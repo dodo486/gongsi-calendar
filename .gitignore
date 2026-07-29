@@ -1,0 +1,13 @@
+# 절대 올리면 안 되는 것: DART OpenAPI 키 (비밀)
+dart_key.txt
+
+# 실행 중 생성되는 데이터/캐시
+data/
+__pycache__/
+*.pyc
+
+# OS/에디터
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/

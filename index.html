@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📅 공시캘린더</title>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1116; --panel:#171a21; --line:#262b36; --text:#e6e9ef; --muted:#8b93a3;
+    --kospi:#3b82f6; --kosdaq:#f59e0b; --accent:#22c55e; --div:#a855f7; --exp:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:18px;margin:0}
+  .meta{color:var(--muted);font-size:12px}
+  .tabs{display:flex;gap:6px}
+  .tab{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px;font-weight:600}
+  .tab.on{background:var(--text);color:var(--bg)}
+  .controls{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
+  input[type=search]{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:8px;width:200px;font-size:13px}
+  .chip{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:13px;user-select:none}
+  .chip.on{color:#fff}
+  .chip.kospi.on{background:var(--kospi);border-color:var(--kospi)}
+  .chip.kosdaq.on{background:var(--kosdaq);border-color:var(--kosdaq)}
+  .layout{display:flex;height:calc(100vh - 58px)}
+  #calendar{flex:1;padding:14px;overflow:auto}
+  #side{width:360px;border-left:1px solid var(--line);background:var(--panel);padding:16px;overflow:auto}
+  #side h2{font-size:14px;color:var(--muted);margin:0 0 10px}
+  .detail .corp{font-size:18px;font-weight:700}
+  .detail .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px;vertical-align:middle}
+  .badge.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
+  .badge.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
+  .detail .title{margin:12px 0;font-size:15px;line-height:1.5}
+  .detail .big{font-size:26px;font-weight:800;color:var(--div);margin:10px 0}
+  .detail .row{font-size:13px;color:var(--muted);margin:4px 0}
+  .btn{display:inline-block;margin-top:14px;background:var(--accent);color:#04240f;font-weight:700;padding:10px 14px;border-radius:8px;text-decoration:none;font-size:14px}
+  .empty{color:var(--muted);font-size:13px}
+  .divlist .lh{font-size:13px;font-weight:700;margin-bottom:10px}
+  .divlist .di{padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:7px;cursor:pointer;background:var(--bg)}
+  .divlist .di:hover{border-color:var(--div)}
+  .divlist .di b{font-size:14px}
+  .divlist .di .sub{font-size:12px;color:var(--muted)}
+  .divlist .mkt{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:4px}
+  .mkt.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
+  .mkt.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
+  .back{display:inline-block;margin-bottom:10px;color:var(--div);cursor:pointer;font-size:13px}
+  .fc{--fc-border-color:var(--line);--fc-page-bg-color:transparent;--fc-neutral-bg-color:#1b1f28;
+      --fc-today-bg-color:rgba(34,197,94,.08);--fc-list-event-hover-bg-color:#1b1f28}
+  .fc .fc-toolbar-title{font-size:16px}
+  .fc .fc-button{background:var(--panel);border-color:var(--line);color:var(--text);text-transform:none}
+  .fc .fc-button-primary:not(:disabled).fc-button-active{background:var(--accent);border-color:var(--accent);color:#04240f}
+  .fc-daygrid-event{cursor:pointer;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fc-event.mk-KOSPI{background:var(--kospi);border-color:var(--kospi)}
+  .fc-event.mk-KOSDAQ{background:var(--kosdaq);border-color:var(--kosdaq);color:#1a1200}
+  .fc-event.dv{background:var(--div);border-color:var(--div);font-weight:600}
+  .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>📅 공시캘린더</h1>
+  <div class="tabs">
+    <span class="tab on" data-mode="disc">공시</span>
+    <span class="tab" data-mode="div">💰 배당</span>
+  </div>
+  <span class="meta" id="meta">불러오는 중…</span>
+  <div class="controls">
+    <input type="search" id="q" placeholder="회사명 검색">
+    <span class="chip kospi on" data-market="KOSPI">KOSPI</span>
+    <span class="chip kosdaq on" data-market="KOSDAQ">KOSDAQ</span>
+  </div>
+</header>
+<div class="layout">
+  <div id="calendar"></div>
+  <div id="side">
+    <h2 id="sideTitle">공시 상세</h2>
+    <div id="detail" class="empty">캘린더에서 항목을 클릭하면 여기에 내용이 표시됩니다.</div>
+  </div>
+</div>
+<script>
+let MODE = "disc";          // 'disc'(공시) | 'div'(배당)
+let ALL = [], DIV = [], EXP = [];
+let calendar;
+const filters = { q:"", KOSPI:true, KOSDAQ:true };
+
+function toISO(d){ return d.includes("-") ? d : `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`; }
+const won = n => Number(n).toLocaleString("ko-KR");
+let divListMode = false;
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`; }
+
+function renderDivToday(){
+  divListMode = true;
+  const t = todayStr();
+  const list = DIV.filter(e => (e.rcept_dt||"") === t);
+  const box = document.getElementById("detail"); box.className = "";
+  let h = `<div class="divlist"><div class="lh">📢 오늘 뜬 배당공시 (${list.length})</div>`;
+  if(!list.length) h += `<div class="empty">오늘 접수된 배당 공시가 없습니다.</div>`;
+  list.forEach(e=>{
+    h += `<div class="di" data-rc="${e.rcept_no}"><b>${e.corp}</b><span class="mkt ${e.market}">${e.market}</span><br>
+      <span class="sub">${e.div_type||"배당"} · ${e.per_share?won(e.per_share)+"원":"금액 미정"} · 잔고확정 ${e.confirm_date||"-"} (기준일 ${e.record_date})</span></div>`;
+  });
+  box.innerHTML = h + `</div>`;
+  box.querySelectorAll(".di").forEach(el=> el.addEventListener("click",()=>{
+    const e = DIV.find(x=>x.rcept_no===el.dataset.rc); if(e) showDetail({...e, kind:"div"});
+  }));
+}
+
+function discEvents(list){
+  return list.map((e,i)=>({
+    id:"d"+i, title:`${e.corp} · ${e.category||""} · ${e.title}`,
+    start:toISO(e.date), allDay:true, classNames:[`mk-${e.market}`],
+    extendedProps:{...e, kind:"disc"},
+  }));
+}
+function divEvents(list){
+  return list.map((e,i)=>({
+    id:"v"+i, title:`${e.corp} (${e.per_share?won(e.per_share)+"원":"미정"})`,
+    start:e.confirm_date || e.record_date, allDay:true, classNames:["dv"],   // 잔고확정일(T-2)에 표시
+    extendedProps:{...e, kind:"div"},
+  }));
+}
+
+function expEvents(){
+  return EXP.map((e,i)=>({
+    id:"x"+i, title:(e.type==="선·옵 동시만기"?"🔮 ":"⚡ ")+e.type,
+    start:e.date, allDay:true, classNames:["exp"], editable:false,
+    extendedProps:{...e, kind:"exp"},
+  }));
+}
+
+function currentFiltered(){
+  const q = filters.q.trim().toLowerCase();
+  const src = MODE==="disc" ? ALL : DIV;
+  return src.filter(e=>{
+    if(!filters[e.market]) return false;
+    if(q && !(`${e.corp}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+function applyFilters(){
+  const list = currentFiltered();
+  calendar.removeAllEvents();
+  const base = MODE==="disc" ? discEvents(list) : divEvents(list);
+  calendar.addEventSource(base.concat(expEvents()));   // 만기일은 두 탭 공통 표시
+}
+
+function showDetail(e){
+  const box = document.getElementById("detail");
+  if(e.kind==="exp"){
+    divListMode = false; box.className="";
+    box.innerHTML = `
+      <div class="detail">
+        <div class="corp" style="color:var(--exp)">${e.type}</div>
+        <div class="title">${e.label||""}</div>
+        <div class="row">📅 만기일 <b style="color:var(--text)">${e.date}</b></div>
+        ${e.adjusted?'<div class="row">※ 원래 둘째 목요일이 휴장이라 직전 영업일로 조정됨</div>':''}
+      </div>`;
+    return;
+  }
+  if(e.kind==="div"){
+    divListMode = false;
+    box.innerHTML = `
+      <div class="detail">
+        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        <div class="corp">${e.corp}<span class="badge ${e.market}">${e.market}</span></div>
+        <div class="row">종목코드 ${e.stock||"-"} · <b style="color:var(--div)">${e.div_type||"배당"}</b></div>
+        <div class="big">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주</span></div>
+        <div class="row">🗓️ 잔고확정일(T-2) <b style="color:var(--div)">${e.confirm_date||"-"}</b></div>
+        <div class="row">📌 배당기준일 ${e.record_date}</div>
+        <div class="row">💸 지급예정일 ${e.pay_date||"-"}</div>
+        <a class="btn" href="${e.url}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+      </div>`;
+  }else{
+    box.innerHTML = `
+      <div class="detail">
+        <div class="corp">${e.corp}<span class="badge ${e.market}">${e.market}</span></div>
+        <div class="row">종목코드 ${e.stock||"-"} · <b style="color:var(--accent)">${e.category||""}</b></div>
+        <div class="title">${e.title}</div>
+        <div class="row">📅 접수일 ${toISO(e.date)}</div>
+        <div class="row">✍️ 제출인 ${e.flr||"-"}</div>
+        <div class="row">🧾 접수번호 ${e.rcept_no}</div>
+        <a class="btn" href="${e.url}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+      </div>`;
+  }
+}
+
+async function loadData(){
+  if(MODE==="disc"){
+    const d = await (await fetch("data/disclosures.json?_="+Date.now())).json();
+    ALL = d.events||[];
+    document.getElementById("meta").textContent =
+      `공시 ${d.count}건 · 갱신 ${d.generated_at||""}`;
+  }else{
+    const d = await (await fetch("data/dividends.json?_="+Date.now())).json();
+    DIV = d.events||[];
+    document.getElementById("meta").textContent =
+      `배당 ${d.count}건 (기준일 기준) · 갱신 ${d.generated_at||""}`;
+  }
+  applyFilters();
+  if(MODE==="div" && divListMode) renderDivToday();   // 리스트 보는 중이면 최신으로 갱신
+}
+
+function switchMode(mode){
+  if(mode===MODE) return;
+  MODE = mode;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.mode===mode));
+  document.getElementById("sideTitle").textContent = mode==="div" ? "배당" : "공시 상세";
+  divListMode = false;
+  if(mode==="disc"){
+    const box=document.getElementById("detail");
+    box.className="empty"; box.textContent="캘린더에서 항목을 클릭하면 여기에 내용이 표시됩니다.";
+  }
+  loadData().then(()=>{
+    if(MODE==="div"){ calendar.today(); renderDivToday(); }   // 배당: 오늘 기준 + 오늘 배당공시 리스트
+    else if(ALL.length){ calendar.gotoDate(toISO(ALL[0].date)); }
+  });
+}
+
+async function boot(){
+  calendar = new FullCalendar.Calendar(document.getElementById("calendar"),{
+    initialView:"dayGridMonth", locale:"ko", height:"100%", firstDay:0, dayMaxEvents:6,
+    headerToolbar:{left:"prev,next today",center:"title",right:"dayGridMonth,listWeek"},
+    buttonText:{today:"오늘",month:"월",list:"목록"},
+    eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
+  });
+  calendar.render();
+  try{ EXP = (await (await fetch("data/expiries.json?_="+Date.now())).json()).events||[]; }catch(_){ EXP=[]; }
+  await loadData();
+  if(ALL.length){ calendar.gotoDate(toISO(ALL[0].date)); }
+  setInterval(()=>loadData().catch(console.error), 30000);   // 30초 자동 갱신
+}
+
+// 컨트롤
+document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>switchMode(t.dataset.mode)) );
+document.getElementById("q").addEventListener("input",e=>{filters.q=e.target.value;applyFilters();});
+document.querySelectorAll(".chip").forEach(c=>{
+  c.addEventListener("click",()=>{
+    const mk=c.dataset.market; filters[mk]=!filters[mk];
+    c.classList.toggle("on",filters[mk]); applyFilters();
+  });
+});
+
+boot().catch(err=>{
+  document.getElementById("meta").textContent="데이터 로드 실패 — fetch.py/dividends.py 실행 후 serve.py로 여세요.";
+  console.error(err);
+});
+</script>
+</body>
+</html>
