@@ -52,8 +52,11 @@ def build(years=None):
             })
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                "count": len(events), "events": events}
-    json.dump(payload, open(os.path.join(DATA_DIR, "expiries.json"), "w", encoding="utf-8"),
-              ensure_ascii=False, indent=1)
+    out = os.path.join(DATA_DIR, "expiries.json")
+    tmp = out + ".tmp"   # 원자적 저장 (fetch.py 미의존 — 이 파일은 API 키 없이도 단독 실행 가능)
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, out)
     return payload
 
 if __name__ == "__main__":

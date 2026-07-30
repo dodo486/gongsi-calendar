@@ -12,6 +12,7 @@
 - **실시간 알림** — 1분 폴링, 새 공시 윈도우 토스트(클릭 시 DART 원문)
 - **웹 캘린더 2탭** — 공시 캘린더 / 배당 캘린더(완전 분리)
 - **배당 캘린더** — 원문 파싱으로 1주당 배당금 + 기준일 추출, **잔고확정일(기준일 T-2 영업일)** 에 "회사명(금액)" 표시. 한국 공휴일·근로자의날·연말폐장 반영
+- **배당 리서치** — 종목별 **배당 선진화 판별**(기준일 위치·공시 순서 근거) + **예상배당 추정**(과거 지급 주기 기반, 캘린더 노란색 💡). 배당 클릭 시 "왜 이 날짜인지" 설명
 - **선물·옵션 만기일** — 규칙 계산(둘째 목요일, 3·6·9·12월 동시만기, 휴장시 직전영업일)
 - **원클릭 실행** — 바탕화면 아이콘 + 부팅 자동시작
 
@@ -21,6 +22,7 @@
 |---|---|
 | `fetch.py` | DART 공시 목록 수집·분류 (증자=유형B, 거래소=유형I) |
 | `dividends.py` | 배당금·기준일 원문 파싱, T-2 잔고확정일 계산, 증분 반영(upsert) |
+| `research.py` | 배당 이력 430일 캐시, **배당 선진화 판별** + **예상배당 추정**(캘린더 노란색) |
 | `expiries.py` | 선물·옵션 만기일 규칙 계산 |
 | `get_watchlist.py` | 코스피200(네이버) + 코스닥150(스냅샷) → `watchlist.json` |
 | `monitor.py` | 실시간 폴러(1분), 새 공시 감지·알림·캘린더 반영 |
@@ -29,7 +31,7 @@
 
 ## 설치 & 실행
 
-1. Python 3 + 패키지: `pip install numpy holidays winotify pillow`
+1. Python 3 + 패키지: `pip install numpy holidays` (+ 윈도우 알림용 `winotify pillow` — 맥/리눅스는 불필요)
 2. **DART API 키 발급** ([opendart.fss.or.kr](https://opendart.fss.or.kr)) → `dart_key.txt.example` 를 `dart_key.txt` 로 복사 후 키 입력
 3. 감시대상 생성: `python get_watchlist.py`
 4. 실행: `python launch.py` (또는 바탕화면 아이콘)
@@ -44,7 +46,10 @@ python serve.py          # 웹 캘린더만 (localhost:8777)
 
 ## 환경 참고
 
+- **크로스플랫폼**: 윈도우(토스트 알림·클릭→원문) / 맥(알림센터) / 리눅스(notify-send) 모두 지원
 - 이 도구를 개발한 PC 네트워크에선 **KRX(data.krx.co.kr) 자동접근이 차단**됨 → 코스피200은 네이버, 코스닥150은 임시 스냅샷 사용
 - 배당은 DART 정형 API가 없어 원문(document.xml) 텍스트 파싱으로 처리
+- 사내 TLS 검사 등으로 인증서 검증이 불가능한 환경에서만 `DART_INSECURE_TLS=1` 환경변수로 무검증 접속 가능 (기본은 truststore → certifi → 시스템 인증서 순서로 검증)
+- 데이터 보관: 공시 이력 365일, 알림 중복방지 기록(seen.json) 30일 — 자동 정리
 
 자세한 결정 기록·변경 이력은 [PROJECT.md](PROJECT.md) 참고.

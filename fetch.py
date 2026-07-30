@@ -8,7 +8,18 @@ DART 공시 수집기 (v1)
 import json, os, sys, time, datetime, urllib.request, urllib.error, ssl
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-KEY = open(os.path.join(BASE, "dart_key.txt"), encoding="utf-8").read().strip()
+_KEY_PATH = os.path.join(BASE, "dart_key.txt")
+if not os.path.exists(_KEY_PATH):
+    sys.exit("[!] dart_key.txt 없음 — dart_key.txt.example 을 dart_key.txt 로 복사하고 "
+             "OpenDART API 키를 넣어주세요 (무료 발급: https://opendart.fss.or.kr)")
+KEY = open(_KEY_PATH, encoding="utf-8").read().strip()
+
+def save_json(path, obj):
+    """원자적 저장 — 쓰다 만 파일을 웹이 읽는 사고 방지 (tmp에 쓰고 교체)"""
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=1)
+    os.replace(tmp, path)
 
 # 관심 공시 종류: (제목 키워드, 표시 카테고리). 순서 = 매칭 우선순위.
 CATEGORIES = [
@@ -51,19 +62,29 @@ def make_opener():
         return "certifi"
     except Exception:
         pass
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx)))
-    return "unverified"
+    if os.environ.get("DART_INSECURE_TLS") == "1":
+        # 사내 TLS 검사 등으로 정상 검증이 불가능할 때만 명시적으로 켜는 최후 수단
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx)))
+        print("[경고] DART_INSECURE_TLS=1 — TLS 인증서 검증 없이 접속합니다")
+        return "unverified"
+    return "default"  # 시스템 기본 인증서로 검증 (실패 시 DART_INSECURE_TLS=1 안내됨)
 
 TLS_MODE = make_opener()
 
 def api(params):
     q = "&".join(f"{k}={v}" for k, v in params.items())
     url = f"https://opendart.fss.or.kr/api/list.json?{q}"
-    with urllib.request.urlopen(url, timeout=20) as r:
-        return json.loads(r.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(url, timeout=20) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except urllib.error.URLError as ex:
+        if isinstance(getattr(ex, "reason", None), ssl.SSLError):
+            print("  [!] TLS 인증 실패 — 사내망이면 `pip install truststore` 또는 "
+                  "환경변수 DART_INSECURE_TLS=1 을 검토하세요")
+        raise
 
 def fetch_range(bgn, end, corp_cls, pblntf_ty=None):
     """해당 시장(corp_cls)의 기간 내 공시를 페이지 넘겨가며 수집 (pblntf_ty로 유형 제한)"""
@@ -139,21 +160,28 @@ def collect_events(bgn, end, watch="__load__", verbose=True):
     return events
 
 def main(days=7):
-    today = datetime.date(2026, 7, 28)   # TODO: 실운영 시 date.today() 로 교체
+    today = datetime.date.today()
     bgn = (today - datetime.timedelta(days=days)).strftime("%Y%m%d")
     end = today.strftime("%Y%m%d")
     print(f"TLS={TLS_MODE} | 기간 {bgn}~{end}")
     events = [e for e in collect_events(bgn, end) if e["category"] not in CAL_EXCLUDE]
 
+    # 기존 파일과 병합 — 짧은 기간 백필이 기존 이력을 지우지 않게 (rcept_no 기준 중복 제거)
+    out_path = os.path.join(DATA_DIR, "disclosures.json")
+    if os.path.exists(out_path):
+        have = {e["rcept_no"] for e in events}
+        old = json.load(open(out_path, encoding="utf-8")).get("events", [])
+        events += [e for e in old if e.get("rcept_no") not in have]
+    events.sort(key=lambda e: e.get("date", ""), reverse=True)
+
+    dates = [e["date"] for e in events if e.get("date")]
     payload = {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "range": {"bgn": bgn, "end": end},
+        "range": {"bgn": min(dates), "end": max(dates)} if dates else {},
         "count": len(events),
         "events": events,
     }
-    out_path = os.path.join(DATA_DIR, "disclosures.json")
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=1)
+    save_json(out_path, payload)
     print(f"저장: {out_path} ({len(events)}건)")
 
 if __name__ == "__main__":

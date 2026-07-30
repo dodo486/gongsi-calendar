@@ -9,7 +9,7 @@
 <style>
   :root{
     --bg:#0f1116; --panel:#171a21; --line:#262b36; --text:#e6e9ef; --muted:#8b93a3;
-    --kospi:#3b82f6; --kosdaq:#f59e0b; --accent:#22c55e; --div:#a855f7; --exp:#ef4444;
+    --kospi:#3b82f6; --kosdaq:#f59e0b; --accent:#22c55e; --div:#a855f7; --exp:#ef4444; --est:#eab308;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:"Malgun Gothic","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text)}
@@ -57,6 +57,11 @@
   .fc-event.mk-KOSDAQ{background:var(--kosdaq);border-color:var(--kosdaq);color:#1a1200}
   .fc-event.dv{background:var(--div);border-color:var(--div);font-weight:600}
   .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
+  .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
+  .why{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+  .why .wh{font-weight:700;font-size:13px;margin-bottom:8px;color:var(--est)}
+  .why .row{font-size:12.5px;line-height:1.55}
+  .why .ev{font-size:12px;color:var(--muted);margin:3px 0;line-height:1.5}
 </style>
 </head>
 <body>
@@ -83,11 +88,14 @@
 <script>
 let MODE = "disc";          // 'disc'(공시) | 'div'(배당)
 let ALL = [], DIV = [], EXP = [];
+let RES = {companies:{}, events:[]};   // 리서치: 선진화 판별 + 예상배당(research.json)
 let calendar;
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
 
 function toISO(d){ return d.includes("-") ? d : `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`; }
 const won = n => Number(n).toLocaleString("ko-KR");
+// 외부(DART) 데이터를 innerHTML에 넣기 전 이스케이프 (XSS 방지)
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let divListMode = false;
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`; }
 
@@ -99,8 +107,8 @@ function renderDivToday(){
   let h = `<div class="divlist"><div class="lh">📢 오늘 뜬 배당공시 (${list.length})</div>`;
   if(!list.length) h += `<div class="empty">오늘 접수된 배당 공시가 없습니다.</div>`;
   list.forEach(e=>{
-    h += `<div class="di" data-rc="${e.rcept_no}"><b>${e.corp}</b><span class="mkt ${e.market}">${e.market}</span><br>
-      <span class="sub">${e.div_type||"배당"} · ${e.per_share?won(e.per_share)+"원":"금액 미정"} · 잔고확정 ${e.confirm_date||"-"} (기준일 ${e.record_date})</span></div>`;
+    h += `<div class="di" data-rc="${esc(e.rcept_no)}"><b>${esc(e.corp)}</b><span class="mkt ${esc(e.market)}">${esc(e.market)}</span><br>
+      <span class="sub">${esc(e.div_type||"배당")} · ${e.per_share?won(e.per_share)+"원":"금액 미정"} · 잔고확정 ${esc(e.confirm_date||"-")} (기준일 ${esc(e.record_date)})</span></div>`;
   });
   box.innerHTML = h + `</div>`;
   box.querySelectorAll(".di").forEach(el=> el.addEventListener("click",()=>{
@@ -131,6 +139,17 @@ function expEvents(){
   }));
 }
 
+function estEvents(){   // 예상배당(리서치 추정) — 배당 탭 전용, 노란색
+  const q = filters.q.trim().toLowerCase();
+  return (RES.events||[])
+    .filter(e => filters[e.market] && (!q || `${e.corp}`.toLowerCase().includes(q)))
+    .map((e,i)=>({
+      id:"e"+i, title:`💡 ${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"})`,
+      start:e.confirm_date || e.record_date, allDay:true, classNames:["est"],
+      extendedProps:{...e, kind:"est"},
+    }));
+}
+
 function currentFiltered(){
   const q = filters.q.trim().toLowerCase();
   const src = MODE==="disc" ? ALL : DIV;
@@ -143,19 +162,56 @@ function currentFiltered(){
 function applyFilters(){
   const list = currentFiltered();
   calendar.removeAllEvents();
-  const base = MODE==="disc" ? discEvents(list) : divEvents(list);
+  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents());
   calendar.addEventSource(base.concat(expEvents()));   // 만기일은 두 탭 공통 표시
+}
+
+function whyBlock(e){
+  // "왜 이 날짜에 표시되나" — 잔고확정일 계산 + 공시→기준일 순서 + 선진화 판별
+  const c = (RES.companies||{})[e.stock];
+  const disclosed = e.rcept_dt ? toISO(e.rcept_dt) : "";
+  const seq = disclosed && e.record_date && disclosed < e.record_date;
+  let h = `<div class="why"><div class="wh">📍 왜 이 날짜에 표시되나</div>
+    <div class="row">캘린더 표시일은 <b>잔고확정일(${esc(e.confirm_date||"-")})</b> = 배당기준일 ${esc(e.record_date)}의
+      2영업일 전(주말·공휴일 제외). 국내 주식은 T+2 결제라 <b>이날까지 매수</b>해야 기준일에 주주명부에 올라 배당을 받습니다.</div>`;
+  if(disclosed) h += `<div class="row" style="margin-top:6px">${seq
+    ? `✅ 배당액 공시(${esc(disclosed)}) → 기준일(${esc(e.record_date)}) 순서 — 배당액을 <b>알고</b> 투자할 수 있는 선진화 방식`
+    : `⚠️ 기준일(${esc(e.record_date)})이 공시(${esc(disclosed)})보다 앞 — 배당액을 모른 채 기준일이 지나는 구형 방식`}</div>`;
+  if(c){
+    h += `<div class="row" style="margin-top:6px">🏷️ 이 기업의 배당 선진화 판별: <b style="color:var(--est)">${esc(c.verdict)}</b></div>`;
+    h += (c.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("");
+  }
+  return h + `</div>`;
 }
 
 function showDetail(e){
   const box = document.getElementById("detail");
+  if(e.kind==="est"){
+    divListMode = false; box.className="";
+    box.innerHTML = `
+      <div class="detail">
+        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        <div class="corp">💡 ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--est)">예상 ${esc(e.div_type||"배당")}</b> (리서치 추정)</div>
+        <div class="big" style="color:var(--est)">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주 (예상)</span></div>
+        <div class="row">🗓️ 예상 잔고확정일(T-2) <b style="color:var(--est)">${esc(e.confirm_date||"-")}</b></div>
+        <div class="row">📌 예상 배당기준일 ${esc(e.record_date)}</div>
+        <div class="why"><div class="wh">🧠 추정 근거</div>
+          <div class="row">${esc(e.basis||"")}</div>
+          <div class="row" style="margin-top:6px">🏷️ 배당 선진화 판별: <b style="color:var(--est)">${esc(e.verdict||"판단불가")}</b></div>
+          ${((RES.companies||{})[e.stock]?.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("")}
+          <div class="ev" style="margin-top:8px">※ 과거 공시 이력 기반 자동 추정입니다. 실제 공시가 나오면 보라색(확정) 이벤트로 대체됩니다.</div>
+        </div>
+      </div>`;
+    return;
+  }
   if(e.kind==="exp"){
     divListMode = false; box.className="";
     box.innerHTML = `
       <div class="detail">
-        <div class="corp" style="color:var(--exp)">${e.type}</div>
-        <div class="title">${e.label||""}</div>
-        <div class="row">📅 만기일 <b style="color:var(--text)">${e.date}</b></div>
+        <div class="corp" style="color:var(--exp)">${esc(e.type)}</div>
+        <div class="title">${esc(e.label||"")}</div>
+        <div class="row">📅 만기일 <b style="color:var(--text)">${esc(e.date)}</b></div>
         ${e.adjusted?'<div class="row">※ 원래 둘째 목요일이 휴장이라 직전 영업일로 조정됨</div>':''}
       </div>`;
     return;
@@ -165,24 +221,25 @@ function showDetail(e){
     box.innerHTML = `
       <div class="detail">
         <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
-        <div class="corp">${e.corp}<span class="badge ${e.market}">${e.market}</span></div>
-        <div class="row">종목코드 ${e.stock||"-"} · <b style="color:var(--div)">${e.div_type||"배당"}</b></div>
+        <div class="corp">${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--div)">${esc(e.div_type||"배당")}</b></div>
         <div class="big">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주</span></div>
-        <div class="row">🗓️ 잔고확정일(T-2) <b style="color:var(--div)">${e.confirm_date||"-"}</b></div>
-        <div class="row">📌 배당기준일 ${e.record_date}</div>
-        <div class="row">💸 지급예정일 ${e.pay_date||"-"}</div>
-        <a class="btn" href="${e.url}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+        <div class="row">🗓️ 잔고확정일(T-2) <b style="color:var(--div)">${esc(e.confirm_date||"-")}</b></div>
+        <div class="row">📌 배당기준일 ${esc(e.record_date)}</div>
+        <div class="row">💸 지급예정일 ${esc(e.pay_date||"-")}</div>
+        ${whyBlock(e)}
+        <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
       </div>`;
   }else{
     box.innerHTML = `
       <div class="detail">
-        <div class="corp">${e.corp}<span class="badge ${e.market}">${e.market}</span></div>
-        <div class="row">종목코드 ${e.stock||"-"} · <b style="color:var(--accent)">${e.category||""}</b></div>
-        <div class="title">${e.title}</div>
-        <div class="row">📅 접수일 ${toISO(e.date)}</div>
-        <div class="row">✍️ 제출인 ${e.flr||"-"}</div>
-        <div class="row">🧾 접수번호 ${e.rcept_no}</div>
-        <a class="btn" href="${e.url}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+        <div class="corp">${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--accent)">${esc(e.category||"")}</b></div>
+        <div class="title">${esc(e.title)}</div>
+        <div class="row">📅 접수일 ${esc(toISO(e.date))}</div>
+        <div class="row">✍️ 제출인 ${esc(e.flr||"-")}</div>
+        <div class="row">🧾 접수번호 ${esc(e.rcept_no)}</div>
+        <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
       </div>`;
   }
 }
@@ -196,8 +253,9 @@ async function loadData(){
   }else{
     const d = await (await fetch("data/dividends.json?_="+Date.now())).json();
     DIV = d.events||[];
+    try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
     document.getElementById("meta").textContent =
-      `배당 ${d.count}건 (기준일 기준) · 갱신 ${d.generated_at||""}`;
+      `배당 ${d.count}건 · 💡예상 ${RES.count||0}건 · 갱신 ${d.generated_at||""}`;
   }
   applyFilters();
   if(MODE==="div" && divListMode) renderDivToday();   // 리스트 보는 중이면 최신으로 갱신
@@ -228,6 +286,7 @@ async function boot(){
   });
   calendar.render();
   try{ EXP = (await (await fetch("data/expiries.json?_="+Date.now())).json()).events||[]; }catch(_){ EXP=[]; }
+  try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
   await loadData();
   if(ALL.length){ calendar.gotoDate(toISO(ALL[0].date)); }
   setInterval(()=>loadData().catch(console.error), 30000);   // 30초 자동 갱신

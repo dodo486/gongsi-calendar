@@ -10,9 +10,11 @@
 import sys
 try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception: pass
-import io, os, re, json, zipfile, datetime, urllib.request
+import io, os, re, json, zipfile, datetime, threading, urllib.request
 import numpy as np, holidays as _hol
-from fetch import fetch_range, load_watchlist, DATA_DIR, KEY, TLS_MODE
+from fetch import fetch_range, load_watchlist, DATA_DIR, KEY, TLS_MODE, save_json
+
+_LOCK = threading.RLock()   # dividends.json 동시 쓰기 방지 (main 재생성 vs upsert)
 
 def _build_holidays():
     y = datetime.date.today().year
@@ -36,6 +38,14 @@ def t_minus_2(record_iso):
         return ""
 
 DATE = r"(\d{4}[-.]\d{1,2}[-.]\d{1,2}|\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일)"
+
+def norm_div_type(s):
+    """배당구분 정규화 — 문서마다 ':' 포함, 표기 차이 등으로 병합 키가 갈라지는 것 방지"""
+    s = re.sub(r"[^가-힣A-Za-z0-9]", "", s or "")
+    for kw in ("중간", "분기", "결산", "임시", "특별"):
+        if kw in s:
+            return kw + "배당"
+    return s
 
 def norm_date(s):
     m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
@@ -62,13 +72,23 @@ def parse_decision(t):
     return {"per_share": ps if ps not in ("", "-") else "",
             "record_date": norm_date(rec.group(1)) if rec else "",
             "pay_date": norm_date(pay.group(1)) if pay else "",
-            "div_type": div.group(1) if div else ""}
+            "div_type": norm_div_type(div.group(1) if div else "")}
 
 def parse_record(t):
     rec = re.search(r"기준일\s*" + DATE, t)   # "(기준일) 시작일" 은 날짜 아니라 자동 skip
     div = re.search(r"배당구분\s*(\S+)", t)
     return {"record_date": norm_date(rec.group(1)) if rec else "",
-            "div_type": div.group(1) if div else ""}
+            "div_type": norm_div_type(div.group(1) if div else "")}
+
+def _match_key(index, stock, div_type):
+    """(종목, 배당구분) 키 매칭 — 한쪽 문서의 배당구분 파싱이 비었을 때 같은 종목의 유일 엔트리에 병합"""
+    key = (stock, div_type)
+    if key in index:
+        return key
+    cands = [k for k in index if k[0] == stock]
+    if len(cands) == 1 and "" in (div_type, cands[0][1]):
+        return cands[0]
+    return key
 
 def main(days=90):
     today = datetime.date.today()
@@ -98,8 +118,9 @@ def main(days=90):
     for r in decisions:
         try: d = parse_decision(doc_text(r["rcept_no"]))
         except Exception: continue
-        key = (r["stock_code"], d["div_type"])
-        e = merged.setdefault(key, base(r)); e["div_type"] = d["div_type"]
+        key = _match_key(merged, r["stock_code"], d["div_type"])
+        e = merged.setdefault(key, base(r))
+        e["div_type"] = d["div_type"] or e.get("div_type", "")
         if r["rcept_dt"] >= e.get("_dec_dt", ""):
             e["_dec_dt"] = r["rcept_dt"]
             e["per_share"] = d["per_share"] or e["per_share"]
@@ -112,8 +133,9 @@ def main(days=90):
         try: d = parse_record(doc_text(r["rcept_no"]))
         except Exception: continue
         if not d["record_date"]: continue
-        key = (r["stock_code"], d["div_type"])
-        e = merged.setdefault(key, base(r)); e["div_type"] = d["div_type"]
+        key = _match_key(merged, r["stock_code"], d["div_type"])
+        e = merged.setdefault(key, base(r))
+        e["div_type"] = d["div_type"] or e.get("div_type", "")
         if r["rcept_dt"] >= e.get("_rec_dt", ""):
             e["_rec_dt"] = r["rcept_dt"]; e["record_date"] = d["record_date"]
 
@@ -131,50 +153,54 @@ def main(days=90):
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                "count": len(events), "events": events}
     out = os.path.join(DATA_DIR, "dividends.json")
-    json.dump(payload, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    with _LOCK:
+        save_json(out, payload)
     print(f"저장: {out} ({len(events)}건, 배당금有 {sum(1 for e in events if e['per_share'])}건)")
 
 def upsert(div_events):
     """새 배당 공시(collect_events 형식 dict 리스트)를 dividends.json에 즉시 증분 반영. 변경시 True"""
-    path = os.path.join(DATA_DIR, "dividends.json")
-    payload = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {"count": 0, "events": []}
-    idx = {(e["stock"], e.get("div_type", "")): e for e in payload["events"]}
-    changed = False
-    for r in div_events:
-        nm = r.get("title", "")
-        if "배당" not in nm or "자회사" in nm:
-            continue
-        is_record = "주주명부폐쇄" in nm
-        try:
-            t = doc_text(r["rcept_no"])
-        except Exception:
-            continue
-        d = parse_record(t) if is_record else parse_decision(t)
-        key = (r["stock"], d.get("div_type", ""))
-        e = idx.get(key)
-        if e is None:
-            e = {"corp": r["corp"], "stock": r["stock"], "market": r.get("market", ""),
-                 "per_share": "", "record_date": "", "pay_date": "", "div_type": d.get("div_type", ""),
-                 "rcept_no": r["rcept_no"], "url": r.get("url", ""),
-                 "rcept_dt": r.get("date", ""), "confirm_date": ""}
-            payload["events"].append(e); idx[key] = e
-        if is_record:
-            if d["record_date"]: e["record_date"] = d["record_date"]
-        else:
-            if d["per_share"]: e["per_share"] = d["per_share"]
-            if d["pay_date"]: e["pay_date"] = d["pay_date"]
-            if d["record_date"]: e["record_date"] = d["record_date"]
-            e["rcept_no"] = r["rcept_no"]; e["url"] = r.get("url", "")
-        e["rcept_dt"] = max(e.get("rcept_dt", ""), r.get("date", ""))
-        e["confirm_date"] = t_minus_2(e["record_date"])
-        changed = True
-    if changed:
-        payload["events"] = [e for e in payload["events"] if e.get("record_date")]
-        payload["events"].sort(key=lambda x: x.get("confirm_date") or x.get("record_date"))
-        payload["count"] = len(payload["events"])
-        payload["generated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        json.dump(payload, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    return changed
+    with _LOCK:
+        path = os.path.join(DATA_DIR, "dividends.json")
+        payload = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {"count": 0, "events": []}
+        idx = {(e["stock"], e.get("div_type", "")): e for e in payload["events"]}
+        changed = False
+        for r in div_events:
+            nm = r.get("title", "")
+            if "배당" not in nm or "자회사" in nm:
+                continue
+            is_record = "주주명부폐쇄" in nm
+            try:
+                t = doc_text(r["rcept_no"])
+            except Exception:
+                continue
+            d = parse_record(t) if is_record else parse_decision(t)
+            key = _match_key(idx, r["stock"], d.get("div_type", ""))
+            e = idx.get(key)
+            if e is None:
+                e = {"corp": r["corp"], "stock": r["stock"], "market": r.get("market", ""),
+                     "per_share": "", "record_date": "", "pay_date": "", "div_type": d.get("div_type", ""),
+                     "rcept_no": r["rcept_no"], "url": r.get("url", ""),
+                     "rcept_dt": r.get("date", ""), "confirm_date": ""}
+                payload["events"].append(e); idx[key] = e
+            else:
+                e["div_type"] = d.get("div_type", "") or e.get("div_type", "")
+            if is_record:
+                if d["record_date"]: e["record_date"] = d["record_date"]
+            else:
+                if d["per_share"]: e["per_share"] = d["per_share"]
+                if d["pay_date"]: e["pay_date"] = d["pay_date"]
+                if d["record_date"]: e["record_date"] = d["record_date"]
+                e["rcept_no"] = r["rcept_no"]; e["url"] = r.get("url", "")
+            e["rcept_dt"] = max(e.get("rcept_dt", ""), r.get("date", ""))
+            e["confirm_date"] = t_minus_2(e["record_date"])
+            changed = True
+        if changed:
+            payload["events"] = [e for e in payload["events"] if e.get("record_date")]
+            payload["events"].sort(key=lambda x: x.get("confirm_date") or x.get("record_date"))
+            payload["count"] = len(payload["events"])
+            payload["generated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            save_json(path, payload)
+        return changed
 
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 90

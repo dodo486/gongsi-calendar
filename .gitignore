@@ -11,3 +11,9 @@ Thumbs.db
 Desktop.ini
 .vscode/
 .idea/
+
+# macOS
+.DS_Store
+
+# OMC 세션 상태 (운영 아티팩트)
+.omc/

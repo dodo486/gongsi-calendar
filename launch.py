@@ -19,19 +19,22 @@ def already_running():
     except Exception:
         return False
 
-def _minimized():
+def _spawn_opts():
+    """윈도우: 최소화된 새 콘솔 창 / 맥·리눅스: 백그라운드 프로세스"""
+    if os.name != "nt":
+        return {}
     si = subprocess.STARTUPINFO()
     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     si.wShowWindow = 6  # SW_MINIMIZE
-    return si
+    return {"creationflags": subprocess.CREATE_NEW_CONSOLE, "startupinfo": si}
 
 def main():
     if already_running():
         webbrowser.open(f"http://localhost:{PORT}/index.html")
         return
-    flags = subprocess.CREATE_NEW_CONSOLE
-    subprocess.Popen([PY, "monitor.py"], cwd=BASE, creationflags=flags, startupinfo=_minimized())
-    subprocess.Popen([PY, "serve.py"], cwd=BASE, creationflags=flags, startupinfo=_minimized())
+    opts = _spawn_opts()
+    subprocess.Popen([PY, "monitor.py"], cwd=BASE, **opts)
+    subprocess.Popen([PY, "serve.py"], cwd=BASE, **opts)
     # serve.py 가 브라우저를 자동으로 연다
 
 if __name__ == "__main__":

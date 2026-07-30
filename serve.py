@@ -16,7 +16,8 @@ if __name__ == "__main__":
     url = f"http://localhost:{PORT}/index.html"
     print(f"공시캘린더 열림 → {url}\n(종료: Ctrl+C)")
     threading.Timer(0.8, lambda: webbrowser.open(url)).start()
-    with http.server.ThreadingHTTPServer(("", PORT), Handler) as httpd:
+    # 127.0.0.1 바인딩 — 같은 네트워크의 다른 기기에서 접속 못 하게 (개인 도구)
+    with http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler) as httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
