@@ -280,6 +280,7 @@ function switchMode(mode){
 async function boot(){
   calendar = new FullCalendar.Calendar(document.getElementById("calendar"),{
     initialView:"dayGridMonth", locale:"ko", height:"100%", firstDay:0, dayMaxEvents:6,
+    showNonCurrentDates:false, fixedWeekCount:false,   // 전월·다음월 날짜 숨김 + 여분 주 제거
     headerToolbar:{left:"prev,next today",center:"title",right:"dayGridMonth,listWeek"},
     buttonText:{today:"오늘",month:"월",list:"목록"},
     eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
