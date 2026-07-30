@@ -15,10 +15,12 @@ except Exception:
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 _KEY_PATH = os.path.join(BASE, "dart_key.txt")
-if not os.path.exists(_KEY_PATH):
-    sys.exit("[!] dart_key.txt 없음 — dart_key.txt.example 을 dart_key.txt 로 복사하고 "
-             "OpenDART API 키를 넣어주세요 (무료 발급: https://opendart.fss.or.kr)")
-KEY = open(_KEY_PATH, encoding="utf-8").read().strip()
+KEY = os.environ.get("DART_KEY", "").strip()   # CI(GitHub Actions)에선 시크릿 env로 주입
+if not KEY:
+    if not os.path.exists(_KEY_PATH):
+        sys.exit("[!] dart_key.txt 없음 — dart_key.txt.example 을 dart_key.txt 로 복사하고 "
+                 "OpenDART API 키를 넣어주세요 (무료 발급: https://opendart.fss.or.kr)")
+    KEY = open(_KEY_PATH, encoding="utf-8").read().strip()
 
 def save_json(path, obj):
     """원자적 저장 — 쓰다 만 파일을 웹이 읽는 사고 방지 (tmp에 쓰고 교체)"""

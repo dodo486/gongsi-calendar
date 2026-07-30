@@ -1,0 +1,57 @@
+# 공시캘린더 자동 배포 — 데이터 갱신 후 GitHub Pages(gh-pages 브랜치)로 발행
+# 스케줄: 15분 간격, KST 08:00~19:59 (UTC 23시, 0~10시). 수동 실행도 가능.
+name: publish
+
+on:
+  schedule:
+    - cron: "*/15 0-10,23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Seoul          # date.today()가 한국 날짜가 되도록
+      DART_KEY: ${{ secrets.DART_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install numpy holidays
+
+      - name: 이전 배포 데이터 복원 (리서치 파싱 캐시 재사용)
+        run: |
+          git fetch origin gh-pages --depth=1 2>/dev/null && \
+            git checkout origin/gh-pages -- data 2>/dev/null || \
+            echo "gh-pages 없음 — 첫 배포"
+
+      - name: 데이터 갱신
+        run: |
+          python get_watchlist.py || echo "watchlist 갱신 실패 — 리포 커밋본 사용"
+          python fetch.py 90
+          python dividends.py 90
+          python expiries.py
+          python research.py 430
+
+      - name: 사이트 구성
+        run: |
+          mkdir -p site
+          cp index.html site/
+          cp -r data site/data
+          touch site/.nojekyll
+
+      - name: gh-pages 배포
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site

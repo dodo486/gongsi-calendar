@@ -70,6 +70,18 @@
   .fc-event.dv-ex{background:var(--exp);border-color:var(--exp);font-weight:600}
   .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
   .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
+  @media (max-width: 800px){   /* 모바일: 세로 배치, 사이드는 캘린더 아래로 */
+    header{padding:10px 12px;gap:8px}
+    header h1{font-size:16px}
+    .meta{display:none}
+    .controls{margin-left:0;width:100%}
+    input[type=search]{width:110px;flex:1}
+    .layout{flex-direction:column;height:auto}
+    #calendar{height:62vh;padding:8px;flex:none}
+    #side{width:auto;border-left:none;border-top:1px solid var(--line)}
+    .fc .fc-toolbar-title{font-size:14px}
+    .fc-daygrid-event{font-size:10px}
+  }
   .why{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
   .why .wh{font-weight:700;font-size:13px;margin-bottom:8px;color:var(--est)}
   .why .row{font-size:12.5px;line-height:1.55}
