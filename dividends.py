@@ -27,15 +27,18 @@ def _build_holidays():
 
 _HOL_ARR = _build_holidays()
 
-def t_minus_2(record_iso):
-    """배당기준일 → 잔고확정일 (T-2 영업일, 주말+공휴일 제외)"""
+def t_minus(record_iso, n):
+    """배당기준일 → n영업일 전 (주말+공휴일 제외). T-2=배당매수일(잔고확정), T-1=배당락일"""
     if not record_iso:
         return ""
     try:
-        return str(np.busday_offset(np.datetime64(record_iso, "D"), -2,
+        return str(np.busday_offset(np.datetime64(record_iso, "D"), -n,
                                     roll="backward", holidays=_HOL_ARR))
     except Exception:
         return ""
+
+def t_minus_2(record_iso):
+    return t_minus(record_iso, 2)
 
 DATE = r"(\d{4}[-.]\d{1,2}[-.]\d{1,2}|\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일)"
 
@@ -144,7 +147,8 @@ def main(days=90):
         if not e["record_date"]:
             continue
         e["rcept_dt"] = max(e.get("_dec_dt", ""), e.get("_rec_dt", ""))  # 최근 접수일(YYYYMMDD)
-        e["confirm_date"] = t_minus_2(e["record_date"])  # 잔고확정일 (기준일 T-2 영업일)
+        e["confirm_date"] = t_minus_2(e["record_date"])  # 배당매수일 = 잔고확정일 (기준일 T-2 영업일)
+        e["ex_date"] = t_minus(e["record_date"], 1)      # 배당락일 (기준일 T-1 영업일)
         for k in ("_dec_dt", "_rec_dt"):
             e.pop(k, None)
         events.append(e)
@@ -193,6 +197,7 @@ def upsert(div_events):
                 e["rcept_no"] = r["rcept_no"]; e["url"] = r.get("url", "")
             e["rcept_dt"] = max(e.get("rcept_dt", ""), r.get("date", ""))
             e["confirm_date"] = t_minus_2(e["record_date"])
+            e["ex_date"] = t_minus(e["record_date"], 1)
             changed = True
         if changed:
             payload["events"] = [e for e in payload["events"] if e.get("record_date")]

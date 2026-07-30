@@ -157,6 +157,7 @@ def build(days=430):
             events.append({"corp": es[-1]["corp"], "stock": stock, "market": es[-1]["market"],
                            "div_type": p["div_type"], "per_share": p["per_share"],
                            "record_date": p["record_date"], "confirm_date": dv.t_minus_2(p["record_date"]),
+                           "ex_date": dv.t_minus(p["record_date"], 1),
                            "basis": p["basis"], "verdict": verdict})
     events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
