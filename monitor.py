@@ -18,18 +18,23 @@ from fetch import collect_events, DATA_DIR, TLS_MODE, load_watchlist, CAL_EXCLUD
 import dividends
 import expiries
 import research
+import kind_limits
+import earnings
 
-POLL_SECONDS = 60          # 폴링 주기 (트레이더용으로 장중 20~30초로 낮춰도 됨)
+POLL_SECONDS = 20          # 폴링 주기 (트레이더용 실시간 — 신규 공시/상하한가 20초 내 감지)
+SELF_HEAL_SECONDS = 600    # 배당·실적 전체 재생성 주기 — upsert 유실분을 seen 무관하게 자동 복구
 RETENTION_DAYS = 365       # 공시 캘린더 이력 보관 기간 (오래된 이벤트 자동 정리)
 SEEN_KEEP_DAYS = 30        # 알림 중복방지 기록 보관 기간 (폴링 창은 2일이라 충분)
 DATA_PATH = os.path.join(DATA_DIR, "disclosures.json")
-SEEN_PATH = os.path.join(DATA_DIR, "seen.json")   # 알림 중복방지용 (공시/배당 공통)
+SEEN_PATH = os.path.join(DATA_DIR, "seen.json")   # 알림 중복방지용 (공시/배당/상하한가 공통)
+LIMITS_PATH = os.path.join(DATA_DIR, "limits.json")   # 선물 상하한가(가격제한폭)
+ALERT_MIN_STAGE = 1   # 상하한가 토스트 최소 단계 (1=전부 / 2=2·3단계 / 3=실질 상한하한만)
 
 def load_seen():
     if os.path.exists(SEEN_PATH):
         return set(json.load(open(SEEN_PATH, encoding="utf-8")))
     seen = set()   # 최초 실행: 기존 데이터의 접수번호로 시드
-    for f in ("disclosures.json", "dividends.json"):
+    for f in ("disclosures.json", "dividends.json", "earnings.json"):
         p = os.path.join(DATA_DIR, f)
         if os.path.exists(p):
             for e in json.load(open(p, encoding="utf-8")).get("events", []):
@@ -75,6 +80,23 @@ def flush_pending_div():
     except Exception as ex:
         print(f"  [배당] 증분 반영 실패({ex}) → 전체 갱신")
         refresh_dividends()
+
+_earn_lock = threading.Lock()
+def refresh_earnings(full=False):
+    """실적 데이터 갱신 — full=True: 재수집+등락률(무거움) / False: 등락률만(가벼움). 중복 실행 방지."""
+    if not _earn_lock.acquire(blocking=False):
+        return  # 이미 갱신 중
+    def run():
+        try:
+            if full:
+                print("  [실적] 재수집 시작..."); earnings.main(30); print("  [실적] 완료")
+            else:
+                earnings.refresh_quotes()
+        except Exception as ex:
+            print(f"  [실적] 갱신 실패: {ex}")
+        finally:
+            _earn_lock.release()
+    threading.Thread(target=run, daemon=True).start()
 
 _res_lock = threading.Lock()
 def refresh_research():
@@ -126,6 +148,54 @@ def notify(e):
     except Exception as ex:
         print(f"  [알림실패] {ex}")
 
+def notify_limit(e):
+    """선물 상하한가(가격제한폭 도달) OS 알림 — 클릭 시 KRX 공시 원문"""
+    arrow = "▲상한" if e["direction"] == "상승" else "▼하한"
+    title = f"[선물 {arrow}] {e['name']} · {e['market']}"
+    msg = f"{e['kind']} {e['stage']}단계 가격제한폭 도달"
+    try:
+        system = platform.system()
+        if system == "Windows":
+            from winotify import Notification, audio
+            t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=e["url"])
+            t.set_audio(audio.Default, loop=False)
+            t.add_actions(label="KRX 공시 보기", launch=e["url"])
+            t.show()
+        elif system == "Darwin":
+            script = (f'display notification {json.dumps(msg, ensure_ascii=False)} '
+                      f'with title {json.dumps(title, ensure_ascii=False)} sound name "Glass"')
+            subprocess.run(["osascript", "-e", script], check=False, timeout=10)
+        else:
+            subprocess.run(["notify-send", title, msg], check=False, timeout=10)
+    except Exception as ex:
+        print(f"  [알림실패] {ex}")
+
+def poll_limits(seen, alert=True):
+    """선물 상하한가 — KIND 파생 공시(가격제한폭 도달) 폴링.
+    limits.json 최신화 + 신규 접수번호 알림(ALERT_MIN_STAGE 이상만 토스트)."""
+    try:
+        evs = kind_limits.collect()   # 오늘 코스피200/코스닥150 선물 가격제한폭 도달
+    except Exception as ex:
+        print(f"  [상하한가] 수집 실패: {ex}")
+        return 0
+    save_json(LIMITS_PATH, {
+        "date": datetime.date.today().strftime("%Y-%m-%d"),
+        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "count": len(evs), "events": evs,
+    })
+    alerted = 0
+    new = [e for e in evs if e["rcept_no"] not in seen]
+    for e in new:
+        seen.add(e["rcept_no"])   # 모든 신규는 seen에 등록(재알림 방지); 알림은 단계 조건만
+        if alert and (e.get("stage") or 0) >= ALERT_MIN_STAGE:
+            print(f"  🚨 선물 {'상한' if e['direction']=='상승' else '하한'}: "
+                  f"{e['name']} {e['stage']}단계 ({e['kind']})")
+            notify_limit(e)
+            alerted += 1
+    if new:
+        save_seen(seen)
+    return alerted
+
 def poll_once(seen, alert=True):
     # 어제~오늘 조회: 자정 직전 접수분을 다음 폴링이 놓치지 않게 (중복은 seen이 걸러줌)
     today = datetime.date.today()
@@ -134,16 +204,18 @@ def poll_once(seen, alert=True):
     watch = load_watchlist()
     events = collect_events(bgn, end, watch=watch, verbose=False)
     new = [e for e in events if e["rcept_no"] not in seen]
-    new_cal, new_div = [], []
+    new_cal, new_div, new_earn = [], [], []
     for e in new:
         if alert:
             print(f"  🔔 신규: [{e['category']}] {e['corp']} - {e['title']}")
             notify(e)
         seen.add(e["rcept_no"])
-        if e["category"] in CAL_EXCLUDE:      # 배당 → 공시 캘린더엔 넣지 않음
+        if e["category"] == "배당":           # 배당 → 배당 캘린더(dividends)
             new_div.append(e)
+        elif e["category"] == "실적":          # 실적 → 실적 그리드(earnings)
+            new_earn.append(e)
         else:
-            new_cal.append(e)
+            new_cal.append(e)                 # 그 외 → 공시 캘린더
     if new:
         save_seen(seen)
     if new_cal:
@@ -156,6 +228,8 @@ def poll_once(seen, alert=True):
         with _pending_lock:
             _pending_div.extend(new_div)
     flush_pending_div()
+    if new_earn:
+        refresh_earnings(full=True)           # 신규 실적 → 재수집(등락률 포함)
     return len(new)
 
 def main():
@@ -170,7 +244,8 @@ def main():
 
     if "--once" in sys.argv:
         n = poll_once(seen)
-        print(f"1회 확인 완료 - 신규 {n}건"); return
+        poll_limits(seen, alert=False)
+        print(f"1회 확인 완료 - 공시 신규 {n}건 (limits.json 갱신됨)"); return
 
     try:
         expiries.build()   # 선물·옵션 만기일 생성/갱신 (규칙 계산, 즉시)
@@ -179,15 +254,31 @@ def main():
         print(f"  [만기일] 생성 실패: {ex}")
     refresh_dividends()   # 상주 시작 시 배당 데이터 1회 갱신
     refresh_research()    # 선진화 판별 + 예상배당 갱신 (캐시 기반이라 신규 문서만 파싱)
+    refresh_earnings(full=True)   # 실적 공시 + 현재 등락률 1회 재수집
+    try:
+        poll_limits(seen, alert=False)   # 상하한가 baseline: 현재 도달분을 seen에 담고 알림 억제(재시작 스팸 방지)
+        save_seen(seen)
+        print("  [상하한가] baseline 완료")
+    except Exception as ex:
+        print(f"  [상하한가] baseline 실패: {ex}")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)
         print("  최초 baseline 완료 (알림 억제)")
+    last_heal = time.time()
     while True:
         try:
             n = poll_once(seen)
+            m = poll_limits(seen)
+            refresh_earnings()   # 실적 등락률만 매 주기 갱신(가벼움; 신규 실적은 poll_once가 재수집 트리거)
+            # 자가치유: 주기적으로 배당·실적 전체 재생성 → upsert가 조용히 놓친 건도 자동 복구
+            if time.time() - last_heal >= SELF_HEAL_SECONDS:
+                last_heal = time.time()
+                refresh_dividends()
+                refresh_earnings(full=True)
+                print("  [자가치유] 배당·실적 전체 재생성 트리거")
             ts = datetime.datetime.now().strftime("%H:%M:%S")
-            print(f"[{ts}] 확인 완료 (신규 {n}건, 누적 {len(seen)}건)")
+            print(f"[{ts}] 확인 완료 (공시 신규 {n} · 상하한가 알림 {m} · seen {len(seen)})")
         except Exception as ex:
             print(f"[오류] {ex}")
         time.sleep(POLL_SECONDS)

@@ -28,12 +28,15 @@ def _build_holidays():
 _HOL_ARR = _build_holidays()
 
 def t_minus(record_iso, n):
-    """배당기준일 → n영업일 전 (주말+공휴일 제외). T-2=배당매수일(잔고확정), T-1=배당락일"""
+    """배당기준일 기준 n번째 직전 영업일. n=1 → 배당락일(기준일 직전 영업일),
+    n=2 → 배당매수일(배당부 마지막 매수일 = 잔고확정일).
+    기준일이 휴장일(주말·공휴일, 예: 12/31 연말폐장)이어도 그 하루가 카운트를
+    잡아먹지 않도록, '기준일 하루 전(달력)'부터 직전 영업일들을 센다."""
     if not record_iso:
         return ""
     try:
-        return str(np.busday_offset(np.datetime64(record_iso, "D"), -n,
-                                    roll="backward", holidays=_HOL_ARR))
+        d = np.datetime64(record_iso, "D") - np.timedelta64(1, "D")  # 기준일 하루 전
+        return str(np.busday_offset(d, -(n - 1), roll="backward", holidays=_HOL_ARR))
     except Exception:
         return ""
 

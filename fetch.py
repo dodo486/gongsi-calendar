@@ -36,8 +36,8 @@ CATEGORIES = [
 REPORT_KEYWORDS = [k for k, _ in CATEGORIES]   # 빈 리스트면 종류 필터 없음
 # DART 공시유형: B=주요사항보고(증자·자사주·CB/BW·감자·합병분할), I=거래소공시(배당·실적·최대주주변경)
 PBLNTF_TYPES = ["B", "I"]
-# 공시 캘린더에서 제외할 카테고리 — 배당은 별도 '배당 캘린더'(dividends.py)가 전담
-CAL_EXCLUDE = {"배당"}
+# 공시 캘린더에서 제외할 카테고리 — 배당(dividends.py)·실적(earnings.py)은 별도 그리드 전담
+CAL_EXCLUDE = {"배당", "실적"}
 
 def categorize(title):
     for kw, label in CATEGORIES:

@@ -1,5 +1,6 @@
-# 절대 올리면 안 되는 것: DART OpenAPI 키 (비밀)
+# 절대 올리면 안 되는 것: API 키/시크릿 (비밀)
 dart_key.txt
+kis_key.txt
 
 # 실행 중 생성되는 데이터/캐시
 data/

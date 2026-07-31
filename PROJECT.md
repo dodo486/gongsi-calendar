@@ -79,6 +79,7 @@ python fetch.py 90             # 과거 N일 공시 백필 (증자·배당·자�
 python monitor.py              # 실시간 폴러 상주 (1분마다, 새 공시 윈도우 알림)
 python dividends.py 90         # 배당 데이터 추출 (배당금+기준일 원문 파싱) → data/dividends.json
 python expiries.py             # 선물·옵션 만기일 생성(규칙 계산) → data/expiries.json
+python kind_limits.py          # 선물 상하한가(가격제한폭 도달) KIND 공시 수집 → data/limits.json
 python serve.py                # 웹 캘린더 열기 (http://localhost:8777, 1분 자동갱신)
 ```
 - 관심 공시 종류/키워드: `fetch.py`의 `CATEGORIES` 편집
@@ -124,6 +125,9 @@ python serve.py                # 웹 캘린더 열기 (http://localhost:8777, 1�
   ⑤ monitor 연동: 시작 시 + 신규 배당 감지 시 리서치 자동 갱신(캐시 기반 증분)
 
 - 2026-07-31: 배당 캘린더 **날짜 기준 전환** — 상단 칩으로 배당매수일(T-2, 초록)/배당락일(T-1, 빨강) 전환. dividends·research에 ex_date(T-1 영업일) 추가, 상세에 3개 날짜(기준일·매수일·락일) 개념 설명. 월 뷰 전월·다음월 날짜 숨김
+- 2026-07-31: **배당락일/배당매수일 계산 버그 수정** — 기준일이 휴장일(주말·12/31 폐장)일 때 `roll="backward"`가 하루를 먼저 소모해 T-1/T-2가 하루씩 일찍 나오던 오차 제거(기준일 하루 전부터 직전 영업일 카운트). 정상 케이스 무영향. dividends/research 재생성(주말기준일 실제 배당 3건·예상배당 12건 교정)
+- 2026-07-31: **🚨 상하한가 탭 (선물 가격제한폭)** — `kind_limits.py`: KRX **KIND**(kind.krx.co.kr, data.krx와 달리 이 PC서 접근 가능) 파생상품시장 공시(marketType=3)에서 "가격제한폭 확대요건 도달"만 수집. 지수선물(코스피200선물 등)+주식선물(지수범례로 코스피200/코스닥150 필터). 웹 [🚨 상하한가] 탭(실시간 리스트, 지수/주식선물·상한/하한·3단계 필터, 클릭→KRX 원문, 30초 자동갱신). monitor 폴링 통합 + 3단계 도달 시 OS 알림(ALERT_MIN_STAGE). **시세 아닌 공시 기반** → KIS API 불필요.
+- 2026-07-31: 상하한가 표시 개선 — 맨 앞에 **종류 배지(지수선물/주식선물)** + **▲상한가/▼하한가 마크**, 지수·주식선물 기본 동시표시. **확대예정시각** 추가: KIND 문서 본문(document viewer 3단계 로더: searchInitInfo→#mainDoc docNo→searchContents setPath→/external/…htm)에서 "확대 예정시각" 파싱 → `expand_time`, 리스트 뒤 `(확대예정 HH:MM:SS)`. rcept_no 캐시(limits_exp_cache.json)+신규분만 조회(ENRICH_CAP). 배당의 원문파싱과 동일 발상(단 DART 아닌 KIND). 오늘 105건 전부 확대예정시각 확보
 
 ## 6. 다음 할 일 (TODO)
 
@@ -137,5 +141,7 @@ python serve.py                # 웹 캘린더 열기 (http://localhost:8777, 1�
 - [x] 배당 데이터 자동 갱신 — 폴러(monitor.py) 시작 시 + 신규 배당 공시 감지 시 자동 재생성
 - [x] 실운영용 날짜 자동화 (fetch.py 하드코딩 날짜 → today())
 - [x] 안정성 수리 8종 (2026-07-30 로그 참고 — 경합·병합키·이중쓰기·자정경계·TLS·보관정리·원자저장·크로스플랫폼)
+- [x] **선물 상하한가 탭** (KIND 파생 공시 — 지수선물+주식선물 가격제한폭 도달, 실시간)
+- [ ] (선택) **개별 주식 ±30% 상한가/하한가** — KIND 공시 없음(고정 제한폭). 필요 시 KIS(택함)/네이버 실시간 시세로 확장
 - [ ] **코스닥150 자동화** (실제 크롬 CDP or ETF 보유내역) — 현재 임시 스냅샷
 - [ ] (선택) 장중 20~30초/장외 느리게 폴링, 카테고리별 색상 구분
