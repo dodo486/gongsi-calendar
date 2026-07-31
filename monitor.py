@@ -16,6 +16,7 @@ import expiries
 import research
 import kind_limits
 import earnings
+import earn_sched
 
 POLL_SECONDS = 20          # 폴링 주기 (트레이더용 실시간 — 신규 공시/상하한가 20초 내 감지)
 SELF_HEAL_SECONDS = 600    # 배당·실적 전체 재생성 주기 — upsert 유실분을 seen 무관하게 자동 복구
@@ -30,7 +31,7 @@ def load_seen():
     if os.path.exists(SEEN_PATH):
         return set(json.load(open(SEEN_PATH, encoding="utf-8")))
     seen = set()   # 최초 실행: 기존 데이터의 접수번호로 시드
-    for f in ("disclosures.json", "dividends.json", "earnings.json"):
+    for f in ("disclosures.json", "dividends.json", "earnings.json", "earn_sched.json"):
         p = os.path.join(DATA_DIR, f)
         if os.path.exists(p):
             for e in json.load(open(p, encoding="utf-8")).get("events", []):
@@ -99,6 +100,13 @@ def refresh_research():
     def work():
         print("  [리서치] 선진화·예상배당 갱신 시작..."); research.build(); print("  [리서치] 갱신 완료")
     _run_guarded(_res_lock, work, "리서치")
+
+_sched_lock = threading.Lock()
+def refresh_earn_sched():
+    """예상 실적발표 일정(earn_sched.json) 갱신 — 예고 문서는 rcept_no 캐시라 신규분만 파싱"""
+    def work():
+        print("  [실적예고] 예정일정 갱신 시작..."); earn_sched.main(); print("  [실적예고] 완료")
+    _run_guarded(_sched_lock, work, "실적예고")
 
 def load_payload():
     if os.path.exists(DATA_PATH):
@@ -190,7 +198,7 @@ def poll_once(seen, alert=True):
     watch = load_watchlist()
     events = collect_events(bgn, end, watch=watch, verbose=False)
     new = [e for e in events if e["rcept_no"] not in seen]
-    new_cal, new_div, new_earn = [], [], []
+    new_cal, new_div, new_earn, new_sched = [], [], [], []
     for e in new:
         if alert:
             print(f"  🔔 신규: [{e['category']}] {e['corp']} - {e['title']}")
@@ -198,8 +206,10 @@ def poll_once(seen, alert=True):
         seen.add(e["rcept_no"])
         if e["category"] == "배당":           # 배당 → 배당 캘린더(dividends)
             new_div.append(e)
-        elif e["category"] == "실적":          # 실적 → 실적 그리드(earnings)
+        elif e["category"] == "실적":          # 실적 → 실적 그리드 왼쪽(earnings)
             new_earn.append(e)
+        elif e["category"] == "실적예고":       # 실적발표 예고 → 실적 그리드 오른쪽(earn_sched)
+            new_sched.append(e)
         else:
             new_cal.append(e)                 # 그 외 → 공시 캘린더
     if new:
@@ -216,6 +226,8 @@ def poll_once(seen, alert=True):
     flush_pending_div()
     if new_earn:
         refresh_earnings(full=True)           # 신규 실적 → 재수집(등락률 포함)
+    if new_sched:
+        refresh_earn_sched()                  # 신규 예고 → 예정일정 재수집
     return len(new)
 
 def main():
@@ -241,6 +253,7 @@ def main():
     refresh_dividends()   # 상주 시작 시 배당 데이터 1회 갱신
     refresh_research()    # 선진화 판별 + 예상배당 갱신 (캐시 기반이라 신규 문서만 파싱)
     refresh_earnings(full=True)   # 실적 공시 + 현재 등락률 1회 재수집
+    refresh_earn_sched()          # 예상 실적발표 일정 1회 재수집
     try:
         poll_limits(seen, alert=False)   # 상하한가 baseline: 현재 도달분을 seen에 담고 알림 억제(재시작 스팸 방지)
         save_seen(seen)
@@ -262,7 +275,8 @@ def main():
                 last_heal = time.time()
                 refresh_dividends()
                 refresh_earnings(full=True)
-                print("  [자가치유] 배당·실적 전체 재생성 트리거")
+                refresh_earn_sched()
+                print("  [자가치유] 배당·실적·실적예고 전체 재생성 트리거")
             ts = datetime.datetime.now().strftime("%H:%M:%S")
             print(f"[{ts}] 확인 완료 (공시 신규 {n} · 상하한가 알림 {m} · seen {len(seen)})")
         except Exception as ex:

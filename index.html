@@ -83,7 +83,12 @@
   .lchip.down.on{background:#3b82f6;border-color:#3b82f6}
   .lchip.s3.on{background:#f59e0b;border-color:#f59e0b;color:#1a1200}
   #limitsView{flex:none;height:30%;padding:12px 18px;overflow:auto;border-bottom:2px solid var(--line)}
-  #earnView{flex:none;height:24%;padding:12px 18px;overflow:auto;border-bottom:2px solid var(--line)}
+  #earnView{flex:none;height:24%;border-bottom:2px solid var(--line)}
+  .earn-split{display:flex;height:100%}
+  .earn-col{flex:1;min-width:0;padding:12px 18px;overflow:auto}
+  .earn-col + .earn-col{border-left:1px solid var(--line)}
+  .li .sd{margin-left:auto;flex:none;font-size:13px;font-weight:800;color:#6ee7b7;background:rgba(16,185,129,.16);padding:2px 9px;border-radius:6px}
+  .li .qt{font-size:10px;padding:1px 6px;border-radius:5px;background:rgba(148,163,184,.18);color:#cbd5e1;flex:none}
   .li .etitle{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .li .rate{margin-left:auto;flex:none;font-size:14px;font-weight:800;padding:2px 9px;border-radius:6px;color:var(--muted)}
   .li .rate.up{color:#fca5a5;background:rgba(239,68,68,.16)}
@@ -140,7 +145,12 @@
 </header>
 <div class="layout">
   <div id="limitsView" style="display:none"></div>
-  <div id="earnView" style="display:none"></div>
+  <div id="earnView" style="display:none">
+    <div class="earn-split">
+      <div class="earn-col" id="earnActual"></div>
+      <div class="earn-col" id="earnSched"></div>
+    </div>
+  </div>
   <div class="cal-row">
     <div class="cal-col">
       <div class="cal-bar" id="calBar" style="display:none">
@@ -160,7 +170,7 @@
 </div>
 <script>
 let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'disc'(공시)
-let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [];
+let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [];
 let RES = {companies:{}, events:[]};   // 리서치: 선진화 판별 + 예상배당(research.json)
 let calendar;
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
@@ -415,7 +425,7 @@ function renderEarnings(){
     if(q && !(e.corp||"").toLowerCase().includes(q)) return false;
     return true;
   });
-  const box = document.getElementById("earnView");
+  const box = document.getElementById("earnActual");
   let h = `<div class="limhd">📊 실적 공시 (${list.length}) <span style="font-weight:400;color:var(--muted);font-size:12px">· 옆 숫자 = 현재 등락률(네이버 실시간)</span></div>`;
   if(!list.length) h += `<div class="empty">최근 실적 공시가 없습니다.</div>`;
   list.forEach(e=>{
@@ -434,15 +444,47 @@ function renderEarnings(){
   bindOpen(box);
 }
 
+const isoMD = d => (d && d.length>=10) ? d.slice(5) : (d||"");   // 'YYYY-MM-DD' → 'MM-DD'
+const qLabel = pe => ({"03":"1Q","06":"반기","09":"3Q","12":"연간"}[(pe||"").slice(5,7)] || "");
+async function loadEarnSched(){
+  try{
+    const d = await (await fetch("data/earn_sched.json?_="+Date.now())).json();
+    SCHED = d.events||[];
+  }catch(_){ SCHED = []; }
+  renderEarnSched();
+}
+function renderEarnSched(){
+  const q = filters.q.trim().toLowerCase();
+  const list = SCHED.filter(e=>{
+    if(filters[e.market]===false) return false;
+    if(q && !(e.corp||"").toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const box = document.getElementById("earnSched");
+  let h = `<div class="limhd">🗓️ 예정 실적발표 (${list.length}) <span style="font-weight:400;color:var(--muted);font-size:12px">· 회사가 예고한 공시예정일(관찰종목)</span></div>`;
+  if(!list.length) h += `<div class="empty">예고된 실적발표 일정이 없습니다.</div>`;
+  list.forEach(e=>{
+    h += `<div class="li" data-url="${esc(e.url)}">
+      <span class="nm">${esc(e.corp)}</span>
+      <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
+      ${e.period_end?`<span class="qt">${esc(qLabel(e.period_end))}</span>`:""}
+      <span class="sd">${esc(isoMD(e.expected_date))}</span>
+    </div>`;
+  });
+  box.innerHTML = h;
+  bindOpen(box);
+}
+
 async function loadData(){
   if(MODE==="board"){
     const d = await (await fetch("data/dividends.json?_="+Date.now())).json();
     DIV = d.events||[];
     try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
     await loadLimits();     // 상단 상하한가 밴드
-    await loadEarnings();   // 중간 실적 그리드 (+등락률)
+    await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
+    await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예정 실적발표 일정)
     document.getElementById("meta").textContent =
-      `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · 갱신 ${d.generated_at||""}`;
+      `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · 갱신 ${d.generated_at||""}`;
     applyFilters();
     if(divListMode) renderDivToday();
     return;
@@ -518,13 +560,13 @@ document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>swi
 document.getElementById("q").addEventListener("input",e=>{
   filters.q=e.target.value;
   applyFilters();
-  if(MODE==="board"){ renderLimits(); renderEarnings(); }
+  if(MODE==="board"){ renderLimits(); renderEarnings(); renderEarnSched(); }
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
     c.classList.toggle("on",filters[mk]); applyFilters();
-    if(MODE==="board") renderEarnings();
+    if(MODE==="board"){ renderEarnings(); renderEarnSched(); }
   });
 });
 document.querySelectorAll(".lchip").forEach(c=>{

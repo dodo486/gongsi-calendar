@@ -36,14 +36,15 @@ CATEGORIES = [
     ("감자", "감자"),
     ("합병", "합병/분할"), ("분할", "합병/분할"),
     ("최대주주변경", "최대주주변경"),   # '최대주주등소유주식변동신고서'(단순 지분변동) 제외 위해 '변경'까지 명시
+    ("결산실적공시예고", "실적예고"),   # 실적 '발표 예정일' 안내 — 실제 실적(아래)보다 먼저 매칭
     ("영업(잠정)실적", "실적"), ("실적", "실적"), ("손익구조", "실적"),
     ("배당", "배당"),
 ]
 REPORT_KEYWORDS = [k for k, _ in CATEGORIES]   # 빈 리스트면 종류 필터 없음
 # DART 공시유형: B=주요사항보고(증자·자사주·CB/BW·감자·합병분할), I=거래소공시(배당·실적·최대주주변경)
 PBLNTF_TYPES = ["B", "I"]
-# 공시 캘린더에서 제외할 카테고리 — 배당(dividends.py)·실적(earnings.py)은 별도 그리드 전담
-CAL_EXCLUDE = {"배당", "실적"}
+# 공시 캘린더에서 제외할 카테고리 — 배당·실적·실적예고는 각자 별도 그리드 전담
+CAL_EXCLUDE = {"배당", "실적", "실적예고"}
 
 def categorize(title):
     for kw, label in CATEGORIES:
@@ -138,8 +139,9 @@ def load_watchlist():
         return None
     mtime = os.path.getmtime(path)   # 파일이 바뀔 때만 다시 파싱 — 폴링마다(20초) 재파싱 방지
     if _wl_cache["mtime"] != mtime:
-        _wl_cache["mtime"] = mtime
-        _wl_cache["data"] = json.load(open(path, encoding="utf-8")).get("stocks", {})
+        data = json.load(open(path, encoding="utf-8")).get("stocks", {})
+        _wl_cache["data"] = data      # data 를 먼저 세팅하고
+        _wl_cache["mtime"] = mtime     # mtime 은 마지막 — 동시 호출 스레드가 None data 를 보는 race 방지
     return _wl_cache["data"]
 
 def collect_events(bgn, end, watch="__load__", verbose=True):
