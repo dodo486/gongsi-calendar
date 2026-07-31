@@ -393,11 +393,14 @@ function renderLimits(){
     </div>`;
   });
   box.innerHTML = h;
-  box.querySelectorAll(".li").forEach(el=>
-    el.addEventListener("click",()=>window.open(el.dataset.url,"_blank","noopener")));
+  bindOpen(box);
 }
 
 const toMD = d => (d && d.length>=8) ? `${d.slice(4,6)}-${d.slice(6,8)}` : (d||"");
+function bindOpen(box){   // .li 항목 클릭 → 원문 새 탭 (상하한가·실적 목록 공용)
+  box.querySelectorAll(".li").forEach(el=>
+    el.addEventListener("click",()=>window.open(el.dataset.url,"_blank","noopener")));
+}
 async function loadEarnings(){
   try{
     const d = await (await fetch("data/earnings.json?_="+Date.now())).json();
@@ -428,8 +431,7 @@ function renderEarnings(){
     </div>`;
   });
   box.innerHTML = h;
-  box.querySelectorAll(".li").forEach(el=>
-    el.addEventListener("click",()=>window.open(el.dataset.url,"_blank","noopener")));
+  bindOpen(box);
 }
 
 async function loadData(){

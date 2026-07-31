@@ -10,13 +10,9 @@
   python kind_limits.py            # 오늘 선물 가격제한폭 도달 공시 → data/limits.json
   python kind_limits.py 2026-05-06 # 특정일자
 """
-import json, os, sys, re, datetime, ssl, http.cookiejar, urllib.request, urllib.parse
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
-    pass
-# fetch 의 TLS 세팅(truststore→certifi)·경로·watchlist 재사용
-from fetch import TLS_MODE, DATA_DIR, BASE, load_watchlist, save_json
+import json, os, sys, re, datetime, http.cookiejar, urllib.request, urllib.parse
+# fetch 의 TLS 세팅(truststore→certifi)·경로·watchlist·SSL 컨텍스트 재사용
+from fetch import TLS_MODE, DATA_DIR, BASE, load_watchlist, save_json, build_ssl_context
 
 KIND_URL = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
 VIEWER = "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={}&docno="
@@ -101,15 +97,8 @@ EXP_CACHE_PATH = os.path.join(DATA_DIR, "limits_exp_cache.json")  # rcept_no→�
 ENRICH_CAP = 40   # 한 번의 collect에서 새로 본문 조회할 최대 건수(나머지는 다음 주기에)
 
 def _make_cookie_opener():
-    try:
-        import certifi
-        ctx = ssl.create_default_context(cafile=certifi.where())
-    except Exception:
-        ctx = ssl.create_default_context()
-        if os.environ.get("DART_INSECURE_TLS") == "1":
-            ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
     cj = http.cookiejar.CookieJar()
-    return urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx),
+    return urllib.request.build_opener(urllib.request.HTTPSHandler(context=build_ssl_context()),
                                        urllib.request.HTTPCookieProcessor(cj))
 _OPENER = None
 def _get(url, data=None, ref="https://kind.krx.co.kr/"):

@@ -10,11 +10,7 @@
   python monitor.py --test-toast   # 알림만 테스트
 """
 import json, os, sys, time, datetime, platform, subprocess, threading
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # 콘솔 인코딩 크래시 방지
-except Exception:
-    pass
-from fetch import collect_events, DATA_DIR, TLS_MODE, load_watchlist, CAL_EXCLUDE, save_json
+from fetch import collect_events, DATA_DIR, TLS_MODE, load_watchlist, CAL_EXCLUDE, save_json   # fetch import 시 콘솔 UTF-8 설정 공유
 import dividends
 import expiries
 import research
@@ -51,21 +47,27 @@ _div_lock = threading.Lock()      # 배당 전체 재생성 중복 방지
 _pending_lock = threading.Lock()  # 대기 중 배당 upsert 큐 보호
 _pending_div = []                 # 전체 재생성 도중 도착한 배당 공시 (끝난 뒤 반영)
 
-def refresh_dividends():
-    """배당 데이터(dividends.json) 재생성 — 무겁고 느려서 별도 스레드/중복방지"""
-    if not _div_lock.acquire(blocking=False):
-        return  # 이미 갱신 중
+def _run_guarded(lock, work, name, after=None):
+    """lock 이 비어 있을 때만 work() 를 데몬 스레드로 1회 실행(중복 방지).
+    끝나면 lock 해제 후 after() 호출 — refresh_* 들의 공통 뼈대."""
+    if not lock.acquire(blocking=False):
+        return   # 이미 갱신 중
     def run():
         try:
-            print("  [배당] 데이터 갱신 시작...")
-            dividends.main(90)
-            print("  [배당] 갱신 완료")
+            work()
         except Exception as ex:
-            print(f"  [배당] 갱신 실패: {ex}")
+            print(f"  [{name}] 갱신 실패: {ex}")
         finally:
-            _div_lock.release()
-        flush_pending_div()   # 재생성 도중 대기시킨 신규 배당 반영
+            lock.release()
+        if after:
+            after()
     threading.Thread(target=run, daemon=True).start()
+
+def refresh_dividends():
+    """배당 데이터(dividends.json) 재생성 — 무겁고 느려서 별도 스레드/중복방지"""
+    def work():
+        print("  [배당] 데이터 갱신 시작..."); dividends.main(90); print("  [배당] 갱신 완료")
+    _run_guarded(_div_lock, work, "배당", after=flush_pending_div)   # 재생성 뒤 대기분 반영
 
 def flush_pending_div():
     """대기 중인 배당 upsert 처리 — 전체 재생성 중이면 미룸 (덮어쓰기로 유실되는 것 방지)"""
@@ -84,35 +86,19 @@ def flush_pending_div():
 _earn_lock = threading.Lock()
 def refresh_earnings(full=False):
     """실적 데이터 갱신 — full=True: 재수집+등락률(무거움) / False: 등락률만(가벼움). 중복 실행 방지."""
-    if not _earn_lock.acquire(blocking=False):
-        return  # 이미 갱신 중
-    def run():
-        try:
-            if full:
-                print("  [실적] 재수집 시작..."); earnings.main(30); print("  [실적] 완료")
-            else:
-                earnings.refresh_quotes()
-        except Exception as ex:
-            print(f"  [실적] 갱신 실패: {ex}")
-        finally:
-            _earn_lock.release()
-    threading.Thread(target=run, daemon=True).start()
+    def work():
+        if full:
+            print("  [실적] 재수집 시작..."); earnings.main(30); print("  [실적] 완료")
+        else:
+            earnings.refresh_quotes()
+    _run_guarded(_earn_lock, work, "실적")
 
 _res_lock = threading.Lock()
 def refresh_research():
     """리서치(선진화 판별 + 예상배당) 갱신 — 이력은 rcept_no 캐시라 신규 문서만 파싱"""
-    if not _res_lock.acquire(blocking=False):
-        return
-    def run():
-        try:
-            print("  [리서치] 선진화·예상배당 갱신 시작...")
-            research.build()
-            print("  [리서치] 갱신 완료")
-        except Exception as ex:
-            print(f"  [리서치] 갱신 실패: {ex}")
-        finally:
-            _res_lock.release()
-    threading.Thread(target=run, daemon=True).start()
+    def work():
+        print("  [리서치] 선진화·예상배당 갱신 시작..."); research.build(); print("  [리서치] 갱신 완료")
+    _run_guarded(_res_lock, work, "리서치")
 
 def load_payload():
     if os.path.exists(DATA_PATH):

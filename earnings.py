@@ -8,33 +8,20 @@
   python earnings.py            # 최근 30일 실적 공시 + 등락률 → data/earnings.json
   python earnings.py 60         # 최근 N일
 """
-import json, os, sys, ssl, datetime, urllib.request
-try:
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception:
-    pass
-from fetch import collect_events, DATA_DIR, load_watchlist, save_json, TLS_MODE
+import json, os, sys, datetime, urllib.request
+from fetch import collect_events, DATA_DIR, load_watchlist, save_json, TLS_MODE, build_ssl_context
 
 EARN_PATH = os.path.join(DATA_DIR, "earnings.json")
 RETAIN_DAYS = 30
 QUOTE_CAP = 80          # 등락률 조회 종목 상한(과도한 네이버 호출 방지)
 
-def _ctx():
-    try:
-        import certifi
-        return ssl.create_default_context(cafile=certifi.where())
-    except Exception:
-        c = ssl.create_default_context()
-        if os.environ.get("DART_INSECURE_TLS") == "1":
-            c.check_hostname = False; c.verify_mode = ssl.CERT_NONE
-        return c
 _CTX = None
 
 def naver_rate(code):
     """네이버 실시간 시세 → {price, rate(부호포함 %), sign} / 실패 시 {}"""
     global _CTX
     if _CTX is None:
-        _CTX = _ctx()
+        _CTX = build_ssl_context()
     try:
         url = f"https://polling.finance.naver.com/api/realtime/domestic/stock/{code}"
         req = urllib.request.Request(url, headers={

@@ -10,18 +10,11 @@ import sys
 try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception: pass
 import os, json, datetime
-import numpy as np, holidays as _hol
+from krx_cal import holiday_dates, default_years   # 휴장일 달력 공유(fetch 비의존 — API 키 없이 단독 실행 유지)
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
-
-def holiday_set(years):
-    days = set(_hol.SouthKorea(years=years).keys())
-    for y in years:
-        days.add(datetime.date(y, 5, 1))     # 근로자의날 (증시 휴장)
-        days.add(datetime.date(y, 12, 31))    # 연말 폐장일
-    return days
 
 def second_thursday(year, month):
     d = datetime.date(year, month, 1)
@@ -35,9 +28,8 @@ def prev_business_day(d, hol):
 
 def build(years=None):
     if years is None:
-        y = datetime.date.today().year
-        years = [y - 1, y, y + 1]
-    hol = holiday_set(years)
+        years = default_years()
+    hol = holiday_dates(years)
     events = []
     for y in years:
         for m in range(1, 13):

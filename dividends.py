@@ -7,25 +7,15 @@
 - 회사·배당구분별로 병합 → data/dividends.json
 - 웹은 기준일 날짜에 "회사명 (금액원)" 표시
 """
-import sys
-try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception: pass
-import io, os, re, json, zipfile, datetime, threading, urllib.request
-import numpy as np, holidays as _hol
+import sys, io, os, re, json, zipfile, datetime, threading, urllib.request
+import numpy as np
 from fetch import fetch_range, load_watchlist, DATA_DIR, KEY, TLS_MODE, save_json
+from krx_cal import holiday_dates, default_years
 
 _LOCK = threading.RLock()   # dividends.json 동시 쓰기 방지 (main 재생성 vs upsert)
 
-def _build_holidays():
-    y = datetime.date.today().year
-    years = [y - 1, y, y + 1]
-    days = set(_hol.SouthKorea(years=years).keys())
-    for yy in years:
-        days.add(datetime.date(yy, 5, 1))    # 근로자의날 (증시 휴장)
-        days.add(datetime.date(yy, 12, 31))   # 연말 폐장일
-    return np.array(sorted(str(d) for d in days), dtype="datetime64[D]")
-
-_HOL_ARR = _build_holidays()
+# 영업일 계산용 휴장일 배열(numpy) — 공용 달력(krx_cal)에서 생성
+_HOL_ARR = np.array(sorted(str(d) for d in holiday_dates(default_years())), dtype="datetime64[D]")
 
 def t_minus(record_iso, n):
     """배당기준일 기준 n번째 직전 영업일. n=1 → 배당락일(기준일 직전 영업일),

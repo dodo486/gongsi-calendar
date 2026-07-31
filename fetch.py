@@ -7,6 +7,12 @@ DART 공시 수집기 (v1)
 """
 import json, os, sys, time, datetime, urllib.request, urllib.error, ssl
 
+# 콘솔 UTF-8 출력 — fetch 를 import 하는 모든 모듈이 이 설정을 공유(각자 재선언 불필요)
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 _KEY_PATH = os.path.join(BASE, "dart_key.txt")
 if not os.path.exists(_KEY_PATH):
@@ -48,6 +54,20 @@ DATA_DIR = os.path.join(BASE, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # --- HTTPS 준비 (사내 보안 프로그램 TLS 검사 대응) ---
+def build_ssl_context():
+    """단건 요청용 SSL 컨텍스트 — certifi 우선, 없으면 시스템 기본.
+    DART_INSECURE_TLS=1 이면 검증 해제(최후 수단). truststore 는 재귀 이슈로 여기선 미사용.
+    (earnings.py·kind_limits.py 가 각자 만들던 컨텍스트를 이 하나로 통일)"""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        ctx = ssl.create_default_context()
+        if os.environ.get("DART_INSECURE_TLS") == "1":
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+        return ctx
+
 def make_opener():
     try:
         import truststore

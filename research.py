@@ -11,11 +11,8 @@
 
 사용: python research.py [이력일수=430]
 """
-import sys
-try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception: pass
-import os, json, time, calendar, datetime, threading
-from fetch import fetch_range, load_watchlist, DATA_DIR, save_json
+import sys, os, json, time, calendar, datetime, threading
+from fetch import fetch_range, load_watchlist, DATA_DIR, save_json   # fetch import 시 콘솔 UTF-8 설정 공유
 import dividends as dv
 
 HIST_PATH = os.path.join(DATA_DIR, "div_history.json")
