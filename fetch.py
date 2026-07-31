@@ -130,13 +130,17 @@ def fetch_range(bgn, end, corp_cls, pblntf_ty=None):
         time.sleep(0.15)  # API 예의상 살짝 쉼
     return out
 
+_wl_cache = {"mtime": None, "data": None}
 def load_watchlist():
     path = os.path.join(BASE, "watchlist.json")
     if not os.path.exists(path):
         print("  [!] watchlist.json 없음 — 전체 공시 표시(필터 없음)")
         return None
-    wl = json.load(open(path, encoding="utf-8"))
-    return wl.get("stocks", {})
+    mtime = os.path.getmtime(path)   # 파일이 바뀔 때만 다시 파싱 — 폴링마다(20초) 재파싱 방지
+    if _wl_cache["mtime"] != mtime:
+        _wl_cache["mtime"] = mtime
+        _wl_cache["data"] = json.load(open(path, encoding="utf-8")).get("stocks", {})
+    return _wl_cache["data"]
 
 def collect_events(bgn, end, watch="__load__", verbose=True):
     """기간 내 감시대상+관심종류 공시를 수집해 캘린더용 이벤트 리스트로 반환 (fetch/monitor 공용)"""

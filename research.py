@@ -15,7 +15,7 @@ import sys, os, json, time, calendar, datetime, threading
 from fetch import fetch_range, load_watchlist, DATA_DIR, save_json   # fetch import 시 콘솔 UTF-8 설정 공유
 import dividends as dv
 
-HIST_PATH = os.path.join(DATA_DIR, "div_history.json")
+HIST_PATH = dv.HIST_PATH   # 배당 파싱 캐시 경로는 dividends 와 공유(단일 출처)
 OUT_PATH = os.path.join(DATA_DIR, "research.json")
 _LOCK = threading.RLock()
 
@@ -24,9 +24,7 @@ CYCLE_DEFAULT = {"분기배당": 3, "중간배당": 12, "결산배당": 12}   # 
 HORIZON_MONTHS = 9   # 이보다 먼 예측은 표시 안 함
 
 def load_hist():
-    if os.path.exists(HIST_PATH):
-        return json.load(open(HIST_PATH, encoding="utf-8"))
-    return {}
+    return dv.load_doc_cache()   # dividends 와 동일 로더 재사용
 
 def build_history(days=430):
     """배당 관련 공시(배당결정+명부폐쇄)를 파싱해 rcept_no별 캐시로 누적. 신규분만 원문 요청"""

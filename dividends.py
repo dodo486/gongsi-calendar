@@ -86,6 +86,31 @@ def _match_key(index, stock, div_type):
         return cands[0]
     return key
 
+# --- 배당 원문 파싱 캐시 (dividends·research 공용) ---
+# rcept_no 별 파싱 결과를 저장/재사용 → 같은 공시 문서를 두 번 다시 내려받지 않는다.
+# research.build_history 가 장기 이력을 채우고, dividends.main 이 그걸 그대로 재사용.
+HIST_PATH = os.path.join(DATA_DIR, "div_history.json")
+
+def load_doc_cache():
+    """div_history.json(파싱 캐시)을 dict 로 로드. 없거나 깨졌으면 빈 dict."""
+    if os.path.exists(HIST_PATH):
+        try:
+            return json.load(open(HIST_PATH, encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def doc_fields(rcept_no, kind, cache=None):
+    """공시 원문의 배당 필드(per_share/record_date/pay_date/div_type)를 반환.
+    캐시에 있으면 재사용(다운로드 0), 없으면 그때만 원문 1회 다운로드+파싱.
+    kind: 'decision' | 'record'."""
+    c = cache.get(rcept_no) if cache is not None else None
+    if c is not None:
+        return {"per_share": c.get("per_share", ""), "record_date": c.get("record_date", ""),
+                "pay_date": c.get("pay_date", ""), "div_type": c.get("div_type", "")}
+    t = doc_text(rcept_no)
+    return parse_decision(t) if kind == "decision" else parse_record(t)
+
 def main(days=90):
     today = datetime.date.today()
     bgn = (today - datetime.timedelta(days=days)).strftime("%Y%m%d")
@@ -93,14 +118,36 @@ def main(days=90):
     watch = load_watchlist() or {}
     print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 감시대상 {len(watch)}")
 
-    rows = []
-    for cls in ("Y", "K"):
-        rows += fetch_range(bgn, end, cls, "I")
-    rows = [r for r in rows if r.get("stock_code") in watch and "자회사" not in (r.get("report_nm") or "")]
+    cache = load_doc_cache()   # research 가 채운 파싱 캐시(=div_history.json)
+    def _is_dec(nm): return "현금ㆍ현물배당결정" in nm
+    def _is_rec(nm): return "주주명부폐쇄" in nm and "배당" in nm
 
-    decisions = [r for r in rows if "현금ㆍ현물배당결정" in r["report_nm"]]
-    records   = [r for r in rows if "주주명부폐쇄" in r["report_nm"] and "배당" in r["report_nm"]]
-    print(f"  배당결정 {len(decisions)}건 / 명부폐쇄(기준일) {len(records)}건 파싱 중...")
+    # (a) 과거분은 캐시에서 바로 재구성 — 90일 list.json 재스캔·문서 재다운로드 모두 0
+    def _crow(rno, c):
+        return {"rcept_no": rno, "stock_code": c.get("stock", ""), "corp_name": c.get("corp", ""),
+                "corp_cls": "Y" if c.get("market") == "KOSPI" else "K", "rcept_dt": c.get("rcept_dt", "")}
+    cached_kind = {}
+    cached_rows = []
+    for rno, c in cache.items():
+        if c.get("kind") in ("decision", "record") and bgn <= c.get("rcept_dt", "") and c.get("stock") in watch:
+            cached_rows.append(_crow(rno, c)); cached_kind[rno] = c["kind"]
+    cached_rnos = set(cached_kind)
+
+    # (b) 캐시가 비었으면(콜드스타트) 전체기간, 아니면 최근 며칠만 라이브 스캔해 신규/누락분 보강(자가치유)
+    scan_days = days if not cache else 5
+    scan_bgn = (today - datetime.timedelta(days=scan_days)).strftime("%Y%m%d")
+    live = []
+    for cls in ("Y", "K"):
+        live += fetch_range(scan_bgn, end, cls, "I")
+    live = [r for r in live if r.get("stock_code") in watch
+            and "자회사" not in (r.get("report_nm") or "")
+            and r["rcept_no"] not in cached_rnos
+            and (_is_dec(r["report_nm"]) or _is_rec(r["report_nm"]))]
+
+    decisions = [r for r in cached_rows if cached_kind[r["rcept_no"]] == "decision"] + [r for r in live if _is_dec(r["report_nm"])]
+    records   = [r for r in cached_rows if cached_kind[r["rcept_no"]] == "record"]   + [r for r in live if _is_rec(r["report_nm"])]
+    print(f"  배당결정 {len(decisions)} / 명부폐쇄 {len(records)} "
+          f"(캐시 재사용 {len(cached_rows)} + 라이브 신규 {len(live)} · 신규분만 다운로드)")
 
     merged = {}  # (stock, div_type) -> entry
     def base(r):
@@ -112,7 +159,7 @@ def main(days=90):
 
     # 1) 배당결정 → 배당금(+기준일 fallback). 정정 대비 최신(rcept_dt) 우선
     for r in decisions:
-        try: d = parse_decision(doc_text(r["rcept_no"]))
+        try: d = doc_fields(r["rcept_no"], "decision", cache)
         except Exception: continue
         key = _match_key(merged, r["stock_code"], d["div_type"])
         e = merged.setdefault(key, base(r))
@@ -126,7 +173,7 @@ def main(days=90):
 
     # 2) 명부폐쇄(기준일) → 기준일 (배당결정 기준일 없을 때 우선 채움/덮어씀)
     for r in records:
-        try: d = parse_record(doc_text(r["rcept_no"]))
+        try: d = doc_fields(r["rcept_no"], "record", cache)
         except Exception: continue
         if not d["record_date"]: continue
         key = _match_key(merged, r["stock_code"], d["div_type"])
