@@ -129,6 +129,11 @@ python serve.py                # 웹 캘린더 열기 (http://localhost:8777, 1�
 - 2026-07-31: **🚨 상하한가 탭 (선물 가격제한폭)** — `kind_limits.py`: KRX **KIND**(kind.krx.co.kr, data.krx와 달리 이 PC서 접근 가능) 파생상품시장 공시(marketType=3)에서 "가격제한폭 확대요건 도달"만 수집. 지수선물(코스피200선물 등)+주식선물(지수범례로 코스피200/코스닥150 필터). 웹 [🚨 상하한가] 탭(실시간 리스트, 지수/주식선물·상한/하한·3단계 필터, 클릭→KRX 원문, 30초 자동갱신). monitor 폴링 통합 + 3단계 도달 시 OS 알림(ALERT_MIN_STAGE). **시세 아닌 공시 기반** → KIS API 불필요.
 - 2026-07-31: 상하한가 표시 개선 — 맨 앞에 **종류 배지(지수선물/주식선물)** + **▲상한가/▼하한가 마크**, 지수·주식선물 기본 동시표시. **확대예정시각** 추가: KIND 문서 본문(document viewer 3단계 로더: searchInitInfo→#mainDoc docNo→searchContents setPath→/external/…htm)에서 "확대 예정시각" 파싱 → `expand_time`, 리스트 뒤 `(확대예정 HH:MM:SS)`. rcept_no 캐시(limits_exp_cache.json)+신규분만 조회(ENRICH_CAP). 배당의 원문파싱과 동일 발상(단 DART 아닌 KIND). 오늘 105건 전부 확대예정시각 확보
 
+- 2026-07-31: **예상 실적발표 소스 확장 (리서치 결과 반영)** — 소스 조사: KIND IR일정·네이버 리서치·FnGuide 모두 접근 가능 확인. 채택 2종:
+  ① DART '기업설명회(IR)개최(안내공시)' — 일시·개최목적·후원 증권사 파싱, 목적에 '실적' 포함건만 [IR] 태그로 예정 일정에 병합 (최근 30일 관찰종목 211건 규모)
+  ② 네이버 리서치 종목분석 리포트 — 관찰종목 필터, 실적 그리드 3열째 '증권사 리포트'(제목·증권사·날짜, 클릭→원문)
+  earn_sched.json에 events(src: 예고/IR)+reports 저장, 캐시 재사용. FnGuide 컨센서스는 추후 후보로 보류
+
 ## 6. 다음 할 일 (TODO)
 
 - [x] 결정 4개 확정 (섹션 4)
