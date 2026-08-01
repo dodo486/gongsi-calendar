@@ -319,8 +319,28 @@ function showDetail(e){
              ${e.sponsor&&e.sponsor!=="-"?`<div class="row">🏦 후원기관 ${esc(e.sponsor)}</div>`:""}`
           : `<div class="row">🧾 회사가 예고한 결산실적 공시예정일${e.period_end?` (${esc(qLabel(e.period_end))} 실적, 결산기간 종료 ${esc(e.period_end)})`:""}</div>`}
         <div class="row" style="color:var(--muted)">출처: ${isIR?"기업설명회(IR)개최 안내공시":"결산실적공시예고 안내공시"}</div>
+        <div id="ernCons"><div class="row" style="color:var(--muted)">컨센서스 불러오는 중…</div></div>
         <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+        <a class="btn" style="background:var(--kospi);color:#fff;margin-left:8px"
+           href="https://finance.naver.com/item/main.nhn?code=${esc(e.stock)}" target="_blank" rel="noopener">📈 회사정보</a>
       </div>`;
+    (async ()=>{
+      const f = await fetchFacts(e.stock, "");
+      const boxc = document.getElementById("ernCons");
+      if(!boxc) return;   // 그 사이 다른 항목 클릭됨
+      if(!f){ boxc.innerHTML = ""; return; }
+      const cons = (f.quarters||[]).filter(q=>q.consensus);
+      const hasNum = cons.some(q=>q.sales!=="-"||q.op!=="-"||q.np!=="-");
+      let h = `<div class="why"><div class="wh">🔮 컨센서스 전망 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익, 억원)</span></div>`;
+      h += hasNum
+        ? cons.map(q=>`<div class="row">${esc(q.label)}(E) &nbsp;${eok(q.sales)}/ ${eok(q.op)}/ ${eok(q.np)}</div>`).join("")
+        : `<div class="row" style="color:var(--muted)">컨센서스 없음 (애널리스트 미커버 종목)</div>`;
+      const rows = trendRows(f, null);
+      if(rows.length)
+        h += `<div class="wh" style="margin-top:10px">📈 최근 실적 추이</div>`
+          + rows.map(r=>`<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}</div>`).join("");
+      boxc.innerHTML = h + `</div>`;
+    })();
     return;
   }
   if(e.kind==="est"){
@@ -478,7 +498,57 @@ function renderEarnings(){
     </div>`;
   });
   box.innerHTML = h;
-  bindOpen(box);
+  // 실적 항목 클릭 → 사이드에 컨센서스·추이 상세 (원문은 상세 안의 공시링크로)
+  box.querySelectorAll(".li").forEach((el,i)=> el.addEventListener("click",()=>showEarnFact(list[i])));
+}
+
+const eok = v => (v===undefined||v===null||v===""||v==="-") ? "-" : esc(v)+"억";
+async function fetchFacts(code, rcept){
+  try{
+    const r = await fetch(`/api/earnfacts?code=${encodeURIComponent(code)}${rcept?"&rcept="+encodeURIComponent(rcept):""}`);
+    if(!r.ok) return null;
+    const d = await r.json();
+    return d.error ? null : d;
+  }catch(_){ return null; }
+}
+function trendRows(f, actual){   // 최근 실적 추이 (최신순 5분기, 방금 공시분 포함)
+  let rows = (f.quarters||[]).filter(q=>!q.consensus && q.sales!=="-")
+    .map(q=>({label:q.label, sales:q.sales, op:q.op, np:q.np}));
+  const a = actual||{};
+  if(a.label && !rows.some(r=>r.label===a.label))
+    rows.push({label:a.label, sales:a.sales, op:a.op, np:a.np});
+  rows.sort((x,y)=> y.label.localeCompare(x.label));
+  return rows.slice(0,5);
+}
+async function showEarnFact(e){
+  divListMode = false;
+  const box = document.getElementById("detail");
+  box.className = "";
+  box.innerHTML = `
+    <div class="detail">
+      <div class="corp">${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+      <div class="row">A${esc(e.stock)} <span id="factCap"></span></div>
+      <div class="title">${esc(e.title)}</div>
+      <div class="row" id="factNums">실적·컨센서스 불러오는 중…</div>
+      <div id="factTrend"></div>
+      <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 공시링크</a>
+      <a class="btn" style="background:var(--kospi);color:#fff;margin-left:8px"
+         href="https://finance.naver.com/item/main.nhn?code=${esc(e.stock)}" target="_blank" rel="noopener">📈 회사정보</a>
+    </div>`;
+  const f = await fetchFacts(e.stock, e.rcept_no||"");
+  if(!f){ document.getElementById("factNums").textContent = "실적 데이터를 불러오지 못했습니다 — 공시링크에서 원문을 확인하세요."; return; }
+  if(f.marketCap) document.getElementById("factCap").textContent = `(시가총액: ${f.marketCap})`;
+  const a = f.actual||{};
+  const est = (f.quarters||[]).find(q=>q.consensus && q.label===a.label) || {};
+  document.getElementById("factNums").innerHTML = a.label ? `
+    매출액 : <b style="color:var(--text)">${eok(a.sales)}</b> (예상치 : ${eok(est.sales)})<br>
+    영업익 : <b style="color:var(--text)">${eok(a.op)}</b> (예상치 : ${eok(est.op)})<br>
+    순이익 : <b style="color:var(--text)">${eok(a.np)}</b> (예상치 : ${eok(est.np)})`
+    : `당기 수치 자동 추출 불가 — 아래 추이와 공시 원문을 확인하세요.`;
+  const rows = trendRows(f, a);
+  if(rows.length)
+    document.getElementById("factTrend").innerHTML = `<div class="why"><div class="wh">📈 최근 실적 추이 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익, 억원)</span></div>`
+      + rows.map(r=>`<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}</div>`).join("") + `</div>`;
 }
 
 const isoMD = d => (d && d.length>=10) ? d.slice(5) : (d||"");   // 'YYYY-MM-DD' → 'MM-DD'

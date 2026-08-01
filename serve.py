@@ -2,8 +2,10 @@
 """로컬 웹서버 — index.html + data/ 를 브라우저에서 열어줌
 + /events (SSE): data/*.json 이 바뀌는 즉시 브라우저로 '변경' 이벤트를 밀어줌
   → 브라우저가 새로고침 없이 즉시 다시 로드 (배당·실적·상하한가 실시간 반영)
++ /api/earnfacts?code=XXXXXX[&rcept=접수번호]: 실적 상세(시총·컨센서스·분기 추이) JSON
 """
-import http.server, os, time, json, webbrowser, threading
+import http.server, os, time, json, re, webbrowser, threading
+import urllib.parse
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -42,9 +44,31 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
-        if self.path.split("?")[0] == "/events":
+        route = self.path.split("?")[0]
+        if route == "/events":
             return self._serve_sse()
+        if route == "/api/earnfacts":
+            return self._serve_earnfacts()
         return super().do_GET()
+
+    def _serve_earnfacts(self):
+        """실적 상세 — consensus.facts (네이버+DART, 캐시 30분)"""
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        code = (qs.get("code") or [""])[0]
+        rcept = (qs.get("rcept") or [""])[0]
+        if not re.fullmatch(r"\d{6}", code) or not re.fullmatch(r"\d{0,14}", rcept):
+            self.send_error(400)
+            return
+        try:
+            import consensus
+            body = json.dumps(consensus.facts(code, rcept), ensure_ascii=False).encode("utf-8")
+        except Exception as ex:
+            body = json.dumps({"error": str(ex)}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def _serve_sse(self):
         """Server-Sent Events — data/ 변경을 감지해 즉시 push. 클라이언트는 EventSource로 수신."""
