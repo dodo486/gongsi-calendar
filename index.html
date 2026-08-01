@@ -97,10 +97,10 @@
   .lchip.down.on{background:#3b82f6;border-color:#3b82f6}
   .lchip.s3.on{background:#f59e0b;border-color:#f59e0b;color:#1a1200}
   #limitsView{flex:none;height:auto;max-height:40vh;padding:12px 18px;overflow:auto;border-bottom:2px solid var(--line)}
-  #earnView{flex:none;height:62vh;min-height:460px;border-bottom:2px solid var(--line)}
+  #earnView{flex:none;border-bottom:2px solid var(--line)}   /* 높이 고정 없음 — 캘린더 내용만큼 */
   .earn-calcol{display:flex;flex-direction:column}
-  #earnCal{flex:1;min-height:0}
-  .earn-split{display:flex;height:100%}
+  #earnCal{flex:1}
+  .earn-split{display:flex}
   .earn-col{flex:1;min-width:0;padding:12px 18px;overflow:auto}
   .earn-col + .earn-col{border-left:1px solid var(--line)}
   .li .sd{margin-left:auto;flex:none;font-size:13px;font-weight:800;color:#6ee7b7;background:rgba(16,185,129,.16);padding:2px 9px;border-radius:6px}
@@ -623,7 +623,7 @@ async function boot(){
   });
   calendar.render();
   earnCal = new FullCalendar.Calendar(document.getElementById("earnCal"),{
-    initialView:"dayGridMonth", locale:"ko", height:"100%", firstDay:0, dayMaxEvents:4,
+    initialView:"dayGridMonth", locale:"ko", height:"auto", firstDay:0, dayMaxEvents:8,
     showNonCurrentDates:false, fixedWeekCount:false,
     headerToolbar:{left:"prev,next today",center:"title",right:""},
     buttonText:{today:"오늘"},
