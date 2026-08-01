@@ -40,19 +40,54 @@ def naver_rate(code):
     except Exception:
         return {}
 
+def naver_daily_rates(code, days=40):
+    """일별 등락률 맵 {YYYY-MM-DD: 부호포함 %} — 과거 공시일의 '그날' 변동률용"""
+    global _CTX
+    if _CTX is None:
+        _CTX = build_ssl_context()
+    try:
+        url = f"https://m.stock.naver.com/api/stock/{code}/price?pageSize={days}&page=1"
+        req = urllib.request.Request(url, headers={
+            "User-Agent": "Mozilla/5.0", "Referer": "https://m.stock.naver.com/"})
+        with urllib.request.urlopen(req, timeout=8, context=_CTX) as r:
+            rows = json.load(r)
+        out = {}
+        for x in rows:
+            try:
+                out[x["localTradedAt"]] = float(str(x.get("fluctuationsRatio", "")).replace(",", ""))
+            except Exception:
+                pass
+        return out
+    except Exception:
+        return {}
+
 def _attach_quotes(events):
-    cache, n = {}, 0
+    """등락률 부착 — 과거 공시일은 '그 날짜'의 일별 변동률(확정, 재조회 안 함),
+    오늘 공시는 실시간 등락률(폴러가 매 주기 갱신)"""
+    today = datetime.date.today().strftime("%Y%m%d")
+    live, hist, n = {}, {}, 0
     for e in events:
-        c = e.get("stock", "")
+        c, d = e.get("stock", ""), e.get("date", "")
         if not c:
             continue
-        if c not in cache:
-            cache[c] = naver_rate(c) if n < QUOTE_CAP else {}
-            n += 1
-        q = cache[c]
-        e["price"] = q.get("price", "")
-        e["rate"] = q.get("rate")
-        e["chg_sign"] = q.get("sign", "")
+        if d == today:                      # 오늘 공시 → 실시간
+            if c not in live:
+                live[c] = naver_rate(c) if n < QUOTE_CAP else {}
+                n += 1
+            q = live[c]
+            e["price"] = q.get("price", "")
+            e["rate"] = q.get("rate")
+            e["chg_sign"] = q.get("sign", "")
+        else:                               # 과거 공시 → 공시일 당일 변동률로 고정
+            if e.get("rate_fixed"):
+                continue
+            if c not in hist:
+                hist[c] = naver_daily_rates(c) if n < QUOTE_CAP else {}
+                n += 1
+            r = hist[c].get(f"{d[:4]}-{d[4:6]}-{d[6:8]}")
+            if r is not None:
+                e["rate"] = r
+                e["rate_fixed"] = True      # 과거치는 불변 — 다음 갱신 때 스킵
     return events
 
 def _dedupe_sort(evs):
