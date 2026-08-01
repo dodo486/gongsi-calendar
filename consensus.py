@@ -92,6 +92,23 @@ def naver_reports(code, n=5):
     except Exception:
         return []
 
+def naver_prices(code, n=30):
+    """일별 시세 (최신순) — 발표 전 선반영 체크용"""
+    try:
+        d = _get(f"https://m.stock.naver.com/api/stock/{code}/price?pageSize={n}&page=1")
+        return [{"date": x.get("localTradedAt", ""), "close": x.get("closePrice", "")} for x in d]
+    except Exception:
+        return []
+
+def naver_trend(code, n=5):
+    """투자자별 매매동향 (최신순) — 외국인/기관 순매수 수량 + 종가(금액 환산용)"""
+    try:
+        d = _get(f"https://m.stock.naver.com/api/stock/{code}/trend?pageSize={n}&page=1")
+        return [{"date": x.get("bizdate", ""), "frgn": x.get("foreignerPureBuyQuant", ""),
+                 "org": x.get("organPureBuyQuant", ""), "close": x.get("closePrice", "")} for x in d]
+    except Exception:
+        return []
+
 _UNIT = {"백만원": 0.01, "억원": 1.0, "천원": 1e-5, "원": 1e-8}
 
 def parse_actual(rcept_no):
@@ -151,6 +168,8 @@ def facts(code, rcept_no=""):
     out["actual"] = parse_actual(rcept_no) if rcept_no else {}
     out["news"] = naver_news(code)         # IR·가이던스 보충용 최신 뉴스
     out["reports"] = naver_reports(code)   # 증권사 리포트 (컨콜 요약·전망 포함)
+    out["prices"] = naver_prices(code)     # 일별 시세 — 선반영(발표 전 급등) 체크
+    out["trend"] = naver_trend(code)       # 외국인/기관 순매수 — 수급 판독
     out["_ts"] = time.time()
     out["_rcept"] = rcept_no
     save_json(path, out)
