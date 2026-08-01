@@ -70,6 +70,7 @@
   .fc-event.dv-ex{background:var(--exp);border-color:var(--exp);font-weight:600}
   .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
   .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
+  .fc-event.ern{background:#06b6d4;border-color:#06b6d4;color:#00222a;font-weight:600}   /* 예상 실적발표(청록) */
   @media (max-width: 800px){   /* 모바일: 세로 배치, 사이드는 캘린더 아래로 */
     header{padding:10px 12px;gap:8px}
     header h1{font-size:16px}
@@ -95,7 +96,7 @@
   .lchip.down.on{background:#3b82f6;border-color:#3b82f6}
   .lchip.s3.on{background:#f59e0b;border-color:#f59e0b;color:#1a1200}
   #limitsView{flex:none;height:auto;max-height:40vh;padding:12px 18px;overflow:auto;border-bottom:2px solid var(--line)}
-  #earnView{flex:none;height:62vh;min-height:420px;border-bottom:2px solid var(--line)}
+  #earnView{flex:none;height:44vh;min-height:340px;border-bottom:2px solid var(--line)}
   .earn-split{display:flex;height:100%}
   .earn-col{flex:1;min-width:0;padding:12px 18px;overflow:auto}
   .earn-col + .earn-col{border-left:1px solid var(--line)}
@@ -161,8 +162,6 @@
   <div id="earnView" style="display:none">
     <div class="earn-split">
       <div class="earn-col" id="earnActual"></div>
-      <div class="earn-col" id="earnSched"></div>
-      <div class="earn-col" id="earnReports"></div>
     </div>
   </div>
   <div class="cal-row">
@@ -184,7 +183,7 @@
 </div>
 <script>
 let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'disc'(공시)
-let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [], REPORTS = [];
+let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [];
 let RES = {companies:{}, events:[]};   // 리서치: 선진화 판별 + 예상배당(research.json)
 let calendar;
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
@@ -274,7 +273,7 @@ function currentFiltered(){
 function applyFilters(){
   const list = currentFiltered();
   calendar.removeAllEvents();
-  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents());
+  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents()).concat(ernEvents());
   calendar.addEventSource(base.concat(expEvents()));   // 만기일은 두 탭 공통 표시
 }
 
@@ -300,6 +299,23 @@ function whyBlock(e){
 
 function showDetail(e){
   const box = document.getElementById("detail");
+  if(e.kind==="ern"){
+    divListMode = false; box.className="";
+    const isIR = e.src==="IR";
+    box.innerHTML = `
+      <div class="detail">
+        <div class="corp">📊 ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:#06b6d4">예상 실적발표${isIR?" (IR 컨퍼런스콜)":""}</b></div>
+        <div class="big" style="color:#06b6d4">${esc(e.expected_date)}${e.time?" "+esc(e.time):""}</div>
+        ${isIR
+          ? `<div class="row">🎯 ${esc(e.purpose||"실적발표")}</div>
+             ${e.sponsor&&e.sponsor!=="-"?`<div class="row">🏦 후원기관 ${esc(e.sponsor)}</div>`:""}`
+          : `<div class="row">🧾 회사가 예고한 결산실적 공시예정일${e.period_end?` (${esc(qLabel(e.period_end))} 실적, 결산기간 종료 ${esc(e.period_end)})`:""}</div>`}
+        <div class="row" style="color:var(--muted)">출처: ${isIR?"기업설명회(IR)개최 안내공시":"결산실적공시예고 안내공시"}</div>
+        <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+      </div>`;
+    return;
+  }
   if(e.kind==="est"){
     divListMode = false; box.className="";
     box.innerHTML = `
@@ -460,59 +476,22 @@ function renderEarnings(){
 
 const isoMD = d => (d && d.length>=10) ? d.slice(5) : (d||"");   // 'YYYY-MM-DD' → 'MM-DD'
 const qLabel = pe => ({"03":"1Q","06":"반기","09":"3Q","12":"연간"}[(pe||"").slice(5,7)] || "");
-async function loadEarnSched(){
+async function loadEarnSched(){   // 예정 실적발표 → 캘린더 이벤트(ernEvents)로 표시
   try{
     const d = await (await fetch("data/earn_sched.json?_="+Date.now())).json();
     SCHED = d.events||[];
-    REPORTS = d.reports||[];
-  }catch(_){ SCHED = []; REPORTS = []; }
-  renderEarnSched();
-  renderReports();
+  }catch(_){ SCHED = []; }
 }
-function renderEarnSched(){
+function ernEvents(){   // 예상 실적발표(예고공시+IR) — 배당 캘린더에 청록색으로 표시
   const q = filters.q.trim().toLowerCase();
-  const list = SCHED.filter(e=>{
-    if(filters[e.market]===false) return false;
-    if(q && !(e.corp||"").toLowerCase().includes(q)) return false;
-    return true;
-  });
-  const box = document.getElementById("earnSched");
-  let h = `<div class="limhd">🗓️ 예정 실적발표 (${list.length}) <span style="font-weight:400;color:var(--muted);font-size:12px">· 예고공시 + IR개최공시(관찰종목)</span></div>`;
-  if(!list.length) h += `<div class="empty">예고된 실적발표 일정이 없습니다.</div>`;
-  list.forEach(e=>{
-    const irTip = e.src==="IR" ? `${e.purpose||""}${e.sponsor&&e.sponsor!=="-"?" · 후원 "+e.sponsor:""}` : "";
-    h += `<div class="li" data-url="${esc(e.url)}" ${irTip?`title="${esc(irTip)}"`:""}>
-      <span class="nm">${esc(e.corp)}</span>
-      <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
-      ${e.src==="IR"?`<span class="qt ir">IR</span>`:(e.period_end?`<span class="qt">${esc(qLabel(e.period_end))}</span>`:"")}
-      ${irTip?`<span class="etitle">${esc(irTip)}</span>`:""}
-      <span class="sd">${esc(isoMD(e.expected_date))}${e.time?" "+esc(e.time):""}</span>
-    </div>`;
-  });
-  box.innerHTML = h;
-  bindOpen(box);
-}
-
-function renderReports(){
-  const q = filters.q.trim().toLowerCase();
-  const list = REPORTS.filter(r=>{
-    if(filters[r.market]===false) return false;
-    if(q && !(r.corp||"").toLowerCase().includes(q)) return false;
-    return true;
-  });
-  const box = document.getElementById("earnReports");
-  let h = `<div class="limhd">📝 증권사 리포트 (${list.length}) <span style="font-weight:400;color:var(--muted);font-size:12px">· 네이버 리서치(관찰종목)</span></div>`;
-  if(!list.length) h += `<div class="empty">관찰종목 대상 최신 리포트가 없습니다.</div>`;
-  list.forEach(r=>{
-    h += `<div class="li" data-url="${esc(r.url)}" title="${esc(r.title)}">
-      <span class="t">${esc((r.date||"").slice(5))}</span>
-      <span class="nm">${esc(r.corp)}</span>
-      <span class="etitle">${esc(r.title)}</span>
-      <span class="qt">${esc(r.broker)}</span>
-    </div>`;
-  });
-  box.innerHTML = h;
-  bindOpen(box);
+  return SCHED
+    .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
+    .map((e,i)=>({
+      id:"n"+i,
+      title:`📊 ${e.corp}${e.src==="IR"?" IR":(e.period_end?" "+qLabel(e.period_end):"")}`,
+      start:e.expected_date, allDay:true, classNames:["ern"],
+      extendedProps:{...e, kind:"ern"},
+    }));
 }
 
 async function loadData(){
@@ -524,7 +503,7 @@ async function loadData(){
     await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
     await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예정 실적발표 일정)
     document.getElementById("meta").textContent =
-      `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 📝 리포트 ${REPORTS.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · 갱신 ${d.generated_at||""}`;
+      `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · 갱신 ${d.generated_at||""}`;
     applyFilters();
     if(divListMode) renderDivToday();
     return;
@@ -600,13 +579,13 @@ document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>swi
 document.getElementById("q").addEventListener("input",e=>{
   filters.q=e.target.value;
   applyFilters();
-  if(MODE==="board"){ renderLimits(); renderEarnings(); renderEarnSched(); renderReports(); }
+  if(MODE==="board"){ renderLimits(); renderEarnings(); }
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
     c.classList.toggle("on",filters[mk]); applyFilters();
-    if(MODE==="board"){ renderEarnings(); renderEarnSched(); renderReports(); }
+    if(MODE==="board"){ renderEarnings(); }
   });
 });
 document.querySelectorAll(".lchip").forEach(c=>{

@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-"""예상 실적발표 일정 — 소스 3종 수집
+"""예상 실적발표 일정 — 소스 2종 수집 (웹 배당 캘린더에 청록색으로 표시)
 1. DART '결산실적공시예고(안내공시)' — 회사가 결산실적 공시예정일을 미리 알림 [예고]
 2. DART '기업설명회(IR)개최(안내공시)' — 실적발표 컨퍼런스콜 일시·목적·후원 증권사 [IR]
-3. 네이버 리서치 증권사 리포트 목록 — 관찰종목 대상 최신 종목분석 리포트 [리포트]
 - 원문은 rcept_no 캐시로 같은 문서 재다운로드 방지
-- data/earn_sched.json 저장 → 웹 실적 그리드(예정 일정 + 리포트 열)가 읽음
+- data/earn_sched.json 저장
 사용:
   python earn_sched.py [일수=45]
 """
-import json, os, sys, re, datetime, urllib.request
+import json, os, sys, re, datetime
 from fetch import DATA_DIR, load_watchlist, save_json, fetch_range, TLS_MODE
 import dividends as dv   # doc_text(원문 다운로드) 재사용
 
@@ -18,7 +17,6 @@ KW = "결산실적공시예고"
 IR_KW = "기업설명회"
 COLLECT_DAYS = 45          # 예고는 보통 발표 1~2주 전 — 넉넉히 45일치 훑어 다가오는 일정 확보
 IR_DAYS = 14               # IR 안내는 보통 개최 1~10일 전 접수 — 14일이면 충분
-REPORT_PAGES = 2           # 네이버 리서치 목록 페이지 수 (페이지당 ~30건)
 
 def parse_sched(t):
     """예고 본문 → {expected_date(공시예정일), period_end(결산기간 종료일)}"""
@@ -118,42 +116,14 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
     evs.sort(key=lambda x: (x["expected_date"], x.get("time", ""), x["corp"]))
     return evs
 
-def collect_reports(watch="__load__", pages=REPORT_PAGES):
-    """네이버 리서치 종목분석 목록 → 관찰종목 대상 최신 증권사 리포트 [리포트]"""
-    if watch == "__load__":
-        watch = load_watchlist() or {}
-    out, seen = [], set()
-    for p in range(1, pages + 1):
-        url = f"https://finance.naver.com/research/company_list.naver?&page={p}"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        try:
-            html = urllib.request.urlopen(req, timeout=15).read().decode("euc-kr", "replace")
-        except Exception as ex:
-            print(f"  [리포트] 네이버 목록 실패(p{p}): {ex}")
-            break
-        for m in re.finditer(
-                r'code=(\d{6})"[^>]*>([^<]+)</a>.*?company_read\.naver\?nid=(\d+)[^"]*"[^>]*>([^<]+)</a>'
-                r'.*?<td>([^<]+)</td>.*?class="date"[^>]*>(\d{2}\.\d{2}\.\d{2})</td>', html, re.S):
-            code, corp, nid, title, broker, date = (x.strip() for x in m.groups())
-            if code not in watch or nid in seen:
-                continue
-            seen.add(nid)
-            out.append({"stock": code, "corp": corp, "nid": nid, "title": title,
-                        "broker": broker, "date": "20" + date.replace(".", "-"),
-                        "market": watch[code].get("market", ""),
-                        "url": f"https://finance.naver.com/research/company_read.naver?nid={nid}"})
-    return out[:40]
-
 def main(days=COLLECT_DAYS):
     evs = collect(days)
-    reports = collect_reports()
     save_json(SCHED_PATH, {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "count": len(evs), "events": evs,
-        "reports": reports,
     })
     n_ir = sum(1 for e in evs if e["src"] == "IR")
-    print(f"TLS={TLS_MODE} | earn_sched.json 저장: 예정 {len(evs)}건(예고 {len(evs)-n_ir}·IR {n_ir}) + 리포트 {len(reports)}건")
+    print(f"TLS={TLS_MODE} | earn_sched.json 저장: 예정 {len(evs)}건 (예고 {len(evs)-n_ir} · IR {n_ir})")
 
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else COLLECT_DAYS
