@@ -96,7 +96,9 @@
   .lchip.down.on{background:#3b82f6;border-color:#3b82f6}
   .lchip.s3.on{background:#f59e0b;border-color:#f59e0b;color:#1a1200}
   #limitsView{flex:none;height:auto;max-height:40vh;padding:12px 18px;overflow:auto;border-bottom:2px solid var(--line)}
-  #earnView{flex:none;height:44vh;min-height:340px;border-bottom:2px solid var(--line)}
+  #earnView{flex:none;height:62vh;min-height:460px;border-bottom:2px solid var(--line)}
+  .earn-calcol{display:flex;flex-direction:column}
+  #earnCal{flex:1;min-height:0}
   .earn-split{display:flex;height:100%}
   .earn-col{flex:1;min-width:0;padding:12px 18px;overflow:auto}
   .earn-col + .earn-col{border-left:1px solid var(--line)}
@@ -162,6 +164,10 @@
   <div id="earnView" style="display:none">
     <div class="earn-split">
       <div class="earn-col" id="earnActual"></div>
+      <div class="earn-col earn-calcol">
+        <div class="limhd">🗓️ 예상 실적발표 <span style="font-weight:400;color:var(--muted);font-size:12px">· 예고공시 + IR개최공시(관찰종목)</span></div>
+        <div id="earnCal"></div>
+      </div>
     </div>
   </div>
   <div class="cal-row">
@@ -184,6 +190,7 @@
 <script>
 let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'disc'(공시)
 let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [];
+let earnCal;   // 예상 실적발표 전용 캘린더 (실적 그리드 오른쪽)
 let RES = {companies:{}, events:[]};   // 리서치: 선진화 판별 + 예상배당(research.json)
 let calendar;
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
@@ -273,7 +280,7 @@ function currentFiltered(){
 function applyFilters(){
   const list = currentFiltered();
   calendar.removeAllEvents();
-  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents()).concat(ernEvents());
+  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents());
   calendar.addEventSource(base.concat(expEvents()));   // 만기일은 두 탭 공통 표시
 }
 
@@ -482,16 +489,21 @@ async function loadEarnSched(){   // 예정 실적발표 → 캘린더 이벤트
     SCHED = d.events||[];
   }catch(_){ SCHED = []; }
 }
-function ernEvents(){   // 예상 실적발표(예고공시+IR) — 배당 캘린더에 청록색으로 표시
+function ernEvents(){   // 예상 실적발표(예고공시+IR) — 실적 그리드 오른쪽 전용 캘린더에 표시
   const q = filters.q.trim().toLowerCase();
   return SCHED
     .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
     .map((e,i)=>({
       id:"n"+i,
-      title:`📊 ${e.corp}${e.src==="IR"?" IR":(e.period_end?" "+qLabel(e.period_end):"")}`,
+      title:`${e.corp}${e.src==="IR"?" IR":(e.period_end?" "+qLabel(e.period_end):"")}`,
       start:e.expected_date, allDay:true, classNames:["ern"],
       extendedProps:{...e, kind:"ern"},
     }));
+}
+function renderEarnCal(){   // 예상 실적발표 캘린더 이벤트 갱신 (검색·시장 필터 반영)
+  if(!earnCal) return;
+  earnCal.removeAllEvents();
+  earnCal.addEventSource(ernEvents());
 }
 
 async function loadData(){
@@ -501,7 +513,8 @@ async function loadData(){
     try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
     await loadLimits();     // 상단 상하한가 밴드
     await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
-    await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예정 실적발표 일정)
+    await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예상 실적발표 캘린더)
+    renderEarnCal();
     document.getElementById("meta").textContent =
       `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · 갱신 ${d.generated_at||""}`;
     applyFilters();
@@ -522,6 +535,7 @@ function applyModeView(){   // 현재 MODE에 맞춰 탭/컨트롤/상단밴드 
   document.getElementById("lmodes").classList.toggle("show", isBoard);   // 선물/상한하한 칩
   document.getElementById("limitsView").style.display = isBoard ? "block" : "none";
   document.getElementById("earnView").style.display = isBoard ? "block" : "none";   // 중간 실적 그리드  // 상단 상하한가 밴드
+  if(isBoard && earnCal) setTimeout(()=>earnCal.updateSize(), 0);   // 숨김→표시 시 캘린더 크기 재계산
 }
 function switchMode(mode){
   if(mode===MODE) return;
@@ -548,11 +562,20 @@ async function boot(){
     eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
   });
   calendar.render();
+  earnCal = new FullCalendar.Calendar(document.getElementById("earnCal"),{
+    initialView:"dayGridMonth", locale:"ko", height:"100%", firstDay:0, dayMaxEvents:4,
+    showNonCurrentDates:false, fixedWeekCount:false,
+    headerToolbar:{left:"prev,next today",center:"title",right:""},
+    buttonText:{today:"오늘"},
+    eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
+  });
+  earnCal.render();
   try{ EXP = (await (await fetch("data/expiries.json?_="+Date.now())).json()).events||[]; }catch(_){ EXP=[]; }
   try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
   applyModeView();          // 기본 탭(board) 화면 세팅 — 배당 체크박스/상단 밴드 표시
   await loadData();
   calendar.updateSize();
+  earnCal.updateSize();
   if(MODE==="board"){ calendar.today(); renderDivToday(); }
   else if(ALL.length){ calendar.gotoDate(toISO(ALL[0].date)); }
   // SSE: 서버가 data/ 변경을 감지하면 즉시 push → 새로고침 없이 바로 반영
@@ -579,13 +602,13 @@ document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>swi
 document.getElementById("q").addEventListener("input",e=>{
   filters.q=e.target.value;
   applyFilters();
-  if(MODE==="board"){ renderLimits(); renderEarnings(); }
+  if(MODE==="board"){ renderLimits(); renderEarnings(); renderEarnCal(); }
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
     c.classList.toggle("on",filters[mk]); applyFilters();
-    if(MODE==="board"){ renderEarnings(); }
+    if(MODE==="board"){ renderEarnings(); renderEarnCal(); }
   });
 });
 document.querySelectorAll(".lchip").forEach(c=>{
