@@ -343,7 +343,7 @@ function showErnDetail(e){   // 예상 실적발표 상세 → 실적 그리드 
       if(rows.length)
         h += `<div class="wh" style="margin-top:10px">📈 최근 실적 추이</div>`
           + rows.map(r=>`<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}</div>`).join("");
-      boxc.innerHTML = h + `</div>`;
+      boxc.innerHTML = h + `</div>` + buildRefs(f);
     })();
   }
 }
@@ -522,6 +522,7 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
       <div class="row" id="factNums">실적·컨센서스 불러오는 중…</div>
       <div id="factPoints"></div>
       <div id="factTrend"></div>
+      <div id="factRefs"></div>
       <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 공시링크</a>
       <a class="btn" style="background:var(--kospi);color:#fff;margin-left:8px"
          href="https://finance.naver.com/item/main.nhn?code=${esc(e.stock)}" target="_blank" rel="noopener">📈 회사정보</a>
@@ -547,6 +548,20 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
     document.getElementById("factTrend").innerHTML = `<div class="why"><div class="wh">📈 최근 실적 추이 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익, 억원)</span></div>`
       + rows.map(r=>`<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}</div>`).join("") + `</div>`;
   if(a.label) document.getElementById("factPoints").innerHTML = buildPoints(e, f, a, est);
+  document.getElementById("factRefs").innerHTML = buildRefs(f);
+}
+
+function buildRefs(f){   // 가이던스·IR 보충 — 최신 증권사 리포트 + 종목 뉴스 (링크)
+  const reps = f.reports||[], news = f.news||[];
+  if(!reps.length && !news.length) return "";
+  const line = (date, title, tail, url) =>
+    `<div class="row">· <a href="${esc(url)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${esc((date||"").slice(5))} ${esc(title)}</a> <span style="color:var(--muted)">— ${esc(tail)}</span></div>`;
+  let h = `<div class="why"><div class="wh">📰 뉴스·리포트 보충 <span style="font-weight:400;color:var(--muted)">(가이던스·컨콜 내용은 여기서 확인)</span></div>`;
+  if(reps.length) h += `<div class="row" style="color:var(--muted);margin-top:2px">증권사 리포트</div>`
+    + reps.map(r=>line(r.date, r.title, r.broker, r.url)).join("");
+  if(news.length) h += `<div class="row" style="color:var(--muted);margin-top:6px">최신 뉴스</div>`
+    + news.map(n=>line(n.date, n.title, n.press, n.url)).join("");
+  return h + `</div>`;
 }
 
 const toNum = s => { const n = parseFloat(String(s??"").replace(/,/g,"")); return isNaN(n) ? null : n; };
