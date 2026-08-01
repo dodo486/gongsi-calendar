@@ -333,16 +333,14 @@ function showErnDetail(e){   // 예상 실적발표 상세 → 실적 그리드 
       const boxc = document.getElementById("ernCons");
       if(!boxc) return;   // 그 사이 다른 항목 클릭됨
       if(!f){ boxc.innerHTML = ""; return; }
-      const cons = (f.quarters||[]).filter(q=>q.consensus);
-      const hasNum = cons.some(q=>q.sales!=="-"||q.op!=="-"||q.np!=="-");
-      let h = `<div class="why"><div class="wh">🔮 컨센서스 전망 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익, 억원)</span></div>`;
-      h += hasNum
-        ? cons.map(q=>`<div class="row">${esc(q.label)}(E) &nbsp;${eok(q.sales)}/ ${eok(q.op)}/ ${eok(q.np)}</div>`).join("")
-        : `<div class="row" style="color:var(--muted)">컨센서스 없음 (애널리스트 미커버 종목)</div>`;
       const rows = trendRows(f, null);
-      if(rows.length)
-        h += `<div class="wh" style="margin-top:10px">📈 최근 실적 추이</div>`
-          + rows.map(r=>`<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}</div>`).join("");
+      const hascons = rows.some(r=>r.consensus);
+      let h = `<div class="why"><div class="wh">📈 최근 실적 추이 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익, 억원)</span></div>`;
+      h += rows.map(r=>{
+        const cons = r.consensus ? ` <span style="color:var(--muted)">(컨센)</span>` : "";
+        return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${cons}</div>`;
+      }).join("");
+      if(!hascons) h += `<div class="row" style="color:var(--muted)">컨센서스 없음 (애널리스트 미커버 종목)</div>`;
       boxc.innerHTML = h + `</div>` + buildRefs(f);
     })();
   }
@@ -488,7 +486,12 @@ function earnActEvents(){   // 실제 실적공시 → 실적 캘린더 보라�
     .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
     .map((e,i)=>({
       id:"a"+i,
-      title:`${e.corp}${(e.rate===null||e.rate===undefined)?"":` (${e.rate>0?"+":""}${e.rate}%)`}`,
+      title:(()=>{   // 발표 전→후 반응 있으면 "전값→후값", 없으면 공시일 등락률
+        const p = v => `${v>0?"+":""}${v}%`;
+        if(e.pre5!=null || e.post5!=null)
+          return `${e.corp} (${e.pre5!=null?p(e.pre5):"-"}→${e.post5!=null?p(e.post5):"-"})`;
+        return `${e.corp}${(e.rate===null||e.rate===undefined)?"":` (${p(e.rate)})`}`;
+      })(),
       start:toISO(e.date), allDay:true, classNames:["eact"],
       extendedProps:{...e, kind:"eact"},
     }));
@@ -503,14 +506,19 @@ async function fetchFacts(code, rcept){
     return d.error ? null : d;
   }catch(_){ return null; }
 }
-function trendRows(f, actual){   // 최근 실적 추이 (최신순 5분기, 방금 공시분 포함)
-  let rows = (f.quarters||[]).filter(q=>!q.consensus && q.sales!=="-")
+function trendRows(f, actual){   // 최근 실적 추이 (최신순 5분기, 방금 공시분 포함) + 컨센서스 분기 전부
+  let actRows = (f.quarters||[]).filter(q=>!q.consensus && q.sales!=="-")
     .map(q=>({label:q.label, sales:q.sales, op:q.op, np:q.np}));
   const a = actual||{};
-  if(a.label && !rows.some(r=>r.label===a.label))
-    rows.push({label:a.label, sales:a.sales, op:a.op, np:a.np});
+  if(a.label && !actRows.some(r=>r.label===a.label))
+    actRows.push({label:a.label, sales:a.sales, op:a.op, np:a.np});
+  actRows.sort((x,y)=> y.label.localeCompare(x.label));
+  actRows = actRows.slice(0,5);
+  const consRows = (f.quarters||[]).filter(q=>q.consensus)
+    .map(q=>({label:q.label, sales:q.sales, op:q.op, np:q.np, consensus:true}));
+  const rows = actRows.concat(consRows);
   rows.sort((x,y)=> y.label.localeCompare(x.label));
-  return rows.slice(0,5);
+  return rows;
 }
 async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 오른쪽 패널 (배당 사이드와 분리)
   const box = document.getElementById("earnDetail");
@@ -553,11 +561,11 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
       + numLine("영업익", a.op, est.op, g.op)
       + numLine("순이익", a.np, est.np, g.np) + fallbackNote
     : `당기 수치 자동 추출 불가 — 아래 추이와 공시 원문을 확인하세요.`;
-  // ③ 경고 플래그 (해당 시만) + 수급
+  // ③ 공시시각·전후5분 + 경고 플래그 (해당 시만) + 수급(발표 후 기준)
   const flags = [preRunFlag(f, e), onetimeFlag(a)].filter(Boolean)
     .map(x=>`<div class="row" style="margin:5px 0">${x}</div>`).join("");
-  document.getElementById("factFlags").innerHTML =
-    (flags || flowLine(f)) ? `<div class="why">${flags}${flowLine(f)}</div>` : "";
+  const extra = tickLine(e) + flags + flowLine(f, e);
+  document.getElementById("factFlags").innerHTML = extra ? `<div class="why">${extra}</div>` : "";
   // ④ 분기 추이 + 영업이익률
   const rows = trendRows(f, a);
   if(rows.length)
@@ -565,7 +573,8 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
       + rows.map(r=>{
           const s=toNum(r.sales), o=toNum(r.op);
           const opm = (s&&o!==null)?` <span style="color:var(--muted)">· OPM ${Math.round(o/s*1000)/10}%</span>`:"";
-          return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${opm}</div>`;
+          const cons = r.consensus ? ` <span style="color:var(--muted)">(컨센)</span>` : "";
+          return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${opm}${cons}</div>`;
         }).join("") + `</div>`;
   // ⑤ 참고자료 (IR·리포트·뉴스)
   document.getElementById("factRefs").innerHTML = buildRefs(f);
@@ -642,6 +651,19 @@ function numLine(name, val, estVal, g){   // 핵심 수치 1줄: 값 (컨센± �
   return `<div class="row">${name} <b style="color:var(--text)">${eok(val)}</b> <span style="color:var(--muted)">(${bits.join(" · ")})</span></div>`;
 }
 
+const TICK_LABEL = {   // 공시 시간대별 전/후 지표 이름
+  min:       ["발표 전5분", "후5분"],
+  close_gap: ["장후 공시 — 당일 등락", "익일 시가갭"],
+  open_gap:  ["장전 공시 — 전일 등락", "당일 시가갭"],
+  day:       ["당일 등락", "익일 등락"],
+};
+function tickLine(e){   // 공시 접수시각 + 발표 전후 반응 (시간대별 의미가 다름)
+  if(e.pre5==null && e.post5==null && !e.disc_time) return "";
+  const p = v => v==null ? "-" : `${v>0?"+":""}${v}%`;
+  const [l1, l2] = TICK_LABEL[e.tick_kind] || TICK_LABEL.min;
+  return `<div class="row" style="margin:5px 0">⏱️ 공시 ${esc(e.disc_time||"-")} · ${l1} <b>${p(e.pre5)}</b> · ${l2} <b>${p(e.post5)}</b></div>`;
+}
+
 function preRunFlag(f, e){   // 선반영 체크 — 발표 전 5거래일 수익률 ("전날까지 올랐으면 셀온 주의")
   const ps = f.prices||[];   // 최신순
   const dIso = e.date ? toISO(e.date) : "";
@@ -666,13 +688,23 @@ function onetimeFlag(a){   // 이익의 질 — 영업익·순이익 YoY 괴리 
   return null;
 }
 
-function flowLine(f){   // 수급 — 최근 5거래일 외국인/기관 순매수 금액(주수×종가 근사, 억원)
-  const tr = f.trend||[];
+function flowLine(f, e){   // 수급 — 공시일 이후 최대 5거래일 순매수 (발표 반응 수급, 주수×종가 근사)
+  let tr = f.trend||[];   // 최신순, 최대 20거래일
   if(!tr.length) return "";
+  let label = "최근 5거래일";
+  const d = e && e.date;
+  if(d && tr.some(x=>x.date >= d)){       // 공시일 이후 구간만, 공시일부터 5거래일
+    tr = tr.filter(x=>x.date >= d)
+           .sort((a,b)=>a.date.localeCompare(b.date))
+           .slice(0,5);
+    label = `발표 후 ${tr.length}거래일`;
+  }else{
+    tr = tr.slice(0,5);                   // 공시가 20거래일보다 오래됨 → 최근 5거래일 폴백
+  }
   const sum = k => {
     let s = 0, ok = false;
-    tr.slice(0,5).forEach(d=>{
-      const q = toNum(d[k]), c = toNum(d.close);
+    tr.forEach(x=>{
+      const q = toNum(x[k]), c = toNum(x.close);
       if(q!==null && c){ s += q*c; ok = true; }
     });
     return ok ? Math.round(s/1e8) : null;
@@ -682,7 +714,7 @@ function flowLine(f){   // 수급 — 최근 5거래일 외국인/기관 순매�
   const fmt = v => v===null ? "-" : `${v>0?"+":""}${v.toLocaleString("ko-KR")}억`;
   const note = (fr>0&&og>0) ? ` <span style="color:var(--accent)">— 쌍끌이 순매수</span>`
              : ((fr<0&&og<0) ? ` <span style="color:var(--exp)">— 동반 순매도</span>` : "");
-  return `<div class="row" style="margin:5px 0">💰 수급(5거래일): 외국인 <b>${fmt(fr)}</b> · 기관 <b>${fmt(og)}</b>${note} <span style="color:var(--muted)">(주수×종가 근사)</span></div>`;
+  return `<div class="row" style="margin:5px 0">💰 수급(${label}): 외국인 <b>${fmt(fr)}</b> · 기관 <b>${fmt(og)}</b>${note} <span style="color:var(--muted)">(주수×종가 근사)</span></div>`;
 }
 
 const isoMD = d => (d && d.length>=10) ? d.slice(5) : (d||"");   // 'YYYY-MM-DD' → 'MM-DD'

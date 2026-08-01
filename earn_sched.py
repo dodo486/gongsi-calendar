@@ -17,6 +17,8 @@ KW = "결산실적공시예고"
 IR_KW = "기업설명회"
 COLLECT_DAYS = 45          # 예고는 보통 발표 1~2주 전 — 넉넉히 45일치 훑어 다가오는 일정 확보
 IR_DAYS = 14               # IR 안내는 보통 개최 1~10일 전 접수 — 14일이면 충분
+PAST_KEEP_DAYS = 14        # 지나간 예상 일정도 2주간 캘린더에 유지 (과거분 소멸 방지)
+_last_raw = 0              # 직전 collect()의 DART 원시 응답 수 — 0이면 API 오류 가능성
 
 def parse_sched(t):
     """예고 본문 → {expected_date(공시예정일), period_end(결산기간 종료일)}"""
@@ -110,14 +112,24 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
                               "purpose": d.get("purpose", ""), "sponsor": d.get("sponsor", "")}
     if changed:
         _save_cache(cache)
-    today_iso = today.strftime("%Y-%m-%d")
+    global _last_raw
+    _last_raw = len(rows)
+    keep_from = (today - datetime.timedelta(days=PAST_KEEP_DAYS)).strftime("%Y-%m-%d")
     evs = [e for e in list(merged.values()) + list(ir_merged.values())
-           if e["expected_date"] >= today_iso]   # 다가오는 일정만
+           if e["expected_date"] >= keep_from]   # 다가오는 일정 + 지난 2주
     evs.sort(key=lambda x: (x["expected_date"], x.get("time", ""), x["corp"]))
     return evs
 
 def main(days=COLLECT_DAYS):
     evs = collect(days)
+    if not evs and _last_raw == 0 and os.path.exists(SCHED_PATH):
+        try:
+            prev = json.load(open(SCHED_PATH, encoding="utf-8")).get("count", 0)
+        except Exception:
+            prev = 0
+        if prev > 0:   # DART 응답 자체가 0인데 기존 데이터가 있음 → API 오류로 보고 보존
+            print("  [!] DART 응답 0건 — 기존 earn_sched.json 유지 (0건 덮어쓰기 방지)")
+            return
     save_json(SCHED_PATH, {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "count": len(evs), "events": evs,

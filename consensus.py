@@ -100,7 +100,7 @@ def naver_prices(code, n=30):
     except Exception:
         return []
 
-def naver_trend(code, n=5):
+def naver_trend(code, n=20):
     """투자자별 매매동향 (최신순) — 외국인/기관 순매수 수량 + 종가(금액 환산용)"""
     try:
         d = _get(f"https://m.stock.naver.com/api/stock/{code}/trend?pageSize={n}&page=1")
