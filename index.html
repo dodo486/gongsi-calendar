@@ -71,6 +71,7 @@
   .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
   .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
   .fc-event.ern{background:#06b6d4;border-color:#06b6d4;color:#00222a;font-weight:600}   /* 예상 실적발표(청록) */
+  .fc-event.eact{background:var(--div);border-color:var(--div);font-weight:600}          /* 실제 실적공시(보라) */
   @media (max-width: 800px){   /* 모바일: 세로 배치, 사이드는 캘린더 아래로 */
     header{padding:10px 12px;gap:8px}
     header h1{font-size:16px}
@@ -163,10 +164,14 @@
   <div id="limitsView" style="display:none"></div>
   <div id="earnView" style="display:none">
     <div class="earn-split">
-      <div class="earn-col" id="earnActual"></div>
       <div class="earn-col earn-calcol">
-        <div class="limhd">🗓️ 예상 실적발표 <span style="font-weight:400;color:var(--muted);font-size:12px">· 예고공시 + IR개최공시(관찰종목)</span></div>
+        <div class="limhd">📊 실적 캘린더
+          <span style="font-weight:400;color:var(--muted);font-size:12px">
+            · <span style="color:var(--div)">■</span> 실적공시(발표됨) &nbsp;<span style="color:#06b6d4">■</span> 예상 실적발표(예고·IR)</span></div>
         <div id="earnCal"></div>
+      </div>
+      <div class="earn-col" id="earnDetail">
+        <div class="empty">캘린더에서 실적을 클릭하면 상세(실적·컨센서스·추이)가 여기에 표시됩니다.</div>
       </div>
     </div>
   </div>
@@ -304,10 +309,9 @@ function whyBlock(e){
   return h + `</div>`;
 }
 
-function showDetail(e){
-  const box = document.getElementById("detail");
-  if(e.kind==="ern"){
-    divListMode = false; box.className="";
+function showErnDetail(e){   // 예상 실적발표 상세 → 실적 그리드 오른쪽 패널 (배당 사이드와 분리)
+  const box = document.getElementById("earnDetail");
+  {
     const isIR = e.src==="IR";
     box.innerHTML = `
       <div class="detail">
@@ -341,8 +345,11 @@ function showDetail(e){
           + rows.map(r=>`<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}</div>`).join("");
       boxc.innerHTML = h + `</div>`;
     })();
-    return;
   }
+}
+
+function showDetail(e){
+  const box = document.getElementById("detail");
   if(e.kind==="est"){
     divListMode = false; box.className="";
     box.innerHTML = `
@@ -473,33 +480,18 @@ async function loadEarnings(){
     const d = await (await fetch("data/earnings.json?_="+Date.now())).json();
     EARN = d.events||[];
   }catch(_){ EARN = []; }
-  renderEarnings();
+  renderEarnCal();
 }
-function renderEarnings(){
+function earnActEvents(){   // 실제 실적공시 → 실적 캘린더 보라색 이벤트 (제목에 등락률 병기)
   const q = filters.q.trim().toLowerCase();
-  const list = EARN.filter(e=>{
-    if(filters[e.market]===false) return false;
-    if(q && !(e.corp||"").toLowerCase().includes(q)) return false;
-    return true;
-  });
-  const box = document.getElementById("earnActual");
-  let h = `<div class="limhd">📊 실적 공시 (${list.length}) <span style="font-weight:400;color:var(--muted);font-size:12px">· 옆 숫자 = 현재 등락률(네이버 실시간)</span></div>`;
-  if(!list.length) h += `<div class="empty">최근 실적 공시가 없습니다.</div>`;
-  list.forEach(e=>{
-    const r = e.rate;
-    const cls = (r>0)?"up":((r<0)?"down":"");
-    const rtxt = (r===null||r===undefined)?"–":`${r>0?"+":""}${r}%`;
-    h += `<div class="li ${cls}" data-url="${esc(e.url)}">
-      <span class="t">${esc(toMD(e.date))}</span>
-      <span class="nm">${esc(e.corp)}</span>
-      <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
-      <span class="etitle">${esc(e.title)}</span>
-      <span class="rate ${cls}">${esc(rtxt)}</span>
-    </div>`;
-  });
-  box.innerHTML = h;
-  // 실적 항목 클릭 → 사이드에 컨센서스·추이 상세 (원문은 상세 안의 공시링크로)
-  box.querySelectorAll(".li").forEach((el,i)=> el.addEventListener("click",()=>showEarnFact(list[i])));
+  return EARN
+    .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
+    .map((e,i)=>({
+      id:"a"+i,
+      title:`${e.corp}${(e.rate===null||e.rate===undefined)?"":` ${e.rate>0?"+":""}${e.rate}%`}`,
+      start:toISO(e.date), allDay:true, classNames:["eact"],
+      extendedProps:{...e, kind:"eact"},
+    }));
 }
 
 const eok = v => (v===undefined||v===null||v===""||v==="-") ? "-" : esc(v)+"억";
@@ -520,10 +512,8 @@ function trendRows(f, actual){   // 최근 실적 추이 (최신순 5분기, 방
   rows.sort((x,y)=> y.label.localeCompare(x.label));
   return rows.slice(0,5);
 }
-async function showEarnFact(e){
-  divListMode = false;
-  const box = document.getElementById("detail");
-  box.className = "";
+async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 오른쪽 패널 (배당 사이드와 분리)
+  const box = document.getElementById("earnDetail");
   box.innerHTML = `
     <div class="detail">
       <div class="corp">${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
@@ -570,10 +560,10 @@ function ernEvents(){   // 예상 실적발표(예고공시+IR) — 실적 그�
       extendedProps:{...e, kind:"ern"},
     }));
 }
-function renderEarnCal(){   // 예상 실적발표 캘린더 이벤트 갱신 (검색·시장 필터 반영)
+function renderEarnCal(){   // 실적 캘린더 갱신 — 실제 공시(보라) + 예상 발표(청록), 검색·시장 필터 반영
   if(!earnCal) return;
   earnCal.removeAllEvents();
-  earnCal.addEventSource(ernEvents());
+  earnCal.addEventSource(earnActEvents().concat(ernEvents()));
 }
 
 async function loadData(){
@@ -637,7 +627,11 @@ async function boot(){
     showNonCurrentDates:false, fixedWeekCount:false,
     headerToolbar:{left:"prev,next today",center:"title",right:""},
     buttonText:{today:"오늘"},
-    eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
+    eventClick:(info)=>{   // 실적 상세는 실적 그리드 오른쪽 패널에 (배당 사이드와 분리)
+      info.jsEvent.preventDefault();
+      const p = info.event.extendedProps;
+      p.kind==="eact" ? showEarnFact(p) : showErnDetail(p);
+    },
   });
   earnCal.render();
   try{ EXP = (await (await fetch("data/expiries.json?_="+Date.now())).json()).events||[]; }catch(_){ EXP=[]; }
@@ -672,13 +666,13 @@ document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>swi
 document.getElementById("q").addEventListener("input",e=>{
   filters.q=e.target.value;
   applyFilters();
-  if(MODE==="board"){ renderLimits(); renderEarnings(); renderEarnCal(); }
+  if(MODE==="board"){ renderLimits(); renderEarnCal(); }
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
     c.classList.toggle("on",filters[mk]); applyFilters();
-    if(MODE==="board"){ renderEarnings(); renderEarnCal(); }
+    if(MODE==="board"){ renderEarnCal(); }
   });
 });
 document.querySelectorAll(".lchip").forEach(c=>{
