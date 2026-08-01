@@ -8,7 +8,7 @@
   python earnings.py            # 최근 30일 실적 공시 + 등락률 → data/earnings.json
   python earnings.py 60         # 최근 N일
 """
-import json, os, sys, datetime, urllib.request
+import json, os, re, sys, datetime, urllib.request
 from fetch import collect_events, DATA_DIR, load_watchlist, save_json, TLS_MODE, build_ssl_context
 
 EARN_PATH = os.path.join(DATA_DIR, "earnings.json")
@@ -56,11 +56,16 @@ def _attach_quotes(events):
     return events
 
 def _dedupe_sort(evs):
-    seen, out = set(), []
+    """접수번호 중복 제거 + 같은 날 같은 보고서의 [기재정정]/원본은 최신 접수분만 유지"""
+    seen, base_seen, out = set(), set(), []
     for e in sorted(evs, key=lambda x: (x.get("date", ""), x.get("rcept_no", "")), reverse=True):
         if e["rcept_no"] in seen:
             continue
-        seen.add(e["rcept_no"]); out.append(e)
+        base = (e.get("stock", ""), e.get("date", ""),
+                re.sub(r"^(\[[^\]]*\]\s*)+", "", e.get("title", "")))   # 제목 앞 [정정] 태그 제거
+        if base in base_seen:
+            continue   # 최신(정정)본이 이미 있음 — 원본 스킵
+        seen.add(e["rcept_no"]); base_seen.add(base); out.append(e)
     return out
 
 def collect(days=RETAIN_DAYS, watch="__load__"):
