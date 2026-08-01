@@ -541,9 +541,13 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
   if(f.marketCap) document.getElementById("factCap").textContent = `(시가총액: ${f.marketCap})`;
   let a = f.actual||{};
   let fallbackNote = "";
-  if(!a.label){   // 원문 자동추출 실패(다른 공시 양식 등) → 네이버 최근 분기로 폴백
+  if(!a.label && toNum(a.op)===null && toNum(a.sales)===null){
+    // 원문에서 숫자 자체를 못 뽑은 경우에만 네이버 최근 분기로 폴백
+    // (숫자는 있는데 라벨만 없는 공시를 직전 분기로 바꿔치기하면 판정이 완전히 뒤집힘 — 에코프로비엠 사례)
     a = pseudoActual(f);
     if(a.label) fallbackNote = `<div class="row" style="color:var(--muted)">※ 원문 자동추출 불가 — 네이버 최근 분기(${esc(a.label)}) 기준</div>`;
+  }else if(!a.label){
+    a.label = "최근 공시분";   // 숫자는 유효 — 라벨만 미상으로 표기
   }
   fillGrowth(f, a);
   const g = a.growth||{};
@@ -562,7 +566,7 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
       + numLine("순이익", a.np, est.np, g.np) + fallbackNote
     : `당기 수치 자동 추출 불가 — 아래 추이와 공시 원문을 확인하세요.`;
   // ③ 공시시각·전후5분 + 경고 플래그 (해당 시만) + 수급(발표 후 기준)
-  const flags = [preRunFlag(f, e), onetimeFlag(a)].filter(Boolean)
+  const flags = [preRunFlag(f, e), onetimeFlag(a), momentumFlag(a)].filter(Boolean)
     .map(x=>`<div class="row" style="margin:5px 0">${x}</div>`).join("");
   const extra = tickLine(e) + flags + flowLine(f, e);
   document.getElementById("factFlags").innerHTML = extra ? `<div class="why">${extra}</div>` : "";
@@ -635,9 +639,10 @@ function verdictBadge(a, est){   // 헤드라인 판정 — 영업익 컨센 ±1
     ? {t:"🔄 흑자전환", c:"#fb923c", sub:`영업익 ${esc(g.yoy_flag)} (전년동기 대비)`}
     : {t:`⚠️ ${esc(g.yoy_flag)}`, c:"#60a5fa", sub:"영업익 전년동기 대비"};
   if(g.yoy!=null){
-    if(g.yoy>=25)  return {t:"🔥 고성장", c:"#fb923c", sub:`컨센 없음 → 영업익 YoY <b>${pctTxt(g.yoy)}</b> 기준`};
-    if(g.yoy<=-25) return {t:"❄️ 급감", c:"#60a5fa", sub:`컨센 없음 → 영업익 YoY <b>${pctTxt(g.yoy)}</b> 기준`};
-    return {t:"➖ 무난", c:"var(--muted)", sub:`컨센 없음 → 영업익 YoY ${pctTxt(g.yoy)} 기준`};
+    const qq = g.qoq!=null ? ` · QoQ ${pctTxt(g.qoq)}` : "";
+    if(g.yoy>=25)  return {t:"🔥 고성장", c:"#fb923c", sub:`컨센 없음 → 영업익 YoY <b>${pctTxt(g.yoy)}</b>${qq} 기준`};
+    if(g.yoy<=-25) return {t:"❄️ 급감", c:"#60a5fa", sub:`컨센 없음 → 영업익 YoY <b>${pctTxt(g.yoy)}</b>${qq} 기준`};
+    return {t:"➖ 무난", c:"var(--muted)", sub:`컨센 없음 → 영업익 YoY ${pctTxt(g.yoy)}${qq} 기준`};
   }
   return {t:"판정 불가", c:"var(--muted)", sub:"컨센·비교 데이터 없음"};
 }
@@ -685,6 +690,13 @@ function onetimeFlag(a){   // 이익의 질 — 영업익·순이익 YoY 괴리 
   if((g.np?.yoy_flag||"") !== (g.op?.yoy_flag||"") || (oy!=null && ny!=null && Math.abs(ny-oy) > 30))
     return `⚠️ <b>일회성 의심</b> — 순이익 YoY(${pctTxt(ny)}) vs 영업익 YoY(${pctTxt(oy)}) 괴리${kw?` · 원문 '${esc(kw[0])}' 언급`:""} → 영업이익 우선 판단`;
   if(kw) return `ℹ️ 원문에 '${esc(kw[0])}' 언급 — 일회성 여부 원문 확인`;
+  return null;
+}
+
+function momentumFlag(a){   // YoY가 좋아도 분기 흐름(QoQ)이 꺾이면 경고
+  const q = a.growth?.op?.qoq;
+  if(q!=null && q<=-10)
+    return `⚠️ <b>모멘텀 둔화</b> — 영업익 QoQ ${pctTxt(q)} (YoY 판정과 별개로 직전 분기 대비 감소)`;
   return null;
 }
 

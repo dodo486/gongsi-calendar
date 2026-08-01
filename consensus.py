@@ -121,7 +121,17 @@ def parse_actual(rcept_no):
         return {}
     um = re.search(r"단위\s*:\s*(백만원|억원|천원|원)", t)
     mul = _UNIT.get(um.group(1) if um else "백만원", 0.01)
-    lab = re.search(r"\((\d{4}\.\dQ)\)", t)
+    # 분기 라벨 — 표기 변형 대응: (2026.2Q) / 2026년 2분기 / 실패 시 당기 누적기간 종료월로 추론
+    label = ""
+    m = re.search(r"(\d{4})\s*[.년]\s*([1-4])\s*(?:Q|분기)", t)
+    if m:
+        label = f"{m.group(1)}.{m.group(2)}Q"
+    else:
+        pe = re.search(r"~\s*(\d{4})-(\d{2})-\d{2}", t)   # 당기 누적기간 종료월 (03/06/09/12)
+        if pe:
+            q = {"03": "1", "06": "2", "09": "3", "12": "4"}.get(pe.group(2))
+            if q:
+                label = f"{pe.group(1)}.{q}Q"
 
     def _f(s):
         try:
@@ -146,7 +156,7 @@ def parse_actual(rcept_no):
     fmt = lambda v: "-" if v is None else f"{v:,}"
     nm = re.search(r"투자판단과\s*관련한\s*중요사항\s*[-:.\s]*(.+)$", t)
     notes = (nm.group(1).strip()[:400] if nm else "")
-    out = {"label": lab.group(1) if lab else "",
+    out = {"label": label,
            "sales": fmt(rs["cur"] if rs else None),
            "op": fmt(ro["cur"] if ro else None),
            "np": fmt(rn["cur"] if rn else None),
