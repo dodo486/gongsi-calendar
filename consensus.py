@@ -53,7 +53,9 @@ def naver_facts(code):
 _UNIT = {"백만원": 0.01, "억원": 1.0, "천원": 1e-5, "원": 1e-8}
 
 def parse_actual(rcept_no):
-    """잠정실적(공정공시) 원문 → 당기 실적(억원) {label, sales, op, np}"""
+    """잠정실적(공정공시) 원문 → 당기 실적(억원) + QoQ/YoY 증감율 + 투자판단 중요사항
+    원문 행 구조: <항목> 당해실적 당기 전기 전기대비% 흑전여부 전년동기 전년동기대비% 흑전여부
+    """
     try:
         t = dv.doc_text(rcept_no)
     except Exception:
@@ -61,15 +63,37 @@ def parse_actual(rcept_no):
     um = re.search(r"단위\s*:\s*(백만원|억원|천원|원)", t)
     mul = _UNIT.get(um.group(1) if um else "백만원", 0.01)
     lab = re.search(r"\((\d{4}\.\dQ)\)", t)
-    def num(name):
-        m = re.search(name + r"\s*당해실적\s*(-?[\d,]+)", t)
-        return round(float(m.group(1).replace(",", "")) * mul) if m else None
-    s, o, n = num("매출액"), num("영업이익"), num("당기순이익")
-    if s is None and o is None:
+
+    def _f(s):
+        try:
+            return float(s.replace(",", ""))
+        except Exception:
+            return None
+
+    def row(name):
+        m = re.search(name + r"\s*당해실적((?:\s+\S+){7})", t)
+        if not m:
+            return None
+        tok = m.group(1).split()
+        amt = lambda v: (None if _f(v) is None else round(_f(v) * mul))
+        flag = lambda v: ("" if v in ("-", "") else v)
+        return {"cur": amt(tok[0]), "prev": amt(tok[1]), "prev_yr": amt(tok[4]),
+                "qoq": _f(tok[2]), "qoq_flag": flag(tok[3]),
+                "yoy": _f(tok[5]), "yoy_flag": flag(tok[6])}
+
+    rs, ro, rn = row("매출액"), row("영업이익"), row("당기순이익")
+    if rs is None and ro is None:
         return {}
     fmt = lambda v: "-" if v is None else f"{v:,}"
-    return {"label": lab.group(1) if lab else "",
-            "sales": fmt(s), "op": fmt(o), "np": fmt(n)}
+    nm = re.search(r"투자판단과\s*관련한\s*중요사항\s*[-:.\s]*(.+)$", t)
+    notes = (nm.group(1).strip()[:400] if nm else "")
+    out = {"label": lab.group(1) if lab else "",
+           "sales": fmt(rs["cur"] if rs else None),
+           "op": fmt(ro["cur"] if ro else None),
+           "np": fmt(rn["cur"] if rn else None),
+           "growth": {"sales": rs, "op": ro, "np": rn},
+           "notes": notes}
+    return out
 
 def facts(code, rcept_no=""):
     """종목 실적 팩트 (캐시 30분, rcept가 달라지면 재생성)"""
