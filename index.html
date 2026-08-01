@@ -488,7 +488,7 @@ function earnActEvents(){   // 실제 실적공시 → 실적 캘린더 보라�
     .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
     .map((e,i)=>({
       id:"a"+i,
-      title:`${e.corp}${(e.rate===null||e.rate===undefined)?"":` ${e.rate>0?"+":""}${e.rate}%`}`,
+      title:`${e.corp}${(e.rate===null||e.rate===undefined)?"":` (${e.rate>0?"+":""}${e.rate}%)`}`,
       start:toISO(e.date), allDay:true, classNames:["eact"],
       extendedProps:{...e, kind:"eact"},
     }));
@@ -529,12 +529,18 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
   const f = await fetchFacts(e.stock, e.rcept_no||"");
   if(!f){ document.getElementById("factNums").textContent = "실적 데이터를 불러오지 못했습니다 — 공시링크에서 원문을 확인하세요."; return; }
   if(f.marketCap) document.getElementById("factCap").textContent = `(시가총액: ${f.marketCap})`;
-  const a = f.actual||{};
+  let a = f.actual||{};
+  let fallbackNote = "";
+  if(!a.label){   // 원문 자동추출 실패(다른 공시 양식 등) → 네이버 최근 분기로 폴백
+    a = pseudoActual(f);
+    if(a.label) fallbackNote = `<div class="row" style="color:var(--muted)">※ 원문 자동추출 불가 — 네이버 최근 분기(${esc(a.label)}) 기준</div>`;
+  }
+  fillGrowth(f, a);
   const est = (f.quarters||[]).find(q=>q.consensus && q.label===a.label) || {};
   document.getElementById("factNums").innerHTML = a.label ? `
     매출액 : <b style="color:var(--text)">${eok(a.sales)}</b> (예상치 : ${eok(est.sales)})<br>
     영업익 : <b style="color:var(--text)">${eok(a.op)}</b> (예상치 : ${eok(est.op)})<br>
-    순이익 : <b style="color:var(--text)">${eok(a.np)}</b> (예상치 : ${eok(est.np)})`
+    순이익 : <b style="color:var(--text)">${eok(a.np)}</b> (예상치 : ${eok(est.np)})${fallbackNote}`
     : `당기 수치 자동 추출 불가 — 아래 추이와 공시 원문을 확인하세요.`;
   const rows = trendRows(f, a);
   if(rows.length)
@@ -544,6 +550,28 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
 }
 
 const toNum = s => { const n = parseFloat(String(s??"").replace(/,/g,"")); return isNaN(n) ? null : n; };
+function pseudoActual(f){   // 네이버 분기 데이터 중 최신 실적 분기를 당기처럼 사용 (원문 파싱 폴백)
+  const qs = (f.quarters||[]).filter(q=>!q.consensus && q.sales!=="-");
+  if(!qs.length) return {};
+  const q = qs[qs.length-1];
+  return {label:q.label, sales:q.sales, op:q.op, np:q.np};
+}
+function fillGrowth(f, a){   // a.growth 없으면 네이버 분기 데이터로 YoY/QoQ 계산
+  if(!a.label || a.growth) return a;
+  const qs = f.quarters||[];
+  const idx = qs.findIndex(x=>x.label===a.label);
+  const key = qs[idx]?.key;
+  const pyIdx = key ? qs.findIndex(x=>x.key===String(+key-100)) : -1;
+  const rate = (c,b)=> (c!=null && b) ? Math.round((c-b)/Math.abs(b)*1000)/10 : null;
+  const mk = k => {
+    const cur = toNum(a[k]);
+    const prev = idx>0 ? toNum(qs[idx-1][k]) : null;
+    const py = pyIdx>=0 ? toNum(qs[pyIdx][k]) : null;
+    return {cur, prev, prev_yr:py, qoq:rate(cur,prev), yoy:rate(cur,py), qoq_flag:"", yoy_flag:""};
+  };
+  a.growth = {sales:mk("sales"), op:mk("op"), np:mk("np")};
+  return a;
+}
 const pctTxt = v => (v===null||v===undefined) ? "-" : `${v>0?"+":""}${v}%`;
 function growthTxt(g){   // 원문 증감율(%) 또는 흑자/적자전환 문구
   if(!g) return {qoq:"-", yoy:"-"};
