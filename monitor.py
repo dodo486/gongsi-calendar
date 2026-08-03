@@ -18,7 +18,8 @@ import kind_limits
 import earnings
 import earn_sched
 
-POLL_SECONDS = 20          # 폴링 주기 (트레이더용 실시간 — 신규 공시/상하한가 20초 내 감지)
+POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
+LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
 SELF_HEAL_SECONDS = 600    # 배당·실적 전체 재생성 주기 — upsert 유실분을 seen 무관하게 자동 복구
 RETENTION_DAYS = 365       # 공시 캘린더 이력 보관 기간 (오래된 이벤트 자동 정리)
 SEEN_KEEP_DAYS = 30        # 알림 중복방지 기록 보관 기간 (폴링 창은 2일이라 충분)
@@ -164,9 +165,9 @@ def notify_limit(e):
     except Exception as ex:
         print(f"  [알림실패] {ex}")
 
-def poll_limits(seen, alert=True):
-    """선물 상하한가 — KIND 파생 공시(가격제한폭 도달) 폴링.
-    limits.json 최신화 + 신규 접수번호 알림(ALERT_MIN_STAGE 이상만 토스트)."""
+def poll_limits(lim_seen, alert=True):
+    """선물 상하한가 — KIND 파생 공시(가격제한폭 도달) 폴링. limits.json 최신화 + 신규 알림.
+    lim_seen: 이 기능 전용 in-memory 중복셋(공시 seen 과 분리 → 전용 스레드에서 독립 동작)."""
     try:
         evs = kind_limits.collect()   # 오늘 코스피200/코스닥150 선물 가격제한폭 도달
     except Exception as ex:
@@ -178,17 +179,25 @@ def poll_limits(seen, alert=True):
         "count": len(evs), "events": evs,
     })
     alerted = 0
-    new = [e for e in evs if e["rcept_no"] not in seen]
-    for e in new:
-        seen.add(e["rcept_no"])   # 모든 신규는 seen에 등록(재알림 방지); 알림은 단계 조건만
+    for e in evs:
+        if e["rcept_no"] in lim_seen:
+            continue
+        lim_seen.add(e["rcept_no"])   # 신규는 등록(재알림 방지); 알림은 단계 조건만
         if alert and (e.get("stage") or 0) >= ALERT_MIN_STAGE:
             print(f"  🚨 선물 {'상한' if e['direction']=='상승' else '하한'}: "
                   f"{e['name']} {e['stage']}단계 ({e['kind']})")
             notify_limit(e)
             alerted += 1
-    if new:
-        save_seen(seen)
     return alerted
+
+def limits_loop(lim_seen):
+    """상하한가 전용 고속 루프(별도 스레드) — 공시/실적 폴링과 무관하게 LIMITS_POLL_SECONDS 마다 갱신."""
+    while True:
+        try:
+            poll_limits(lim_seen)
+        except Exception as ex:
+            print(f"  [상하한가 루프 오류] {ex}")
+        time.sleep(LIMITS_POLL_SECONDS)
 
 def poll_once(seen, alert=True):
     # 어제~오늘 조회: 자정 직전 접수분을 다음 폴링이 놓치지 않게 (중복은 seen이 걸러줌)
@@ -242,7 +251,7 @@ def main():
 
     if "--once" in sys.argv:
         n = poll_once(seen)
-        poll_limits(seen, alert=False)
+        poll_limits(set(), alert=False)
         print(f"1회 확인 완료 - 공시 신규 {n}건 (limits.json 갱신됨)"); return
 
     try:
@@ -254,12 +263,14 @@ def main():
     refresh_research()    # 선진화 판별 + 예상배당 갱신 (캐시 기반이라 신규 문서만 파싱)
     refresh_earnings(full=True)   # 실적 공시 + 현재 등락률 1회 재수집
     refresh_earn_sched()          # 예상 실적발표 일정 1회 재수집
+    lim_seen = set()   # 상하한가 전용 중복셋(공시 seen 과 분리)
     try:
-        poll_limits(seen, alert=False)   # 상하한가 baseline: 현재 도달분을 seen에 담고 알림 억제(재시작 스팸 방지)
-        save_seen(seen)
+        poll_limits(lim_seen, alert=False)   # baseline: 현재 도달분을 담고 알림 억제(재시작 스팸 방지)
         print("  [상하한가] baseline 완료")
     except Exception as ex:
         print(f"  [상하한가] baseline 실패: {ex}")
+    threading.Thread(target=limits_loop, args=(lim_seen,), daemon=True).start()   # 5초 고속 갱신 스레드
+    print(f"  [상하한가] 전용 루프 시작 ({LIMITS_POLL_SECONDS}초 주기)")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)
@@ -267,9 +278,8 @@ def main():
     last_heal = time.time()
     while True:
         try:
-            n = poll_once(seen)
-            m = poll_limits(seen)
-            refresh_earnings()   # 실적 등락률만 매 주기 갱신(가벼움; 신규 실적은 poll_once가 재수집 트리거)
+            n = poll_once(seen)   # 상하한가는 별도 스레드(limits_loop)가 5초마다 전담
+            refresh_earnings()    # 실적 등락률만 매 주기 갱신(가벼움; 신규 실적은 poll_once가 재수집 트리거)
             # 자가치유: 주기적으로 배당·실적 전체 재생성 → upsert가 조용히 놓친 건도 자동 복구
             if time.time() - last_heal >= SELF_HEAL_SECONDS:
                 last_heal = time.time()
@@ -278,7 +288,7 @@ def main():
                 refresh_earn_sched()
                 print("  [자가치유] 배당·실적·실적예고 전체 재생성 트리거")
             ts = datetime.datetime.now().strftime("%H:%M:%S")
-            print(f"[{ts}] 확인 완료 (공시 신규 {n} · 상하한가 알림 {m} · seen {len(seen)})")
+            print(f"[{ts}] 확인 완료 (공시 신규 {n} · seen {len(seen)})")
         except Exception as ex:
             print(f"[오류] {ex}")
         time.sleep(POLL_SECONDS)
