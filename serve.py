@@ -9,7 +9,15 @@ import urllib.parse
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
+INDEX_PATH = os.path.join(BASE, "index.html")
 PORT = 8777
+
+def html_mtime():
+    """index.html 수정 시각 — 바뀌면 SSE로 reload 신호를 보내 열린 탭이 스스로 새로고침."""
+    try:
+        return os.path.getmtime(INDEX_PATH)
+    except OSError:
+        return 0.0
 
 def data_signature():
     """data/*.json 의 (파일명→mtime) 최대값 — 하나라도 바뀌면 값이 커진다."""
@@ -82,6 +90,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             return
         last = data_signature()
+        last_html = html_mtime()
         # 접속 즉시 한 번 트리거 — 최신 상태로 맞춤
         try:
             self.wfile.write(b"retry: 3000\ndata: hello\n\n")
@@ -92,6 +101,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         while True:
             time.sleep(1)
             try:
+                hm = html_mtime()
+                if hm > last_html:   # index.html 이 바뀜 → 열린 탭에 새로고침 지시
+                    last_html = hm
+                    self.wfile.write(b"event: reload\ndata: 1\n\n")
+                    self.wfile.flush()
+                    beat = 0
                 sig = data_signature()
                 if sig > last:
                     last = sig
