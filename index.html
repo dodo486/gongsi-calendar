@@ -171,6 +171,7 @@
 <script>
 let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'disc'(공시)
 let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [];
+let LIMGEN = "";   // 상하한가(limits.json) 생성 시각 — 상단 '갱신 시각'에 표시(5초마다 갱신)
 let RES = {companies:{}, events:[]};   // 리서치: 선진화 판별 + 예상배당(research.json)
 let calendar;
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
@@ -350,8 +351,7 @@ async function loadLimits(){
   try{
     const d = await (await fetch("data/limits.json?_="+Date.now())).json();
     LIM = d.events||[];
-    document.getElementById("meta").textContent =
-      `상하한가(선물 가격제한폭) ${d.count}건 · 갱신 ${d.generated_at||""}`;
+    LIMGEN = d.generated_at||"";
   }catch(_){
     LIM = [];
     document.getElementById("meta").textContent = "상하한가 데이터 없음 — kind_limits.py 실행 필요";
@@ -484,7 +484,7 @@ async function loadData(){
     await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
     await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예정 실적발표 일정)
     document.getElementById("meta").textContent =
-      `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · 갱신 ${d.generated_at||""}`;
+      `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · ⏱ 상하한가 갱신 ${LIMGEN}`;
     applyFilters();
     if(divListMode) renderDivToday();
     return;
