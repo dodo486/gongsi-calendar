@@ -61,6 +61,12 @@
   .fc{--fc-border-color:var(--line);--fc-page-bg-color:transparent;--fc-neutral-bg-color:#1b1f28;
       --fc-today-bg-color:rgba(34,197,94,.08);--fc-list-event-hover-bg-color:#1b1f28}
   .fc .fc-toolbar-title{font-size:16px}
+  /* 오늘 날짜 강조 — 실적·배당 두 캘린더 공통(눈에 띄는 노란 동그라미) */
+  .fc .fc-day-today .fc-daygrid-day-number{
+    background:#facc15;color:#1a1200;font-weight:800;
+    min-width:26px;height:26px;padding:0 3px;margin:3px;
+    display:inline-flex;align-items:center;justify-content:center;
+    border-radius:999px;box-shadow:0 0 0 3px rgba(250,204,21,.35);}
   .fc .fc-button{background:var(--panel);border-color:var(--line);color:var(--text);text-transform:none}
   .fc .fc-button-primary:not(:disabled).fc-button-active{background:var(--accent);border-color:var(--accent);color:#04240f}
   .fc-daygrid-event{cursor:pointer;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
