@@ -42,6 +42,9 @@ jobs:
           python dividends.py 90
           python expiries.py
           python research.py 430
+          python earnings.py || echo "earnings 실패 — 건너뜀"
+          python earn_sched.py || echo "earn_sched 실패 — 건너뜀"
+          python kind_limits.py || echo "kind_limits 실패(해외 IP 차단 가능) — 건너뜀"
 
       - name: 사이트 구성
         run: |
