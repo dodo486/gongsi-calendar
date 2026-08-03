@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📅 공시캘린더</title>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1116; --panel:#171a21; --line:#262b36; --text:#e6e9ef; --muted:#8b93a3;
+    --kospi:#3b82f6; --kosdaq:#f59e0b; --accent:#22c55e; --div:#a855f7; --exp:#ef4444; --est:#eab308;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Malgun Gothic","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:18px;margin:0}
+  .meta{color:var(--muted);font-size:12px}
+  .clock{font-family:"Consolas","Menlo",monospace;font-size:24px;font-weight:800;color:#facc15;letter-spacing:2px;padding:4px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+  .tabs{display:flex;gap:6px}
+  .tab{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px;font-weight:600}
+  .tab.on{background:var(--text);color:var(--bg)}
+  .controls{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
+  input[type=search]{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:8px;width:200px;font-size:13px}
+  .chip{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:13px;user-select:none}
+  .chip.on{color:#fff}
+  .chip.kospi.on{background:var(--kospi);border-color:var(--kospi)}
+  .chip.kosdaq.on{background:var(--kosdaq);border-color:var(--kosdaq)}
+  .dmodes{display:none;gap:10px;align-items:center}
+  .dmodes.show{display:flex}
+  .dchk{display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;user-select:none}
+  .dchk input{margin:0;cursor:pointer}
+  .dchk.buy{color:var(--accent)} .dchk.buy input{accent-color:var(--accent)}
+  .dchk.ex{color:var(--exp)} .dchk.ex input{accent-color:var(--exp)}
+  .layout{display:flex;flex-direction:column}   /* 높이 고정 해제 — 페이지 스크롤 허용 */
+  .cal-row{display:flex;height:calc(100vh - 90px);min-height:560px}
+  .cal-col{display:flex;flex-direction:column;flex:1;min-height:0}
+  .cal-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .cal-bar-lbl{font-size:13px;font-weight:700;color:var(--muted)}
+  #calendar{flex:1;padding:14px;overflow:auto}
+  #side{width:360px;border-left:1px solid var(--line);background:var(--panel);padding:16px;overflow:auto}
+  #side h2{font-size:14px;color:var(--muted);margin:0 0 10px}
+  .detail .corp{font-size:18px;font-weight:700}
+  .detail .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px;vertical-align:middle}
+  .badge.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
+  .badge.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
+  .detail .title{margin:12px 0;font-size:15px;line-height:1.5}
+  .detail .big{font-size:26px;font-weight:800;color:var(--div);margin:10px 0}
+  .detail .row{font-size:13px;color:var(--muted);margin:4px 0}
+  .btn{display:inline-block;margin-top:14px;background:var(--accent);color:#04240f;font-weight:700;padding:10px 14px;border-radius:8px;text-decoration:none;font-size:14px}
+  .empty{color:var(--muted);font-size:13px}
+  .divlist .lh{font-size:13px;font-weight:700;margin-bottom:10px}
+  .divlist .di{padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:7px;cursor:pointer;background:var(--bg)}
+  .divlist .di:hover{border-color:var(--div)}
+  .divlist .di b{font-size:14px}
+  .divlist .di .sub{font-size:12px;color:var(--muted)}
+  .divlist .mkt{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:4px}
+  .mkt.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
+  .mkt.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
+  .back{display:inline-block;margin-bottom:10px;color:var(--div);cursor:pointer;font-size:13px}
+  .fc{--fc-border-color:var(--line);--fc-page-bg-color:transparent;--fc-neutral-bg-color:#1b1f28;
+      --fc-today-bg-color:rgba(34,197,94,.08);--fc-list-event-hover-bg-color:#1b1f28}
+  .fc .fc-toolbar-title{font-size:16px}
+  .fc .fc-button{background:var(--panel);border-color:var(--line);color:var(--text);text-transform:none}
+  .fc .fc-button-primary:not(:disabled).fc-button-active{background:var(--accent);border-color:var(--accent);color:#04240f}
+  .fc-daygrid-event{cursor:pointer;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fc-event.mk-KOSPI{background:var(--kospi);border-color:var(--kospi)}
+  .fc-event.mk-KOSDAQ{background:var(--kosdaq);border-color:var(--kosdaq);color:#1a1200}
+  .fc-event.dv-buy{background:var(--accent);border-color:var(--accent);color:#04240f;font-weight:600}
+  .fc-event.dv-ex{background:var(--exp);border-color:var(--exp);font-weight:600}
+  .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
+  .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
+  .fc-event.ern{background:#06b6d4;border-color:#06b6d4;color:#00222a;font-weight:600}   /* 예상 실적발표(청록) */
+  .fc-event.eact{background:var(--div);border-color:var(--div);font-weight:600}          /* 실제 실적공시(보라) */
+  @media (max-width: 800px){   /* 모바일: 세로 배치, 사이드는 캘린더 아래로 */
+    header{padding:10px 12px;gap:8px}
+    header h1{font-size:16px}
+    .meta{display:none}
+    .controls{margin-left:0;width:100%}
+    input[type=search]{width:110px;flex:1}
+    .layout{flex-direction:column;height:auto}
+    #calendar{height:62vh;padding:8px;flex:none}
+    #side{width:auto;border-left:none;border-top:1px solid var(--line)}
+    .fc .fc-toolbar-title{font-size:14px}
+    .fc-daygrid-event{font-size:10px}
+  }
+  .why{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+  .why .wh{font-weight:700;font-size:13px;margin-bottom:8px;color:var(--est)}
+  .why .row{font-size:12.5px;line-height:1.55}
+  .why .ev{font-size:12px;color:var(--muted);margin:3px 0;line-height:1.5}
+  /* 상하한가(선물 가격제한폭) 탭 */
+  .lmodes{display:none;gap:6px;align-items:center;flex-wrap:wrap}
+  .lmodes.show{display:flex}
+  .lchip{padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:12px;user-select:none}
+  .lchip.on{color:#fff;background:#374151;border-color:#4b5563}
+  .lchip.up.on{background:var(--exp);border-color:var(--exp)}
+  .lchip.down.on{background:#3b82f6;border-color:#3b82f6}
+  .lchip.s3.on{background:#f59e0b;border-color:#f59e0b;color:#1a1200}
+  #limitsView{flex:none;height:auto;max-height:40vh;padding:12px 18px;overflow:auto;border-bottom:2px solid var(--line)}
+  #earnView{flex:none;border-bottom:2px solid var(--line)}   /* 높이 고정 없음 — 캘린더 내용만큼 */
+  .earn-calcol{display:flex;flex-direction:column}
+  #earnCal{flex:1}
+  .earn-split{display:flex}
+  .earn-col{flex:1;min-width:0;padding:12px 18px;overflow:auto}
+  .earn-col + .earn-col{border-left:1px solid var(--line)}
+  .li .sd{margin-left:auto;flex:none;font-size:13px;font-weight:800;color:#6ee7b7;background:rgba(16,185,129,.16);padding:2px 9px;border-radius:6px}
+  .li .qt{font-size:10px;padding:1px 6px;border-radius:5px;background:rgba(148,163,184,.18);color:#cbd5e1;flex:none}
+  .li .qt.ir{background:rgba(59,130,246,.18);color:#93c5fd}
+  .li .etitle{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .li .rate{margin-left:auto;flex:none;font-size:14px;font-weight:800;padding:2px 9px;border-radius:6px;color:var(--muted)}
+  .li .rate.up{color:#fca5a5;background:rgba(239,68,68,.16)}
+  .li .rate.down{color:#93c5fd;background:rgba(59,130,246,.16)}
+  .li .mk.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
+  .li .mk.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
+  .limhd{font-size:15px;font-weight:700;margin-bottom:4px}
+  .limsub{font-size:12px;color:var(--muted);margin-bottom:14px}
+  .li{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--panel)}
+  .li:hover{border-color:#6b7280}
+  .li.up{border-left:3px solid var(--exp)}
+  .li.down{border-left:3px solid #3b82f6}
+  @keyframes blinkY{0%,49%{background:rgba(234,179,8,.34)}50%,100%{background:var(--panel)}}
+  .li.hot{animation:blinkY 1.1s infinite;border-left-color:var(--est)!important}
+  .li .t{font-size:12px;color:var(--muted);width:42px;flex:none}
+  .li .nm{font-size:14px;font-weight:700}
+  .li .mk{font-size:10px;padding:1px 6px;border-radius:5px}
+  .li .mk.KOSPI200{background:rgba(59,130,246,.2);color:#93c5fd}
+  .li .mk.KOSDAQ150{background:rgba(245,158,11,.2);color:#fcd34d}
+  .li .mk.IDX{background:rgba(168,85,247,.2);color:#d8b4fe}
+  .li .dir{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;flex:none;min-width:56px;text-align:center}
+  .li.up .dir{background:rgba(239,68,68,.18);color:#fca5a5}
+  .li.down .dir{background:rgba(59,130,246,.18);color:#93c5fd}
+  .li .et{font-size:11px;color:var(--muted);flex:none;margin-left:4px}
+  .li .stg{font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px;background:#374151;color:#cbd5e1;flex:none}
+  .li .stg.s3{background:#f59e0b;color:#1a1200}
+  .li .kd{font-size:11px;color:var(--muted);margin-left:auto;flex:none}
+  .li .kb{font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;flex:none}
+  .li .kb.idx{background:rgba(168,85,247,.22);color:#d8b4fe}   /* 지수선물 보라 */
+  .li .kb.stk{background:rgba(148,163,184,.18);color:#cbd5e1}  /* 주식선물 회색 */
+</style>
+</head>
+<body>
+<header>
+  <h1>📅 공시캘린더</h1>
+  <span class="clock" id="clock">--:--:--</span>
+  <div class="tabs">
+    <span class="tab" data-mode="disc">공시</span>
+    <span class="tab on" data-mode="board">🚨 상하한가 · 💰 배당</span>
+  </div>
+  <span class="meta" id="meta">불러오는 중…</span>
+  <div class="controls">
+    <span class="lmodes" id="lmodes">
+      <span class="lchip on" data-lim="지수선물">지수선물</span>
+      <span class="lchip on" data-lim="주식선물">주식선물</span>
+      <span class="lchip up on" data-lim="상승">▲상한</span>
+      <span class="lchip down on" data-lim="하락">▼하한</span>
+      <span class="lchip s3" data-lim="onlyS3">3단계만</span>
+    </span>
+    <input type="search" id="q" placeholder="회사명 검색">
+    <span class="chip kospi on" data-market="KOSPI">KOSPI</span>
+    <span class="chip kosdaq on" data-market="KOSDAQ">KOSDAQ</span>
+  </div>
+</header>
+<div class="layout">
+  <div id="limitsView" style="display:none"></div>
+  <div id="earnView" style="display:none">
+    <div class="earn-split">
+      <div class="earn-col earn-calcol">
+        <div class="limhd">📊 실적 캘린더
+          <span style="font-weight:400;color:var(--muted);font-size:12px">
+            · <span style="color:var(--div)">■</span> 실적공시(발표됨) &nbsp;<span style="color:#06b6d4">■</span> 예상 실적발표(예고·IR)</span></div>
+        <div id="earnCal"></div>
+      </div>
+      <div class="earn-col" id="earnDetail">
+        <div class="empty">캘린더에서 실적을 클릭하면 상세(실적·컨센서스·추이)가 여기에 표시됩니다.</div>
+      </div>
+    </div>
+  </div>
+  <div class="cal-row">
+    <div class="cal-col">
+      <div class="cal-bar" id="calBar" style="display:none">
+        <span class="cal-bar-lbl">💰 배당 표시</span>
+        <span class="dmodes show" id="dmodes">
+          <label class="dchk buy"><input type="checkbox" id="chkBuy" checked>배당매수일</label>
+          <label class="dchk ex"><input type="checkbox" id="chkEx">배당락일</label>
+        </span>
+      </div>
+      <div id="calendar"></div>
+    </div>
+    <div id="side">
+      <h2 id="sideTitle">공시 상세</h2>
+      <div id="detail" class="empty">캘린더에서 항목을 클릭하면 여기에 내용이 표시됩니다.</div>
+    </div>
+  </div>
+</div>
+<script>
+let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'disc'(공시)
+let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [];
+let earnCal;   // 예상 실적발표 전용 캘린더 (실적 그리드 오른쪽)
+let LIMGEN = "";   // 상하한가(limits.json) 생성 시각 — 상단 '갱신 시각'에 표시(5초마다 갱신)
+let RES = {companies:{}, events:[]};   // 리서치: 선진화 판별 + 예상배당(research.json)
+let calendar;
+const filters = { q:"", KOSPI:true, KOSDAQ:true };
+// 상하한가(선물 가격제한폭) 필터
+const limF = { "지수선물":true, "주식선물":true, "상승":true, "하락":true, onlyS3:false };
+
+function toISO(d){ return d.includes("-") ? d : `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`; }
+const won = n => Number(n).toLocaleString("ko-KR");
+// 외부(DART) 데이터를 innerHTML에 넣기 전 이스케이프 (XSS 방지)
+const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let divListMode = false;
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`; }
+
+// 배당 캘린더 날짜 표시: 배당매수일(초록)·배당락일(빨강) 체크박스 — 둘 다 켜면 동시 표시
+const dm = {buy:true, ex:false};
+
+function renderDivToday(){
+  divListMode = true;
+  const t = todayStr();
+  const list = DIV.filter(e => (e.rcept_dt||"") === t);
+  const box = document.getElementById("detail"); box.className = "";
+  let h = `<div class="divlist"><div class="lh">📢 오늘 뜬 배당공시 (${list.length})</div>`;
+  if(!list.length) h += `<div class="empty">오늘 접수된 배당 공시가 없습니다.</div>`;
+  list.forEach(e=>{
+    h += `<div class="di" data-rc="${esc(e.rcept_no)}"><b>${esc(e.corp)}</b><span class="mkt ${esc(e.market)}">${esc(e.market)}</span><br>
+      <span class="sub">${esc(e.div_type||"배당")} · ${e.per_share?won(e.per_share)+"원":"금액 미정"} · 매수 ${esc(e.confirm_date||"-")} · 락 ${esc(e.ex_date||"-")} · 기준 ${esc(e.record_date)}</span></div>`;
+  });
+  box.innerHTML = h + `</div>`;
+  box.querySelectorAll(".di").forEach(el=> el.addEventListener("click",()=>{
+    const e = DIV.find(x=>x.rcept_no===el.dataset.rc); if(e) showDetail({...e, kind:"div"});
+  }));
+}
+
+function discEvents(list){
+  return list.map((e,i)=>({
+    id:"d"+i, title:`${e.corp} · ${e.category||""} · ${e.title}`,
+    start:toISO(e.date), allDay:true, classNames:[`mk-${e.market}`],
+    extendedProps:{...e, kind:"disc"},
+  }));
+}
+function divEvents(list){
+  const out = [];
+  list.forEach((e,i)=>{
+    const title = `${e.corp} (${e.per_share?won(e.per_share)+"원":"미정"})`;
+    const props = {...e, kind:"div"};
+    if(dm.buy) out.push({id:"vb"+i, title, start:e.confirm_date||e.record_date,
+                         allDay:true, classNames:["dv-buy"], extendedProps:props});
+    if(dm.ex)  out.push({id:"vx"+i, title, start:e.ex_date||e.record_date,
+                         allDay:true, classNames:["dv-ex"], extendedProps:props});
+  });
+  return out;
+}
+
+function expEvents(){
+  return EXP.map((e,i)=>({
+    id:"x"+i, title:(e.type==="선·옵 동시만기"?"🔮 ":"⚡ ")+e.type,
+    start:e.date, allDay:true, classNames:["exp"], editable:false,
+    extendedProps:{...e, kind:"exp"},
+  }));
+}
+
+function estEvents(){   // 예상배당(리서치 추정) — 배당 탭 전용, 노란색 (체크된 날짜 기준 따름)
+  const q = filters.q.trim().toLowerCase();
+  const out = [];
+  (RES.events||[])
+    .filter(e => filters[e.market] && (!q || `${e.corp}`.toLowerCase().includes(q)))
+    .forEach((e,i)=>{
+      const title = `💡 ${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"})`;
+      const props = {...e, kind:"est"};
+      if(dm.buy) out.push({id:"eb"+i, title, start:e.confirm_date||e.record_date,
+                           allDay:true, classNames:["est"], extendedProps:props});
+      if(dm.ex)  out.push({id:"ex"+i, title, start:e.ex_date||e.record_date,
+                           allDay:true, classNames:["est"], extendedProps:props});
+    });
+  return out;
+}
+
+function currentFiltered(){
+  const q = filters.q.trim().toLowerCase();
+  const src = MODE==="disc" ? ALL : DIV;
+  return src.filter(e=>{
+    if(!filters[e.market]) return false;
+    if(q && !(`${e.corp}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+function applyFilters(){
+  const list = currentFiltered();
+  calendar.removeAllEvents();
+  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents());
+  calendar.addEventSource(base.concat(expEvents()));   // 만기일은 두 탭 공통 표시
+}
+
+function whyBlock(e){
+  // "왜 이 날짜에 표시되나" — 잔고확정일 계산 + 공시→기준일 순서 + 선진화 판별
+  const c = (RES.companies||{})[e.stock];
+  const disclosed = e.rcept_dt ? toISO(e.rcept_dt) : "";
+  const seq = disclosed && e.record_date && disclosed < e.record_date;
+  let h = `<div class="why"><div class="wh">📍 날짜 안내</div>
+    <div class="row">📌 <b>기준일(${esc(e.record_date)})</b> — 공시에 나온 배당기준일. 이날 주주명부에 올라있어야 배당을 받습니다.</div>
+    <div class="row">🗓️ <b>배당매수일(${esc(e.confirm_date||"-")})</b> — 기준일 2영업일 전(T-2). 국내 주식은 T+2 결제라 <b>이날까지 매수</b>해야 배당을 받습니다.</div>
+    <div class="row">🚫 <b>배당락일(${esc(e.ex_date||"-")})</b> — 기준일 1영업일 전(T-1). 이날부터는 사도 배당이 없어, 통상 배당액만큼 주가가 하락(배당락)합니다.</div>
+    <div class="row" style="margin-top:4px;color:var(--muted)">※ 영업일 계산은 주말·한국 공휴일·근로자의날·연말폐장 제외. 상단 체크박스로 표시 기준 선택(초록=매수일, 빨강=배당락일).</div>`;
+  if(disclosed) h += `<div class="row" style="margin-top:6px">${seq
+    ? `✅ 배당액 공시(${esc(disclosed)}) → 기준일(${esc(e.record_date)}) 순서 — 배당액을 <b>알고</b> 투자할 수 있는 선진화 방식`
+    : `⚠️ 기준일(${esc(e.record_date)})이 공시(${esc(disclosed)})보다 앞 — 배당액을 모른 채 기준일이 지나는 구형 방식`}</div>`;
+  if(c){
+    h += `<div class="row" style="margin-top:6px">🏷️ 이 기업의 배당 선진화 판별: <b style="color:var(--est)">${esc(c.verdict)}</b></div>`;
+    h += (c.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("");
+  }
+  return h + `</div>`;
+}
+
+function showErnDetail(e){   // 예상 실적발표 상세 → 실적 그리드 오른쪽 패널 (배당 사이드와 분리)
+  const box = document.getElementById("earnDetail");
+  {
+    const isIR = e.src==="IR";
+    box.innerHTML = `
+      <div class="detail">
+        <div class="corp">📊 ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:#06b6d4">예상 실적발표${isIR?" (IR 컨퍼런스콜)":""}</b></div>
+        <div class="big" style="color:#06b6d4">${esc(e.expected_date)}${e.time?" "+esc(e.time):""}</div>
+        ${isIR
+          ? `<div class="row">🎯 ${esc(e.purpose||"실적발표")}</div>
+             ${e.sponsor&&e.sponsor!=="-"?`<div class="row">🏦 후원기관 ${esc(e.sponsor)}</div>`:""}`
+          : `<div class="row">🧾 회사가 예고한 결산실적 공시예정일${e.period_end?` (${esc(qLabel(e.period_end))} 실적, 결산기간 종료 ${esc(e.period_end)})`:""}</div>`}
+        <div class="row" style="color:var(--muted)">출처: ${isIR?"기업설명회(IR)개최 안내공시":"결산실적공시예고 안내공시"}</div>
+        <div id="ernCons"><div class="row" style="color:var(--muted)">컨센서스 불러오는 중…</div></div>
+        <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+        <a class="btn" style="background:var(--kospi);color:#fff;margin-left:8px"
+           href="https://finance.naver.com/item/main.nhn?code=${esc(e.stock)}" target="_blank" rel="noopener">📈 회사정보</a>
+      </div>`;
+    (async ()=>{
+      const f = await fetchFacts(e.stock, "");
+      const boxc = document.getElementById("ernCons");
+      if(!boxc) return;   // 그 사이 다른 항목 클릭됨
+      if(!f){ boxc.innerHTML = ""; return; }
+      const rows = trendRows(f, null);
+      const hascons = rows.some(r=>r.consensus);
+      let h = `<div class="why"><div class="wh">📈 최근 실적 추이 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익, 억원)</span></div>`;
+      h += rows.map(r=>{
+        const cons = r.consensus ? ` <span style="color:var(--muted)">(컨센)</span>` : "";
+        return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${cons}</div>`;
+      }).join("");
+      if(!hascons) h += `<div class="row" style="color:var(--muted)">컨센서스 없음 (애널리스트 미커버 종목)</div>`;
+      boxc.innerHTML = h + `</div>` + buildRefs(f);
+    })();
+  }
+}
+
+function showDetail(e){
+  const box = document.getElementById("detail");
+  if(e.kind==="est"){
+    divListMode = false; box.className="";
+    box.innerHTML = `
+      <div class="detail">
+        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        <div class="corp">💡 ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--est)">예상 ${esc(e.div_type||"배당")}</b> (리서치 추정)</div>
+        <div class="big" style="color:var(--est)">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주 (예상)</span></div>
+        <div class="row">🗓️ 예상 배당매수일(T-2) <b style="color:var(--est)">${esc(e.confirm_date||"-")}</b></div>
+        <div class="row">🚫 예상 배당락일(T-1) ${esc(e.ex_date||"-")}</div>
+        <div class="row">📌 예상 배당기준일 ${esc(e.record_date)}</div>
+        <div class="why"><div class="wh">🧠 추정 근거</div>
+          <div class="row">${esc(e.basis||"")}</div>
+          <div class="row" style="margin-top:6px">🏷️ 배당 선진화 판별: <b style="color:var(--est)">${esc(e.verdict||"판단불가")}</b></div>
+          ${((RES.companies||{})[e.stock]?.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("")}
+          <div class="ev" style="margin-top:8px">※ 과거 공시 이력 기반 자동 추정입니다. 실제 공시가 나오면 보라색(확정) 이벤트로 대체됩니다.</div>
+        </div>
+      </div>`;
+    return;
+  }
+  if(e.kind==="exp"){
+    divListMode = false; box.className="";
+    box.innerHTML = `
+      <div class="detail">
+        <div class="corp" style="color:var(--exp)">${esc(e.type)}</div>
+        <div class="title">${esc(e.label||"")}</div>
+        <div class="row">📅 만기일 <b style="color:var(--text)">${esc(e.date)}</b></div>
+        ${e.adjusted?'<div class="row">※ 원래 둘째 목요일이 휴장이라 직전 영업일로 조정됨</div>':''}
+      </div>`;
+    return;
+  }
+  if(e.kind==="div"){
+    divListMode = false;
+    box.innerHTML = `
+      <div class="detail">
+        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        <div class="corp">${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--div)">${esc(e.div_type||"배당")}</b></div>
+        <div class="big">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주</span></div>
+        <div class="row">🗓️ 배당매수일(T-2) <b style="color:var(--accent)">${esc(e.confirm_date||"-")}</b></div>
+        <div class="row">🚫 배당락일(T-1) <b style="color:var(--exp)">${esc(e.ex_date||"-")}</b></div>
+        <div class="row">📌 배당기준일 ${esc(e.record_date)}</div>
+        <div class="row">💸 지급예정일 ${esc(e.pay_date||"-")}</div>
+        ${whyBlock(e)}
+        <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+      </div>`;
+  }else{
+    box.innerHTML = `
+      <div class="detail">
+        <div class="corp">${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--accent)">${esc(e.category||"")}</b></div>
+        <div class="title">${esc(e.title)}</div>
+        <div class="row">📅 접수일 ${esc(toISO(e.date))}</div>
+        <div class="row">✍️ 제출인 ${esc(e.flr||"-")}</div>
+        <div class="row">🧾 접수번호 ${esc(e.rcept_no)}</div>
+        <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+      </div>`;
+  }
+}
+
+async function loadLimits(){
+  try{
+    const d = await (await fetch("data/limits.json?_="+Date.now())).json();
+    LIM = d.events||[];
+    LIMGEN = d.generated_at||"";
+  }catch(_){
+    LIM = [];
+    document.getElementById("meta").textContent = "상하한가 데이터 없음 — kind_limits.py 실행 필요";
+  }
+  renderLimits();
+}
+function limTime(s){   // "HH:MM[:SS]" → 오늘 그 시각의 timestamp(ms), 형식 아니면 null
+  if(!s || !/^\d{1,2}:\d{2}/.test(s)) return null;
+  const p = s.split(":").map(Number);
+  const d = new Date(); d.setHours(p[0], p[1], p[2]||0, 0);
+  return d.getTime();
+}
+function limHot(e){   // '지금 걸림' = 도달시각 ~ 확대예정시각 사이(제한폭 확대 전까지 핀 상태)
+  const now = Date.now();
+  const start = limTime(e.time);
+  if(start === null) return false;
+  const end = limTime(e.expand_time);
+  const s = start - 60000;   // 도달 1분 전 여유
+  return end !== null ? (now >= s && now < end)
+                      : (now >= s && now <= start + 5*60000);   // 확대예정 없으면 도달 후 5분
+}
+function renderLimits(){
+  const q = filters.q.trim().toLowerCase();
+  const list = LIM.filter(e=>{
+    if(!limF[e.kind]) return false;
+    if(!limF[e.direction]) return false;
+    if(limF.onlyS3 && (e.stage||0) < 3) return false;
+    if(q && !(e.name||"").toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const upN = list.filter(e=>e.direction==="상승").length;
+  const downN = list.filter(e=>e.direction==="하락").length;
+  const box = document.getElementById("limitsView");
+  let h = `<div class="limhd">🚨 오늘 선물 가격제한폭 도달 (${list.length})</div>
+    <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 클릭 → KRX 공시 원문 · 30초 자동갱신</div>`;
+  if(!list.length) h += `<div class="empty">해당하는 공시가 없습니다. (장중 선물이 가격제한폭에 도달하면 실시간으로 표시됩니다)</div>`;
+  list.forEach(e=>{
+    const up = e.direction==="상승";
+    const idx = e.kind==="지수선물";
+    const hot = limHot(e);
+    h += `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}">
+      <span class="dir">${up?"▲ 상한가":"▼ 하한가"}</span>
+      <span class="kb ${idx?"idx":"stk"}">${idx?"지수선물":"주식선물"}</span>
+      <span class="t">${esc(e.time)}</span>
+      <span class="stg${(e.stage||0)>=3?" s3":""}">${esc(String(e.stage||"?"))}단계</span>
+      <span class="nm">${esc(e.name)}</span>
+      ${idx?"":`<span class="mk ${e.market}">${esc(e.market)}</span>`}
+      ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
+    </div>`;
+  });
+  box.innerHTML = h;
+  bindOpen(box);
+}
+
+const toMD = d => (d && d.length>=8) ? `${d.slice(4,6)}-${d.slice(6,8)}` : (d||"");
+function bindOpen(box){   // .li 항목 클릭 → 원문 새 탭 (상하한가·실적 목록 공용)
+  box.querySelectorAll(".li").forEach(el=>
+    el.addEventListener("click",()=>window.open(el.dataset.url,"_blank","noopener")));
+}
+async function loadEarnings(){
+  try{
+    const d = await (await fetch("data/earnings.json?_="+Date.now())).json();
+    EARN = d.events||[];
+  }catch(_){ EARN = []; }
+  renderEarnCal();
+}
+function earnActEvents(){   // 실제 실적공시 → 실적 캘린더 보라색 이벤트 (제목에 등락률 병기)
+  const q = filters.q.trim().toLowerCase();
+  return EARN
+    .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
+    .map((e,i)=>({
+      id:"a"+i,
+      title:(()=>{   // 발표 전→후 반응 있으면 "전값→후값", 없으면 공시일 등락률
+        const p = v => `${v>0?"+":""}${v}%`;
+        if(e.pre5!=null || e.post5!=null)
+          return `${e.corp} (${e.pre5!=null?p(e.pre5):"-"}→${e.post5!=null?p(e.post5):"-"})`;
+        return `${e.corp}${(e.rate===null||e.rate===undefined)?"":` (${p(e.rate)})`}`;
+      })(),
+      start:toISO(e.date), allDay:true, classNames:["eact"],
+      extendedProps:{...e, kind:"eact"},
+    }));
+}
+
+const eok = v => (v===undefined||v===null||v===""||v==="-") ? "-" : esc(v)+"억";
+async function fetchFacts(code, rcept){
+  try{
+    const r = await fetch(`/api/earnfacts?code=${encodeURIComponent(code)}${rcept?"&rcept="+encodeURIComponent(rcept):""}`);
+    if(!r.ok) return null;
+    const d = await r.json();
+    return d.error ? null : d;
+  }catch(_){ return null; }
+}
+function trendRows(f, actual){   // 최근 실적 추이 (최신순 5분기, 방금 공시분 포함) + 컨센서스 분기 전부
+  let actRows = (f.quarters||[]).filter(q=>!q.consensus && q.sales!=="-")
+    .map(q=>({label:q.label, sales:q.sales, op:q.op, np:q.np}));
+  const a = actual||{};
+  if(a.label && !actRows.some(r=>r.label===a.label))
+    actRows.push({label:a.label, sales:a.sales, op:a.op, np:a.np});
+  actRows.sort((x,y)=> y.label.localeCompare(x.label));
+  actRows = actRows.slice(0,5);
+  const consRows = (f.quarters||[]).filter(q=>q.consensus)
+    .map(q=>({label:q.label, sales:q.sales, op:q.op, np:q.np, consensus:true}));
+  const rows = actRows.concat(consRows);
+  rows.sort((x,y)=> y.label.localeCompare(x.label));
+  return rows;
+}
+async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 오른쪽 패널 (배당 사이드와 분리)
+  const box = document.getElementById("earnDetail");
+  box.innerHTML = `
+    <div class="detail">
+      <div class="corp">${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+      <div class="row">A${esc(e.stock)} <span id="factCap"></span></div>
+      <div class="title">${esc(e.title)}</div>
+      <div id="factBadge"></div>
+      <div class="row" id="factNums">실적·컨센서스 불러오는 중…</div>
+      <div id="factFlags"></div>
+      <div id="factTrend"></div>
+      <div id="factRefs"></div>
+      <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 공시링크</a>
+      <a class="btn" style="background:var(--kospi);color:#fff;margin-left:8px"
+         href="https://finance.naver.com/item/main.nhn?code=${esc(e.stock)}" target="_blank" rel="noopener">📈 회사정보</a>
+    </div>`;
+  const f = await fetchFacts(e.stock, e.rcept_no||"");
+  if(!f){ document.getElementById("factNums").textContent = "실적 데이터를 불러오지 못했습니다 — 공시링크에서 원문을 확인하세요."; return; }
+  if(f.marketCap) document.getElementById("factCap").textContent = `(시가총액: ${f.marketCap})`;
+  let a = f.actual||{};
+  let fallbackNote = "";
+  if(!a.label && toNum(a.op)===null && toNum(a.sales)===null){
+    // 원문에서 숫자 자체를 못 뽑은 경우에만 네이버 최근 분기로 폴백
+    // (숫자는 있는데 라벨만 없는 공시를 직전 분기로 바꿔치기하면 판정이 완전히 뒤집힘 — 에코프로비엠 사례)
+    a = pseudoActual(f);
+    if(a.label) fallbackNote = `<div class="row" style="color:var(--muted)">※ 원문 자동추출 불가 — 네이버 최근 분기(${esc(a.label)}) 기준</div>`;
+  }else if(!a.label){
+    a.label = "최근 공시분";   // 숫자는 유효 — 라벨만 미상으로 표기
+  }
+  fillGrowth(f, a);
+  const g = a.growth||{};
+  const est = (f.quarters||[]).find(q=>q.consensus && q.label===a.label) || {};
+  // ① 헤드라인 판정 배지 (영업익 컨센 ±10% / 무컨센이면 YoY·흑전 기준)
+  if(a.label){
+    const v = verdictBadge(a, est);
+    document.getElementById("factBadge").innerHTML =
+      `<div style="font-size:19px;font-weight:800;color:${v.c};margin:10px 0 2px">${v.t}</div>
+       <div class="row" style="color:var(--muted)">${esc(a.label)} · ${v.sub}</div>`;
+  }
+  // ② 핵심 수치 3줄 압축 (컨센 괴리 · YoY · QoQ)
+  document.getElementById("factNums").innerHTML = a.label
+    ? numLine("매출액", a.sales, est.sales, g.sales)
+      + numLine("영업익", a.op, est.op, g.op)
+      + numLine("순이익", a.np, est.np, g.np) + fallbackNote
+    : `당기 수치 자동 추출 불가 — 아래 추이와 공시 원문을 확인하세요.`;
+  // ③ 공시시각·전후5분 + 경고 플래그 (해당 시만) + 수급(발표 후 기준)
+  const flags = [preRunFlag(f, e), onetimeFlag(a), momentumFlag(a)].filter(Boolean)
+    .map(x=>`<div class="row" style="margin:5px 0">${x}</div>`).join("");
+  const extra = tickLine(e) + flags + flowLine(f, e);
+  document.getElementById("factFlags").innerHTML = extra ? `<div class="why">${extra}</div>` : "";
+  // ④ 분기 추이 + 영업이익률
+  const rows = trendRows(f, a);
+  if(rows.length)
+    document.getElementById("factTrend").innerHTML = `<div class="why"><div class="wh">📈 최근 실적 추이 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익 · 영업이익률)</span></div>`
+      + rows.map(r=>{
+          const s=toNum(r.sales), o=toNum(r.op);
+          const opm = (s&&o!==null)?` <span style="color:var(--muted)">· OPM ${Math.round(o/s*1000)/10}%</span>`:"";
+          const cons = r.consensus ? ` <span style="color:var(--muted)">(컨센)</span>` : "";
+          return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${opm}${cons}</div>`;
+        }).join("") + `</div>`;
+  // ⑤ 참고자료 (IR·리포트·뉴스)
+  document.getElementById("factRefs").innerHTML = buildRefs(f);
+}
+
+function buildRefs(f){   // 가이던스·IR 보충 — 최신 증권사 리포트 + 종목 뉴스 (링크)
+  const reps = f.reports||[], news = f.news||[];
+  if(!reps.length && !news.length) return "";
+  const line = (date, title, tail, url) =>
+    `<div class="row">· <a href="${esc(url)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${esc((date||"").slice(5))} ${esc(title)}</a> <span style="color:var(--muted)">— ${esc(tail)}</span></div>`;
+  let h = `<div class="why"><div class="wh">📰 뉴스·리포트 보충 <span style="font-weight:400;color:var(--muted)">(가이던스·컨콜 내용은 여기서 확인)</span></div>`;
+  if(reps.length) h += `<div class="row" style="color:var(--muted);margin-top:2px">증권사 리포트</div>`
+    + reps.map(r=>line(r.date, r.title, r.broker, r.url)).join("");
+  if(news.length) h += `<div class="row" style="color:var(--muted);margin-top:6px">최신 뉴스</div>`
+    + news.map(n=>line(n.date, n.title, n.press, n.url)).join("");
+  return h + `</div>`;
+}
+
+const toNum = s => { const n = parseFloat(String(s??"").replace(/,/g,"")); return isNaN(n) ? null : n; };
+function pseudoActual(f){   // 네이버 분기 데이터 중 최신 실적 분기를 당기처럼 사용 (원문 파싱 폴백)
+  const qs = (f.quarters||[]).filter(q=>!q.consensus && q.sales!=="-");
+  if(!qs.length) return {};
+  const q = qs[qs.length-1];
+  return {label:q.label, sales:q.sales, op:q.op, np:q.np};
+}
+function fillGrowth(f, a){   // a.growth 없으면 네이버 분기 데이터로 YoY/QoQ 계산
+  if(!a.label || a.growth) return a;
+  const qs = f.quarters||[];
+  const idx = qs.findIndex(x=>x.label===a.label);
+  const key = qs[idx]?.key;
+  const pyIdx = key ? qs.findIndex(x=>x.key===String(+key-100)) : -1;
+  const rate = (c,b)=> (c!=null && b) ? Math.round((c-b)/Math.abs(b)*1000)/10 : null;
+  const mk = k => {
+    const cur = toNum(a[k]);
+    const prev = idx>0 ? toNum(qs[idx-1][k]) : null;
+    const py = pyIdx>=0 ? toNum(qs[pyIdx][k]) : null;
+    return {cur, prev, prev_yr:py, qoq:rate(cur,prev), yoy:rate(cur,py), qoq_flag:"", yoy_flag:""};
+  };
+  a.growth = {sales:mk("sales"), op:mk("op"), np:mk("np")};
+  return a;
+}
+const pctTxt = v => (v===null||v===undefined) ? "-" : `${v>0?"+":""}${v}%`;
+function growthTxt(g){   // 원문 증감율(%) 또는 흑자/적자전환 문구
+  if(!g) return {qoq:"-", yoy:"-"};
+  return {qoq: g.qoq_flag ? esc(g.qoq_flag) : pctTxt(g.qoq),
+          yoy: g.yoy_flag ? esc(g.yoy_flag) : pctTxt(g.yoy)};
+}
+function verdictBadge(a, est){   // 헤드라인 판정 — 영업익 컨센 ±10%(FnGuide 컨벤션), 무컨센은 YoY·흑전
+  const ao = toNum(a.op), eo = toNum(est.op);
+  const g = (a.growth||{}).op || {};
+  if(eo && ao!==null){
+    const sp = Math.round((ao-eo)/Math.abs(eo)*1000)/10;
+    if(sp>=10)  return {t:"🔥 어닝 서프라이즈", c:"#fb923c", sub:`영업익 컨센(${eok(est.op)}) 대비 <b>${pctTxt(sp)}</b>`};
+    if(sp<=-10) return {t:"❄️ 어닝 쇼크", c:"#60a5fa", sub:`영업익 컨센(${eok(est.op)}) 대비 <b>${pctTxt(sp)}</b>`};
+    return {t:"✅ 컨센 부합", c:"var(--accent)", sub:`영업익 컨센(${eok(est.op)}) 대비 ${pctTxt(sp)} (±10% 이내)`};
+  }
+  if(g.yoy_flag) return g.yoy_flag.includes("흑자")
+    ? {t:"🔄 흑자전환", c:"#fb923c", sub:`영업익 ${esc(g.yoy_flag)} (전년동기 대비)`}
+    : {t:`⚠️ ${esc(g.yoy_flag)}`, c:"#60a5fa", sub:"영업익 전년동기 대비"};
+  if(g.yoy!=null){
+    const qq = g.qoq!=null ? ` · QoQ ${pctTxt(g.qoq)}` : "";
+    if(g.yoy>=25)  return {t:"🔥 고성장", c:"#fb923c", sub:`컨센 없음 → 영업익 YoY <b>${pctTxt(g.yoy)}</b>${qq} 기준`};
+    if(g.yoy<=-25) return {t:"❄️ 급감", c:"#60a5fa", sub:`컨센 없음 → 영업익 YoY <b>${pctTxt(g.yoy)}</b>${qq} 기준`};
+    return {t:"➖ 무난", c:"var(--muted)", sub:`컨센 없음 → 영업익 YoY ${pctTxt(g.yoy)}${qq} 기준`};
+  }
+  return {t:"판정 불가", c:"var(--muted)", sub:"컨센·비교 데이터 없음"};
+}
+
+function numLine(name, val, estVal, g){   // 핵심 수치 1줄: 값 (컨센± · YoY · QoQ)
+  const bits = [];
+  const ev = toNum(estVal), av = toNum(val);
+  if(ev && av!==null) bits.push(`컨센 ${pctTxt(Math.round((av-ev)/Math.abs(ev)*1000)/10)}`);
+  const gt = growthTxt(g);
+  bits.push(`YoY ${gt.yoy}`, `QoQ ${gt.qoq}`);
+  return `<div class="row">${name} <b style="color:var(--text)">${eok(val)}</b> <span style="color:var(--muted)">(${bits.join(" · ")})</span></div>`;
+}
+
+const TICK_LABEL = {   // 공시 시간대별 전/후 지표 이름
+  min:       ["발표 전5분", "후5분"],
+  close_gap: ["장후 공시 — 당일 등락", "익일 시가갭"],
+  open_gap:  ["장전 공시 — 전일 등락", "당일 시가갭"],
+  day:       ["당일 등락", "익일 등락"],
+};
+function tickLine(e){   // 공시 접수시각 + 발표 전후 반응 (시간대별 의미가 다름)
+  if(e.pre5==null && e.post5==null && !e.disc_time) return "";
+  const p = v => v==null ? "-" : `${v>0?"+":""}${v}%`;
+  const [l1, l2] = TICK_LABEL[e.tick_kind] || TICK_LABEL.min;
+  return `<div class="row" style="margin:5px 0">⏱️ 공시 ${esc(e.disc_time||"-")} · ${l1} <b>${p(e.pre5)}</b> · ${l2} <b>${p(e.post5)}</b></div>`;
+}
+
+function preRunFlag(f, e){   // 선반영 체크 — 발표 전 5거래일 수익률 ("전날까지 올랐으면 셀온 주의")
+  const ps = f.prices||[];   // 최신순
+  const dIso = e.date ? toISO(e.date) : "";
+  if(!ps.length || !dIso) return null;
+  const idx = ps.findIndex(p=>p.date < dIso);   // 발표일 직전 거래일
+  if(idx<0 || idx+5>=ps.length) return null;
+  const c1 = toNum(ps[idx].close), c0 = toNum(ps[idx+5].close);
+  if(!c1 || !c0) return null;
+  const r = Math.round((c1-c0)/c0*1000)/10;
+  if(r>=10)  return `⚠️ <b>선반영 주의</b> — 발표 전 5거래일 ${pctTxt(r)} 급등, 재료소멸 셀온 가능성`;
+  if(r<=-10) return `ℹ️ 발표 전 5거래일 ${pctTxt(r)} 조정 — 선반영 부담 낮음`;
+  return null;
+}
+
+function onetimeFlag(a){   // 이익의 질 — 영업익·순이익 YoY 괴리 30%p + 원문 키워드 (영업이익 우선 판단)
+  const g = a.growth||{};
+  const oy = g.op?.yoy, ny = g.np?.yoy;
+  const kw = (a.notes||"").match(/일회성|소송|매각|손상|충당금|중단사업|영업외/);
+  if((g.np?.yoy_flag||"") !== (g.op?.yoy_flag||"") || (oy!=null && ny!=null && Math.abs(ny-oy) > 30))
+    return `⚠️ <b>일회성 의심</b> — 순이익 YoY(${pctTxt(ny)}) vs 영업익 YoY(${pctTxt(oy)}) 괴리${kw?` · 원문 '${esc(kw[0])}' 언급`:""} → 영업이익 우선 판단`;
+  if(kw) return `ℹ️ 원문에 '${esc(kw[0])}' 언급 — 일회성 여부 원문 확인`;
+  return null;
+}
+
+function momentumFlag(a){   // YoY가 좋아도 분기 흐름(QoQ)이 꺾이면 경고
+  const q = a.growth?.op?.qoq;
+  if(q!=null && q<=-10)
+    return `⚠️ <b>모멘텀 둔화</b> — 영업익 QoQ ${pctTxt(q)} (YoY 판정과 별개로 직전 분기 대비 감소)`;
+  return null;
+}
+
+function flowLine(f, e){   // 수급 — 공시일 이후 최대 5거래일 순매수 (발표 반응 수급, 주수×종가 근사)
+  let tr = f.trend||[];   // 최신순, 최대 20거래일
+  if(!tr.length) return "";
+  let label = "최근 5거래일";
+  const d = e && e.date;
+  if(d && tr.some(x=>x.date >= d)){       // 공시일 이후 구간만, 공시일부터 5거래일
+    tr = tr.filter(x=>x.date >= d)
+           .sort((a,b)=>a.date.localeCompare(b.date))
+           .slice(0,5);
+    label = `발표 후 ${tr.length}거래일`;
+  }else{
+    tr = tr.slice(0,5);                   // 공시가 20거래일보다 오래됨 → 최근 5거래일 폴백
+  }
+  const sum = k => {
+    let s = 0, ok = false;
+    tr.forEach(x=>{
+      const q = toNum(x[k]), c = toNum(x.close);
+      if(q!==null && c){ s += q*c; ok = true; }
+    });
+    return ok ? Math.round(s/1e8) : null;
+  };
+  const fr = sum("frgn"), og = sum("org");
+  if(fr===null && og===null) return "";
+  const fmt = v => v===null ? "-" : `${v>0?"+":""}${v.toLocaleString("ko-KR")}억`;
+  const note = (fr>0&&og>0) ? ` <span style="color:var(--accent)">— 쌍끌이 순매수</span>`
+             : ((fr<0&&og<0) ? ` <span style="color:var(--exp)">— 동반 순매도</span>` : "");
+  return `<div class="row" style="margin:5px 0">💰 수급(${label}): 외국인 <b>${fmt(fr)}</b> · 기관 <b>${fmt(og)}</b>${note} <span style="color:var(--muted)">(주수×종가 근사)</span></div>`;
+}
+
+const isoMD = d => (d && d.length>=10) ? d.slice(5) : (d||"");   // 'YYYY-MM-DD' → 'MM-DD'
+const qLabel = pe => ({"03":"1Q","06":"반기","09":"3Q","12":"연간"}[(pe||"").slice(5,7)] || "");
+async function loadEarnSched(){   // 예정 실적발표 → 캘린더 이벤트(ernEvents)로 표시
+  try{
+    const d = await (await fetch("data/earn_sched.json?_="+Date.now())).json();
+    SCHED = d.events||[];
+  }catch(_){ SCHED = []; }
+}
+function ernEvents(){   // 예상 실적발표(예고공시+IR) — 실적 그리드 오른쪽 전용 캘린더에 표시
+  const q = filters.q.trim().toLowerCase();
+  return SCHED
+    .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
+    .map((e,i)=>({
+      id:"n"+i,
+      title:`${e.corp}${e.src==="IR"?" IR":(e.period_end?" "+qLabel(e.period_end):"")}`,
+      start:e.expected_date, allDay:true, classNames:["ern"],
+      extendedProps:{...e, kind:"ern"},
+    }));
+}
+function renderEarnCal(){   // 실적 캘린더 갱신 — 실제 공시(보라) + 예상 발표(청록), 검색·시장 필터 반영
+  if(!earnCal) return;
+  earnCal.removeAllEvents();
+  earnCal.addEventSource(earnActEvents().concat(ernEvents()));
+}
+
+async function loadData(){
+  if(MODE==="board"){
+    const d = await (await fetch("data/dividends.json?_="+Date.now())).json();
+    DIV = d.events||[];
+    try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
+    await loadLimits();     // 상단 상하한가 밴드
+    await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
+    await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예상 실적발표 캘린더)
+    renderEarnCal();
+    document.getElementById("meta").textContent =
+      `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · ⏱ 상하한가 갱신 ${LIMGEN}`;
+    applyFilters();
+    if(divListMode) renderDivToday();
+    return;
+  }
+  const d = await (await fetch("data/disclosures.json?_="+Date.now())).json();
+  ALL = d.events||[];
+  document.getElementById("meta").textContent = `공시 ${d.count}건 · 갱신 ${d.generated_at||""}`;
+  applyFilters();
+}
+
+function applyModeView(){   // 현재 MODE에 맞춰 탭/컨트롤/상단밴드 표시 상태 세팅
+  const isBoard = MODE==="board";
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.mode===MODE));
+  document.getElementById("sideTitle").textContent = isBoard ? "오늘의 배당공시" : "공시 상세";
+  document.getElementById("calBar").style.display = isBoard ? "flex" : "none";   // 배당 체크박스 바(캘린더 위)
+  document.getElementById("lmodes").classList.toggle("show", isBoard);   // 선물/상한하한 칩
+  document.getElementById("limitsView").style.display = isBoard ? "block" : "none";
+  document.getElementById("earnView").style.display = isBoard ? "block" : "none";   // 중간 실적 그리드  // 상단 상하한가 밴드
+  if(isBoard && earnCal) setTimeout(()=>earnCal.updateSize(), 0);   // 숨김→표시 시 캘린더 크기 재계산
+}
+function switchMode(mode){
+  if(mode===MODE) return;
+  MODE = mode;
+  applyModeView();
+  divListMode = false;
+  if(MODE!=="board"){
+    const box=document.getElementById("detail");
+    box.className="empty"; box.textContent="캘린더에서 항목을 클릭하면 여기에 내용이 표시됩니다.";
+  }
+  loadData().then(()=>{
+    calendar.updateSize();   // 상단 밴드로 캘린더 높이가 바뀌므로 재계산
+    if(MODE==="board"){ calendar.today(); renderDivToday(); }
+    else if(ALL.length){ calendar.gotoDate(toISO(ALL[0].date)); }
+  });
+}
+
+async function boot(){
+  calendar = new FullCalendar.Calendar(document.getElementById("calendar"),{
+    initialView:"dayGridMonth", locale:"ko", height:"100%", firstDay:0, dayMaxEvents:6,
+    showNonCurrentDates:false, fixedWeekCount:false,   // 전월·다음월 날짜 숨김 + 여분 주 제거
+    headerToolbar:{left:"prev,next today",center:"title",right:"dayGridMonth,listWeek"},
+    buttonText:{today:"오늘",month:"월",list:"목록"},
+    eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
+  });
+  calendar.render();
+  earnCal = new FullCalendar.Calendar(document.getElementById("earnCal"),{
+    initialView:"dayGridMonth", locale:"ko", height:"auto", firstDay:0, dayMaxEvents:8,
+    showNonCurrentDates:false, fixedWeekCount:false,
+    headerToolbar:{left:"prev,next today",center:"title",right:""},
+    buttonText:{today:"오늘"},
+    eventClick:(info)=>{   // 실적 상세는 실적 그리드 오른쪽 패널에 (배당 사이드와 분리)
+      info.jsEvent.preventDefault();
+      const p = info.event.extendedProps;
+      p.kind==="eact" ? showEarnFact(p) : showErnDetail(p);
+    },
+  });
+  earnCal.render();
+  try{ EXP = (await (await fetch("data/expiries.json?_="+Date.now())).json()).events||[]; }catch(_){ EXP=[]; }
+  try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
+  applyModeView();          // 기본 탭(board) 화면 세팅 — 배당 체크박스/상단 밴드 표시
+  await loadData();
+  calendar.updateSize();
+  earnCal.updateSize();
+  if(MODE==="board"){ calendar.today(); renderDivToday(); }
+  else if(ALL.length){ calendar.gotoDate(toISO(ALL[0].date)); }
+  // SSE: 서버가 data/ 변경을 감지하면 즉시 push → 새로고침 없이 바로 반영
+  connectSSE();
+  setInterval(()=>loadData().catch(console.error), 30000);   // SSE 실패 대비 폴백(30초)
+  setInterval(()=>{ if(MODE==="board") renderLimits(); }, 5000);   // 깜빡이(지금 걸림) 상태 5초마다 갱신
+}
+
+let _es = null;
+function connectSSE(){
+  try{
+    if(_es) _es.close();
+    _es = new EventSource("events");
+    _es.onmessage = ()=>{   // 데이터 변경 통지 → 즉시 다시 로드
+      loadData().catch(console.error);
+      if(MODE==="board") renderLimits();
+    };
+    _es.onerror = ()=>{};   // 브라우저 EventSource가 자동 재접속 (폴백 폴링도 병행)
+  }catch(_){ /* EventSource 미지원 시 30초 폴링으로 동작 */ }
+}
+
+// 컨트롤
+document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>switchMode(t.dataset.mode)) );
+document.getElementById("q").addEventListener("input",e=>{
+  filters.q=e.target.value;
+  applyFilters();
+  if(MODE==="board"){ renderLimits(); renderEarnCal(); }
+});
+document.querySelectorAll(".chip[data-market]").forEach(c=>{
+  c.addEventListener("click",()=>{
+    const mk=c.dataset.market; filters[mk]=!filters[mk];
+    c.classList.toggle("on",filters[mk]); applyFilters();
+    if(MODE==="board"){ renderEarnCal(); }
+  });
+});
+document.querySelectorAll(".lchip").forEach(c=>{
+  c.addEventListener("click",()=>{
+    const k=c.dataset.lim; limF[k]=!limF[k];
+    c.classList.toggle("on",limF[k]); renderLimits();
+  });
+});
+document.getElementById("chkBuy").addEventListener("change",e=>{ dm.buy=e.target.checked; applyFilters(); });
+document.getElementById("chkEx").addEventListener("change",e=>{ dm.ex=e.target.checked; applyFilters(); });
+
+function tickClock(){
+  const d=new Date(), p=n=>String(n).padStart(2,"0");
+  const el=document.getElementById("clock");
+  if(el) el.textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+setInterval(tickClock, 1000); tickClock();
+
+boot().catch(err=>{
+  document.getElementById("meta").textContent="데이터 로드 실패 — fetch.py/dividends.py 실행 후 serve.py로 여세요.";
+  console.error(err);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+{
+ "generated_at": "2026-08-04 06:57:56",
+ "count": 36,
+ "events": [
+  {
+   "date": "2025-01-09",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2025-02-13",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2025-03-13",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2025-04-10",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2025-05-08",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2025-06-12",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2025-07-10",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2025-08-14",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2025-09-11",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2025-10-02",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": true
+  },
+  {
+   "date": "2025-11-13",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2025-12-11",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2026-01-08",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2026-02-12",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2026-03-12",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2026-04-09",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2026-05-14",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2026-06-11",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2026-07-09",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2026-08-13",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2026-09-10",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2026-10-08",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2026-11-12",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2026-12-10",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2027-01-14",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2027-02-11",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2027-03-11",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2027-04-08",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2027-05-12",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": true
+  },
+  {
+   "date": "2027-06-10",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2027-07-08",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2027-08-12",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2027-09-09",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  },
+  {
+   "date": "2027-10-14",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2027-11-11",
+   "type": "옵션만기",
+   "label": "옵션 만기일",
+   "adjusted": false
+  },
+  {
+   "date": "2027-12-09",
+   "type": "선·옵 동시만기",
+   "label": "선물·옵션 동시만기 (네 마녀의 날)",
+   "adjusted": false
+  }
+ ]
+}
