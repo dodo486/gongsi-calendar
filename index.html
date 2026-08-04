@@ -487,12 +487,8 @@ function renderLimits(){
       ${e.until?`<span class="et">(해제예정 ${esc(e.until)})</span>`:""}
     </div>`;
   };
-  let h = "";
-  if(acts.length){
-    h += `<div class="limsec danger">🏛️ KRX 시장조치 (${acts.length})</div>` + acts.map(actRow).join("");
-  }
-  h += `<div class="limhd"${acts.length?' style="margin-top:14px"':''}>🚨 가격제한폭 도달 (${list.length})</div>
-    <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 클릭 → KRX 원문 · 5초 자동갱신</div>`;
+  let h = `<div class="limhd">🚨 가격제한폭 도달 · 시장조치 (${list.length + acts.length})</div>
+    <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 🏛️ 시장조치 ${acts.length} · 클릭 → KRX 원문 · 5초 자동갱신</div>`;
   const row = e=>{
     const up = e.direction==="상승";
     const idx = e.kind==="지수선물";
@@ -506,11 +502,15 @@ function renderLimits(){
       ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
     </div>`;
   };
-  const col = (title, cls, items)=> `<div class="lim-col">
+  const col = (title, cls, items, rowFn=row)=> `<div class="lim-col">
       <div class="limsec ${cls}">${title} (${items.length})</div>
-      ${items.length ? items.map(row).join("") : `<div class="empty">해당 없음</div>`}
+      ${items.length ? items.map(rowFn).join("") : `<div class="empty">해당 없음</div>`}
     </div>`;
-  h += `<div class="lim-split">${col("🔶 주식선물","stk",list.filter(e=>e.kind==="주식선물"))}${col("🔷 지수선물","idx",list.filter(e=>e.kind==="지수선물"))}</div>`;
+  h += `<div class="lim-split">`
+     + col("🔶 주식선물","stk",list.filter(e=>e.kind==="주식선물"))
+     + col("🔷 지수선물","idx",list.filter(e=>e.kind==="지수선물"))
+     + col("🏛️ 시장조치","danger",acts,actRow)
+     + `</div>`;
   box.innerHTML = h;
   bindOpen(box);
 }
