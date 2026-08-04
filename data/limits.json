@@ -1,8 +1,78 @@
 {
  "date": "2026-08-04",
- "generated_at": "2026-08-04 13:02:57",
- "count": 29,
+ "generated_at": "2026-08-04 15:38:25",
+ "count": 33,
  "events": [
+  {
+   "time": "15:16",
+   "kind": "주식선물",
+   "name": "ISC",
+   "code": "095340",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260804000395",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260804000395&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "15:21:46"
+  },
+  {
+   "time": "15:00",
+   "kind": "주식선물",
+   "name": "한화시스템",
+   "code": "272210",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260804000380",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260804000380&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "15:05:41"
+  },
+  {
+   "time": "14:24",
+   "kind": "주식선물",
+   "name": "한미사이언스",
+   "code": "008930",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260804000318",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260804000318&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "14:29:02"
+  },
+  {
+   "time": "13:12",
+   "kind": "주식선물",
+   "name": "알테오젠",
+   "code": "196170",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260804000236",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260804000236&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "13:17:29"
+  },
   {
    "time": "12:39",
    "kind": "주식선물",
