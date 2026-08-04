@@ -15,7 +15,8 @@ from dividends import doc_text, t_minus, norm_date
 _LOCK = threading.RLock()
 CAP_PATH = os.path.join(DATA_DIR, "capital.json")
 CACHE_PATH = os.path.join(DATA_DIR, "cap_cache.json")   # rcept_no -> 파싱결과(원문 재다운로드 방지)
-MAX_DAYS = 88   # DART: corp_code 없이 조회 가능한 최대 기간(3개월)
+MAX_DAYS = 92   # DART: corp_code 없이 조회 가능한 최대 기간(3개월). 증자 공시는 기준일보다
+                # 앞서 나오므로, 과거 92일 공시를 훑으면 향후 3개월 내 신주배정기준일이 모두 포착됨
 
 RE_REC = re.compile(r"신주배정기준일\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
 # 무상: "1주당 신주배정 주식수 보통주식 (주) 0.5" / 유상: "1주당 신주배정주식수 (주) 0.24" 둘 다 대응

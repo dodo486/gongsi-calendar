@@ -108,7 +108,7 @@ _cap_lock = threading.Lock()
 def refresh_capital():
     """유·무상증자 데이터(capital.json) 재생성 — 원문 파싱이라 무거워 별도 스레드/중복방지(캐시로 신규분만 다운로드)"""
     def work():
-        print("  [증자] 유·무상증자 갱신 시작..."); capital.main(88); print("  [증자] 갱신 완료")
+        print("  [증자] 유·무상증자 갱신 시작..."); capital.main(); print("  [증자] 갱신 완료(과거 92일 공시 → 향후 3개월 기준일)")
     _run_guarded(_cap_lock, work, "증자")
 
 _sched_lock = threading.Lock()
