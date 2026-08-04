@@ -54,44 +54,6 @@ def naver_facts(code):
 def _clean(s):
     return re.sub(r"<[^>]+>", "", _html.unescape(s or "")).strip()
 
-def naver_news(code, n=5):
-    """종목 관련 최신 뉴스 (제목·언론사·일자·링크)"""
-    try:
-        d = _get(f"https://m.stock.naver.com/api/news/stock/{code}?pageSize={n}&page=1")
-        out = []
-        for grp in d:
-            for it in grp.get("items", []):
-                dt = it.get("datetime", "")
-                out.append({"title": _clean(it.get("title", "")), "press": it.get("officeName", ""),
-                            "date": f"{dt[:4]}-{dt[4:6]}-{dt[6:8]}" if len(dt) >= 8 else "",
-                            "url": f"https://n.news.naver.com/mnews/article/{it.get('officeId')}/{it.get('articleId')}"})
-        return out[:n]
-    except Exception:
-        return []
-
-def naver_reports(code, n=5):
-    """종목 대상 최신 증권사 리포트 (네이버 리서치, 제목·증권사·날짜·링크)"""
-    global _CTX
-    if _CTX is None:
-        _CTX = build_ssl_context()
-    try:
-        url = f"https://finance.naver.com/research/company_list.naver?searchType=itemCode&itemCode={code}"
-        req = urllib.request.Request(url, headers=HDR)
-        with urllib.request.urlopen(req, timeout=10, context=_CTX) as r:
-            page = r.read().decode("euc-kr", "replace")
-        out = []
-        for m in re.finditer(
-                r'company_read\.naver\?nid=(\d+)[^"]*"[^>]*>([^<]+)</a>.*?<td>([^<]+)</td>'
-                r'.*?class="date"[^>]*>(\d{2}\.\d{2}\.\d{2})</td>', page, re.S):
-            nid, title, broker, date = (x.strip() for x in m.groups())
-            out.append({"title": _clean(title), "broker": broker, "date": "20" + date.replace(".", "-"),
-                        "url": f"https://finance.naver.com/research/company_read.naver?nid={nid}"})
-            if len(out) >= n:
-                break
-        return out
-    except Exception:
-        return []
-
 def naver_prices(code, n=30):
     """일별 시세 (최신순) — 발표 전 선반영 체크용"""
     try:
@@ -176,8 +138,6 @@ def facts(code, rcept_no=""):
             pass
     out = naver_facts(code)
     out["actual"] = parse_actual(rcept_no) if rcept_no else {}
-    out["news"] = naver_news(code)         # IR·가이던스 보충용 최신 뉴스
-    out["reports"] = naver_reports(code)   # 증권사 리포트 (컨콜 요약·전망 포함)
     out["prices"] = naver_prices(code)     # 일별 시세 — 선반영(발표 전 급등) 체크
     out["trend"] = naver_trend(code)       # 외국인/기관 순매수 — 수급 판독
     out["_ts"] = time.time()
