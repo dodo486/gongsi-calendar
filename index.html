@@ -37,6 +37,10 @@
   .cal-col{display:flex;flex-direction:column;flex:1;min-height:0}
   .cal-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
   .cal-bar-lbl{font-size:13px;font-weight:700;color:var(--muted)}
+  .cal-legend{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+  .cal-legend .lg{display:inline-flex;align-items:center;gap:3px}
+  .cal-legend .lg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .cal-legend-note{color:var(--muted)}
   #calendar{flex:1;padding:14px;overflow:auto}
   #side{width:360px;border-left:1px solid var(--line);background:var(--panel);padding:16px;overflow:auto}
   #side h2{font-size:14px;color:var(--muted);margin:0 0 10px}
@@ -78,8 +82,9 @@
   .fc-daygrid-event{cursor:pointer;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .fc-event.mk-KOSPI{background:var(--kospi);border-color:var(--kospi)}
   .fc-event.mk-KOSDAQ{background:var(--kosdaq);border-color:var(--kosdaq);color:#1a1200}
-  .fc-event.dv-buy{background:var(--accent);border-color:var(--accent);color:#04240f;font-weight:600}
-  .fc-event.dv-ex{background:var(--exp);border-color:var(--exp);font-weight:600}
+  /* 배당 — 권리락(T-1) 진빨강 / 매수일(T-2) 연빨강 */
+  .fc-event.dv-ex{background:#dc2626;border-color:#dc2626;color:#fff;font-weight:600}
+  .fc-event.dv-buy{background:#fca5a5;border-color:#fca5a5;color:#3a0a0a;font-weight:600}
   .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
   /* 무상증자 — 권리락(T-1) 보라 / 권리부매수(T-2) 연보라 */
   .fc-event.cap-bonus-ex{background:#a855f7;border-color:#a855f7;font-weight:600}
@@ -211,10 +216,12 @@
   <div class="cal-row">
     <div class="cal-col">
       <div class="cal-bar" id="calBar" style="display:none">
-        <span class="cal-bar-lbl">💰 배당 표시</span>
-        <span class="dmodes show" id="dmodes">
-          <label class="dchk buy"><input type="checkbox" id="chkBuy" checked>배당매수일</label>
-          <label class="dchk ex"><input type="checkbox" id="chkEx">배당락일</label>
+        <span class="cal-bar-lbl">💰 배당·증자 일정</span>
+        <span class="cal-legend">
+          <span class="lg"><i style="background:#dc2626"></i><i style="background:#fca5a5"></i> 배당</span>
+          <span class="lg"><i style="background:#a855f7"></i><i style="background:#c4b5fd"></i> 무상</span>
+          <span class="lg"><i style="background:#3b82f6"></i><i style="background:#7dd3fc"></i> 유상</span>
+          <span class="cal-legend-note">· 진한색=권리락(T-1), 연한색=매수일(T-2)</span>
         </span>
       </div>
       <div id="calendar"></div>
@@ -246,8 +253,8 @@ const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;","
 let divListMode = false;
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`; }
 
-// 배당 캘린더 날짜 표시: 배당매수일(초록)·배당락일(빨강) 체크박스 — 둘 다 켜면 동시 표시
-const dm = {buy:true, ex:false};
+// 배당 캘린더 날짜 표시: 매수일·권리락 항상 모두 표시(체크박스 제거)
+const dm = {buy:true, ex:true};
 
 function renderDivToday(){
   divListMode = true;
@@ -276,11 +283,11 @@ function discEvents(list){
 function divEvents(list){
   const out = [];
   list.forEach((e,i)=>{
-    const title = `${e.corp} (${e.per_share?won(e.per_share)+"원":"미정"})`;
+    const amt = e.per_share?` (${won(e.per_share)}원)`:"";
     const props = {...e, kind:"div"};
-    if(dm.buy) out.push({id:"vb"+i, title, start:e.confirm_date||e.record_date,
+    if(dm.buy) out.push({id:"vb"+i, title:`[배당매수일] ${e.corp}${amt}`, start:e.confirm_date||e.record_date,
                          allDay:true, classNames:["dv-buy"], extendedProps:props});
-    if(dm.ex)  out.push({id:"vx"+i, title, start:e.ex_date||e.record_date,
+    if(dm.ex)  out.push({id:"vx"+i, title:`[배당권리락] ${e.corp}${amt}`, start:e.ex_date||e.record_date,
                          allDay:true, classNames:["dv-ex"], extendedProps:props});
   });
   return out;
@@ -292,14 +299,13 @@ function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준
   CAP.filter(e => filters[e.market] && (!q || `${e.corp}`.toLowerCase().includes(q)))
     .forEach((e,i)=>{
       const bonus = e.type==="무상증자";
-      const tag = bonus ? "🆓 무상" : "💰 유상";
-      const title = `${tag} ${e.corp}`;
+      const pre = bonus ? "무상" : "유상";
       const props = {...e, kind:"cap"};
       if(dm.buy && (e.buy_date||e.record_date))
-        out.push({id:"cb"+i, title, start:e.buy_date||e.record_date, allDay:true,
+        out.push({id:"cb"+i, title:`[${pre}매수일] ${e.corp}`, start:e.buy_date||e.record_date, allDay:true,
                   classNames:[bonus?"cap-bonus-buy":"cap-rights-buy"], extendedProps:props});
       if(dm.ex && (e.ex_date||e.record_date))
-        out.push({id:"cx"+i, title, start:e.ex_date||e.record_date, allDay:true,
+        out.push({id:"cx"+i, title:`[${pre}권리락] ${e.corp}`, start:e.ex_date||e.record_date, allDay:true,
                   classNames:[bonus?"cap-bonus-ex":"cap-rights-ex"], extendedProps:props});
     });
   return out;
@@ -346,7 +352,7 @@ function whyBlock(e){
     <div class="row">📌 <b>기준일(${esc(e.record_date)})</b> — 공시에 나온 배당기준일. 이날 주주명부에 올라있어야 배당을 받습니다.</div>
     <div class="row">🗓️ <b>배당매수일(${esc(e.confirm_date||"-")})</b> — 기준일 2영업일 전(T-2). 국내 주식은 T+2 결제라 <b>이날까지 매수</b>해야 배당을 받습니다.</div>
     <div class="row">🚫 <b>배당락일(${esc(e.ex_date||"-")})</b> — 기준일 1영업일 전(T-1). 이날부터는 사도 배당이 없어, 통상 배당액만큼 주가가 하락(배당락)합니다.</div>
-    <div class="row" style="margin-top:4px;color:var(--muted)">※ 영업일 계산은 주말·한국 공휴일·근로자의날·연말폐장 제외. 상단 체크박스로 표시 기준 선택(초록=매수일, 빨강=배당락일).</div>`;
+    <div class="row" style="margin-top:4px;color:var(--muted)">※ 영업일 계산은 주말·한국 공휴일·근로자의날·연말폐장 제외. 캘린더엔 매수일(연빨강)·배당락일(진빨강) 모두 표시됩니다.</div>`;
   if(disclosed) h += `<div class="row" style="margin-top:6px">${seq
     ? `✅ 배당액 공시(${esc(disclosed)}) → 기준일(${esc(e.record_date)}) 순서 — 배당액을 <b>알고</b> 투자할 수 있는 선진화 방식`
     : `⚠️ 기준일(${esc(e.record_date)})이 공시(${esc(disclosed)})보다 앞 — 배당액을 모른 채 기준일이 지나는 구형 방식`}</div>`;
@@ -971,8 +977,6 @@ document.querySelectorAll(".chip[data-market]").forEach(c=>{
     if(MODE==="board"){ renderEarnCal(); }
   });
 });
-document.getElementById("chkBuy").addEventListener("change",e=>{ dm.buy=e.target.checked; applyFilters(); });
-document.getElementById("chkEx").addEventListener("change",e=>{ dm.ex=e.target.checked; applyFilters(); });
 
 function tickClock(){
   const d=new Date(), p=n=>String(n).padStart(2,"0");
