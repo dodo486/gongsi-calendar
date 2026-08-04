@@ -54,6 +54,21 @@ def naver_facts(code):
 def _clean(s):
     return re.sub(r"<[^>]+>", "", _html.unescape(s or "")).strip()
 
+def naver_news(code, n=10):
+    """종목 관련 최신 뉴스 (제목·언론사·일자·링크) — 실적발표 이후 반응용"""
+    try:
+        d = _get(f"https://m.stock.naver.com/api/news/stock/{code}?pageSize={n}&page=1")
+        out = []
+        for grp in d:
+            for it in grp.get("items", []):
+                dt = it.get("datetime", "")
+                out.append({"title": _clean(it.get("title", "")), "press": it.get("officeName", ""),
+                            "date": f"{dt[:4]}-{dt[4:6]}-{dt[6:8]}" if len(dt) >= 8 else "",
+                            "url": f"https://n.news.naver.com/mnews/article/{it.get('officeId')}/{it.get('articleId')}"})
+        return out[:n]
+    except Exception:
+        return []
+
 def naver_prices(code, n=30):
     """일별 시세 (최신순) — 발표 전 선반영 체크용"""
     try:
@@ -138,6 +153,7 @@ def facts(code, rcept_no=""):
             pass
     out = naver_facts(code)
     out["actual"] = parse_actual(rcept_no) if rcept_no else {}
+    out["news"] = naver_news(code)         # 실적발표 이후 반응 (뉴스 헤드라인)
     out["prices"] = naver_prices(code)     # 일별 시세 — 선반영(발표 전 급등) 체크
     out["trend"] = naver_trend(code)       # 외국인/기관 순매수 — 수급 판독
     out["_ts"] = time.time()

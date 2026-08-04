@@ -638,20 +638,21 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
           const cons = r.consensus ? ` <span style="color:var(--muted)">(컨센)</span>` : "";
           return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${opm}${cons}</div>`;
         }).join("") + `</div>`;
-  // ⑤ 실적발표 이후 반응 — 제미나이에게 질문 (프롬프트 자동복사 후 새 탭)
-  document.getElementById("factRefs").innerHTML = geminiRefs(e.corp);
+  // ⑤ 실적발표 이후 반응 — 공시일 이후 뉴스 헤드라인 직접 표시
+  document.getElementById("factRefs").innerHTML = reactRefs(f, e);
 }
 
-function geminiRefs(corp){   // 실적발표 이후 시장 반응 — 제미나이에 검색 질문
-  const q = `${corp} 기업 실적발표 이후 시장 반응 검색해서 정리해줘`;
-  return `<div class="why"><div class="wh">🤖 실적발표 이후 반응</div>
-    <button class="btn" style="background:#8b5cf6;color:#fff;margin-top:6px" onclick="askGemini(this)" data-q="${esc(q)}">제미나이에게 물어보기</button>
-    <div class="row" style="color:var(--muted);margin-top:4px">클릭 → 프롬프트 복사 + 제미나이 새 탭</div></div>`;
-}
-function askGemini(btn){
-  const q = btn.dataset.q||"";
-  try{ navigator.clipboard.writeText(q); btn.textContent="✅ 복사됨 — 제미나이에 붙여넣기"; }catch(_){}
-  window.open("https://gemini.google.com/app?q="+encodeURIComponent(q), "_blank", "noopener");
+const ymd = s => String(s||"").replace(/\D/g,"");
+function reactRefs(f, e){   // 실적발표 이후 반응 — 공시일 이후 종목 뉴스 (없으면 최신 뉴스)
+  const news = f.news||[];
+  if(!news.length) return "";
+  const after = (e && e.date) ? news.filter(n=> ymd(n.date) >= ymd(e.date)) : [];
+  const list = after.length ? after : news;
+  const label = after.length ? "공시일 이후 뉴스" : "최신 뉴스";
+  return `<div class="why"><div class="wh">🗞️ 실적발표 이후 반응 <span style="font-weight:400;color:var(--muted)">(${label})</span></div>`
+    + list.slice(0,6).map(n=>
+        `<div class="row">· <a href="${esc(n.url)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${esc((n.date||"").slice(5))} ${esc(n.title)}</a> <span style="color:var(--muted)">— ${esc(n.press)}</span></div>`
+      ).join("") + `</div>`;
 }
 
 const toNum = s => { const n = parseFloat(String(s??"").replace(/,/g,"")); return isNaN(n) ? null : n; };
