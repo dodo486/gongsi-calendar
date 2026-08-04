@@ -17,6 +17,7 @@ import research
 import kind_limits
 import earnings
 import earn_sched
+import krx_actions
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
@@ -167,6 +168,52 @@ def notify_limit(e):
     except Exception as ex:
         print(f"  [알림실패] {ex}")
 
+def notify_action(e):
+    """KRX 시장조치(사이드카·서킷·거래정지/재개·투자경고 등) OS 알림 — 클릭 시 KRX 원문"""
+    dirtag = " ▲매수" if e["direction"] == "매수" else (" ▼매도" if e["direction"] == "매도" else "")
+    title = f"[{e['kind']}{(' ' + e['action']) if e['action'] else ''}] {e['market']}{dirtag}"
+    msg = e["title"]
+    try:
+        system = platform.system()
+        if system == "Windows":
+            from winotify import Notification, audio
+            t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=e["url"])
+            t.set_audio(audio.Default, loop=False)
+            t.add_actions(label="KRX 보기", launch=e["url"])
+            t.duration = 'long" scenario="reminder'   # 직접 닫기 전까지 화면에 유지
+            t.show()
+        elif system == "Darwin":
+            script = (f'display notification {json.dumps(msg, ensure_ascii=False)} '
+                      f'with title {json.dumps(title, ensure_ascii=False)} sound name "Glass"')
+            subprocess.run(["osascript", "-e", script], check=False, timeout=10)
+        else:
+            subprocess.run(["notify-send", title, msg], check=False, timeout=10)
+    except Exception as ex:
+        print(f"  [알림실패] {ex}")
+
+def poll_actions(ac_seen, alert=True):
+    """KRX 시장조치 폴링 — krx_actions.json 최신화 + 신규 조치 토스트. ac_seen: 전용 in-memory 중복셋."""
+    try:
+        evs = krx_actions.collect()
+    except Exception as ex:
+        print(f"  [시장조치] 수집 실패: {ex}")
+        return 0
+    save_json(krx_actions.ACTIONS_PATH, {
+        "date": datetime.date.today().strftime("%Y-%m-%d"),
+        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "count": len(evs), "events": evs,
+    })
+    alerted = 0
+    for e in evs:
+        if e["rcept_no"] in ac_seen:
+            continue
+        ac_seen.add(e["rcept_no"])
+        if alert:
+            print(f"  🚨 시장조치 [{e['kind']}] {e['market']} {e['action']} {e['title'][:40]}")
+            notify_action(e)
+            alerted += 1
+    return alerted
+
 def poll_limits(lim_seen, alert=True):
     """선물 상하한가 — KIND 파생 공시(가격제한폭 도달) 폴링. limits.json 최신화 + 신규 알림.
     lim_seen: 이 기능 전용 in-memory 중복셋(공시 seen 과 분리 → 전용 스레드에서 독립 동작)."""
@@ -192,13 +239,17 @@ def poll_limits(lim_seen, alert=True):
             alerted += 1
     return alerted
 
-def limits_loop(lim_seen):
-    """상하한가 전용 고속 루프(별도 스레드) — 공시/실적 폴링과 무관하게 LIMITS_POLL_SECONDS 마다 갱신."""
+def limits_loop(lim_seen, ac_seen):
+    """상하한가·시장조치 전용 고속 루프(별도 스레드) — 공시/실적과 무관하게 LIMITS_POLL_SECONDS 마다 갱신."""
     while True:
         try:
             poll_limits(lim_seen)
         except Exception as ex:
             print(f"  [상하한가 루프 오류] {ex}")
+        try:
+            poll_actions(ac_seen)
+        except Exception as ex:
+            print(f"  [시장조치 루프 오류] {ex}")
         time.sleep(LIMITS_POLL_SECONDS)
 
 def poll_once(seen, alert=True):
@@ -254,7 +305,8 @@ def main():
     if "--once" in sys.argv:
         n = poll_once(seen)
         poll_limits(set(), alert=False)
-        print(f"1회 확인 완료 - 공시 신규 {n}건 (limits.json 갱신됨)"); return
+        poll_actions(set(), alert=False)
+        print(f"1회 확인 완료 - 공시 신규 {n}건 (limits/krx_actions 갱신됨)"); return
 
     try:
         expiries.build()   # 선물·옵션 만기일 생성/갱신 (규칙 계산, 즉시)
@@ -265,14 +317,15 @@ def main():
     refresh_research()    # 선진화 판별 + 예상배당 갱신 (캐시 기반이라 신규 문서만 파싱)
     refresh_earnings(full=True)   # 실적 공시 + 현재 등락률 1회 재수집
     refresh_earn_sched()          # 예상 실적발표 일정 1회 재수집
-    lim_seen = set()   # 상하한가 전용 중복셋(공시 seen 과 분리)
+    lim_seen, ac_seen = set(), set()   # 상하한가·시장조치 전용 중복셋(공시 seen 과 분리)
     try:
         poll_limits(lim_seen, alert=False)   # baseline: 현재 도달분을 담고 알림 억제(재시작 스팸 방지)
-        print("  [상하한가] baseline 완료")
+        poll_actions(ac_seen, alert=False)   # 시장조치 baseline
+        print("  [상하한가·시장조치] baseline 완료")
     except Exception as ex:
-        print(f"  [상하한가] baseline 실패: {ex}")
-    threading.Thread(target=limits_loop, args=(lim_seen,), daemon=True).start()   # 5초 고속 갱신 스레드
-    print(f"  [상하한가] 전용 루프 시작 ({LIMITS_POLL_SECONDS}초 주기)")
+        print(f"  [상하한가·시장조치] baseline 실패: {ex}")
+    threading.Thread(target=limits_loop, args=(lim_seen, ac_seen), daemon=True).start()   # 5초 고속 갱신 스레드
+    print(f"  [상하한가·시장조치] 전용 루프 시작 ({LIMITS_POLL_SECONDS}초 주기)")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)
