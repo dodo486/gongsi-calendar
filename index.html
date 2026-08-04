@@ -78,8 +78,9 @@
   .fc-daygrid-event{cursor:pointer;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .fc-event.mk-KOSPI{background:var(--kospi);border-color:var(--kospi)}
   .fc-event.mk-KOSDAQ{background:var(--kosdaq);border-color:var(--kosdaq);color:#1a1200}
-  .fc-event.dv-buy{background:var(--accent);border-color:var(--accent);color:#04240f;font-weight:600}
-  .fc-event.dv-ex{background:var(--exp);border-color:var(--exp);font-weight:600}
+  /* 배당 — 권리락(T-1) 진빨강 / 매수일(T-2) 연빨강 */
+  .fc-event.dv-ex{background:#dc2626;border-color:#dc2626;color:#fff;font-weight:600}
+  .fc-event.dv-buy{background:#fca5a5;border-color:#fca5a5;color:#3a0a0a;font-weight:600}
   .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
   /* 무상증자 — 권리락(T-1) 보라 / 권리부매수(T-2) 연보라 */
   .fc-event.cap-bonus-ex{background:#a855f7;border-color:#a855f7;font-weight:600}
@@ -276,11 +277,11 @@ function discEvents(list){
 function divEvents(list){
   const out = [];
   list.forEach((e,i)=>{
-    const title = `${e.corp} (${e.per_share?won(e.per_share)+"원":"미정"})`;
+    const amt = e.per_share?` (${won(e.per_share)}원)`:"";
     const props = {...e, kind:"div"};
-    if(dm.buy) out.push({id:"vb"+i, title, start:e.confirm_date||e.record_date,
+    if(dm.buy) out.push({id:"vb"+i, title:`[배당매수일] ${e.corp}${amt}`, start:e.confirm_date||e.record_date,
                          allDay:true, classNames:["dv-buy"], extendedProps:props});
-    if(dm.ex)  out.push({id:"vx"+i, title, start:e.ex_date||e.record_date,
+    if(dm.ex)  out.push({id:"vx"+i, title:`[배당권리락] ${e.corp}${amt}`, start:e.ex_date||e.record_date,
                          allDay:true, classNames:["dv-ex"], extendedProps:props});
   });
   return out;
@@ -292,14 +293,13 @@ function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준
   CAP.filter(e => filters[e.market] && (!q || `${e.corp}`.toLowerCase().includes(q)))
     .forEach((e,i)=>{
       const bonus = e.type==="무상증자";
-      const tag = bonus ? "🆓 무상" : "💰 유상";
-      const title = `${tag} ${e.corp}`;
+      const pre = bonus ? "무상" : "유상";
       const props = {...e, kind:"cap"};
       if(dm.buy && (e.buy_date||e.record_date))
-        out.push({id:"cb"+i, title, start:e.buy_date||e.record_date, allDay:true,
+        out.push({id:"cb"+i, title:`[${pre}매수일] ${e.corp}`, start:e.buy_date||e.record_date, allDay:true,
                   classNames:[bonus?"cap-bonus-buy":"cap-rights-buy"], extendedProps:props});
       if(dm.ex && (e.ex_date||e.record_date))
-        out.push({id:"cx"+i, title, start:e.ex_date||e.record_date, allDay:true,
+        out.push({id:"cx"+i, title:`[${pre}권리락] ${e.corp}`, start:e.ex_date||e.record_date, allDay:true,
                   classNames:[bonus?"cap-bonus-ex":"cap-rights-ex"], extendedProps:props});
     });
   return out;
