@@ -134,7 +134,7 @@
   .li .mk.KOSPI200{background:rgba(59,130,246,.2);color:#93c5fd}
   .li .mk.KOSDAQ150{background:rgba(245,158,11,.2);color:#fcd34d}
   .li .mk.IDX{background:rgba(168,85,247,.2);color:#d8b4fe}
-  .li .dir{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;flex:none;min-width:56px;text-align:center}
+  .li .dir{font-size:14px;font-weight:800;padding:3px 10px;border-radius:6px;flex:none;min-width:88px;text-align:center}
   .li.up .dir{background:rgba(239,68,68,.18);color:#fca5a5}
   .li.down .dir{background:rgba(59,130,246,.18);color:#93c5fd}
   .li .dir.s3{background:#f59e0b;color:#1a1200}   /* 3단계 강조(주황) */
@@ -468,7 +468,7 @@ function renderLimits(){
     h += `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}">
       <span class="kb ${idx?"idx":"stk"}">${idx?"지수선물":"주식선물"}</span>
       <span class="t">${esc(e.time)}</span>
-      <span class="dir${(e.stage||0)>=3?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계</span>
+      <span class="dir${(e.stage||0)>=3?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계 ${up?"(상)":"(하)"}</span>
       <span class="nm">${esc(e.name)}</span>
       ${idx?"":`<span class="mk ${e.market}">${esc(e.market)}</span>`}
       ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
