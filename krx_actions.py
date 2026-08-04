@@ -8,7 +8,7 @@
   python krx_actions.py 2026-08-04 # 특정일자
 """
 import json, os, sys, re, datetime, urllib.request, urllib.parse
-from fetch import DATA_DIR, save_json, build_ssl_context, TLS_MODE
+from fetch import DATA_DIR, save_json, build_ssl_context, TLS_MODE, load_watchlist
 
 KIND_URL = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
 HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
@@ -62,8 +62,17 @@ def _fetch(mt, sel_date):
     with urllib.request.urlopen(req, timeout=15, context=_CTX) as r:
         return r.read().decode("utf-8", "replace")
 
+def _watch_names():
+    """감시대상(코스피200·코스닥150) 종목명 집합 — 공백 제거해 매칭 안정화."""
+    w = load_watchlist() or {}
+    return {re.sub(r"\s+", "", v.get("name", "")) for v in w.values() if v.get("name")}
+
+# 시장 전체 조치(특정 종목 아님) — 감시대상 필터와 무관하게 항상 알림
+_MARKET_WIDE = ("사이드카", "서킷브레이커")
+
 def collect(sel_date=None):
     d = sel_date or datetime.date.today().strftime("%Y-%m-%d")
+    names = _watch_names()
     events = []
     for mt, market in (("1", "KOSPI"), ("2", "KOSDAQ")):
         try:
@@ -77,13 +86,18 @@ def collect(sel_date=None):
             submitter = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", tds[3])).strip()
             if "시장본부" not in submitter and "거래소" not in submitter:
                 continue   # 시장본부/거래소 발신만 = 시장조치 (개별사 공시 제외)
-            m_title = re.search(r"title='([^']+)'", row)
+            m_corp = re.search(r"title='([^']+)'", tds[1])   # 회사명 (종목-특정 조치일 때만 존재)
+            corp = m_corp.group(1).strip() if m_corp else ""
+            m_title = re.search(r"title='([^']+)'", tds[2])  # 공시 제목 (2번째 셀 = 제목 링크)
             title = (m_title.group(1) if m_title else re.sub(r"<[^>]+>", " ", tds[2])).strip()
-            m_time = re.search(r'([0-9]{1,2}:[0-9]{2})', tds[0])
-            tm = m_time.group(1) if m_time else ""
             kind = _classify(title)
             if kind == "시장안내":
                 continue   # 기타시장안내(NXT 등 루틴 안내)는 제외
+            # 코스피200·코스닥150 종목만 — 사이드카·서킷브레이커(시장 전체 조치)는 예외로 항상 유지
+            if kind not in _MARKET_WIDE and (not corp or re.sub(r"\s+", "", corp) not in names):
+                continue
+            m_time = re.search(r'([0-9]{1,2}:[0-9]{2})', tds[0])
+            tm = m_time.group(1) if m_time else ""
             action = _action(title)
             m_acpt = re.search(r"openDisclsViewer\('(\d+)'", row)
             rno = m_acpt.group(1) if m_acpt else f"{d.replace('-','')}{market}{tm}{title[:16]}"
@@ -91,7 +105,8 @@ def collect(sel_date=None):
                 "time": tm, "market": market, "kind": kind,
                 "direction": "매수" if "매수" in title else ("매도" if "매도" in title else ""),
                 "action": action, "until": _until(kind, action, tm),
-                "title": title, "submitter": submitter,
+                "corp": corp,
+                "title": (f"{corp} {title}" if corp else title), "submitter": submitter,
                 "rcept_no": rno,
                 "url": VIEWER.format(m_acpt.group(1)) if m_acpt else "https://kind.krx.co.kr",
             })
