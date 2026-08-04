@@ -170,20 +170,12 @@
   </div>
   <span class="meta" id="meta">불러오는 중…</span>
   <div class="controls">
-    <span class="lmodes" id="lmodes">
-      <span class="lchip on" data-lim="지수선물">지수선물</span>
-      <span class="lchip on" data-lim="주식선물">주식선물</span>
-      <span class="lchip up on" data-lim="상승">▲상한</span>
-      <span class="lchip down on" data-lim="하락">▼하한</span>
-      <span class="lchip s3" data-lim="onlyS3">3단계만</span>
-    </span>
     <input type="search" id="q" placeholder="회사명 검색">
     <span class="chip kospi on" data-market="KOSPI">KOSPI</span>
     <span class="chip kosdaq on" data-market="KOSDAQ">KOSDAQ</span>
   </div>
 </header>
 <div class="layout">
-  <div id="actionsView" style="display:none"></div>
   <div id="limitsView" style="display:none"></div>
   <div id="earnView" style="display:none">
     <div class="earn-split">
@@ -437,37 +429,11 @@ function showDetail(e){
 const actClass = k => (["사이드카","서킷브레이커","거래정지"].includes(k) ? "danger"
                      : k==="거래재개" ? "ok"
                      : ["투자경고","투자위험","투자주의","단기과열","공매도과열"].includes(k) ? "warn" : "info");
-async function loadActions(){
+async function loadActions(){   // KRX 시장조치 데이터만 로드(렌더는 renderLimits 가 상단 구획으로 함께 처리)
   try{
     const d = await (await fetch("data/krx_actions.json?_="+Date.now())).json();
     ACT = d.events||[];
   }catch(_){ ACT = []; }
-  renderActions();
-}
-function renderActions(){
-  const box = document.getElementById("actionsView");
-  const q = filters.q.trim().toLowerCase();
-  const list = ACT.filter(e=>{
-    if(filters[e.market]===false) return false;
-    if(q && !(`${e.title}${e.kind}`.toLowerCase().includes(q))) return false;
-    return true;
-  });
-  if(MODE!=="board" || !list.length){ box.style.display="none"; box.innerHTML=""; return; }
-  box.style.display = "block";
-  let h = `<div class="limhd">🏛️ KRX 시장조치 (${list.length}) <span style="font-weight:400;color:var(--muted);font-size:12px">· 사이드카·서킷·거래정지/재개·투자경고 등 · 클릭 → KRX 원문</span></div>`;
-  list.forEach(e=>{
-    const dir = e.direction==="매수" ? " ▲매수" : (e.direction==="매도" ? " ▼매도" : "");
-    const hot = actHot(e);   // 발동~해제예정 사이면 깜빡임
-    h += `<div class="li${hot?" hot":""}" data-url="${esc(e.url)}">
-      <span class="t">${esc(e.time)}</span>
-      <span class="ak ${actClass(e.kind)}">${esc(e.kind)}${e.action?(" "+esc(e.action)):""}</span>
-      <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
-      <span class="etitle">${esc(e.title)}${dir}</span>
-      ${e.until?`<span class="et">(해제예정 ${esc(e.until)})</span>`:""}
-    </div>`;
-  });
-  box.innerHTML = h;
-  bindOpen(box);
 }
 function actHot(e){   // 시장조치 '지금 발동중' = 발동시각 ~ 해제예정시각 사이 (선물 가격제한폭 limHot과 동일 방식)
   if(!e.until) return false;
@@ -504,18 +470,29 @@ function limHot(e){   // '지금 걸림' = 도달시각 ~ 확대예정시각 사
 }
 function renderLimits(){
   const q = filters.q.trim().toLowerCase();
-  const list = LIM.filter(e=>{
-    if(!limF[e.kind]) return false;
-    if(!limF[e.direction]) return false;
-    if(limF.onlyS3 && (e.stage||0) < 3) return false;
-    if(q && !(e.name||"").toLowerCase().includes(q)) return false;
-    return true;
-  });
+  const list = LIM.filter(e=> !q || (e.name||"").toLowerCase().includes(q));
   const upN = list.filter(e=>e.direction==="상승").length;
   const downN = list.filter(e=>e.direction==="하락").length;
   const box = document.getElementById("limitsView");
-  let h = `<div class="limhd">🚨 오늘 선물 가격제한폭 도달 (${list.length})</div>
-    <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 클릭 → KRX 공시 원문 · 30초 자동갱신</div>`;
+  // 상단 구획: KRX 시장조치(사이드카·서킷·거래정지 등) — 가격제한폭과 같은 개념이라 한 뷰에서 관리
+  const acts = ACT.filter(e=> !q || `${e.title}${e.kind}`.toLowerCase().includes(q));
+  const actRow = e=>{
+    const dir = e.direction==="매수" ? " ▲매수" : (e.direction==="매도" ? " ▼매도" : "");
+    const hot = actHot(e);
+    return `<div class="li${hot?" hot":""}" data-url="${esc(e.url)}">
+      <span class="t">${esc(e.time)}</span>
+      <span class="ak ${actClass(e.kind)}">${esc(e.kind)}${e.action?(" "+esc(e.action)):""}</span>
+      <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
+      <span class="etitle">${esc(e.title)}${dir}</span>
+      ${e.until?`<span class="et">(해제예정 ${esc(e.until)})</span>`:""}
+    </div>`;
+  };
+  let h = "";
+  if(acts.length){
+    h += `<div class="limsec danger">🏛️ KRX 시장조치 (${acts.length})</div>` + acts.map(actRow).join("");
+  }
+  h += `<div class="limhd"${acts.length?' style="margin-top:14px"':''}>🚨 가격제한폭 도달 (${list.length})</div>
+    <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 클릭 → KRX 원문 · 5초 자동갱신</div>`;
   const row = e=>{
     const up = e.direction==="상승";
     const idx = e.kind==="지수선물";
@@ -851,9 +828,7 @@ function applyModeView(){   // 현재 MODE에 맞춰 탭/컨트롤/상단밴드 
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.mode===MODE));
   document.getElementById("sideTitle").textContent = isBoard ? "오늘의 배당공시" : "공시 상세";
   document.getElementById("calBar").style.display = isBoard ? "flex" : "none";   // 배당 체크박스 바(캘린더 위)
-  document.getElementById("lmodes").classList.toggle("show", isBoard);   // 선물/상한하한 칩
   document.getElementById("limitsView").style.display = isBoard ? "block" : "none";
-  if(!isBoard) document.getElementById("actionsView").style.display = "none"; else renderActions();
   document.getElementById("earnView").style.display = isBoard ? "block" : "none";   // 중간 실적 그리드  // 상단 상하한가 밴드
   if(isBoard && earnCal) setTimeout(()=>earnCal.updateSize(), 0);   // 숨김→표시 시 캘린더 크기 재계산
 }
@@ -909,7 +884,7 @@ async function boot(){
   // SSE: 서버가 data/ 변경을 감지하면 즉시 push → 새로고침 없이 바로 반영
   connectSSE();
   setInterval(()=>loadData().catch(console.error), 30000);   // SSE 실패 대비 폴백(30초)
-  setInterval(()=>{ if(MODE==="board"){ renderLimits(); renderActions(); } }, 5000);   // 깜빡이(지금 걸림/발동중) 5초마다 갱신
+  setInterval(()=>{ if(MODE==="board") renderLimits(); }, 5000);   // 깜빡이(지금 걸림/발동중) 5초마다 갱신
 }
 
 let _es = null;
@@ -931,19 +906,13 @@ document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>swi
 document.getElementById("q").addEventListener("input",e=>{
   filters.q=e.target.value;
   applyFilters();
-  if(MODE==="board"){ renderActions(); renderLimits(); renderEarnCal(); }
+  if(MODE==="board"){ renderLimits(); renderEarnCal(); }
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
     c.classList.toggle("on",filters[mk]); applyFilters();
-    if(MODE==="board"){ renderActions(); renderEarnCal(); }
-  });
-});
-document.querySelectorAll(".lchip").forEach(c=>{
-  c.addEventListener("click",()=>{
-    const k=c.dataset.lim; limF[k]=!limF[k];
-    c.classList.toggle("on",limF[k]); renderLimits();
+    if(MODE==="board"){ renderEarnCal(); }
   });
 });
 document.getElementById("chkBuy").addEventListener("change",e=>{ dm.buy=e.target.checked; applyFilters(); });
