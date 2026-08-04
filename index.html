@@ -63,12 +63,16 @@
   .fc .fc-toolbar-title{font-size:16px}
   /* 휴장일(공휴일) — 날짜 글자 빨간색 (오늘 동그라미보다 먼저 선언해 오늘이 우선) */
   .fc .holiday .fc-daygrid-day-number{color:#ef4444;font-weight:700}
-  /* 오늘 날짜 강조 — 실적·배당 두 캘린더 공통(눈에 띄는 노란 동그라미) */
+  /* 오늘 날짜 강조 — 초록 동그라미 (만기일 노란 별표와 헷갈리지 않게) */
   .fc .fc-day-today .fc-daygrid-day-number{
-    background:#facc15;color:#1a1200;font-weight:800;
+    background:#22c55e;color:#04240f;font-weight:800;
     min-width:26px;height:26px;padding:0 3px;margin:3px;
     display:inline-flex;align-items:center;justify-content:center;
-    border-radius:999px;box-shadow:0 0 0 3px rgba(250,204,21,.35);}
+    border-radius:999px;box-shadow:0 0 0 3px rgba(34,197,94,.35);}
+  /* 만기일(선물·옵션) — 날짜 옆 노란 별표 */
+  .fc .expday .fc-daygrid-day-number::after{
+    content:"★";color:#facc15;margin-left:2px;font-size:13px;
+    text-shadow:0 0 2px rgba(0,0,0,.5);vertical-align:top;}
   .fc .fc-button{background:var(--panel);border-color:var(--line);color:var(--text);text-transform:none}
   .fc .fc-button-primary:not(:disabled).fc-button-active{background:var(--accent);border-color:var(--accent);color:#04240f}
   .fc-daygrid-event{cursor:pointer;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -77,6 +81,12 @@
   .fc-event.dv-buy{background:var(--accent);border-color:var(--accent);color:#04240f;font-weight:600}
   .fc-event.dv-ex{background:var(--exp);border-color:var(--exp);font-weight:600}
   .fc-event.exp{background:var(--exp);border-color:var(--exp);font-weight:700}
+  /* 무상증자 — 권리락(T-1) 보라 / 권리부매수(T-2) 연보라 */
+  .fc-event.cap-bonus-ex{background:#a855f7;border-color:#a855f7;font-weight:600}
+  .fc-event.cap-bonus-buy{background:#c4b5fd;border-color:#c4b5fd;color:#1a1030;font-weight:600}
+  /* 유상증자 — 권리락(T-1) 파랑 / 권리부매수(T-2) 하늘 */
+  .fc-event.cap-rights-ex{background:#3b82f6;border-color:#3b82f6;font-weight:600}
+  .fc-event.cap-rights-buy{background:#7dd3fc;border-color:#7dd3fc;color:#04222a;font-weight:600}
   .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
   .fc-event.ern{background:#06b6d4;border-color:#06b6d4;color:#00222a;font-weight:600}   /* 예상 실적발표(청록) */
   .fc-event.eact{background:var(--div);border-color:var(--div);font-weight:600}          /* 실제 실적공시(보라) */
@@ -217,10 +227,11 @@
 </div>
 <script>
 let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'disc'(공시)
-let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [], ACT = [];
+let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [], ACT = [], CAP = [];
 let earnCal;   // 예상 실적발표 전용 캘린더 (실적 그리드 오른쪽)
 let LIMGEN = "";   // 상하한가(limits.json) 생성 시각 — 상단 '갱신 시각'에 표시(5초마다 갱신)
 let HOL = new Set();   // 휴장일(공휴일) ISO 날짜 — 캘린더에 빨간 글자로 표시
+let EXPD = new Set();  // 만기일 ISO 날짜 — 캘린더 날짜에 노란 별표
 const dISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 let RES = {companies:{}, events:[]};   // 리서치: 선진화 판별 + 예상배당(research.json)
 let calendar;
@@ -275,12 +286,23 @@ function divEvents(list){
   return out;
 }
 
-function expEvents(){
-  return EXP.map((e,i)=>({
-    id:"x"+i, title:(e.type==="선·옵 동시만기"?"🔮 ":"⚡ ")+e.type,
-    start:e.date, allDay:true, classNames:["exp"], editable:false,
-    extendedProps:{...e, kind:"exp"},
-  }));
+function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준 권리락(T-1)/권리부매수(T-2)
+  const q = filters.q.trim().toLowerCase();
+  const out = [];
+  CAP.filter(e => filters[e.market] && (!q || `${e.corp}`.toLowerCase().includes(q)))
+    .forEach((e,i)=>{
+      const bonus = e.type==="무상증자";
+      const tag = bonus ? "🆓 무상" : "💰 유상";
+      const title = `${tag} ${e.corp}`;
+      const props = {...e, kind:"cap"};
+      if(dm.buy && (e.buy_date||e.record_date))
+        out.push({id:"cb"+i, title, start:e.buy_date||e.record_date, allDay:true,
+                  classNames:[bonus?"cap-bonus-buy":"cap-rights-buy"], extendedProps:props});
+      if(dm.ex && (e.ex_date||e.record_date))
+        out.push({id:"cx"+i, title, start:e.ex_date||e.record_date, allDay:true,
+                  classNames:[bonus?"cap-bonus-ex":"cap-rights-ex"], extendedProps:props});
+    });
+  return out;
 }
 
 function estEvents(){   // 예상배당(리서치 추정) — 배당 탭 전용, 노란색 (체크된 날짜 기준 따름)
@@ -311,8 +333,8 @@ function currentFiltered(){
 function applyFilters(){
   const list = currentFiltered();
   calendar.removeAllEvents();
-  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents());
-  calendar.addEventSource(base.concat(expEvents()));   // 만기일은 두 탭 공통 표시
+  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents()).concat(capEvents());
+  calendar.addEventSource(base);   // 만기일은 날짜 별표로 표시(이벤트 알약 아님)
 }
 
 function whyBlock(e){
@@ -367,7 +389,7 @@ function showErnDetail(e){   // 예상 실적발표 상세 → 실적 그리드 
         return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${cons}</div>`;
       }).join("");
       if(!hascons) h += `<div class="row" style="color:var(--muted)">컨센서스 없음 (애널리스트 미커버 종목)</div>`;
-      boxc.innerHTML = h + `</div>` + buildRefs(f);
+      boxc.innerHTML = h + `</div>` + reactRefs(f, null);
     })();
   }
 }
@@ -402,6 +424,27 @@ function showDetail(e){
         <div class="title">${esc(e.label||"")}</div>
         <div class="row">📅 만기일 <b style="color:var(--text)">${esc(e.date)}</b></div>
         ${e.adjusted?'<div class="row">※ 원래 둘째 목요일이 휴장이라 직전 영업일로 조정됨</div>':''}
+      </div>`;
+    return;
+  }
+  if(e.kind==="cap"){
+    divListMode = false; box.className="";
+    const bonus = e.type==="무상증자";
+    const col = bonus ? "#a855f7" : "#3b82f6";
+    box.innerHTML = `
+      <div class="detail">
+        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        <div class="corp">${bonus?"🆓":"💰"} ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:${col}">${esc(e.type)}</b>${e.ratio?` · 배정비율 ${esc(e.ratio)}`:""}</div>
+        <div class="row">🗓️ 권리부매수일(T-2) <b style="color:${col}">${esc(e.buy_date||"-")}</b> <span style="color:var(--muted)">— 이날까지 사야 신주배정 권리</span></div>
+        <div class="row">🚫 권리락일(T-1) <b style="color:${col}">${esc(e.ex_date||"-")}</b> <span style="color:var(--muted)">— 이날부터 권리락</span></div>
+        <div class="row">📌 신주배정기준일 ${esc(e.record_date)}</div>
+        <div class="why"><div class="wh">📍 날짜 안내</div>
+          <div class="row">📌 <b>신주배정기준일(${esc(e.record_date)})</b> — 이날 주주명부에 있어야 ${bonus?"무상":"유상"}신주를 배정받습니다.</div>
+          <div class="row">🗓️ <b>권리부매수일(${esc(e.buy_date||"-")})</b> — 기준일 2영업일 전(T-2). T+2 결제라 이날까지 매수해야 권리를 받습니다.</div>
+          <div class="row">🚫 <b>권리락일(${esc(e.ex_date||"-")})</b> — 기준일 1영업일 전(T-1). 이날부터 신주 권리가 없어 통상 권리락으로 주가가 조정됩니다.</div>
+        </div>
+        <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
       </div>`;
     return;
   }
@@ -816,6 +859,7 @@ async function loadData(){
   if(MODE==="board"){
     const d = await (await fetch("data/dividends.json?_="+Date.now())).json();
     DIV = d.events||[];
+    try{ const cp = await (await fetch("data/capital.json?_="+Date.now())).json(); CAP = cp.events||[]; }catch(_){ CAP = []; }
     try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
     await loadActions();    // 최상단 KRX 시장조치(사이드카·서킷 등)
     await loadLimits();     // 상단 상하한가 밴드
@@ -862,13 +906,14 @@ function switchMode(mode){
 async function boot(){
   // 만기일·휴장일 먼저 로드 — 캘린더 render 전에 HOL 을 채워야 휴일 빨간색이 첫 렌더부터 적용됨
   try{ const ex = await (await fetch("data/expiries.json?_="+Date.now())).json();
-       EXP = ex.events||[]; HOL = new Set(ex.holidays||[]); }catch(_){ EXP=[]; }
+       EXP = ex.events||[]; HOL = new Set(ex.holidays||[]);
+       EXPD = new Set(EXP.map(e=>e.date)); }catch(_){ EXP=[]; }
   calendar = new FullCalendar.Calendar(document.getElementById("calendar"),{
     initialView:"dayGridMonth", locale:"ko", height:"100%", firstDay:0, dayMaxEvents:6,
     showNonCurrentDates:false, fixedWeekCount:false,   // 전월·다음월 날짜 숨김 + 여분 주 제거
     headerToolbar:{left:"prev,next today",center:"title",right:"dayGridMonth,listWeek"},
     buttonText:{today:"오늘",month:"월",list:"목록"},
-    dayCellClassNames:(a)=> HOL.has(dISO(a.date)) ? ["holiday"] : [],   // 휴장일 → 빨간 글자
+    dayCellClassNames:(a)=>{ const iso=dISO(a.date), c=[]; if(HOL.has(iso))c.push("holiday"); if(EXPD.has(iso))c.push("expday"); return c; },   // 휴장일 빨간글자·만기일 별표
     eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
   });
   calendar.render();
@@ -877,7 +922,7 @@ async function boot(){
     showNonCurrentDates:false, fixedWeekCount:false,
     headerToolbar:{left:"prev,next today",center:"title",right:""},
     buttonText:{today:"오늘"},
-    dayCellClassNames:(a)=> HOL.has(dISO(a.date)) ? ["holiday"] : [],   // 휴장일 → 빨간 글자
+    dayCellClassNames:(a)=>{ const iso=dISO(a.date), c=[]; if(HOL.has(iso))c.push("holiday"); if(EXPD.has(iso))c.push("expday"); return c; },   // 휴장일 빨간글자·만기일 별표
     eventClick:(info)=>{   // 실적 상세는 실적 그리드 오른쪽 패널에 (배당 사이드와 분리)
       info.jsEvent.preventDefault();
       const p = info.event.extendedProps;

@@ -18,6 +18,7 @@ import kind_limits
 import earnings
 import earn_sched
 import krx_actions
+import capital
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
@@ -102,6 +103,13 @@ def refresh_research():
     def work():
         print("  [리서치] 선진화·예상배당 갱신 시작..."); research.build(); print("  [리서치] 갱신 완료")
     _run_guarded(_res_lock, work, "리서치")
+
+_cap_lock = threading.Lock()
+def refresh_capital():
+    """유·무상증자 데이터(capital.json) 재생성 — 원문 파싱이라 무거워 별도 스레드/중복방지(캐시로 신규분만 다운로드)"""
+    def work():
+        print("  [증자] 유·무상증자 갱신 시작..."); capital.main(88); print("  [증자] 갱신 완료")
+    _run_guarded(_cap_lock, work, "증자")
 
 _sched_lock = threading.Lock()
 def refresh_earn_sched():
@@ -260,7 +268,7 @@ def poll_once(seen, alert=True):
     watch = load_watchlist()
     events = collect_events(bgn, end, watch=watch, verbose=False)
     new = [e for e in events if e["rcept_no"] not in seen]
-    new_cal, new_div, new_earn, new_sched = [], [], [], []
+    new_cal, new_div, new_earn, new_sched, new_cap = [], [], [], [], []
     for e in new:
         if alert:
             print(f"  🔔 신규: [{e['category']}] {e['corp']} - {e['title']}")
@@ -274,6 +282,8 @@ def poll_once(seen, alert=True):
             new_sched.append(e)
         else:
             new_cal.append(e)                 # 그 외 → 공시 캘린더
+        if e["category"] in ("유상증자", "무상증자"):   # 증자는 공시 캘린더 + 배당 캘린더 T-1/T-2 마커 겸용
+            new_cap.append(e)
     if new:
         save_seen(seen)
     if new_cal:
@@ -286,6 +296,13 @@ def poll_once(seen, alert=True):
         with _pending_lock:
             _pending_div.extend(new_div)
     flush_pending_div()
+    if new_cap:
+        try:
+            if capital.upsert(new_cap):
+                print(f"  [증자] 신규 {len(new_cap)}건 반영")
+        except Exception as ex:
+            print(f"  [증자] 증분 반영 실패({ex}) → 전체 갱신")
+            refresh_capital()
     if new_earn:
         refresh_earnings(full=True)           # 신규 실적 → 재수집(등락률 포함)
     if new_sched:
@@ -314,6 +331,7 @@ def main():
     except Exception as ex:
         print(f"  [만기일] 생성 실패: {ex}")
     refresh_dividends()   # 상주 시작 시 배당 데이터 1회 갱신
+    refresh_capital()     # 유·무상증자 데이터 1회 갱신 (신주배정기준일 T-1/T-2)
     refresh_research()    # 선진화 판별 + 예상배당 갱신 (캐시 기반이라 신규 문서만 파싱)
     refresh_earnings(full=True)   # 실적 공시 + 현재 등락률 1회 재수집
     refresh_earn_sched()          # 예상 실적발표 일정 1회 재수집
@@ -339,9 +357,10 @@ def main():
             if time.time() - last_heal >= SELF_HEAL_SECONDS:
                 last_heal = time.time()
                 refresh_dividends()
+                refresh_capital()
                 refresh_earnings(full=True)
                 refresh_earn_sched()
-                print("  [자가치유] 배당·실적·실적예고 전체 재생성 트리거")
+                print("  [자가치유] 배당·증자·실적·실적예고 전체 재생성 트리거")
             ts = datetime.datetime.now().strftime("%H:%M:%S")
             print(f"[{ts}] 확인 완료 (공시 신규 {n} · seen {len(seen)})")
         except Exception as ex:
