@@ -466,9 +466,9 @@ function renderLimits(){
     const hot = limHot(e);
     h += `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}">
       <span class="dir">${up?"▲ 상한가":"▼ 하한가"}</span>
+      <span class="stg${(e.stage||0)>=3?" s3":""}">${esc(String(e.stage||"?"))}단계</span>
       <span class="kb ${idx?"idx":"stk"}">${idx?"지수선물":"주식선물"}</span>
       <span class="t">${esc(e.time)}</span>
-      <span class="stg${(e.stage||0)>=3?" s3":""}">${esc(String(e.stage||"?"))}단계</span>
       <span class="nm">${esc(e.name)}</span>
       ${idx?"":`<span class="mk ${e.market}">${esc(e.market)}</span>`}
       ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
