@@ -457,15 +457,24 @@ function renderActions(){
   let h = `<div class="limhd">🏛️ KRX 시장조치 (${list.length}) <span style="font-weight:400;color:var(--muted);font-size:12px">· 사이드카·서킷·거래정지/재개·투자경고 등 · 클릭 → KRX 원문</span></div>`;
   list.forEach(e=>{
     const dir = e.direction==="매수" ? " ▲매수" : (e.direction==="매도" ? " ▼매도" : "");
-    h += `<div class="li" data-url="${esc(e.url)}">
+    const hot = actHot(e);   // 발동~해제예정 사이면 깜빡임
+    h += `<div class="li${hot?" hot":""}" data-url="${esc(e.url)}">
       <span class="t">${esc(e.time)}</span>
       <span class="ak ${actClass(e.kind)}">${esc(e.kind)}${e.action?(" "+esc(e.action)):""}</span>
       <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
       <span class="etitle">${esc(e.title)}${dir}</span>
+      ${e.until?`<span class="et">(해제예정 ${esc(e.until)})</span>`:""}
     </div>`;
   });
   box.innerHTML = h;
   bindOpen(box);
+}
+function actHot(e){   // 시장조치 '지금 발동중' = 발동시각 ~ 해제예정시각 사이 (선물 가격제한폭 limHot과 동일 방식)
+  if(!e.until) return false;
+  const s = limTime(e.time), en = limTime(e.until);
+  if(s===null || en===null) return false;
+  const now = Date.now();
+  return now >= s-60000 && now < en;
 }
 async function loadLimits(){
   try{
@@ -900,7 +909,7 @@ async function boot(){
   // SSE: 서버가 data/ 변경을 감지하면 즉시 push → 새로고침 없이 바로 반영
   connectSSE();
   setInterval(()=>loadData().catch(console.error), 30000);   // SSE 실패 대비 폴백(30초)
-  setInterval(()=>{ if(MODE==="board") renderLimits(); }, 5000);   // 깜빡이(지금 걸림) 상태 5초마다 갱신
+  setInterval(()=>{ if(MODE==="board"){ renderLimits(); renderActions(); } }, 5000);   // 깜빡이(지금 걸림/발동중) 5초마다 갱신
 }
 
 let _es = null;

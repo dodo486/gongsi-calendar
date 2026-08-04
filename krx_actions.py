@@ -37,6 +37,18 @@ def _action(t):
             return k
     return ""
 
+DUR_MIN = {"사이드카": 5, "서킷브레이커": 20}   # 발동 후 자동 해제까지(분) — 선물 가격제한폭 확대예정처럼 표시
+def _until(kind, action, tm):
+    """발동시각 + 지속시간 → 해제예정 시각(HH:MM). 자동해제 없는 종류/해제공시면 빈 문자열."""
+    if action != "발동" or kind not in DUR_MIN or not tm:
+        return ""
+    try:
+        h, m = map(int, tm.split(":"))
+        t = h * 60 + m + DUR_MIN[kind]
+        return f"{t // 60 % 24:02d}:{t % 60:02d}"
+    except Exception:
+        return ""
+
 def _fetch(mt, sel_date):
     global _CTX
     if _CTX is None:
@@ -69,12 +81,17 @@ def collect(sel_date=None):
             title = (m_title.group(1) if m_title else re.sub(r"<[^>]+>", " ", tds[2])).strip()
             m_time = re.search(r'([0-9]{1,2}:[0-9]{2})', tds[0])
             tm = m_time.group(1) if m_time else ""
+            kind = _classify(title)
+            if kind == "시장안내":
+                continue   # 기타시장안내(NXT 등 루틴 안내)는 제외
+            action = _action(title)
             m_acpt = re.search(r"openDisclsViewer\('(\d+)'", row)
             rno = m_acpt.group(1) if m_acpt else f"{d.replace('-','')}{market}{tm}{title[:16]}"
             events.append({
-                "time": tm, "market": market, "kind": _classify(title),
+                "time": tm, "market": market, "kind": kind,
                 "direction": "매수" if "매수" in title else ("매도" if "매도" in title else ""),
-                "action": _action(title), "title": title, "submitter": submitter,
+                "action": action, "until": _until(kind, action, tm),
+                "title": title, "submitter": submitter,
                 "rcept_no": rno,
                 "url": VIEWER.format(m_acpt.group(1)) if m_acpt else "https://kind.krx.co.kr",
             })
