@@ -149,6 +149,9 @@
   .limsec:first-of-type{margin-top:6px}
   .limsec.idx{color:#d8b4fe}   /* 지수선물 보라 */
   .limsec.stk{color:#cbd5e1}   /* 주식선물 회색 */
+  .lim-split{display:flex;gap:16px;align-items:flex-start}
+  .lim-col{flex:1;min-width:0}
+  .lim-col + .lim-col{border-left:1px solid var(--line);padding-left:16px}
 </style>
 </head>
 <body>
@@ -464,7 +467,6 @@ function renderLimits(){
   const box = document.getElementById("limitsView");
   let h = `<div class="limhd">🚨 오늘 선물 가격제한폭 도달 (${list.length})</div>
     <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 클릭 → KRX 공시 원문 · 30초 자동갱신</div>`;
-  if(!list.length) h += `<div class="empty">해당하는 공시가 없습니다. (장중 선물이 가격제한폭에 도달하면 실시간으로 표시됩니다)</div>`;
   const row = e=>{
     const up = e.direction==="상승";
     const idx = e.kind==="지수선물";
@@ -478,11 +480,11 @@ function renderLimits(){
       ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
     </div>`;
   };
-  const sec = (title, cls, items)=> items.length
-    ? `<div class="limsec ${cls}">${title} (${items.length})</div>` + items.map(row).join("")
-    : "";
-  h += sec("🔷 지수선물", "idx", list.filter(e=>e.kind==="지수선물"))
-     + sec("🔶 주식선물", "stk", list.filter(e=>e.kind==="주식선물"));
+  const col = (title, cls, items)=> `<div class="lim-col">
+      <div class="limsec ${cls}">${title} (${items.length})</div>
+      ${items.length ? items.map(row).join("") : `<div class="empty">해당 없음</div>`}
+    </div>`;
+  h += `<div class="lim-split">${col("🔶 주식선물","stk",list.filter(e=>e.kind==="주식선물"))}${col("🔷 지수선물","idx",list.filter(e=>e.kind==="지수선물"))}</div>`;
   box.innerHTML = h;
   bindOpen(box);
 }
