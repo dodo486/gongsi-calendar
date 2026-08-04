@@ -1,7 +1,35 @@
 {
- "generated_at": "2026-08-04 07:45:56",
- "count": 146,
+ "generated_at": "2026-08-04 09:47:24",
+ "count": 148,
  "events": [
+  {
+   "corp": "대우건설",
+   "stock": "047040",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260804",
+   "rcept_no": "20260804800072",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800072",
+   "flr": "대우건설",
+   "price": "13,700",
+   "rate": 3.01,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "대우건설",
+   "stock": "047040",
+   "market": "KOSPI",
+   "title": "[기재정정]연결재무제표기준영업실적등에대한전망(공정공시)",
+   "category": "실적",
+   "date": "20260804",
+   "rcept_no": "20260804800070",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800070",
+   "flr": "대우건설",
+   "price": "13,700",
+   "rate": 3.01,
+   "chg_sign": "2"
+  },
   {
    "corp": "에스앤에스텍",
    "stock": "101490",
@@ -31,8 +59,8 @@
    "disc_time": "16:47",
    "pre5": 1.29,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260804"
+   "tick_state": "wait:20260804",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "기아",
@@ -49,8 +77,8 @@
    "disc_time": "16:47",
    "pre5": -1.74,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260804"
+   "tick_state": "wait:20260804",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대제철",
@@ -67,8 +95,8 @@
    "disc_time": "16:47",
    "pre5": -5.88,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260804"
+   "tick_state": "wait:20260804",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대제철",
@@ -85,8 +113,8 @@
    "disc_time": "16:47",
    "pre5": -5.88,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260804"
+   "tick_state": "wait:20260804",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "DL",
@@ -103,8 +131,8 @@
    "disc_time": "16:47",
    "pre5": 6.98,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260804"
+   "tick_state": "wait:20260804",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "S-Oil",
@@ -121,8 +149,8 @@
    "disc_time": "16:47",
    "pre5": -4.4,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260804"
+   "tick_state": "wait:20260804",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "SOOP",
@@ -139,8 +167,8 @@
    "disc_time": "17:43",
    "pre5": -0.52,
    "post5": -12.29,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "에코프로비엠",
@@ -157,8 +185,8 @@
    "disc_time": "17:43",
    "pre5": 7.25,
    "post5": -6.47,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "효성티앤씨",
@@ -175,8 +203,8 @@
    "disc_time": "17:56",
    "pre5": 3.18,
    "post5": 1.95,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "효성중공업",
@@ -193,8 +221,8 @@
    "disc_time": "17:56",
    "pre5": 27.61,
    "post5": 3.23,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "F&F",
@@ -211,8 +239,8 @@
    "disc_time": "17:56",
    "pre5": 2.03,
    "post5": -23.23,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "녹십자",
@@ -229,8 +257,8 @@
    "disc_time": "17:56",
    "pre5": 1.49,
    "post5": -2.24,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD현대",
@@ -247,8 +275,8 @@
    "disc_time": "17:56",
    "pre5": 2.94,
    "post5": -0.5,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD현대",
@@ -265,8 +293,8 @@
    "disc_time": "17:56",
    "pre5": 2.94,
    "post5": -0.5,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "종근당",
@@ -283,8 +311,8 @@
    "disc_time": "17:56",
    "pre5": -0.45,
    "post5": -0.9,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "호텔신라",
@@ -301,8 +329,8 @@
    "disc_time": "17:56",
    "pre5": 1.63,
    "post5": -5.28,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "한온시스템",
@@ -319,8 +347,8 @@
    "disc_time": "17:56",
    "pre5": 1.23,
    "post5": -1.51,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "한화엔진",
@@ -337,8 +365,8 @@
    "disc_time": "17:56",
    "pre5": -0.64,
    "post5": -2.69,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "에스원",
@@ -355,8 +383,8 @@
    "disc_time": "17:56",
    "pre5": -0.84,
    "post5": 0.98,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "풍산",
@@ -373,8 +401,8 @@
    "disc_time": "17:56",
    "pre5": 18.86,
    "post5": -4.63,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대건설",
@@ -391,8 +419,8 @@
    "disc_time": "17:56",
    "pre5": 15.79,
    "post5": 1.06,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "풍산",
@@ -409,8 +437,8 @@
    "disc_time": "17:56",
    "pre5": 18.86,
    "post5": -4.63,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "한화에어로스페이스",
@@ -427,8 +455,8 @@
    "disc_time": "17:56",
    "pre5": 6.01,
    "post5": 0.22,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "LG화학",
@@ -445,8 +473,8 @@
    "disc_time": "17:56",
    "pre5": 5.09,
    "post5": -4.26,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "동원시스템즈",
@@ -463,8 +491,8 @@
    "disc_time": "17:56",
    "pre5": 2.23,
    "post5": 0.49,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "동원시스템즈",
@@ -481,8 +509,8 @@
    "disc_time": "17:56",
    "pre5": 2.23,
    "post5": 0.49,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "팬오션",
@@ -499,8 +527,8 @@
    "disc_time": "17:56",
    "pre5": 10.84,
    "post5": -1.83,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "LG씨엔에스",
@@ -517,8 +545,8 @@
    "disc_time": "17:56",
    "pre5": 7.39,
    "post5": -1.76,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "포스코엠텍",
@@ -545,7 +573,8 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730900131",
    "flr": "한컴",
    "rate": 4.42,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "한컴",
@@ -558,7 +587,8 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730900129",
    "flr": "한컴",
    "rate": 4.42,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "대한유화",
@@ -571,7 +601,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800975",
    "flr": "대한유화",
    "rate": 3.6,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 3.6,
+   "post5": 1.34,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "HS효성첨단소재",
@@ -584,7 +619,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800789",
    "flr": "HS효성첨단소재",
    "rate": 3.52,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 3.52,
+   "post5": 1.9,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "금호타이어",
@@ -597,7 +637,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800788",
    "flr": "금호타이어",
    "rate": 8.57,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 8.57,
+   "post5": 2.47,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "SK아이이테크놀로지",
@@ -610,7 +655,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800548",
    "flr": "SK아이이테크놀로지",
    "rate": 4.31,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 4.31,
+   "post5": 1.15,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "SK이노베이션",
@@ -623,7 +673,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800524",
    "flr": "SK이노베이션",
    "rate": 6.48,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 6.48,
+   "post5": 3.26,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "대한전선",
@@ -636,7 +691,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800516",
    "flr": "대한전선",
    "rate": -6.31,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": -6.31,
+   "post5": 8.17,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "HL만도",
@@ -649,7 +709,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800508",
    "flr": "HL만도",
    "rate": 1.66,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 1.66,
+   "post5": 5.41,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "DL이앤씨",
@@ -662,7 +727,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800486",
    "flr": "DL이앤씨",
    "rate": 3.24,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 3.24,
+   "post5": 4.07,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "POSCO홀딩스",
@@ -675,7 +745,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800414",
    "flr": "POSCO홀딩스",
    "rate": 4.16,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 4.16,
+   "post5": 3.66,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "POSCO홀딩스",
@@ -688,7 +763,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800403",
    "flr": "POSCO홀딩스",
    "rate": 4.16,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 4.16,
+   "post5": 3.66,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "LG전자",
@@ -701,7 +781,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800391",
    "flr": "LG전자",
    "rate": -1.66,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": -1.66,
+   "post5": 6.42,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "롯데정밀화학",
@@ -714,7 +799,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800387",
    "flr": "롯데정밀화학",
    "rate": 6.06,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 6.06,
+   "post5": 2.75,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "아모레퍼시픽홀딩스",
@@ -727,7 +817,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800384",
    "flr": "아모레퍼시픽홀딩스",
    "rate": 5.57,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 5.57,
+   "post5": -0.39,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "유한양행",
@@ -740,7 +835,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800381",
    "flr": "유한양행",
    "rate": 5.26,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 5.26,
+   "post5": 0.14,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "아모레퍼시픽",
@@ -753,7 +853,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800354",
    "flr": "아모레퍼시픽",
    "rate": 9.93,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 9.93,
+   "post5": -2.24,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "삼성SDI",
@@ -766,7 +871,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800336",
    "flr": "삼성SDI",
    "rate": -1.51,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": -1.51,
+   "post5": 6.56,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "삼성전기",
@@ -779,7 +889,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800303",
    "flr": "삼성전기",
    "rate": -14.58,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": -14.58,
+   "post5": 28.33,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "포스코퓨처엠",
@@ -792,7 +907,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800288",
    "flr": "포스코퓨처엠",
    "rate": 6.63,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 6.63,
+   "post5": 3.46,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "포스코퓨처엠",
@@ -805,7 +925,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800286",
    "flr": "포스코퓨처엠",
    "rate": 6.63,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 6.63,
+   "post5": 3.46,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "포스코인터내셔널",
@@ -818,7 +943,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800259",
    "flr": "포스코인터내셔널",
    "rate": 5.25,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 5.25,
+   "post5": 1.76,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "세아베스틸지주",
@@ -831,7 +961,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800231",
    "flr": "세아베스틸지주",
    "rate": 2.74,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 2.74,
+   "post5": 2.51,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "코스모화학",
@@ -844,7 +979,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800222",
    "flr": "코스모화학",
    "rate": 2.96,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 2.96,
+   "post5": 3.25,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "포스코DX",
@@ -857,7 +997,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800214",
    "flr": "포스코DX",
    "rate": -0.75,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": -0.75,
+   "post5": 4.64,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "삼성에스디에스",
@@ -870,7 +1015,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800152",
    "flr": "삼성에스디에스",
    "rate": 0.71,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 0.71,
+   "post5": 6.69,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "LG에너지솔루션",
@@ -883,7 +1033,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800128",
    "flr": "LG에너지솔루션",
    "rate": 6.49,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 6.49,
+   "post5": 2.66,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "삼성전자",
@@ -896,7 +1051,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800103",
    "flr": "삼성전자",
    "rate": -0.72,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": -0.72,
+   "post5": 24.15,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "키움증권",
@@ -909,7 +1069,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800016",
    "flr": "키움증권",
    "rate": 0.78,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "18:17",
+   "pre5": 0.78,
+   "post5": 7.35,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "주성엔지니어링",
@@ -922,7 +1087,12 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729900867",
    "flr": "주성엔지니어링",
    "rate": -9.86,
-   "rate_fixed": true
+   "rate_fixed": true,
+   "disc_time": "17:43",
+   "pre5": -9.86,
+   "post5": -9.99,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "쎄트렉아이",
@@ -1349,7 +1519,9 @@
    "date": "20260727",
    "rcept_no": "20260727800748",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800748",
-   "flr": "지역난방공사"
+   "flr": "지역난방공사",
+   "rate": -0.75,
+   "rate_fixed": true
   },
   {
    "corp": "기업은행",
@@ -1360,7 +1532,9 @@
    "date": "20260727",
    "rcept_no": "20260727800560",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800560",
-   "flr": "기업은행"
+   "flr": "기업은행",
+   "rate": 0.0,
+   "rate_fixed": true
   },
   {
    "corp": "iM금융지주",
@@ -1371,7 +1545,9 @@
    "date": "20260727",
    "rcept_no": "20260727800396",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800396",
-   "flr": "iM금융지주"
+   "flr": "iM금융지주",
+   "rate": -0.88,
+   "rate_fixed": true
   },
   {
    "corp": "iM금융지주",
@@ -1382,7 +1558,9 @@
    "date": "20260727",
    "rcept_no": "20260727800390",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800390",
-   "flr": "iM금융지주"
+   "flr": "iM금융지주",
+   "rate": -0.88,
+   "rate_fixed": true
   },
   {
    "corp": "두산",
@@ -1393,7 +1571,9 @@
    "date": "20260727",
    "rcept_no": "20260727800362",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800362",
-   "flr": "두산"
+   "flr": "두산",
+   "rate": 0.5,
+   "rate_fixed": true
   },
   {
    "corp": "두산에너빌리티",
@@ -1404,7 +1584,9 @@
    "date": "20260727",
    "rcept_no": "20260727800357",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800357",
-   "flr": "두산에너빌리티"
+   "flr": "두산에너빌리티",
+   "rate": -1.66,
+   "rate_fixed": true
   },
   {
    "corp": "HD현대마린솔루션",
@@ -1415,7 +1597,9 @@
    "date": "20260727",
    "rcept_no": "20260727800323",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800323",
-   "flr": "HD현대마린솔루션"
+   "flr": "HD현대마린솔루션",
+   "rate": -1.67,
+   "rate_fixed": true
   },
   {
    "corp": "LG이노텍",
@@ -1426,7 +1610,9 @@
    "date": "20260727",
    "rcept_no": "20260727800269",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800269",
-   "flr": "LG이노텍"
+   "flr": "LG이노텍",
+   "rate": -1.76,
+   "rate_fixed": true
   },
   {
    "corp": "한화오션",
@@ -1437,7 +1623,9 @@
    "date": "20260727",
    "rcept_no": "20260727800227",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800227",
-   "flr": "한화오션"
+   "flr": "한화오션",
+   "rate": 1.02,
+   "rate_fixed": true
   },
   {
    "corp": "SKC",
@@ -1448,7 +1636,9 @@
    "date": "20260727",
    "rcept_no": "20260727800223",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800223",
-   "flr": "SKC"
+   "flr": "SKC",
+   "rate": -0.37,
+   "rate_fixed": true
   },
   {
    "corp": "삼성카드",
@@ -1459,7 +1649,9 @@
    "date": "20260727",
    "rcept_no": "20260727800185",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800185",
-   "flr": "삼성카드"
+   "flr": "삼성카드",
+   "rate": 2.87,
+   "rate_fixed": true
   },
   {
    "corp": "셀트리온",
@@ -1470,7 +1662,9 @@
    "date": "20260727",
    "rcept_no": "20260727800078",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800078",
-   "flr": "셀트리온"
+   "flr": "셀트리온",
+   "rate": 0.62,
+   "rate_fixed": true
   },
   {
    "corp": "두산로보틱스",
@@ -1481,7 +1675,9 @@
    "date": "20260724",
    "rcept_no": "20260724800506",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800506",
-   "flr": "두산로보틱스"
+   "flr": "두산로보틱스",
+   "rate": -7.31,
+   "rate_fixed": true
   },
   {
    "corp": "우리금융지주",
@@ -1492,7 +1688,9 @@
    "date": "20260724",
    "rcept_no": "20260724800494",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800494",
-   "flr": "우리금융지주"
+   "flr": "우리금융지주",
+   "rate": -0.16,
+   "rate_fixed": true
   },
   {
    "corp": "우리금융지주",
@@ -1503,7 +1701,9 @@
    "date": "20260724",
    "rcept_no": "20260724800491",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800491",
-   "flr": "우리금융지주"
+   "flr": "우리금융지주",
+   "rate": -0.16,
+   "rate_fixed": true
   },
   {
    "corp": "삼성중공업",
@@ -1514,7 +1714,9 @@
    "date": "20260724",
    "rcept_no": "20260724800489",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800489",
-   "flr": "삼성중공업"
+   "flr": "삼성중공업",
+   "rate": -3.17,
+   "rate_fixed": true
   },
   {
    "corp": "현대위아",
@@ -1525,7 +1727,9 @@
    "date": "20260724",
    "rcept_no": "20260724800478",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800478",
-   "flr": "현대위아"
+   "flr": "현대위아",
+   "rate": -5.67,
+   "rate_fixed": true
   },
   {
    "corp": "하나금융지주",
@@ -1536,7 +1740,9 @@
    "date": "20260724",
    "rcept_no": "20260724800407",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800407",
-   "flr": "하나금융지주"
+   "flr": "하나금융지주",
+   "rate": 1.46,
+   "rate_fixed": true
   },
   {
    "corp": "하나금융지주",
@@ -1547,7 +1753,9 @@
    "date": "20260724",
    "rcept_no": "20260724800401",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800401",
-   "flr": "하나금융지주"
+   "flr": "하나금융지주",
+   "rate": 1.46,
+   "rate_fixed": true
   },
   {
    "corp": "기아",
@@ -1571,7 +1779,9 @@
    "date": "20260724",
    "rcept_no": "20260724800304",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800304",
-   "flr": "현대로템"
+   "flr": "현대로템",
+   "rate": -4.86,
+   "rate_fixed": true
   },
   {
    "corp": "제일기획",
@@ -1582,7 +1792,9 @@
    "date": "20260724",
    "rcept_no": "20260724800217",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800217",
-   "flr": "제일기획"
+   "flr": "제일기획",
+   "rate": 1.7,
+   "rate_fixed": true
   },
   {
    "corp": "현대모비스",
@@ -1593,7 +1805,9 @@
    "date": "20260724",
    "rcept_no": "20260724800096",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800096",
-   "flr": "현대모비스"
+   "flr": "현대모비스",
+   "rate": -8.02,
+   "rate_fixed": true
   },
   {
    "corp": "JB금융지주",
@@ -1604,7 +1818,9 @@
    "date": "20260723",
    "rcept_no": "20260723800601",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800601",
-   "flr": "JB금융지주"
+   "flr": "JB금융지주",
+   "rate": -3.95,
+   "rate_fixed": true
   },
   {
    "corp": "JB금융지주",
@@ -1615,7 +1831,9 @@
    "date": "20260723",
    "rcept_no": "20260723800585",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800585",
-   "flr": "JB금융지주"
+   "flr": "JB금융지주",
+   "rate": -3.95,
+   "rate_fixed": true
   },
   {
    "corp": "NH투자증권",
@@ -1626,7 +1844,9 @@
    "date": "20260723",
    "rcept_no": "20260723800581",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800581",
-   "flr": "NH투자증권"
+   "flr": "NH투자증권",
+   "rate": 3.27,
+   "rate_fixed": true
   },
   {
    "corp": "두산밥캣",
@@ -1637,7 +1857,9 @@
    "date": "20260723",
    "rcept_no": "20260723800468",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800468",
-   "flr": "두산밥캣"
+   "flr": "두산밥캣",
+   "rate": 8.79,
+   "rate_fixed": true
   },
   {
    "corp": "KB금융",
@@ -1648,7 +1870,9 @@
    "date": "20260723",
    "rcept_no": "20260723800451",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800451",
-   "flr": "KB금융"
+   "flr": "KB금융",
+   "rate": 0.69,
+   "rate_fixed": true
   },
   {
    "corp": "KB금융",
@@ -1659,7 +1883,9 @@
    "date": "20260723",
    "rcept_no": "20260723800439",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800439",
-   "flr": "KB금융"
+   "flr": "KB금융",
+   "rate": 0.69,
+   "rate_fixed": true
   },
   {
    "corp": "현대글로비스",
@@ -1670,7 +1896,9 @@
    "date": "20260723",
    "rcept_no": "20260723800401",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800401",
-   "flr": "현대글로비스"
+   "flr": "현대글로비스",
+   "rate": 4.98,
+   "rate_fixed": true
   },
   {
    "corp": "OCI홀딩스",
@@ -1681,7 +1909,9 @@
    "date": "20260723",
    "rcept_no": "20260723800356",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800356",
-   "flr": "OCI홀딩스"
+   "flr": "OCI홀딩스",
+   "rate": 30.0,
+   "rate_fixed": true
   },
   {
    "corp": "현대자동차",
@@ -1705,7 +1935,9 @@
    "date": "20260723",
    "rcept_no": "20260723800278",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800278",
-   "flr": "신한지주"
+   "flr": "신한지주",
+   "rate": -0.67,
+   "rate_fixed": true
   },
   {
    "corp": "삼성E&A",
@@ -1716,7 +1948,9 @@
    "date": "20260723",
    "rcept_no": "20260723800275",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800275",
-   "flr": "삼성E&A"
+   "flr": "삼성E&A",
+   "rate": 12.95,
+   "rate_fixed": true
   },
   {
    "corp": "신한지주",
@@ -1727,7 +1961,9 @@
    "date": "20260723",
    "rcept_no": "20260723800269",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800269",
-   "flr": "신한지주"
+   "flr": "신한지주",
+   "rate": -0.67,
+   "rate_fixed": true
   },
   {
    "corp": "엘에스일렉트릭",
@@ -1738,7 +1974,9 @@
    "date": "20260723",
    "rcept_no": "20260723800150",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800150",
-   "flr": "엘에스일렉트릭"
+   "flr": "엘에스일렉트릭",
+   "rate": 17.26,
+   "rate_fixed": true
   },
   {
    "corp": "삼성바이오로직스",
@@ -1749,7 +1987,9 @@
    "date": "20260723",
    "rcept_no": "20260723800003",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723800003",
-   "flr": "삼성바이오로직스"
+   "flr": "삼성바이오로직스",
+   "rate": 0.51,
+   "rate_fixed": true
   },
   {
    "corp": "OCI",
@@ -1760,7 +2000,9 @@
    "date": "20260722",
    "rcept_no": "20260722800388",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722800388",
-   "flr": "OCI"
+   "flr": "OCI",
+   "rate": -1.3,
+   "rate_fixed": true
   },
   {
    "corp": "LG디스플레이",
@@ -1771,7 +2013,9 @@
    "date": "20260722",
    "rcept_no": "20260722800138",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722800138",
-   "flr": "LG디스플레이"
+   "flr": "LG디스플레이",
+   "rate": 3.69,
+   "rate_fixed": true
   },
   {
    "corp": "HD한국조선해양",
@@ -1821,7 +2065,9 @@
    "date": "20260714",
    "rcept_no": "20260714800204",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260714800204",
-   "flr": "한미반도체"
+   "flr": "한미반도체",
+   "rate": 0.97,
+   "rate_fixed": true
   },
   {
    "corp": "테크윙",
@@ -1832,7 +2078,9 @@
    "date": "20260713",
    "rcept_no": "20260713900328",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260713900328",
-   "flr": "테크윙"
+   "flr": "테크윙",
+   "rate": -0.11,
+   "rate_fixed": true
   },
   {
    "corp": "대한항공",
@@ -1843,7 +2091,9 @@
    "date": "20260713",
    "rcept_no": "20260713800490",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260713800490",
-   "flr": "대한항공"
+   "flr": "대한항공",
+   "rate": -3.36,
+   "rate_fixed": true
   },
   {
    "corp": "비츠로셀",
@@ -1854,7 +2104,9 @@
    "date": "20260709",
    "rcept_no": "20260709900508",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260709900508",
-   "flr": "비츠로셀"
+   "flr": "비츠로셀",
+   "rate": -0.16,
+   "rate_fixed": true
   },
   {
    "corp": "신세계",
@@ -1865,7 +2117,9 @@
    "date": "20260709",
    "rcept_no": "20260709800374",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260709800374",
-   "flr": "신세계"
+   "flr": "신세계",
+   "rate": -3.04,
+   "rate_fixed": true
   },
   {
    "corp": "한국가스공사",
@@ -1876,7 +2130,9 @@
    "date": "20260709",
    "rcept_no": "20260709800358",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260709800358",
-   "flr": "한국가스공사"
+   "flr": "한국가스공사",
+   "rate": -2.71,
+   "rate_fixed": true
   },
   {
    "corp": "이마트",
@@ -1887,7 +2143,9 @@
    "date": "20260709",
    "rcept_no": "20260709800326",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260709800326",
-   "flr": "이마트"
+   "flr": "이마트",
+   "rate": -1.85,
+   "rate_fixed": true
   },
   {
    "corp": "오리온",
@@ -1898,7 +2156,9 @@
    "date": "20260709",
    "rcept_no": "20260709800269",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260709800269",
-   "flr": "오리온"
+   "flr": "오리온",
+   "rate": -3.42,
+   "rate_fixed": true
   },
   {
    "corp": "LG전자",

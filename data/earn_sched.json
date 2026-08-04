@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-04 07:51:31",
- "count": 152,
+ "generated_at": "2026-08-04 09:50:23",
+ "count": 153,
  "events": [
   {
    "corp": "LG디스플레이",
@@ -1460,6 +1460,17 @@
    "rcept_no": "20260714900293",
    "rcept_dt": "20260714",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260714900293",
+   "src": "예고",
+   "expected_date": "2026-08-07",
+   "period_end": "2026-06-30"
+  },
+  {
+   "corp": "한국가스공사",
+   "stock": "036460",
+   "market": "KOSPI",
+   "rcept_no": "20260804800066",
+   "rcept_dt": "20260804",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800066",
    "src": "예고",
    "expected_date": "2026-08-07",
    "period_end": "2026-06-30"

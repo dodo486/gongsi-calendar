@@ -61,6 +61,14 @@
   .fc{--fc-border-color:var(--line);--fc-page-bg-color:transparent;--fc-neutral-bg-color:#1b1f28;
       --fc-today-bg-color:rgba(34,197,94,.08);--fc-list-event-hover-bg-color:#1b1f28}
   .fc .fc-toolbar-title{font-size:16px}
+  /* 휴장일(공휴일) — 날짜 글자 빨간색 (오늘 동그라미보다 먼저 선언해 오늘이 우선) */
+  .fc .holiday .fc-daygrid-day-number{color:#ef4444;font-weight:700}
+  /* 오늘 날짜 강조 — 실적·배당 두 캘린더 공통(눈에 띄는 노란 동그라미) */
+  .fc .fc-day-today .fc-daygrid-day-number{
+    background:#facc15;color:#1a1200;font-weight:800;
+    min-width:26px;height:26px;padding:0 3px;margin:3px;
+    display:inline-flex;align-items:center;justify-content:center;
+    border-radius:999px;box-shadow:0 0 0 3px rgba(250,204,21,.35);}
   .fc .fc-button{background:var(--panel);border-color:var(--line);color:var(--text);text-transform:none}
   .fc .fc-button-primary:not(:disabled).fc-button-active{background:var(--accent);border-color:var(--accent);color:#04240f}
   .fc-daygrid-event{cursor:pointer;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -197,6 +205,8 @@ let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'di
 let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [];
 let earnCal;   // 예상 실적발표 전용 캘린더 (실적 그리드 오른쪽)
 let LIMGEN = "";   // 상하한가(limits.json) 생성 시각 — 상단 '갱신 시각'에 표시(5초마다 갱신)
+let HOL = new Set();   // 휴장일(공휴일) ISO 날짜 — 캘린더에 빨간 글자로 표시
+const dISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 let RES = {companies:{}, events:[]};   // 리서치: 선진화 판별 + 예상배당(research.json)
 let calendar;
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
@@ -802,11 +812,15 @@ function switchMode(mode){
 }
 
 async function boot(){
+  // 만기일·휴장일 먼저 로드 — 캘린더 render 전에 HOL 을 채워야 휴일 빨간색이 첫 렌더부터 적용됨
+  try{ const ex = await (await fetch("data/expiries.json?_="+Date.now())).json();
+       EXP = ex.events||[]; HOL = new Set(ex.holidays||[]); }catch(_){ EXP=[]; }
   calendar = new FullCalendar.Calendar(document.getElementById("calendar"),{
     initialView:"dayGridMonth", locale:"ko", height:"100%", firstDay:0, dayMaxEvents:6,
     showNonCurrentDates:false, fixedWeekCount:false,   // 전월·다음월 날짜 숨김 + 여분 주 제거
     headerToolbar:{left:"prev,next today",center:"title",right:"dayGridMonth,listWeek"},
     buttonText:{today:"오늘",month:"월",list:"목록"},
+    dayCellClassNames:(a)=> HOL.has(dISO(a.date)) ? ["holiday"] : [],   // 휴장일 → 빨간 글자
     eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
   });
   calendar.render();
@@ -815,6 +829,7 @@ async function boot(){
     showNonCurrentDates:false, fixedWeekCount:false,
     headerToolbar:{left:"prev,next today",center:"title",right:""},
     buttonText:{today:"오늘"},
+    dayCellClassNames:(a)=> HOL.has(dISO(a.date)) ? ["holiday"] : [],   // 휴장일 → 빨간 글자
     eventClick:(info)=>{   // 실적 상세는 실적 그리드 오른쪽 패널에 (배당 사이드와 분리)
       info.jsEvent.preventDefault();
       const p = info.event.extendedProps;
@@ -822,7 +837,6 @@ async function boot(){
     },
   });
   earnCal.render();
-  try{ EXP = (await (await fetch("data/expiries.json?_="+Date.now())).json()).events||[]; }catch(_){ EXP=[]; }
   try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
   applyModeView();          // 기본 탭(board) 화면 세팅 — 배당 체크박스/상단 밴드 표시
   await loadData();
@@ -845,6 +859,7 @@ function connectSSE(){
       loadData().catch(console.error);
       if(MODE==="board") renderLimits();
     };
+    _es.addEventListener("reload", ()=>location.reload());   // index.html 바뀌면 열린 탭 스스로 새로고침
     _es.onerror = ()=>{};   // 브라우저 EventSource가 자동 재접속 (폴백 폴링도 병행)
   }catch(_){ /* EventSource 미지원 시 30초 폴링으로 동작 */ }
 }
