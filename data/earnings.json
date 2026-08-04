@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-04 18:40:45",
+ "generated_at": "2026-08-04 20:56:57",
  "count": 160,
  "events": [
   {
@@ -12,8 +12,8 @@
    "rcept_no": "20260804900539",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804900539",
    "flr": "디어유",
-   "price": "21,850",
    "rate": 8.98,
+   "price": "21,850",
    "chg_sign": "2"
   },
   {
@@ -26,8 +26,8 @@
    "rcept_no": "20260804900464",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804900464",
    "flr": "이녹스첨단소재",
-   "price": "20,900",
    "rate": 5.66,
+   "price": "20,900",
    "chg_sign": "2"
   },
   {
@@ -40,8 +40,8 @@
    "rcept_no": "20260804900438",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804900438",
    "flr": "셀트리온제약",
-   "price": "41,700",
    "rate": 3.47,
+   "price": "41,700",
    "chg_sign": "2"
   },
   {
@@ -82,8 +82,8 @@
    "rcept_no": "20260804800508",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800508",
    "flr": "삼성증권",
-   "price": "98,600",
    "rate": 1.65,
+   "price": "98,600",
    "chg_sign": "2"
   },
   {
@@ -96,8 +96,8 @@
    "rcept_no": "20260804800456",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800456",
    "flr": "파라다이스",
-   "price": "10,010",
    "rate": 5.15,
+   "price": "10,010",
    "chg_sign": "2"
   },
   {
@@ -110,8 +110,8 @@
    "rcept_no": "20260804800422",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800422",
    "flr": "강원랜드",
-   "price": "14,500",
    "rate": 0.28,
+   "price": "14,500",
    "chg_sign": "5"
   },
   {
@@ -2349,8 +2349,8 @@
    "disc_time": "17:30",
    "pre5": 0.69,
    "post5": -0.79,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대글로비스",
@@ -2367,8 +2367,8 @@
    "disc_time": "17:30",
    "pre5": 4.98,
    "post5": -0.24,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "OCI홀딩스",
@@ -2385,8 +2385,8 @@
    "disc_time": "17:30",
    "pre5": 30.0,
    "post5": 4.66,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대자동차",
@@ -2403,8 +2403,8 @@
    "disc_time": "17:30",
    "pre5": 3.35,
    "post5": -3.12,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "신한지주",
@@ -2421,8 +2421,8 @@
    "disc_time": "17:30",
    "pre5": -0.67,
    "post5": -0.87,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "삼성E&A",
@@ -2439,8 +2439,8 @@
    "disc_time": "17:30",
    "pre5": 12.95,
    "post5": 0.21,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "신한지주",
@@ -2457,8 +2457,8 @@
    "disc_time": "17:30",
    "pre5": -0.67,
    "post5": -0.87,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "엘에스일렉트릭",
@@ -2475,8 +2475,8 @@
    "disc_time": "17:30",
    "pre5": 17.26,
    "post5": -2.24,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "삼성바이오로직스",
@@ -2493,8 +2493,8 @@
    "disc_time": "17:30",
    "pre5": 0.51,
    "post5": 0.07,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "OCI",
@@ -2511,8 +2511,8 @@
    "disc_time": "17:54",
    "pre5": -1.3,
    "post5": 2.04,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "LG디스플레이",
@@ -2529,8 +2529,8 @@
    "disc_time": "17:54",
    "pre5": 3.69,
    "post5": 0.1,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD한국조선해양",
@@ -2547,8 +2547,8 @@
    "disc_time": "17:30",
    "pre5": 5.67,
    "post5": 1.69,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD한국조선해양",
@@ -2565,8 +2565,8 @@
    "disc_time": "17:30",
    "pre5": 5.67,
    "post5": 1.69,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD현대중공업",
@@ -2583,8 +2583,8 @@
    "disc_time": "17:30",
    "pre5": 2.76,
    "post5": -1.34,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "한미반도체",
@@ -2601,8 +2601,8 @@
    "disc_time": "16:54",
    "pre5": 0.97,
    "post5": 8.67,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "테크윙",
@@ -2633,8 +2633,8 @@
    "disc_time": "17:03",
    "pre5": -3.36,
    "post5": 0.19,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "비츠로셀",
@@ -2651,8 +2651,8 @@
    "disc_time": "16:35",
    "pre5": -0.16,
    "post5": 0.95,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "신세계",
@@ -2669,8 +2669,8 @@
    "disc_time": "16:25",
    "pre5": -3.04,
    "post5": 4.46,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "한국가스공사",
@@ -2687,8 +2687,8 @@
    "disc_time": "16:25",
    "pre5": -2.71,
    "post5": 1.24,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "이마트",
@@ -2705,8 +2705,8 @@
    "disc_time": "16:25",
    "pre5": -1.85,
    "post5": 0.63,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "오리온",
@@ -2723,8 +2723,8 @@
    "disc_time": "16:25",
    "pre5": -3.42,
    "post5": 1.77,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "LG전자",
@@ -2741,8 +2741,8 @@
    "disc_time": "16:04",
    "pre5": 1.83,
    "post5": -0.9,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "LG에너지솔루션",
@@ -2759,8 +2759,8 @@
    "disc_time": "16:04",
    "pre5": -6.35,
    "post5": -0.9,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "삼성전자",
@@ -2777,8 +2777,8 @@
    "disc_time": "16:04",
    "pre5": -6.92,
    "post5": -3.55,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD현대일렉트릭",
@@ -2795,8 +2795,8 @@
    "disc_time": "17:35",
    "pre5": -1.69,
    "post5": -0.97,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   }
  ]
 }
