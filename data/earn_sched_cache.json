@@ -1163,5 +1163,12 @@
   "time": "09:00",
   "purpose": "Samsung Group Asia Conference 참석",
   "sponsor": "삼성증권"
+ },
+ "20260804900222": {
+  "kind": "ir",
+  "expected_date": "2026-08-12",
+  "time": "",
+  "purpose": "",
+  "sponsor": "당사"
  }
 }

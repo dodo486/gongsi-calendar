@@ -105,6 +105,12 @@
   .lchip.down.on{background:#3b82f6;border-color:#3b82f6}
   .lchip.s3.on{background:#f59e0b;border-color:#f59e0b;color:#1a1200}
   #limitsView{flex:none;height:auto;max-height:40vh;padding:12px 18px;overflow:auto;border-bottom:2px solid var(--line)}
+  #actionsView{flex:none;height:auto;max-height:32vh;padding:12px 18px;overflow:auto;border-bottom:2px solid var(--line);background:rgba(239,68,68,.05)}
+  .ak{font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;flex:none}
+  .ak.danger{background:rgba(239,68,68,.22);color:#fca5a5}
+  .ak.warn{background:rgba(245,158,11,.22);color:#fcd34d}
+  .ak.ok{background:rgba(34,197,94,.22);color:#86efac}
+  .ak.info{background:rgba(148,163,184,.18);color:#cbd5e1}
   #earnView{flex:none;border-bottom:2px solid var(--line)}   /* 높이 고정 없음 — 캘린더 내용만큼 */
   .earn-calcol{display:flex;flex-direction:column}
   #earnCal{flex:1}
@@ -134,9 +140,10 @@
   .li .mk.KOSPI200{background:rgba(59,130,246,.2);color:#93c5fd}
   .li .mk.KOSDAQ150{background:rgba(245,158,11,.2);color:#fcd34d}
   .li .mk.IDX{background:rgba(168,85,247,.2);color:#d8b4fe}
-  .li .dir{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;flex:none;min-width:56px;text-align:center}
+  .li .dir{font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;flex:none;min-width:82px;text-align:center}
   .li.up .dir{background:rgba(239,68,68,.18);color:#fca5a5}
   .li.down .dir{background:rgba(59,130,246,.18);color:#93c5fd}
+  .li .dir.s3{background:#f59e0b;color:#1a1200}   /* 3단계 강조(주황) */
   .li .et{font-size:11px;color:var(--muted);flex:none;margin-left:4px}
   .li .stg{font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px;background:#374151;color:#cbd5e1;flex:none}
   .li .stg.s3{background:#f59e0b;color:#1a1200}
@@ -144,6 +151,13 @@
   .li .kb{font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;flex:none}
   .li .kb.idx{background:rgba(168,85,247,.22);color:#d8b4fe}   /* 지수선물 보라 */
   .li .kb.stk{background:rgba(148,163,184,.18);color:#cbd5e1}  /* 주식선물 회색 */
+  .limsec{font-size:13px;font-weight:800;margin:14px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+  .limsec:first-of-type{margin-top:6px}
+  .limsec.idx{color:#d8b4fe}   /* 지수선물 보라 */
+  .limsec.stk{color:#cbd5e1}   /* 주식선물 회색 */
+  .lim-split{display:flex;gap:16px;align-items:flex-start}
+  .lim-col{flex:1;min-width:0}
+  .lim-col + .lim-col{border-left:1px solid var(--line);padding-left:16px}
 </style>
 </head>
 <body>
@@ -169,6 +183,7 @@
   </div>
 </header>
 <div class="layout">
+  <div id="actionsView" style="display:none"></div>
   <div id="limitsView" style="display:none"></div>
   <div id="earnView" style="display:none">
     <div class="earn-split">
@@ -202,7 +217,7 @@
 </div>
 <script>
 let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'disc'(공시)
-let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [];
+let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [], ACT = [];
 let earnCal;   // 예상 실적발표 전용 캘린더 (실적 그리드 오른쪽)
 let LIMGEN = "";   // 상하한가(limits.json) 생성 시각 — 상단 '갱신 시각'에 표시(5초마다 갱신)
 let HOL = new Set();   // 휴장일(공휴일) ISO 날짜 — 캘린더에 빨간 글자로 표시
@@ -419,6 +434,39 @@ function showDetail(e){
   }
 }
 
+const actClass = k => (["사이드카","서킷브레이커","거래정지"].includes(k) ? "danger"
+                     : k==="거래재개" ? "ok"
+                     : ["투자경고","투자위험","투자주의","단기과열","공매도과열"].includes(k) ? "warn" : "info");
+async function loadActions(){
+  try{
+    const d = await (await fetch("data/krx_actions.json?_="+Date.now())).json();
+    ACT = d.events||[];
+  }catch(_){ ACT = []; }
+  renderActions();
+}
+function renderActions(){
+  const box = document.getElementById("actionsView");
+  const q = filters.q.trim().toLowerCase();
+  const list = ACT.filter(e=>{
+    if(filters[e.market]===false) return false;
+    if(q && !(`${e.title}${e.kind}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if(MODE!=="board" || !list.length){ box.style.display="none"; box.innerHTML=""; return; }
+  box.style.display = "block";
+  let h = `<div class="limhd">🏛️ KRX 시장조치 (${list.length}) <span style="font-weight:400;color:var(--muted);font-size:12px">· 사이드카·서킷·거래정지/재개·투자경고 등 · 클릭 → KRX 원문</span></div>`;
+  list.forEach(e=>{
+    const dir = e.direction==="매수" ? " ▲매수" : (e.direction==="매도" ? " ▼매도" : "");
+    h += `<div class="li" data-url="${esc(e.url)}">
+      <span class="t">${esc(e.time)}</span>
+      <span class="ak ${actClass(e.kind)}">${esc(e.kind)}${e.action?(" "+esc(e.action)):""}</span>
+      <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
+      <span class="etitle">${esc(e.title)}${dir}</span>
+    </div>`;
+  });
+  box.innerHTML = h;
+  bindOpen(box);
+}
 async function loadLimits(){
   try{
     const d = await (await fetch("data/limits.json?_="+Date.now())).json();
@@ -459,21 +507,24 @@ function renderLimits(){
   const box = document.getElementById("limitsView");
   let h = `<div class="limhd">🚨 오늘 선물 가격제한폭 도달 (${list.length})</div>
     <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 클릭 → KRX 공시 원문 · 30초 자동갱신</div>`;
-  if(!list.length) h += `<div class="empty">해당하는 공시가 없습니다. (장중 선물이 가격제한폭에 도달하면 실시간으로 표시됩니다)</div>`;
-  list.forEach(e=>{
+  const row = e=>{
     const up = e.direction==="상승";
     const idx = e.kind==="지수선물";
     const hot = limHot(e);
-    h += `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}">
-      <span class="dir">${up?"▲ 상한가":"▼ 하한가"}</span>
+    return `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}">
       <span class="kb ${idx?"idx":"stk"}">${idx?"지수선물":"주식선물"}</span>
       <span class="t">${esc(e.time)}</span>
-      <span class="stg${(e.stage||0)>=3?" s3":""}">${esc(String(e.stage||"?"))}단계</span>
+      <span class="dir${(e.stage||0)>=3?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계 ${up?"(상)":"(하)"}</span>
       <span class="nm">${esc(e.name)}</span>
       ${idx?"":`<span class="mk ${e.market}">${esc(e.market)}</span>`}
       ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
     </div>`;
-  });
+  };
+  const col = (title, cls, items)=> `<div class="lim-col">
+      <div class="limsec ${cls}">${title} (${items.length})</div>
+      ${items.length ? items.map(row).join("") : `<div class="empty">해당 없음</div>`}
+    </div>`;
+  h += `<div class="lim-split">${col("🔶 주식선물","stk",list.filter(e=>e.kind==="주식선물"))}${col("🔷 지수선물","idx",list.filter(e=>e.kind==="지수선물"))}</div>`;
   box.innerHTML = h;
   bindOpen(box);
 }
@@ -769,12 +820,13 @@ async function loadData(){
     const d = await (await fetch("data/dividends.json?_="+Date.now())).json();
     DIV = d.events||[];
     try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
+    await loadActions();    // 최상단 KRX 시장조치(사이드카·서킷 등)
     await loadLimits();     // 상단 상하한가 밴드
     await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
     await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예상 실적발표 캘린더)
     renderEarnCal();
     document.getElementById("meta").textContent =
-      `🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · ⏱ 상하한가 갱신 ${LIMGEN}`;
+      `🏛️ 시장조치 ${ACT.length} · 🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · ⏱ 상하한가 갱신 ${LIMGEN}`;
     applyFilters();
     if(divListMode) renderDivToday();
     return;
@@ -792,6 +844,7 @@ function applyModeView(){   // 현재 MODE에 맞춰 탭/컨트롤/상단밴드 
   document.getElementById("calBar").style.display = isBoard ? "flex" : "none";   // 배당 체크박스 바(캘린더 위)
   document.getElementById("lmodes").classList.toggle("show", isBoard);   // 선물/상한하한 칩
   document.getElementById("limitsView").style.display = isBoard ? "block" : "none";
+  if(!isBoard) document.getElementById("actionsView").style.display = "none"; else renderActions();
   document.getElementById("earnView").style.display = isBoard ? "block" : "none";   // 중간 실적 그리드  // 상단 상하한가 밴드
   if(isBoard && earnCal) setTimeout(()=>earnCal.updateSize(), 0);   // 숨김→표시 시 캘린더 크기 재계산
 }
@@ -869,13 +922,13 @@ document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>swi
 document.getElementById("q").addEventListener("input",e=>{
   filters.q=e.target.value;
   applyFilters();
-  if(MODE==="board"){ renderLimits(); renderEarnCal(); }
+  if(MODE==="board"){ renderActions(); renderLimits(); renderEarnCal(); }
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
     c.classList.toggle("on",filters[mk]); applyFilters();
-    if(MODE==="board"){ renderEarnCal(); }
+    if(MODE==="board"){ renderActions(); renderEarnCal(); }
   });
 });
 document.querySelectorAll(".lchip").forEach(c=>{
