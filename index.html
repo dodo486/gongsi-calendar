@@ -155,6 +155,7 @@
   .limsec:first-of-type{margin-top:6px}
   .limsec.idx{color:#d8b4fe}   /* 지수선물 보라 */
   .limsec.stk{color:#cbd5e1}   /* 주식선물 회색 */
+  .lim-hr{border-top:2px solid var(--line);margin:12px 0 6px}
   .lim-split{display:flex;gap:16px;align-items:flex-start}
   .lim-col{flex:1;min-width:0}
   .lim-col + .lim-col{border-left:1px solid var(--line);padding-left:16px}
@@ -506,10 +507,13 @@ function renderLimits(){
       <div class="limsec ${cls}">${title} (${items.length})</div>
       ${items.length ? items.map(rowFn).join("") : `<div class="empty">해당 없음</div>`}
     </div>`;
+  if(acts.length){   // 🏛️ 시장조치 — 전체폭 상단, 아래 주식/지수선물 칼럼과 구분선으로 분리
+    h += `<div class="limsec danger">🏛️ 시장조치 (${acts.length})</div>` + acts.map(actRow).join("")
+       + `<div class="lim-hr"></div>`;
+  }
   h += `<div class="lim-split">`
      + col("🔶 주식선물","stk",list.filter(e=>e.kind==="주식선물"))
      + col("🔷 지수선물","idx",list.filter(e=>e.kind==="지수선물"))
-     + col("🏛️ 시장조치","danger",acts,actRow)
      + `</div>`;
   box.innerHTML = h;
   bindOpen(box);
