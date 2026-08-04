@@ -134,7 +134,7 @@
   .li .mk.KOSPI200{background:rgba(59,130,246,.2);color:#93c5fd}
   .li .mk.KOSDAQ150{background:rgba(245,158,11,.2);color:#fcd34d}
   .li .mk.IDX{background:rgba(168,85,247,.2);color:#d8b4fe}
-  .li .dir{font-size:14px;font-weight:800;padding:3px 10px;border-radius:6px;flex:none;min-width:88px;text-align:center}
+  .li .dir{font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;flex:none;min-width:82px;text-align:center}
   .li.up .dir{background:rgba(239,68,68,.18);color:#fca5a5}
   .li.down .dir{background:rgba(59,130,246,.18);color:#93c5fd}
   .li .dir.s3{background:#f59e0b;color:#1a1200}   /* 3단계 강조(주황) */
@@ -145,6 +145,10 @@
   .li .kb{font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;flex:none}
   .li .kb.idx{background:rgba(168,85,247,.22);color:#d8b4fe}   /* 지수선물 보라 */
   .li .kb.stk{background:rgba(148,163,184,.18);color:#cbd5e1}  /* 주식선물 회색 */
+  .limsec{font-size:13px;font-weight:800;margin:14px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+  .limsec:first-of-type{margin-top:6px}
+  .limsec.idx{color:#d8b4fe}   /* 지수선물 보라 */
+  .limsec.stk{color:#cbd5e1}   /* 주식선물 회색 */
 </style>
 </head>
 <body>
@@ -461,11 +465,11 @@ function renderLimits(){
   let h = `<div class="limhd">🚨 오늘 선물 가격제한폭 도달 (${list.length})</div>
     <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 클릭 → KRX 공시 원문 · 30초 자동갱신</div>`;
   if(!list.length) h += `<div class="empty">해당하는 공시가 없습니다. (장중 선물이 가격제한폭에 도달하면 실시간으로 표시됩니다)</div>`;
-  list.forEach(e=>{
+  const row = e=>{
     const up = e.direction==="상승";
     const idx = e.kind==="지수선물";
     const hot = limHot(e);
-    h += `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}">
+    return `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}">
       <span class="kb ${idx?"idx":"stk"}">${idx?"지수선물":"주식선물"}</span>
       <span class="t">${esc(e.time)}</span>
       <span class="dir${(e.stage||0)>=3?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계 ${up?"(상)":"(하)"}</span>
@@ -473,7 +477,12 @@ function renderLimits(){
       ${idx?"":`<span class="mk ${e.market}">${esc(e.market)}</span>`}
       ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
     </div>`;
-  });
+  };
+  const sec = (title, cls, items)=> items.length
+    ? `<div class="limsec ${cls}">${title} (${items.length})</div>` + items.map(row).join("")
+    : "";
+  h += sec("🔷 지수선물", "idx", list.filter(e=>e.kind==="지수선물"))
+     + sec("🔶 주식선물", "stk", list.filter(e=>e.kind==="주식선물"));
   box.innerHTML = h;
   bindOpen(box);
 }
