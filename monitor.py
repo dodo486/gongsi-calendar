@@ -133,6 +133,7 @@ def notify(e):
             t = Notification(app_id="공시캘린더", title=title, msg=e["title"], launch=e["url"])
             t.set_audio(audio.Default, loop=False)
             t.add_actions(label="DART 원문 보기", launch=e["url"])
+            t.duration = 'long" scenario="reminder'   # 직접 닫기 전까지 화면에 유지(reminder 시나리오)
             t.show()
         elif system == "Darwin":
             script = (f'display notification {json.dumps(e["title"], ensure_ascii=False)} '
@@ -155,6 +156,7 @@ def notify_limit(e):
             t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=e["url"])
             t.set_audio(audio.Default, loop=False)
             t.add_actions(label="KRX 공시 보기", launch=e["url"])
+            t.duration = 'long" scenario="reminder'   # 직접 닫기 전까지 화면에 유지(reminder 시나리오)
             t.show()
         elif system == "Darwin":
             script = (f'display notification {json.dumps(msg, ensure_ascii=False)} '
