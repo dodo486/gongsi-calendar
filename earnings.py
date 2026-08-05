@@ -25,13 +25,12 @@ KIND_HDR = {
 
 _CTX = None
 
-def naver_rate(code):
-    """네이버 실시간 시세 → {price, rate(부호포함 %), sign} / 실패 시 {}"""
+def _naver_quote(url):
+    """네이버 실시간 시세 공통 파서 → {price, rate(부호포함 %), sign} / 실패 시 {}"""
     global _CTX
     if _CTX is None:
         _CTX = build_ssl_context()
     try:
-        url = f"https://polling.finance.naver.com/api/realtime/domestic/stock/{code}"
         req = urllib.request.Request(url, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
             "Referer": "https://finance.naver.com/"})
@@ -47,6 +46,14 @@ def naver_rate(code):
         return {"price": d.get("closePrice", ""), "rate": round(rate, 2), "sign": sign}
     except Exception:
         return {}
+
+def naver_rate(code):
+    """개별종목 실시간 시세 → {price, rate(부호%), sign} / 실패 시 {}"""
+    return _naver_quote(f"https://polling.finance.naver.com/api/realtime/domestic/stock/{code}")
+
+def naver_index_rate(code):
+    """지수 실시간 시세 → {price, rate(부호%), sign}. code: KPI200(코스피200)/KQI150(코스닥150) 등."""
+    return _naver_quote(f"https://polling.finance.naver.com/api/realtime/domestic/index/{code}")
 
 def naver_daily_map(code, days=40):
     """일별 {YYYY-MM-DD: {rate(부호%), open, close}} — 과거 공시일 등락률·시가갭 계산용"""

@@ -150,21 +150,34 @@ def _save_exp_cache(cache):
     cutoff = (datetime.date.today() - datetime.timedelta(days=7)).strftime("%Y%m%d")
     save_json(EXP_CACHE_PATH, {k: v for k, v in cache.items() if k[:8] >= cutoff})
 
-RATE_CAP = 30   # 한 번의 collect에서 기초주식 등락률 조회할 최대 종목수
+RATE_CAP = 40   # 한 번의 collect에서 등락률 조회할 최대 종목수(주식선물+지수선물)
+
+def _index_code(name):
+    """지수선물 종목명 → 네이버 지수코드. 코스피200=KPI200 / 코스닥150=KQI150 (그 외 미지원)."""
+    n = (name or "").replace(" ", "").upper()
+    if "코스피200" in n or "KOSPI200" in n:
+        return "KPI200"
+    if "코스닥150" in n or "KOSDAQ150" in n:
+        return "KQI150"
+    return ""
 
 def _attach_rates(events, cap=RATE_CAP):
-    """주식선물 이벤트에 기초주식 현재 등락률(부호 %) 부착 — 네이버 실시간(earnings.naver_rate 재사용)."""
+    """가격제한폭 이벤트에 기초자산 현재 등락률(부호 %) 부착 — 네이버 실시간 재사용.
+    주식선물 → 기초주식 등락률 / 지수선물 → 해당 지수(코스피200·코스닥150) 등락률."""
     try:
-        from earnings import naver_rate
+        from earnings import naver_rate, naver_index_rate
     except Exception:
         return
     n = 0
     for e in events:
-        if e.get("kind") != "주식선물" or not e.get("code"):
-            continue   # 지수선물은 기초자산이 지수 → 대상 아님
         if n >= cap:
             break
-        q = naver_rate(e["code"]); n += 1
+        if e.get("kind") == "주식선물" and e.get("code"):
+            q = naver_rate(e["code"]); n += 1
+        elif e.get("kind") == "지수선물" and _index_code(e.get("name", "")):
+            q = naver_index_rate(_index_code(e["name"])); n += 1
+        else:
+            continue   # KRX300선물 등 지원 지수 외 → 등락률 없음
         if q and q.get("rate") is not None:
             e["rate"] = q["rate"]
 

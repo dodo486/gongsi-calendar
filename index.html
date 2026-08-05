@@ -561,7 +561,7 @@ function renderLimits(){
       <span class="t">${esc(e.time)}</span>
       <span class="dir${(e.stage||0)>=3?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계 ${up?"(상)":"(하)"}</span>
       <span class="nm">${esc(e.name)}</span>
-      ${(!idx && e.rate!=null)?`<span class="chg ${e.rate>0?"up":(e.rate<0?"down":"")}">(${e.rate>0?"+":""}${esc(String(e.rate))}%)</span>`:""}
+      ${(e.rate!=null)?`<span class="chg ${e.rate>0?"up":(e.rate<0?"down":"")}">(${e.rate>0?"+":""}${esc(String(e.rate))}%)</span>`:""}
       ${idx?"":`<span class="mk ${e.market}">${esc(e.market)}</span>`}
       ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
     </div>`;
