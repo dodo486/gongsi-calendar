@@ -156,7 +156,9 @@ def notify(e):
 def notify_limit(e):
     """선물 상하한가(가격제한폭 도달) OS 알림 — 클릭 시 KRX 공시 원문"""
     arrow = "▲상한" if e["direction"] == "상승" else "▼하한"
-    title = f"[선물 {arrow}] {e['name']} · {e['market']}"
+    r = e.get("rate")
+    rate_str = f"({'+' if r > 0 else ''}{r}%)" if isinstance(r, (int, float)) else ""
+    title = f"[선물 {arrow}] {e['name']}{rate_str} · {e['market']}"
     msg = f"{e['kind']} {e['stage']}단계 가격제한폭 도달"
     try:
         system = platform.system()
@@ -208,6 +210,14 @@ def _action_active(e):
         return False
     return tm <= datetime.datetime.now().strftime("%H:%M") < until
 
+def _limit_active(e):
+    """선물 가격제한폭 도달이 아직 확대 전인지 (도달시각 ~ 확대예정시각 사이).
+    확대예정시각 미상(본문 미보강)이면 판단 불가 → False(다음 주기 보강 후 판정)."""
+    tm, exp = e.get("time"), e.get("expand_time")
+    if not tm or not exp:
+        return False
+    return tm <= datetime.datetime.now().strftime("%H:%M") < exp[:5]
+
 def poll_actions(ac_seen, alert=True):
     """KRX 시장조치 폴링 — krx_actions.json 최신화 + 신규 조치 토스트. ac_seen: 전용 in-memory 중복셋.
     사이드카·서킷브레이커는 재시작 baseline 이라도 '아직 안 풀렸으면' 무조건 토스트(놓침 방지)."""
@@ -251,7 +261,8 @@ def poll_limits(lim_seen, alert=True):
         if e["rcept_no"] in lim_seen:
             continue
         lim_seen.add(e["rcept_no"])   # 신규는 등록(재알림 방지); 알림은 단계 조건만
-        if alert and (e.get("stage") or 0) >= ALERT_MIN_STAGE:
+        # 실시간 신규(alert) + 재시작 baseline 이라도 아직 제한폭 확대 전이면 무조건(사이드카와 통일)
+        if (alert or _limit_active(e)) and (e.get("stage") or 0) >= ALERT_MIN_STAGE:
             print(f"  🚨 선물 {'상한' if e['direction']=='상승' else '하한'}: "
                   f"{e['name']} {e['stage']}단계 ({e['kind']})")
             notify_limit(e)

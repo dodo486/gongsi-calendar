@@ -150,8 +150,26 @@ def _save_exp_cache(cache):
     cutoff = (datetime.date.today() - datetime.timedelta(days=7)).strftime("%Y%m%d")
     save_json(EXP_CACHE_PATH, {k: v for k, v in cache.items() if k[:8] >= cutoff})
 
+RATE_CAP = 30   # 한 번의 collect에서 기초주식 등락률 조회할 최대 종목수
+
+def _attach_rates(events, cap=RATE_CAP):
+    """주식선물 이벤트에 기초주식 현재 등락률(부호 %) 부착 — 네이버 실시간(earnings.naver_rate 재사용)."""
+    try:
+        from earnings import naver_rate
+    except Exception:
+        return
+    n = 0
+    for e in events:
+        if e.get("kind") != "주식선물" or not e.get("code"):
+            continue   # 지수선물은 기초자산이 지수 → 대상 아님
+        if n >= cap:
+            break
+        q = naver_rate(e["code"]); n += 1
+        if q and q.get("rate") is not None:
+            e["rate"] = q["rate"]
+
 def collect(sel_date=None, watch_only=True, enrich=True, enrich_cap=ENRICH_CAP):
-    """가격제한폭 도달 공시 수집 + 본문 '확대 예정시각' 보강(캐시, 신규분만 조회)."""
+    """가격제한폭 도달 공시 수집 + 본문 '확대 예정시각' 보강(캐시, 신규분만 조회) + 기초주식 등락률."""
     events = parse(fetch_html(sel_date), watch_only)
     if enrich:
         cache = _load_exp_cache()
@@ -168,6 +186,7 @@ def collect(sel_date=None, watch_only=True, enrich=True, enrich_cap=ENRICH_CAP):
             # 캡 초과분은 expand_time 미설정 → 다음 주기에 채움
         if changed:
             _save_exp_cache(cache)
+    _attach_rates(events)   # 주식선물 → 기초주식 실시간 등락률(매 주기 갱신)
     return events
 
 def main():

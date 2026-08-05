@@ -154,6 +154,9 @@
   .limsec.danger.blink{animation:blinkR 1s infinite;border-radius:6px;padding:4px 8px}
   .li .t{font-size:12px;color:var(--muted);width:42px;flex:none}
   .li .nm{font-size:14px;font-weight:700}
+  .li .chg{font-size:12px;font-weight:800;flex:none}   /* 기초주식 등락률 */
+  .li .chg.up{color:#fca5a5}   /* 상승=빨강 */
+  .li .chg.down{color:#93c5fd} /* 하락=파랑 */
   .li .mk{font-size:10px;padding:1px 6px;border-radius:5px}
   .li .mk.KOSPI200{background:rgba(59,130,246,.2);color:#93c5fd}
   .li .mk.KOSDAQ150{background:rgba(245,158,11,.2);color:#fcd34d}
@@ -558,6 +561,7 @@ function renderLimits(){
       <span class="t">${esc(e.time)}</span>
       <span class="dir${(e.stage||0)>=3?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계 ${up?"(상)":"(하)"}</span>
       <span class="nm">${esc(e.name)}</span>
+      ${(!idx && e.rate!=null)?`<span class="chg ${e.rate>0?"up":(e.rate<0?"down":"")}">(${e.rate>0?"+":""}${esc(String(e.rate))}%)</span>`:""}
       ${idx?"":`<span class="mk ${e.market}">${esc(e.market)}</span>`}
       ${e.expand_time?`<span class="et">(확대예정 ${esc(e.expand_time)})</span>`:""}
     </div>`;
