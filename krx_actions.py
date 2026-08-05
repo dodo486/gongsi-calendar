@@ -19,8 +19,9 @@ ACTIONS_PATH = os.path.join(DATA_DIR, "krx_actions.json")
 _CTX = None
 
 def _classify(t):
-    if "효력정지" in t or "Sidecar" in t: return "사이드카"
-    if "서킷브레이커" in t or "일시중단" in t: return "서킷브레이커"
+    low = (t or "").lower().replace(" ", "")   # "Side car"/"사이드카"/"Sidecar" 표기 변형 흡수
+    if "사이드카" in t or "sidecar" in low or "효력정지" in t: return "사이드카"
+    if "서킷브레이커" in t or "일시중단" in t or "매매거래중단" in low or "circuitbreaker" in low: return "서킷브레이커"
     if "거래재개" in t: return "거래재개"
     if "매매거래정지" in t or "거래정지" in t: return "거래정지"
     if "투자위험" in t: return "투자위험"
