@@ -158,21 +158,23 @@ def _code_of(name):
 def notify(e):
     """OS 알림 — 윈도우: 토스트(클릭 시 DART 원문) / 맥: 알림센터 / 리눅스: notify-send"""
     title = f"[{e['category']}] {e['corp']}{_rate_str(e.get('stock'))} · {e['market']}"
+    # DART 목록엔 접수시각(HH:MM)이 없어 감지 시각을 병기(폴링 20초 → 공시 시각과 근사)
+    msg = f"⏰{datetime.datetime.now().strftime('%H:%M')} · {e['title']}"
     try:
         system = platform.system()
         if system == "Windows":
             from winotify import Notification, audio
-            t = Notification(app_id="공시캘린더", title=title, msg=e["title"], launch=e["url"])
+            t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=e["url"])
             t.set_audio(audio.Default, loop=False)
             t.add_actions(label="DART 원문 보기", launch=e["url"])
             t.duration = 'long" scenario="reminder'   # 직접 닫기 전까지 화면에 유지(reminder 시나리오)
             t.show()
         elif system == "Darwin":
-            script = (f'display notification {json.dumps(e["title"], ensure_ascii=False)} '
+            script = (f'display notification {json.dumps(msg, ensure_ascii=False)} '
                       f'with title {json.dumps(title, ensure_ascii=False)} sound name "Glass"')
             subprocess.run(["osascript", "-e", script], check=False, timeout=10)
         else:
-            subprocess.run(["notify-send", title, e["title"]], check=False, timeout=10)
+            subprocess.run(["notify-send", title, msg], check=False, timeout=10)
     except Exception as ex:
         print(f"  [알림실패] {ex}")
 
@@ -182,7 +184,8 @@ def notify_limit(e):
     r = e.get("rate")
     rate_str = f"({'+' if r > 0 else ''}{r}%)" if isinstance(r, (int, float)) else ""
     title = f"[선물 {arrow}] {e['name']}{rate_str} · {e['market']}"
-    msg = f"{e['kind']} {e['stage']}단계 가격제한폭 도달"
+    tm = f"⏰{e['time']} · " if e.get("time") else ""
+    msg = f"{tm}{e['kind']} {e['stage']}단계 가격제한폭 도달"
     try:
         system = platform.system()
         if system == "Windows":
@@ -207,7 +210,8 @@ def notify_action(e):
     corp = e.get("corp", "")
     who = f"{corp}{_rate_str(_code_of(corp))} · " if corp else ""   # 종목-특정 조치면 회사명+등락률
     title = f"[{e['kind']}{(' ' + e['action']) if e['action'] else ''}] {who}{e['market']}{dirtag}"
-    msg = e["title"]
+    tm = f"⏰{e['time']} · " if e.get("time") else ""
+    msg = f"{tm}{e['title']}"
     try:
         system = platform.system()
         if system == "Windows":
