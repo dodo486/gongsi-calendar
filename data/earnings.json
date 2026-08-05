@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-05 18:46:02",
+ "generated_at": "2026-08-05 21:05:16",
  "count": 178,
  "events": [
   {
@@ -12,8 +12,8 @@
    "rcept_no": "20260805900462",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900462",
    "flr": "심텍",
-   "price": "103,000",
    "rate": 6.08,
+   "price": "103,000",
    "chg_sign": "2"
   },
   {
@@ -26,8 +26,8 @@
    "rcept_no": "20260805900457",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900457",
    "flr": "심텍",
-   "price": "103,000",
    "rate": 6.08,
+   "price": "103,000",
    "chg_sign": "2"
   },
   {
@@ -96,8 +96,8 @@
    "rcept_no": "20260805800529",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800529",
    "flr": "고려아연",
-   "price": "1,095,000",
    "rate": 4.89,
+   "price": "1,095,000",
    "chg_sign": "2"
   },
   {
@@ -110,8 +110,8 @@
    "rcept_no": "20260805800512",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800512",
    "flr": "고려아연",
-   "price": "1,095,000",
    "rate": 4.89,
+   "price": "1,095,000",
    "chg_sign": "2"
   },
   {

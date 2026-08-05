@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-05 18:21:09",
- "count": 46,
+ "generated_at": "2026-08-05 20:41:13",
+ "count": 47,
  "events": [
   {
    "corp": "POSCO홀딩스",
@@ -575,6 +575,20 @@
    "rcept_dt": "20260731",
    "confirm_date": "2026-08-13",
    "ex_date": "2026-08-14"
+  },
+  {
+   "corp": "LG씨엔에스",
+   "stock": "064400",
+   "market": "KOSPI",
+   "per_share": "750",
+   "record_date": "2026-08-20",
+   "pay_date": "2026-09-04",
+   "rcept_no": "20260805800811",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800811",
+   "div_type": "중간배당",
+   "rcept_dt": "20260805",
+   "confirm_date": "2026-08-18",
+   "ex_date": "2026-08-19"
   },
   {
    "corp": "고려아연",
