@@ -62,12 +62,12 @@
 
 <div class="wrap">
   <div class="card main">
-    <div class="ttl">🔥 거래대금 상위 <span class="sub">— 오늘 돈이 몰린 종목 (등락률 · 외국인/기관/개인 순매수, 당일 잠정)</span></div>
+    <div class="ttl">🔥 거래대금 상위 <span class="sub">— 오늘 돈이 몰린 종목 (거래대금/시총 = 회전율, 외국인 순매수·당일 잠정)</span></div>
     <div style="max-height:76vh;overflow:auto">
       <table>
         <thead><tr>
           <th class="rk">#</th><th class="l">종목</th><th>등락률</th><th>거래대금</th>
-          <th>외국인</th><th>기관</th><th>개인</th>
+          <th>시총</th><th>거래대금<br>/시총</th><th>외국인<br>순매수</th><th>외국인<br>/시총</th>
         </tr></thead>
         <tbody id="valBody"></tbody>
       </table>
@@ -101,6 +101,14 @@ function rateCell(r){
   const cls = r>0?"up":(r<0?"down":"flat");
   return `<span class="${cls}">${r>0?"+":""}${r}%</span>`;
 }
+function pct(v){   // 거래대금/시총 (%) — 부호 없는 회전율
+  return v==null ? `<span class="flat">-</span>` : `${v}%`;
+}
+function pctSigned(v){   // 외국인/시총 (%) — 매수 빨강 / 매도 파랑
+  if(v==null) return `<span class="flat">-</span>`;
+  const cls = v>0?"up":(v<0?"down":"flat");
+  return `<span class="${cls}">${v>0?"+":""}${v}%</span>`;
+}
 function pass(r){
   if(!filters[r.market]) return false;
   const q = filters.q.trim().toLowerCase();
@@ -115,10 +123,11 @@ function render(){
       <td class="l"><span class="nm">${esc(r.name)}</span><span class="mk ${esc(r.market)}">${esc(r.market)}</span></td>
       <td>${rateCell(r.rate)}</td>
       <td class="val">${eok(r.value)}</td>
+      <td>${eok(r.mktcap)}</td>
+      <td>${pct(r.turnover)}</td>
       <td>${qty(r.frgn)}</td>
-      <td>${qty(r.org)}</td>
-      <td>${qty(r.indi)}</td>
-    </tr>`).join("") : `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`;
+      <td>${pctSigned(r.frgn_pct)}</td>
+    </tr>`).join("") : `<tr><td colspan="8" class="empty">데이터 없음</td></tr>`;
 
   const mv = (list)=> list.filter(pass).map(r=>`
     <div class="mv"><span class="nm">${esc(r.name)}</span>${rateCell(r.rate)}</div>`).join("") || `<div class="empty">해당 없음</div>`;

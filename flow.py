@@ -22,18 +22,23 @@ def build():
         d = q.get(code)
         if not d or d.get("value") is None:
             continue
+        mktcap, value = d["mktcap"], d["value"]
         rows.append({
             "code": code, "name": d["name"] or info.get("name", ""),
             "market": info.get("market", ""),
             "price": d["price"], "rate": d["rate"],
-            "value": d["value"], "volume": d["volume"], "mktcap": d["mktcap"],
+            "value": value, "volume": d["volume"], "mktcap": mktcap,
+            # 거래대금이 시총 대비 몇 % (거래대금 회전율)
+            "turnover": round(value / mktcap * 100, 2) if (value and mktcap) else None,
         })
     by_value = sorted(rows, key=lambda r: (r["value"] or 0), reverse=True)[:TOP_N]
-    # 거래대금 상위 종목에 당일 투자자 순매수(외국인/기관/개인) 부착
+    # 거래대금 상위 종목에 당일 외국인 순매수 부착 + 외국인 순매수가 시총 대비 몇 %
     for r in by_value[:TREND_N]:
         tr = quotes.investor_trend(r["code"], n=1)
         if tr:
             r["frgn"], r["org"], r["indi"] = tr[0]["frgn"], tr[0]["org"], tr[0]["indi"]
+            if r["price"] and r["mktcap"]:
+                r["frgn_pct"] = round(r["frgn"] * r["price"] / r["mktcap"] * 100, 3)
     payload = {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "universe": len(rows),
