@@ -1,8 +1,135 @@
 {
  "date": "2026-08-05",
- "generated_at": "2026-08-05 09:32:11",
- "count": 15,
+ "generated_at": "2026-08-05 13:09:22",
+ "count": 22,
  "events": [
+  {
+   "time": "11:20",
+   "kind": "주식선물",
+   "name": "LG전자",
+   "code": "066570",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260805000252",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260805000252&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300",
+    "KTOP30"
+   ],
+   "expand_time": "11:25:44",
+   "rate": 7.85
+  },
+  {
+   "time": "10:46",
+   "kind": "주식선물",
+   "name": "LS",
+   "code": "006260",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260805000209",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260805000209&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "10:51:46",
+   "rate": 9.82
+  },
+  {
+   "time": "10:11",
+   "kind": "주식선물",
+   "name": "HD현대마린엔진",
+   "code": "071970",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260805000167",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260805000167&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "10:16:00",
+   "rate": 13.88
+  },
+  {
+   "time": "10:05",
+   "kind": "주식선물",
+   "name": "한화엔진",
+   "code": "082740",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260805000151",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260805000151&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "10:10:43",
+   "rate": 11.17
+  },
+  {
+   "time": "09:38",
+   "kind": "주식선물",
+   "name": "HS효성첨단소재",
+   "code": "298050",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260805000129",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260805000129&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:43:10",
+   "rate": 5.76
+  },
+  {
+   "time": "09:35",
+   "kind": "주식선물",
+   "name": "금호타이어",
+   "code": "073240",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260805000126",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260805000126&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:40:51",
+   "rate": 6.16
+  },
+  {
+   "time": "09:34",
+   "kind": "주식선물",
+   "name": "SK",
+   "code": "034730",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260805000125",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260805000125&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:39:50",
+   "rate": 7.72
+  },
   {
    "time": "09:31",
    "kind": "주식선물",
@@ -18,7 +145,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:36:06"
+   "expand_time": "09:36:06",
+   "rate": 6.42
   },
   {
    "time": "09:30",
@@ -35,7 +163,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:35:52"
+   "expand_time": "09:35:52",
+   "rate": 14.75
   },
   {
    "time": "09:30",
@@ -53,7 +182,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:35:03"
+   "expand_time": "09:35:03",
+   "rate": 9.42
   },
   {
    "time": "09:24",
@@ -70,7 +200,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:29:17"
+   "expand_time": "09:29:17",
+   "rate": 12.24
   },
   {
    "time": "09:22",
@@ -87,7 +218,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:27:41"
+   "expand_time": "09:27:41",
+   "rate": 10.2
   },
   {
    "time": "09:14",
@@ -104,7 +236,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:19:34"
+   "expand_time": "09:19:34",
+   "rate": 7.17
   },
   {
    "time": "09:14",
@@ -121,7 +254,8 @@
     "KOSDAQ150",
     "KRX300"
    ],
-   "expand_time": "09:19:26"
+   "expand_time": "09:19:26",
+   "rate": 18.06
   },
   {
    "time": "09:13",
@@ -138,7 +272,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:18:36"
+   "expand_time": "09:18:36",
+   "rate": 16.23
   },
   {
    "time": "09:10",
@@ -156,7 +291,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:15:31"
+   "expand_time": "09:15:31",
+   "rate": 3.99
   },
   {
    "time": "09:08",
@@ -173,7 +309,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:13:57"
+   "expand_time": "09:13:57",
+   "rate": 9.56
   },
   {
    "time": "09:02",
@@ -190,7 +327,8 @@
     "KOSDAQ150",
     "KRX300"
    ],
-   "expand_time": "09:07:48"
+   "expand_time": "09:07:48",
+   "rate": 10.19
   },
   {
    "time": "09:02",
@@ -208,7 +346,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:07:16"
+   "expand_time": "09:07:16",
+   "rate": 14.67
   },
   {
    "time": "09:02",
@@ -226,7 +365,8 @@
     "KRX300",
     "KTOP30"
    ],
-   "expand_time": "09:07:07"
+   "expand_time": "09:07:07",
+   "rate": 13.0
   },
   {
    "time": "09:00",
@@ -243,7 +383,8 @@
     "KOSDAQ150",
     "KRX300"
    ],
-   "expand_time": "09:05:09"
+   "expand_time": "09:05:09",
+   "rate": 17.9
   },
   {
    "time": "09:00",
@@ -261,7 +402,8 @@
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:05:00"
+   "expand_time": "09:05:00",
+   "rate": 6.32
   }
  ]
 }

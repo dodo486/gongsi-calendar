@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-05 09:31:56",
- "count": 146,
+ "generated_at": "2026-08-05 13:09:01",
+ "count": 148,
  "events": [
   {
    "corp": "LG디스플레이",
@@ -1499,6 +1499,17 @@
    "period_end": "2026-06-30"
   },
   {
+   "corp": "동원산업",
+   "stock": "006040",
+   "market": "KOSPI",
+   "rcept_no": "20260805800261",
+   "rcept_dt": "20260805",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800261",
+   "src": "예고",
+   "expected_date": "2026-08-12",
+   "period_end": "2026-06-30"
+  },
+  {
    "corp": "미래에셋증권",
    "stock": "006800",
    "market": "KOSPI",
@@ -1665,6 +1676,19 @@
    "time": "10:00",
    "purpose": "2026 회계연도 상반기 경영실적 발표",
    "sponsor": "자사주관"
+  },
+  {
+   "corp": "동원산업",
+   "stock": "006040",
+   "market": "KOSPI",
+   "rcept_no": "20260805800262",
+   "rcept_dt": "20260805",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800262",
+   "src": "IR",
+   "expected_date": "2026-08-13",
+   "time": "10:30",
+   "purpose": "2026년 2분기 경영실적 발표",
+   "sponsor": "-"
   },
   {
    "corp": "삼성생명",
