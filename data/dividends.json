@@ -1,21 +1,7 @@
 {
- "generated_at": "2026-08-04 20:45:46",
- "count": 46,
+ "generated_at": "2026-08-05 09:16:41",
+ "count": 44,
  "events": [
-  {
-   "corp": "고려아연",
-   "stock": "010130",
-   "market": "KOSPI",
-   "per_share": "5000",
-   "record_date": "2026-05-21",
-   "pay_date": "2026-06-05",
-   "rcept_no": "20260506801010",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260506801010",
-   "div_type": "분기배당",
-   "rcept_dt": "20260506",
-   "confirm_date": "2026-05-19",
-   "ex_date": "2026-05-20"
-  },
   {
    "corp": "POSCO홀딩스",
    "stock": "005490",
@@ -167,20 +153,6 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260701900184",
    "div_type": "분기배당",
    "rcept_dt": "20260701",
-   "confirm_date": "2026-06-26",
-   "ex_date": "2026-06-29"
-  },
-  {
-   "corp": "씨젠",
-   "stock": "096530",
-   "market": "KOSDAQ",
-   "per_share": "300",
-   "record_date": "2026-06-30",
-   "pay_date": "2026-05-15",
-   "rcept_no": "20260506900578",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260506900578",
-   "div_type": "분기배당",
-   "rcept_dt": "20260506",
    "confirm_date": "2026-06-26",
    "ex_date": "2026-06-29"
   },

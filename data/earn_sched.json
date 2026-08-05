@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-04 20:58:17",
- "count": 157,
+ "generated_at": "2026-08-05 09:31:56",
+ "count": 146,
  "events": [
   {
    "corp": "LG디스플레이",
@@ -12,19 +12,6 @@
    "src": "예고",
    "expected_date": "2026-07-22",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "율촌화학",
-   "stock": "008730",
-   "market": "KOSPI",
-   "rcept_no": "20260721800117",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721800117",
-   "src": "IR",
-   "expected_date": "2026-07-22",
-   "time": "09:00",
-   "purpose": "국내 기관투자자 대상 NDR (Non-Deal Roadshow)실시 회사 소개,회사 실적 및 사업현황 설명",
-   "sponsor": "하나증권"
   },
   {
    "corp": "두산밥캣",
@@ -141,19 +128,6 @@
    "time": "09:00",
    "purpose": "2026년 2분기 경영실적 발표",
    "sponsor": "KB증권"
-  },
-  {
-   "corp": "우리금융지주",
-   "stock": "316140",
-   "market": "KOSPI",
-   "rcept_no": "20260721801062",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721801062",
-   "src": "IR",
-   "expected_date": "2026-07-24",
-   "time": "16:00",
-   "purpose": "2026년 상반기 경영실적 발표",
-   "sponsor": "자사"
   },
   {
    "corp": "LG이노텍",
@@ -290,32 +264,6 @@
    "time": "09:00",
    "purpose": "26년 2분기 경영실적 및 주요 경영현황 설명",
    "sponsor": "키움증권,"
-  },
-  {
-   "corp": "HD현대일렉트릭",
-   "stock": "267260",
-   "market": "KOSPI",
-   "rcept_no": "20260721800703",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721800703",
-   "src": "IR",
-   "expected_date": "2026-07-28",
-   "time": "15:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
-  },
-  {
-   "corp": "BNK금융지주",
-   "stock": "138930",
-   "market": "KOSPI",
-   "rcept_no": "20260721801306",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721801306",
-   "src": "IR",
-   "expected_date": "2026-07-28",
-   "time": "15:30",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
   },
   {
    "corp": "HK이노엔",
@@ -473,32 +421,6 @@
    "sponsor": "HD한국조선해양"
   },
   {
-   "corp": "한국항공우주",
-   "stock": "047810",
-   "market": "KOSPI",
-   "rcept_no": "20260721801044",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721801044",
-   "src": "IR",
-   "expected_date": "2026-07-29",
-   "time": "16:00",
-   "purpose": "2026년 2분기 잠정실적 발표",
-   "sponsor": "자사주관"
-  },
-  {
-   "corp": "BNK금융지주",
-   "stock": "138930",
-   "market": "KOSPI",
-   "rcept_no": "20260721801376",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721801376",
-   "src": "IR",
-   "expected_date": "2026-07-30",
-   "time": "",
-   "purpose": "2026년 2분기 경영실적 및 주요 경영현안 설명",
-   "sponsor": "유안타증권"
-  },
-  {
    "corp": "DL이앤씨",
    "stock": "375500",
    "market": "KOSPI",
@@ -596,19 +518,6 @@
    "src": "예고",
    "expected_date": "2026-07-30",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "한국항공우주",
-   "stock": "047810",
-   "market": "KOSPI",
-   "rcept_no": "20260721801052",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721801052",
-   "src": "IR",
-   "expected_date": "2026-07-30",
-   "time": "",
-   "purpose": "2026년 2분기 실적 설명",
-   "sponsor": "대신증권"
   },
   {
    "corp": "키움증권",
@@ -838,19 +747,6 @@
    "sponsor": "당사주관"
   },
   {
-   "corp": "현대건설",
-   "stock": "000720",
-   "market": "KOSPI",
-   "rcept_no": "20260721800843",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721800843",
-   "src": "IR",
-   "expected_date": "2026-07-31",
-   "time": "14:00",
-   "purpose": "2026년 상반기 경영실적발표",
-   "sponsor": "-"
-  },
-  {
    "corp": "HD현대",
    "stock": "267250",
    "market": "KOSPI",
@@ -899,19 +795,6 @@
    "time": "09:00",
    "purpose": "2026년 2분기 경영실적 발표",
    "sponsor": "하나증권"
-  },
-  {
-   "corp": "현대건설",
-   "stock": "000720",
-   "market": "KOSPI",
-   "rcept_no": "20260721800851",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721800851",
-   "src": "IR",
-   "expected_date": "2026-08-03",
-   "time": "09:00",
-   "purpose": "실적발표 NDR",
-   "sponsor": "IBK투자증권,"
   },
   {
    "corp": "효성중공업",
@@ -995,19 +878,6 @@
    "src": "예고",
    "expected_date": "2026-08-04",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "한화",
-   "stock": "000880",
-   "market": "KOSPI",
-   "rcept_no": "20260721800003",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721800003",
-   "src": "IR",
-   "expected_date": "2026-08-04",
-   "time": "14:00",
-   "purpose": "2026년 2분기 실적 및 사업 설명",
-   "sponsor": "-"
   },
   {
    "corp": "삼성증권",
@@ -1111,19 +981,6 @@
    "time": "09:00",
    "purpose": "2026년 2분기 경영실적 발표",
    "sponsor": "KB증권"
-  },
-  {
-   "corp": "한화",
-   "stock": "000880",
-   "market": "KOSPI",
-   "rcept_no": "20260721800006",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721800006",
-   "src": "IR",
-   "expected_date": "2026-08-05",
-   "time": "09:00",
-   "purpose": "2026년 2분기 실적 및 사업 설명을 통한 당사에 대한 이해도 제고",
-   "sponsor": "대신증권"
   },
   {
    "corp": "DL",

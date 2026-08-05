@@ -1,7 +1,77 @@
 {
- "generated_at": "2026-08-04 20:56:57",
- "count": 160,
+ "generated_at": "2026-08-05 09:30:21",
+ "count": 165,
  "events": [
+  {
+   "corp": "카카오게임즈",
+   "stock": "293490",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260805",
+   "rcept_no": "20260805900059",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900059",
+   "flr": "카카오게임즈",
+   "price": "8,180",
+   "rate": 1.92,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "SK텔레콤",
+   "stock": "017670",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260805",
+   "rcept_no": "20260805800077",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800077",
+   "flr": "SK텔레콤",
+   "price": "92,500",
+   "rate": 1.2,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "SK텔레콤",
+   "stock": "017670",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260805",
+   "rcept_no": "20260805800075",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800075",
+   "flr": "SK텔레콤",
+   "price": "92,500",
+   "rate": 1.2,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "DB하이텍",
+   "stock": "000990",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260805",
+   "rcept_no": "20260805800063",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800063",
+   "flr": "DB하이텍",
+   "price": "91,900",
+   "rate": 8.12,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "카카오뱅크",
+   "stock": "323410",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260805",
+   "rcept_no": "20260805800019",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800019",
+   "flr": "카카오뱅크",
+   "price": "22,200",
+   "rate": 1.6,
+   "chg_sign": "2"
+  },
   {
    "corp": "디어유",
    "stock": "376300",
@@ -14,7 +84,9 @@
    "flr": "디어유",
    "rate": 8.98,
    "price": "21,850",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "이녹스첨단소재",
@@ -28,7 +100,9 @@
    "flr": "이녹스첨단소재",
    "rate": 5.66,
    "price": "20,900",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "셀트리온제약",
@@ -42,7 +116,9 @@
    "flr": "셀트리온제약",
    "rate": 3.47,
    "price": "41,700",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "에코프로",
@@ -56,7 +132,9 @@
    "flr": "에코프로",
    "rate": 5.94,
    "price": "82,000",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "아이쓰리시스템",
@@ -70,7 +148,9 @@
    "flr": "아이쓰리시스템",
    "rate": 10.74,
    "price": "67,000",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "삼성증권",
@@ -84,7 +164,13 @@
    "flr": "삼성증권",
    "rate": 1.65,
    "price": "98,600",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": 1.65,
+   "post5": 0.71,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "파라다이스",
@@ -98,7 +184,13 @@
    "flr": "파라다이스",
    "rate": 5.15,
    "price": "10,010",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": 5.15,
+   "post5": 2.4,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "강원랜드",
@@ -110,9 +202,15 @@
    "rcept_no": "20260804800422",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800422",
    "flr": "강원랜드",
-   "rate": 0.28,
+   "rate": -0.28,
    "price": "14,500",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": -0.28,
+   "post5": 0.41,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "카카오페이",
@@ -126,7 +224,13 @@
    "flr": "카카오페이",
    "rate": 1.98,
    "price": "43,800",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": 1.98,
+   "post5": 4.45,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "카카오페이",
@@ -140,7 +244,13 @@
    "flr": "카카오페이",
    "rate": 1.98,
    "price": "43,800",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": 1.98,
+   "post5": 4.45,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "에코프로머티",
@@ -154,7 +264,13 @@
    "flr": "에코프로머티",
    "rate": 0.46,
    "price": "32,750",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": 0.46,
+   "post5": 2.6,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "한화",
@@ -168,7 +284,13 @@
    "flr": "한화",
    "rate": 0.0,
    "price": "83,800",
-   "chg_sign": "3"
+   "chg_sign": "3",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": 0.0,
+   "post5": null,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "대우건설",
@@ -182,7 +304,13 @@
    "flr": "대우건설",
    "rate": 14.29,
    "price": "15,200",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": 14.29,
+   "post5": 4.28,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "대우건설",
@@ -196,7 +324,13 @@
    "flr": "대우건설",
    "rate": 14.29,
    "price": "15,200",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "16:34",
+   "pre5": 14.29,
+   "post5": 4.28,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "에스앤에스텍",
@@ -226,8 +360,8 @@
    "rate_fixed": true,
    "disc_time": "16:47",
    "pre5": 1.29,
-   "post5": null,
-   "tick_state": "wait:20260804",
+   "post5": 0.64,
+   "tick_state": "ok",
    "tick_kind": "close_gap"
   },
   {
@@ -244,8 +378,8 @@
    "rate_fixed": true,
    "disc_time": "16:47",
    "pre5": -1.74,
-   "post5": null,
-   "tick_state": "wait:20260804",
+   "post5": -0.93,
+   "tick_state": "ok",
    "tick_kind": "close_gap"
   },
   {
@@ -262,8 +396,8 @@
    "rate_fixed": true,
    "disc_time": "16:47",
    "pre5": -5.88,
-   "post5": null,
-   "tick_state": "wait:20260804",
+   "post5": 0.4,
+   "tick_state": "ok",
    "tick_kind": "close_gap"
   },
   {
@@ -280,8 +414,8 @@
    "rate_fixed": true,
    "disc_time": "16:47",
    "pre5": -5.88,
-   "post5": null,
-   "tick_state": "wait:20260804",
+   "post5": 0.4,
+   "tick_state": "ok",
    "tick_kind": "close_gap"
   },
   {
@@ -298,8 +432,8 @@
    "rate_fixed": true,
    "disc_time": "16:47",
    "pre5": 6.98,
-   "post5": null,
-   "tick_state": "wait:20260804",
+   "post5": -0.54,
+   "tick_state": "ok",
    "tick_kind": "close_gap"
   },
   {
@@ -316,8 +450,8 @@
    "rate_fixed": true,
    "disc_time": "16:47",
    "pre5": -4.4,
-   "post5": null,
-   "tick_state": "wait:20260804",
+   "post5": 0.33,
+   "tick_state": "ok",
    "tick_kind": "close_gap"
   },
   {
