@@ -132,9 +132,32 @@ def save_payload(p):
     p["generated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_json(DATA_PATH, p)
 
+def _rate_str(code):
+    """종목코드 → ' (+3.3%)' 등락률 문자열(부호 포함). 미상/실패면 ''. (네이버 실시간 재사용)"""
+    if not code:
+        return ""
+    try:
+        from earnings import naver_rate
+        r = naver_rate(code).get("rate")
+        if isinstance(r, (int, float)):
+            return f" ({'+' if r > 0 else ''}{r}%)"
+    except Exception:
+        pass
+    return ""
+
+def _code_of(name):
+    """종목명 → 종목코드 (watchlist 역인덱스). 없으면 ''. (시장조치는 코드 없이 회사명만 있음)"""
+    if not name:
+        return ""
+    key = name.strip()
+    for code, info in (load_watchlist() or {}).items():
+        if (info.get("name") or "").strip() == key:
+            return code
+    return ""
+
 def notify(e):
     """OS 알림 — 윈도우: 토스트(클릭 시 DART 원문) / 맥: 알림센터 / 리눅스: notify-send"""
-    title = f"[{e['category']}] {e['corp']} · {e['market']}"
+    title = f"[{e['category']}] {e['corp']}{_rate_str(e.get('stock'))} · {e['market']}"
     try:
         system = platform.system()
         if system == "Windows":
@@ -181,7 +204,9 @@ def notify_limit(e):
 def notify_action(e):
     """KRX 시장조치(사이드카·서킷·거래정지/재개·투자경고 등) OS 알림 — 클릭 시 KRX 원문"""
     dirtag = " ▲매수" if e["direction"] == "매수" else (" ▼매도" if e["direction"] == "매도" else "")
-    title = f"[{e['kind']}{(' ' + e['action']) if e['action'] else ''}] {e['market']}{dirtag}"
+    corp = e.get("corp", "")
+    who = f"{corp}{_rate_str(_code_of(corp))} · " if corp else ""   # 종목-특정 조치면 회사명+등락률
+    title = f"[{e['kind']}{(' ' + e['action']) if e['action'] else ''}] {who}{e['market']}{dirtag}"
     msg = e["title"]
     try:
         system = platform.system()
