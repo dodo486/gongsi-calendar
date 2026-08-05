@@ -199,8 +199,18 @@ def notify_action(e):
     except Exception as ex:
         print(f"  [알림실패] {ex}")
 
+CRITICAL_ACTIONS = ("사이드카", "서킷브레이커")   # 시장 전체 조치 — 무조건 알림 대상
+
+def _action_active(e):
+    """사이드카·서킷 등 자동해제 조치가 아직 안 풀렸는지 (발동시각 ~ 해제예정시각 사이)."""
+    tm, until = e.get("time"), e.get("until")
+    if not tm or not until:
+        return False
+    return tm <= datetime.datetime.now().strftime("%H:%M") < until
+
 def poll_actions(ac_seen, alert=True):
-    """KRX 시장조치 폴링 — krx_actions.json 최신화 + 신규 조치 토스트. ac_seen: 전용 in-memory 중복셋."""
+    """KRX 시장조치 폴링 — krx_actions.json 최신화 + 신규 조치 토스트. ac_seen: 전용 in-memory 중복셋.
+    사이드카·서킷브레이커는 재시작 baseline 이라도 '아직 안 풀렸으면' 무조건 토스트(놓침 방지)."""
     try:
         evs = krx_actions.collect()
     except Exception as ex:
@@ -216,7 +226,8 @@ def poll_actions(ac_seen, alert=True):
         if e["rcept_no"] in ac_seen:
             continue
         ac_seen.add(e["rcept_no"])
-        if alert:
+        # 일반 조치는 alert=True 일 때만 / 사이드카·서킷은 발동중이면 baseline 이라도 무조건
+        if alert or (e["kind"] in CRITICAL_ACTIONS and _action_active(e)):
             print(f"  🚨 시장조치 [{e['kind']}] {e['market']} {e['action']} {e['title'][:40]}")
             notify_action(e)
             alerted += 1

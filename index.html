@@ -149,6 +149,9 @@
   .li.down{border-left:3px solid #3b82f6}
   @keyframes blinkY{0%,49%{background:rgba(234,179,8,.34)}50%,100%{background:var(--panel)}}
   .li.hot{animation:blinkY 1.1s infinite;border-left-color:var(--est)!important}
+  /* 사이드카·서킷 발동중 — 시장조치 상단 헤더 빨간 깜빡(풀릴 때까지) */
+  @keyframes blinkR{0%,49%{background:rgba(239,68,68,.42);color:#fff}50%,100%{background:transparent;color:#fca5a5}}
+  .limsec.danger.blink{animation:blinkR 1s infinite;border-radius:6px;padding:4px 8px}
   .li .t{font-size:12px;color:var(--muted);width:42px;flex:none}
   .li .nm{font-size:14px;font-weight:700}
   .li .mk{font-size:10px;padding:1px 6px;border-radius:5px}
@@ -564,8 +567,9 @@ function renderLimits(){
       ${items.length ? items.map(rowFn).join("") : `<div class="empty">해당 없음</div>`}
     </div>`;
   if(acts.length){   // 🏛️ 시장조치 — 전체폭 상단, 아래 주식/지수선물 칼럼과 구분선으로 분리
-    h += `<div class="limsec danger">🏛️ 시장조치 (${acts.length})</div>` + acts.map(actRow).join("")
-       + `<div class="lim-hr"></div>`;
+    const anyHot = acts.some(actHot);   // 사이드카·서킷 발동중 → 상단 헤더 빨간 깜빡(풀리면 자동 정지)
+    h += `<div class="limsec danger${anyHot?" blink":""}">🏛️ 시장조치 (${acts.length})${anyHot?" · 🔴 발동중":""}</div>`
+       + acts.map(actRow).join("") + `<div class="lim-hr"></div>`;
   }
   h += `<div class="lim-split">`
      + col("🔶 주식선물","stk",list.filter(e=>e.kind==="주식선물"))
