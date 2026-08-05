@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>💰 수급분석기</title>
+<style>
+  :root{
+    --bg:#0f131a; --panel:#161b23; --line:#252c37; --text:#e6ebf2; --muted:#8b97a7;
+    --kospi:#3b82f6; --kosdaq:#f59e0b; --accent:#22c55e; --est:#eab308;
+    --up:#fca5a5; --down:#93c5fd;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI","맑은 고딕",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+  header h1{font-size:18px;margin:0}
+  .navlink{color:var(--est);text-decoration:none;font-size:13px;font-weight:700;padding:4px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+  .navlink:hover{border-color:var(--est)}
+  .clock{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+  .meta{color:var(--muted);font-size:12px;margin-left:auto}
+  .controls{display:flex;gap:8px;align-items:center}
+  input[type=search]{background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:5px 10px;font-size:13px;width:130px}
+  .chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line);cursor:pointer;user-select:none;color:var(--muted)}
+  .chip.kospi.on{background:rgba(59,130,246,.2);color:#93c5fd;border-color:var(--kospi)}
+  .chip.kosdaq.on{background:rgba(245,158,11,.2);color:#fcd34d;border-color:var(--kosdaq)}
+  .wrap{display:flex;gap:16px;padding:16px;align-items:flex-start;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .main{flex:3;min-width:520px}
+  .side{flex:1;min-width:240px;display:flex;flex-direction:column;gap:16px}
+  .ttl{font-size:14px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .ttl .sub{font-size:11px;font-weight:400;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:6px 8px;text-align:right;white-space:nowrap}
+  th{color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);font-size:11px;position:sticky;top:0;background:var(--panel)}
+  td.l,th.l{text-align:left}
+  tbody tr{border-bottom:1px solid #1d232d;cursor:pointer}
+  tbody tr:hover{background:#1b212b}
+  .rk{color:var(--muted);width:26px}
+  .nm{font-weight:700}
+  .mk{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:6px}
+  .mk.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
+  .mk.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
+  .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
+  .val{font-weight:700}
+  .mv{display:flex;justify-content:space-between;padding:5px 4px;border-bottom:1px solid #1d232d;font-size:13px}
+  .mv .nm{font-weight:600}
+  .empty{color:var(--muted);padding:20px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>💰 수급분석기</h1>
+  <a class="navlink" href="index.html">← 📅 공시캘린더</a>
+  <span class="clock" id="clock">--:--:--</span>
+  <span class="meta" id="meta">불러오는 중…</span>
+  <div class="controls">
+    <input type="search" id="q" placeholder="종목명 검색">
+    <span class="chip kospi on" data-market="KOSPI">KOSPI</span>
+    <span class="chip kosdaq on" data-market="KOSDAQ">KOSDAQ</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card main">
+    <div class="ttl">🔥 거래대금 상위 <span class="sub">— 오늘 돈이 몰린 종목 (등락률 · 외국인/기관/개인 순매수, 당일 잠정)</span></div>
+    <div style="max-height:76vh;overflow:auto">
+      <table>
+        <thead><tr>
+          <th class="rk">#</th><th class="l">종목</th><th>등락률</th><th>거래대금</th>
+          <th>외국인</th><th>기관</th><th>개인</th>
+        </tr></thead>
+        <tbody id="valBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="side">
+    <div class="card"><div class="ttl">📈 상승 상위</div><div id="upBox"></div></div>
+    <div class="card"><div class="ttl">📉 하락 상위</div><div id="downBox"></div></div>
+  </div>
+</div>
+
+<script>
+let FLOW = {by_value:[], up:[], down:[], universe:0, generated_at:""};
+const filters = {KOSPI:true, KOSDAQ:true, q:""};
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function eok(won){   // 원 → 억/조 표시
+  if(won==null) return "-";
+  const eok = won/1e8;
+  if(eok >= 10000) return (eok/10000).toFixed(2).replace(/\.?0+$/,"")+"조";
+  return Math.round(eok).toLocaleString()+"억";
+}
+function qty(n){   // 순매수 주식수 (매수=빨강 / 매도=파랑)
+  if(n==null) return `<span class="flat">-</span>`;
+  const cls = n>0?"up":(n<0?"down":"flat");
+  const s = (n>0?"+":"")+Number(n).toLocaleString();
+  return `<span class="${cls}">${s}</span>`;
+}
+function rateCell(r){
+  if(r==null) return `<span class="flat">-</span>`;
+  const cls = r>0?"up":(r<0?"down":"flat");
+  return `<span class="${cls}">${r>0?"+":""}${r}%</span>`;
+}
+function pass(r){
+  if(!filters[r.market]) return false;
+  const q = filters.q.trim().toLowerCase();
+  return !q || (r.name||"").toLowerCase().includes(q) || (r.code||"").includes(q);
+}
+
+function render(){
+  const rows = FLOW.by_value.filter(pass);
+  document.getElementById("valBody").innerHTML = rows.length ? rows.map((r,i)=>`
+    <tr data-code="${esc(r.code)}">
+      <td class="rk">${i+1}</td>
+      <td class="l"><span class="nm">${esc(r.name)}</span><span class="mk ${esc(r.market)}">${esc(r.market)}</span></td>
+      <td>${rateCell(r.rate)}</td>
+      <td class="val">${eok(r.value)}</td>
+      <td>${qty(r.frgn)}</td>
+      <td>${qty(r.org)}</td>
+      <td>${qty(r.indi)}</td>
+    </tr>`).join("") : `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`;
+
+  const mv = (list)=> list.filter(pass).map(r=>`
+    <div class="mv"><span class="nm">${esc(r.name)}</span>${rateCell(r.rate)}</div>`).join("") || `<div class="empty">해당 없음</div>`;
+  document.getElementById("upBox").innerHTML = mv(FLOW.up);
+  document.getElementById("downBox").innerHTML = mv(FLOW.down);
+
+  document.getElementById("meta").textContent =
+    `대상 ${FLOW.universe}종목 · 갱신 ${FLOW.generated_at||"-"}`;
+}
+
+async function load(){
+  try{
+    FLOW = await (await fetch("data/flow.json?_="+Date.now())).json();
+  }catch(_){ FLOW = {by_value:[],up:[],down:[],universe:0,generated_at:""}; }
+  render();
+}
+
+// 종목 클릭 → (추후) 상세. 지금은 네이버 종목 페이지 새 탭
+document.getElementById("valBody").addEventListener("click",e=>{
+  const tr = e.target.closest("tr[data-code]"); if(!tr) return;
+  window.open("https://finance.naver.com/item/main.nhn?code="+tr.dataset.code,"_blank","noopener");
+});
+document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
+  const m=c.dataset.market; filters[m]=!filters[m]; c.classList.toggle("on",filters[m]); render();
+}));
+document.getElementById("q").addEventListener("input",e=>{ filters.q=e.target.value; render(); });
+
+// 시계
+setInterval(()=>{ const d=new Date();
+  document.getElementById("clock").textContent = d.toLocaleTimeString("ko-KR",{hour12:false}); },1000);
+
+// SSE: data/ 변경 시 즉시 재로드 (flow.json 갱신 반영) + index.html/flow.html 변경 시 reload
+let _es;
+function connectSSE(){
+  try{
+    _es = new EventSource("/events");
+    _es.onmessage = ()=> load();
+    _es.addEventListener("reload", ()=> location.reload());
+    _es.onerror = ()=>{ _es.close(); setTimeout(connectSSE, 3000); };
+  }catch(_){}
+}
+load();
+connectSSE();
+setInterval(load, 30000);   // SSE 실패 대비 폴백
+</script>
+</body>
+</html>

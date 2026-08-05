@@ -19,6 +19,7 @@ import earnings
 import earn_sched
 import krx_actions
 import capital
+import flow
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
@@ -298,6 +299,17 @@ def poll_limits(lim_seen, alert=True):
             alerted += 1
     return alerted
 
+FLOW_POLL_SECONDS = 60   # 수급(거래대금·투자자 순매수) 스냅샷 주기 — 상하한가(5초)와 별개
+
+def flow_loop():
+    """수급분석기 전용 루프(별도 스레드) — 거래대금/등락 랭킹 + 투자자 순매수 → data/flow.json."""
+    while True:
+        try:
+            flow.build()
+        except Exception as ex:
+            print(f"  [수급] 갱신 실패: {ex}")
+        time.sleep(FLOW_POLL_SECONDS)
+
 def limits_loop(lim_seen, ac_seen):
     """상하한가·시장조치 전용 고속 루프(별도 스레드) — 공시/실적과 무관하게 LIMITS_POLL_SECONDS 마다 갱신."""
     while True:
@@ -395,6 +407,8 @@ def main():
         print(f"  [상하한가·시장조치] baseline 실패: {ex}")
     threading.Thread(target=limits_loop, args=(lim_seen, ac_seen), daemon=True).start()   # 5초 고속 갱신 스레드
     print(f"  [상하한가·시장조치] 전용 루프 시작 ({LIMITS_POLL_SECONDS}초 주기)")
+    threading.Thread(target=flow_loop, daemon=True).start()   # 수급 스냅샷 스레드
+    print(f"  [수급] 전용 루프 시작 ({FLOW_POLL_SECONDS}초 주기)")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)

@@ -10,14 +10,18 @@ import urllib.parse
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
 INDEX_PATH = os.path.join(BASE, "index.html")
+HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", "flow.html")]
 PORT = 8777
 
 def html_mtime():
-    """index.html 수정 시각 — 바뀌면 SSE로 reload 신호를 보내 열린 탭이 스스로 새로고침."""
-    try:
-        return os.path.getmtime(INDEX_PATH)
-    except OSError:
-        return 0.0
+    """페이지 HTML 최신 수정 시각 — 바뀌면 SSE로 reload 신호(열린 탭 자동 새로고침)."""
+    latest = 0.0
+    for p in HTML_PAGES:
+        try:
+            latest = max(latest, os.path.getmtime(p))
+        except OSError:
+            pass
+    return latest
 
 def data_signature():
     """data/*.json 의 (파일명→mtime) 최대값 — 하나라도 바뀌면 값이 커진다."""
