@@ -4101,5 +4101,49 @@
   "record_date": "2026-09-30",
   "pay_date": "",
   "div_type": "중간배당"
+ },
+ "20260805800818": {
+  "kind": "record",
+  "stock": "064400",
+  "corp": "LG씨엔에스",
+  "market": "KOSPI",
+  "rcept_dt": "20260805",
+  "per_share": "",
+  "record_date": "2026-08-20",
+  "pay_date": "",
+  "div_type": "중간배당"
+ },
+ "20260805800811": {
+  "kind": "decision",
+  "stock": "064400",
+  "corp": "LG씨엔에스",
+  "market": "KOSPI",
+  "rcept_dt": "20260805",
+  "per_share": "750",
+  "record_date": "2026-08-20",
+  "pay_date": "2026-09-04",
+  "div_type": "중간배당"
+ },
+ "20260805800536": {
+  "kind": "decision",
+  "stock": "010130",
+  "corp": "고려아연",
+  "market": "KOSPI",
+  "rcept_dt": "20260805",
+  "per_share": "5000",
+  "record_date": "2026-08-20",
+  "pay_date": "2026-09-04",
+  "div_type": "분기배당"
+ },
+ "20260805800533": {
+  "kind": "record",
+  "stock": "010130",
+  "corp": "고려아연",
+  "market": "KOSPI",
+  "rcept_dt": "20260805",
+  "per_share": "",
+  "record_date": "2026-08-20",
+  "pay_date": "",
+  "div_type": "분기배당"
  }
 }

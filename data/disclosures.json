@@ -1,11 +1,44 @@
 {
- "generated_at": "2026-08-05 15:22:40",
+ "generated_at": "2026-08-05 18:20:43",
  "range": {
   "bgn": "20260506",
-  "end": "20260804"
+  "end": "20260805"
  },
- "count": 307,
+ "count": 310,
  "events": [
+  {
+   "corp": "HLB",
+   "stock": "028300",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260805",
+   "rcept_no": "20260805000480",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805000480",
+   "flr": "HLB"
+  },
+  {
+   "corp": "우리기술",
+   "stock": "032820",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260805",
+   "rcept_no": "20260805000463",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805000463",
+   "flr": "우리기술"
+  },
+  {
+   "corp": "하나마이크론",
+   "stock": "067310",
+   "market": "KOSDAQ",
+   "title": "교환사채권발행결정(종속회사의주요경영사항)              (제2회차)",
+   "category": "메자닌",
+   "date": "20260805",
+   "rcept_no": "20260805900689",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900689",
+   "flr": "하나마이크론"
+  },
   {
    "corp": "하나머티리얼즈",
    "stock": "166090",

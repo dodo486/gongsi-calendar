@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-05 15:23:02",
- "count": 45,
+ "generated_at": "2026-08-05 18:21:09",
+ "count": 46,
  "events": [
   {
    "corp": "POSCO홀딩스",
@@ -575,6 +575,20 @@
    "rcept_dt": "20260731",
    "confirm_date": "2026-08-13",
    "ex_date": "2026-08-14"
+  },
+  {
+   "corp": "고려아연",
+   "stock": "010130",
+   "market": "KOSPI",
+   "per_share": "5000",
+   "record_date": "2026-08-20",
+   "pay_date": "2026-09-04",
+   "rcept_no": "20260805800536",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800536",
+   "div_type": "분기배당",
+   "rcept_dt": "20260805",
+   "confirm_date": "2026-08-18",
+   "ex_date": "2026-08-19"
   },
   {
    "corp": "SK텔레콤",

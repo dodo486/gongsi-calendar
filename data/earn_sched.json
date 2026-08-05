@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-05 15:51:44",
- "count": 149,
+ "generated_at": "2026-08-05 18:49:15",
+ "count": 151,
  "events": [
   {
    "corp": "LG디스플레이",
@@ -1256,6 +1256,17 @@
    "period_end": "2026-06-30"
   },
   {
+   "corp": "롯데케미칼",
+   "stock": "011170",
+   "market": "KOSPI",
+   "rcept_no": "20260805800824",
+   "rcept_dt": "20260805",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800824",
+   "src": "예고",
+   "expected_date": "2026-08-07",
+   "period_end": "2026-06-30"
+  },
+  {
    "corp": "산일전기",
    "stock": "062040",
    "market": "KOSPI",
@@ -1475,6 +1486,17 @@
    "time": "16:00",
    "purpose": "2026년도 2분기 실적발표",
    "sponsor": "자사주관"
+  },
+  {
+   "corp": "JYP Ent.",
+   "stock": "035900",
+   "market": "KOSDAQ",
+   "rcept_no": "20260805900573",
+   "rcept_dt": "20260805",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900573",
+   "src": "예고",
+   "expected_date": "2026-08-12",
+   "period_end": "2026-06-30"
   },
   {
    "corp": "네오위즈",
