@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-05 12:43:41",
- "count": 44,
+ "generated_at": "2026-08-05 15:23:02",
+ "count": 45,
  "events": [
   {
    "corp": "POSCO홀딩스",
@@ -617,6 +617,20 @@
    "rcept_dt": "20260721",
    "confirm_date": "2026-08-27",
    "ex_date": "2026-08-28"
+  },
+  {
+   "corp": "현대백화점",
+   "stock": "069960",
+   "market": "KOSPI",
+   "per_share": "500",
+   "record_date": "2026-09-30",
+   "pay_date": "2026-10-30",
+   "rcept_no": "20260805800355",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800355",
+   "div_type": "중간배당",
+   "rcept_dt": "20260805",
+   "confirm_date": "2026-09-28",
+   "ex_date": "2026-09-29"
   }
  ]
 }

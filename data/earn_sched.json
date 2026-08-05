@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-05 13:09:01",
- "count": 148,
+ "generated_at": "2026-08-05 15:51:44",
+ "count": 149,
  "events": [
   {
    "corp": "LG디스플레이",
@@ -1715,6 +1715,19 @@
    "time": "15:30",
    "purpose": "2026년 2분기 경영실적 설명",
    "sponsor": "당사주관"
+  },
+  {
+   "corp": "DB손해보험",
+   "stock": "005830",
+   "market": "KOSPI",
+   "rcept_no": "20260805800322",
+   "rcept_dt": "20260805",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800322",
+   "src": "IR",
+   "expected_date": "2026-08-13",
+   "time": "16:00",
+   "purpose": "2026년 상반기 경영실적 발표",
+   "sponsor": "자사주관"
   },
   {
    "corp": "에스디바이오센서",
