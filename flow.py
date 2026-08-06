@@ -42,9 +42,11 @@ def build():
                 r["frgn"], r["org"], r["indi"] = tr[0]["frgn"], tr[0]["org"], tr[0]["indi"]
                 if r["price"] and r["mktcap"]:
                     r["frgn_pct"] = round(r["frgn"] * r["price"] / r["mktcap"] * 100, 3)
-                sig = _flow_signals([{"org": t["org"], "frgn": t["frgn"]} for t in reversed(tr)])
+                sig, lead = _classify_signals(tr)   # 매집 신호 + 선행(🔵)/후행(🔥)
                 if sig:
-                    r["sig"] = sig   # 랭킹 목록의 🔥 매수신호 마크용
+                    r["sig"] = sig
+                    r["lead"] = lead["lead"]
+                    r["ret5"] = lead["ret5"]
     payload = {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "universe": len(rows),
@@ -56,11 +58,17 @@ def build():
     print(f"TLS={TLS_MODE} | flow.json 저장: 거래대금상위 {len(by_value)} · 전체 {len(rows)}종목")
     return payload
 
-MIN_STREAK = 3   # 연속 순매수 최소 일수 (이 이상만 목록에 매집 마크)
+MIN_STREAK = 3      # 연속 순매수 최소 일수 (이 이상만 매집 마크)
+LEAD_MAX_RET = 5.0  # 최근 5일 수익률 이 이하면 '아직 미발현' = 선행(🔵), 초과면 후행(🔥)
 
-def _flow_signals(rows):
-    """수급 '지속 매집' 마크용 — 기관/외국인 연속 순매수 ≥ MIN_STREAK 만 태그(전환은 노이즈라 제외).
-    rows: 과거→최신, org/frgn 순매수. 반환 예: [{'who':'기관','days':4}]."""
+def _classify_signals(trend):
+    """투자자 추이(최신→과거, close 포함)로 매집 신호 + 선행/후행 구분.
+    - 매집: 기관/외국인 연속 순매수 ≥ MIN_STREAK
+    - 선행(lead): 매집 중인데 최근 5일 수익률 ≤ LEAD_MAX_RET (돈은 들어오나 아직 안 오름) → 🔵
+    - 후행: 매집 + 이미 상승(>LEAD_MAX_RET) → 🔥
+    반환: (sig_list, {'lead':bool, 'ret5':float|None})"""
+    rows = [{"org": t.get("org"), "frgn": t.get("frgn")} for t in reversed(trend)]  # 과거→최신
+
     def streak(key):
         c = 0
         for r in reversed(rows):
@@ -70,14 +78,24 @@ def _flow_signals(rows):
                 break
         return c
 
-    out = []
+    sig = []
     so, sf = streak("org"), streak("frgn")
     if so >= MIN_STREAK:
-        out.append({"who": "기관", "days": so})
+        sig.append({"who": "기관", "days": so})
     if sf >= MIN_STREAK:
-        out.append({"who": "외인", "days": sf})
-    out.sort(key=lambda x: x["days"], reverse=True)
-    return out
+        sig.append({"who": "외인", "days": sf})
+    if not sig:
+        return [], {"lead": False, "ret5": None}
+    sig.sort(key=lambda x: x["days"], reverse=True)
+    # 최근 5일 수익률 (trend close 최신→과거)
+    closes = [t["close"] for t in trend if t.get("close")]
+    ret = None
+    if len(closes) >= 2:
+        k = min(5, len(closes) - 1)
+        if closes[k]:
+            ret = (closes[0] / closes[k] - 1) * 100
+    lead = ret is not None and ret <= LEAD_MAX_RET
+    return sig, {"lead": lead, "ret5": round(ret, 1) if ret is not None else None}
 
 def _signals(rows):
     """일별 레코드(과거→최신, 투자자 데이터 포함분)에서 신호 배지 추출.
