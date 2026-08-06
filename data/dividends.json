@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-05 20:41:13",
- "count": 47,
+ "generated_at": "2026-08-06 09:13:59",
+ "count": 46,
  "events": [
   {
    "corp": "POSCO홀딩스",
@@ -55,20 +55,6 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260511800793",
    "div_type": "분기배당",
    "rcept_dt": "20260511",
-   "confirm_date": "2026-05-28",
-   "ex_date": "2026-05-29"
-  },
-  {
-   "corp": "코웨이",
-   "stock": "021240",
-   "market": "KOSPI",
-   "per_share": "700",
-   "record_date": "2026-05-31",
-   "pay_date": "",
-   "rcept_no": "20260507800978",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260507800978",
-   "div_type": "분기배당",
-   "rcept_dt": "20260507",
    "confirm_date": "2026-05-28",
    "ex_date": "2026-05-29"
   },

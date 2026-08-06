@@ -1,18 +1,7 @@
 {
- "generated_at": "2026-08-05 21:08:26",
- "count": 151,
+ "generated_at": "2026-08-06 09:42:38",
+ "count": 145,
  "events": [
-  {
-   "corp": "LG디스플레이",
-   "stock": "034220",
-   "market": "KOSPI",
-   "rcept_no": "20260701800098",
-   "rcept_dt": "20260701",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260701800098",
-   "src": "예고",
-   "expected_date": "2026-07-22",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "두산밥캣",
    "stock": "241560",
@@ -382,45 +371,6 @@
    "period_end": "2026-06-30"
   },
   {
-   "corp": "HD건설기계",
-   "stock": "267270",
-   "market": "KOSPI",
-   "rcept_no": "20260722800505",
-   "rcept_dt": "20260722",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722800505",
-   "src": "IR",
-   "expected_date": "2026-07-29",
-   "time": "13:30",
-   "purpose": "'26년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
-  },
-  {
-   "corp": "HD한국조선해양",
-   "stock": "009540",
-   "market": "KOSPI",
-   "rcept_no": "20260722800553",
-   "rcept_dt": "20260722",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722800553",
-   "src": "IR",
-   "expected_date": "2026-07-29",
-   "time": "14:30",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
-  },
-  {
-   "corp": "HD현대중공업",
-   "stock": "329180",
-   "market": "KOSPI",
-   "rcept_no": "20260722800571",
-   "rcept_dt": "20260722",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722800571",
-   "src": "IR",
-   "expected_date": "2026-07-29",
-   "time": "14:30",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "HD한국조선해양"
-  },
-  {
    "corp": "DL이앤씨",
    "stock": "375500",
    "market": "KOSPI",
@@ -518,19 +468,6 @@
    "src": "예고",
    "expected_date": "2026-07-30",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "키움증권",
-   "stock": "039490",
-   "market": "KOSPI",
-   "rcept_no": "20260722800513",
-   "rcept_dt": "20260722",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722800513",
-   "src": "IR",
-   "expected_date": "2026-07-30",
-   "time": "10:00",
-   "purpose": "2026년 2분기 경영실적 설명",
-   "sponsor": "자사주관"
   },
   {
    "corp": "포스코DX",
@@ -1473,19 +1410,6 @@
    "time": "16:00",
    "purpose": "2026년 2분기 경영실적 발표",
    "sponsor": "-"
-  },
-  {
-   "corp": "NC",
-   "stock": "036570",
-   "market": "KOSPI",
-   "rcept_no": "20260722800426",
-   "rcept_dt": "20260722",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722800426",
-   "src": "IR",
-   "expected_date": "2026-08-11",
-   "time": "16:00",
-   "purpose": "2026년도 2분기 실적발표",
-   "sponsor": "자사주관"
   },
   {
    "corp": "JYP Ent.",
