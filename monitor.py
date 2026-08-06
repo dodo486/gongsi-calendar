@@ -156,70 +156,26 @@ def _code_of(name):
             return code
     return ""
 
-def notify(e):
-    """OS 알림 — 윈도우: 토스트(클릭 시 DART 원문) / 맥: 알림센터 / 리눅스: notify-send"""
-    title = f"[{e['category']}] {e['corp']}{_rate_str(e.get('stock'))} · {e['market']}"
-    # DART 목록엔 접수시각(HH:MM)이 없어 감지 시각을 병기(폴링 20초 → 공시 시각과 근사)
-    msg = f"⏰{datetime.datetime.now().strftime('%H:%M')} · {e['title']}"
-    try:
-        system = platform.system()
-        if system == "Windows":
-            from winotify import Notification, audio
-            t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=e["url"])
-            t.set_audio(audio.Default, loop=False)
-            t.add_actions(label="DART 원문 보기", launch=e["url"])
-            t.duration = 'long" scenario="reminder'   # 직접 닫기 전까지 화면에 유지(reminder 시나리오)
-            t.show()
-        elif system == "Darwin":
-            script = (f'display notification {json.dumps(msg, ensure_ascii=False)} '
-                      f'with title {json.dumps(title, ensure_ascii=False)} sound name "Glass"')
-            subprocess.run(["osascript", "-e", script], check=False, timeout=10)
-        else:
-            subprocess.run(["notify-send", title, msg], check=False, timeout=10)
-    except Exception as ex:
-        print(f"  [알림실패] {ex}")
+def _chart_url(code):
+    """네이버 금융 종목 차트/현재가 페이지 (토스트 클릭 기본)."""
+    return f"https://finance.naver.com/item/main.naver?code={code}" if code else ""
 
-def notify_limit(e):
-    """선물 상하한가(가격제한폭 도달) OS 알림 — 클릭 시 KRX 공시 원문"""
-    arrow = "▲상한" if e["direction"] == "상승" else "▼하한"
-    r = e.get("rate")
-    rate_str = f"({'+' if r > 0 else ''}{r}%)" if isinstance(r, (int, float)) else ""
-    title = f"[선물 {arrow}] {e['name']}{rate_str} · {e['market']}"
-    tm = f"⏰{e['time']} · " if e.get("time") else ""
-    msg = f"{tm}{e['kind']} {e['stage']}단계 가격제한폭 도달"
-    try:
-        system = platform.system()
-        if system == "Windows":
-            from winotify import Notification, audio
-            t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=e["url"])
-            t.set_audio(audio.Default, loop=False)
-            t.add_actions(label="KRX 공시 보기", launch=e["url"])
-            t.duration = 'long" scenario="reminder'   # 직접 닫기 전까지 화면에 유지(reminder 시나리오)
-            t.show()
-        elif system == "Darwin":
-            script = (f'display notification {json.dumps(msg, ensure_ascii=False)} '
-                      f'with title {json.dumps(title, ensure_ascii=False)} sound name "Glass"')
-            subprocess.run(["osascript", "-e", script], check=False, timeout=10)
-        else:
-            subprocess.run(["notify-send", title, msg], check=False, timeout=10)
-    except Exception as ex:
-        print(f"  [알림실패] {ex}")
+def _toss_url(code):
+    """토스증권 종목 페이지."""
+    return f"https://tossinvest.com/stocks/{code}" if code else ""
 
-def notify_action(e):
-    """KRX 시장조치(사이드카·서킷·거래정지/재개·투자경고 등) OS 알림 — 클릭 시 KRX 원문"""
-    dirtag = " ▲매수" if e["direction"] == "매수" else (" ▼매도" if e["direction"] == "매도" else "")
-    corp = e.get("corp", "")
-    who = f"{corp}{_rate_str(_code_of(corp))} · " if corp else ""   # 종목-특정 조치면 회사명+등락률
-    title = f"[{e['kind']}{(' ' + e['action']) if e['action'] else ''}] {who}{e['market']}{dirtag}"
-    tm = f"⏰{e['time']} · " if e.get("time") else ""
-    msg = f"{tm}{e['title']}"
+def _toast(title, msg, launch, buttons):
+    """공용 OS 알림 — 윈도우(winotify, reminder 지속) / 맥 / 리눅스.
+    launch: 토스트 본문 클릭 시 열 URL. buttons: [(label, url), ...] (reminder 시나리오는 액션 1개+ 필요)."""
     try:
         system = platform.system()
         if system == "Windows":
             from winotify import Notification, audio
-            t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=e["url"])
+            t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=launch)
             t.set_audio(audio.Default, loop=False)
-            t.add_actions(label="KRX 보기", launch=e["url"])
+            for label, url in buttons:
+                if url:
+                    t.add_actions(label=label, launch=url)
             t.duration = 'long" scenario="reminder'   # 직접 닫기 전까지 화면에 유지
             t.show()
         elif system == "Darwin":
@@ -230,6 +186,41 @@ def notify_action(e):
             subprocess.run(["notify-send", title, msg], check=False, timeout=10)
     except Exception as ex:
         print(f"  [알림실패] {ex}")
+
+def notify(e):
+    """공시 알림 — 클릭 시 네이버 차트(종목 알면) / 버튼: 토스증권·DART 원문"""
+    title = f"[{e['category']}] {e['corp']}{_rate_str(e.get('stock'))} · {e['market']}"
+    msg = f"⏰{datetime.datetime.now().strftime('%H:%M')} · {e['title']}"
+    code = e.get("stock")
+    chart = _chart_url(code)
+    buttons = ([("📊 토스증권", _toss_url(code))] if chart else []) + [("🔗 DART 원문", e["url"])]
+    _toast(title, msg, chart or e["url"], buttons)
+
+def notify_limit(e):
+    """선물 상하한가 알림 — 클릭 시 기초주식 네이버 차트(주식선물) / 버튼: 토스·KRX 원문"""
+    arrow = "▲상한" if e["direction"] == "상승" else "▼하한"
+    r = e.get("rate")
+    rate_str = f"({'+' if r > 0 else ''}{r}%)" if isinstance(r, (int, float)) else ""
+    title = f"[선물 {arrow}] {e['name']}{rate_str} · {e['market']}"
+    tm = f"⏰{e['time']} · " if e.get("time") else ""
+    msg = f"{tm}{e['kind']} {e['stage']}단계 가격제한폭 도달"
+    code = e.get("code")   # 주식선물이면 기초주식 코드, 지수선물이면 빈값
+    chart = _chart_url(code)
+    buttons = ([("📊 토스증권", _toss_url(code))] if chart else []) + [("🔗 KRX 공시", e["url"])]
+    _toast(title, msg, chart or e["url"], buttons)
+
+def notify_action(e):
+    """KRX 시장조치 알림 — 클릭 시 해당 종목 네이버 차트(종목조치) / 버튼: 토스·KRX 원문"""
+    dirtag = " ▲매수" if e["direction"] == "매수" else (" ▼매도" if e["direction"] == "매도" else "")
+    corp = e.get("corp", "")
+    code = _code_of(corp)
+    who = f"{corp}{_rate_str(code)} · " if corp else ""   # 종목-특정 조치면 회사명+등락률
+    title = f"[{e['kind']}{(' ' + e['action']) if e['action'] else ''}] {who}{e['market']}{dirtag}"
+    tm = f"⏰{e['time']} · " if e.get("time") else ""
+    msg = f"{tm}{e['title']}"
+    chart = _chart_url(code)
+    buttons = ([("📊 토스증권", _toss_url(code))] if chart else []) + [("🔗 KRX", e["url"])]
+    _toast(title, msg, chart or e["url"], buttons)
 
 CRITICAL_ACTIONS = ("사이드카", "서킷브레이커")   # 시장 전체 조치 — 무조건 알림 대상
 
