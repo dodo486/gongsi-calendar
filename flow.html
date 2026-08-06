@@ -91,6 +91,13 @@
 </div>
 
 <script>
+// 진단용: 초기화가 멈추면 원인을 헤더(meta)에 표시 (F12 없이 원인 파악)
+window.addEventListener("error", e=>{
+  const m=document.getElementById("meta"); if(m) m.textContent="⚠️ JS오류: "+(e.message||"")+" @"+(e.lineno||"?")+":"+(e.colno||"?");
+});
+window.addEventListener("unhandledrejection", e=>{
+  const m=document.getElementById("meta"); if(m) m.textContent="⚠️ 비동기오류: "+((e.reason&&(e.reason.message||e.reason))||"");
+});
 let FLOW = {by_value:[], up:[], down:[], universe:0, generated_at:""};
 const filters = {KOSPI:true, KOSDAQ:true, q:""};
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -154,6 +161,17 @@ function renderSide(){
     `<div class="card"><div class="ttl">📈 상승 상위</div>${mv(FLOW.up)}</div>
      <div class="card"><div class="ttl">📉 하락 상위</div>${mv(FLOW.down)}</div>
      <div class="empty" style="font-size:12px">행을 클릭하면 종목 수급 상세가 여기 열립니다</div>`;
+}
+
+async function load(){
+  try{
+    const res = await fetch("data/flow.json?_="+Date.now(), {cache:"no-store"});
+    FLOW = await res.json();
+  }catch(e){
+    FLOW = {by_value:[], up:[], down:[], universe:0, generated_at:""};
+    document.getElementById("meta").textContent = "flow.json 로드 실패: " + (e.message||e);
+  }
+  render();
 }
 
 async function openDetail(code){
