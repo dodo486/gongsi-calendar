@@ -61,7 +61,27 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._serve_sse()
         if route == "/api/earnfacts":
             return self._serve_earnfacts()
+        if route == "/api/flow":
+            return self._serve_flow()
         return super().do_GET()
+
+    def _serve_flow(self):
+        """수급 종목 상세 — flow.detail(code) (일별 가격·거래량·투자자 + 신호)"""
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        code = (qs.get("code") or [""])[0]
+        if not re.fullmatch(r"[A-Za-z0-9]{6}", code):
+            self.send_error(400)
+            return
+        try:
+            import flow
+            body = json.dumps(flow.detail(code), ensure_ascii=False).encode("utf-8")
+        except Exception as ex:
+            body = json.dumps({"error": str(ex)}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def _serve_earnfacts(self):
         """실적 상세 — consensus.facts (네이버+DART, 캐시 30분)"""

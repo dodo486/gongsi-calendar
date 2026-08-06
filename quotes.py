@@ -82,6 +82,24 @@ def investor_trend(code, n=20):
         })
     return out[:n]
 
+PRICE = "https://m.stock.naver.com/api/stock/{}/price?pageSize={}&page=1"
+
+def daily_price(code, n=40):
+    """일별 종가·거래량 [{date(YYYYMMDD), close, vol}] 최신→과거.
+    ※ 이 API의 등락률 부호는 신뢰 불가 → 등락률은 호출측에서 종가대비 재계산할 것."""
+    try:
+        d = _get(PRICE.format(code, n))
+    except Exception:
+        return []
+    out = []
+    for it in (d if isinstance(d, list) else []):
+        dt = (it.get("localTradedAt") or "").replace("-", "")
+        if not dt:
+            continue
+        out.append({"date": dt, "close": _num(it.get("closePrice")),
+                    "vol": _num(it.get("accumulatedTradingVolume"))})
+    return out
+
 def _one_rate(url):
     try:
         d = (_get(url).get("datas") or [{}])[0]

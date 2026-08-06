@@ -35,6 +35,7 @@
   td.l,th.l{text-align:left}
   tbody tr{border-bottom:1px solid #1d232d;cursor:pointer}
   tbody tr:hover{background:#1b212b}
+  tbody tr.sel{background:#243040;box-shadow:inset 3px 0 0 var(--est)}
   .rk{color:var(--muted);width:26px}
   .nm{font-weight:700}
   .mk{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:6px}
@@ -45,6 +46,19 @@
   .mv{display:flex;justify-content:space-between;padding:5px 4px;border-bottom:1px solid #1d232d;font-size:13px}
   .mv .nm{font-weight:600}
   .empty{color:var(--muted);padding:20px;text-align:center}
+  /* 종목 상세 패널 */
+  .det-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .det-hd .dnm{font-size:16px;font-weight:800}
+  .det-close{margin-left:auto;cursor:pointer;color:var(--muted);font-size:16px;border:1px solid var(--line);border-radius:6px;padding:0 8px}
+  .det-sub{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .bdg{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid var(--line)}
+  .bdg.buyturn{background:rgba(239,68,68,.18);color:#fca5a5;border-color:#ef4444}
+  .bdg.streak{background:rgba(239,68,68,.12);color:#fca5a5}
+  .bdg.vol{background:rgba(234,179,8,.18);color:#fde68a;border-color:#eab308}
+  .bdg.low{background:rgba(148,163,184,.15);color:#cbd5e1}
+  .det table td,.det table th{padding:4px 6px;font-size:12px}
+  tr.surge{background:rgba(234,179,8,.08)}
 </style>
 </head>
 <body>
@@ -73,10 +87,7 @@
       </table>
     </div>
   </div>
-  <div class="side">
-    <div class="card"><div class="ttl">📈 상승 상위</div><div id="upBox"></div></div>
-    <div class="card"><div class="ttl">📉 하락 상위</div><div id="downBox"></div></div>
-  </div>
+  <div class="side" id="sideBox"></div>
 </div>
 
 <script>
@@ -115,10 +126,12 @@ function pass(r){
   return !q || (r.name||"").toLowerCase().includes(q) || (r.code||"").includes(q);
 }
 
+let SEL = null;   // 선택된 종목코드 (상세 패널 열림)
+
 function render(){
   const rows = FLOW.by_value.filter(pass);
   document.getElementById("valBody").innerHTML = rows.length ? rows.map((r,i)=>`
-    <tr data-code="${esc(r.code)}">
+    <tr data-code="${esc(r.code)}"${r.code===SEL?' class="sel"':''}>
       <td class="rk">${i+1}</td>
       <td class="l"><span class="nm">${esc(r.name)}</span><span class="mk ${esc(r.market)}">${esc(r.market)}</span></td>
       <td>${rateCell(r.rate)}</td>
@@ -128,27 +141,76 @@ function render(){
       <td>${qty(r.frgn)}</td>
       <td>${pctSigned(r.frgn_pct)}</td>
     </tr>`).join("") : `<tr><td colspan="8" class="empty">데이터 없음</td></tr>`;
-
-  const mv = (list)=> list.filter(pass).map(r=>`
-    <div class="mv"><span class="nm">${esc(r.name)}</span>${rateCell(r.rate)}</div>`).join("") || `<div class="empty">해당 없음</div>`;
-  document.getElementById("upBox").innerHTML = mv(FLOW.up);
-  document.getElementById("downBox").innerHTML = mv(FLOW.down);
-
   document.getElementById("meta").textContent =
     `대상 ${FLOW.universe}종목 · 갱신 ${FLOW.generated_at||"-"}`;
+  if(!SEL) renderSide();
 }
 
-async function load(){
-  try{
-    FLOW = await (await fetch("data/flow.json?_="+Date.now())).json();
-  }catch(_){ FLOW = {by_value:[],up:[],down:[],universe:0,generated_at:""}; }
-  render();
+function renderSide(){
+  const mv = (list)=> list.filter(pass).map(r=>`
+    <div class="mv" data-code="${esc(r.code)}"><span class="nm">${esc(r.name)}</span>${rateCell(r.rate)}</div>`).join("")
+    || `<div class="empty">해당 없음</div>`;
+  document.getElementById("sideBox").innerHTML =
+    `<div class="card"><div class="ttl">📈 상승 상위</div>${mv(FLOW.up)}</div>
+     <div class="card"><div class="ttl">📉 하락 상위</div>${mv(FLOW.down)}</div>
+     <div class="empty" style="font-size:12px">행을 클릭하면 종목 수급 상세가 여기 열립니다</div>`;
 }
 
-// 종목 클릭 → (추후) 상세. 지금은 네이버 종목 페이지 새 탭
+async function openDetail(code){
+  SEL = code;
+  document.getElementById("sideBox").innerHTML = `<div class="card"><div class="empty">수급 상세 불러오는 중…</div></div>`;
+  let d;
+  try{ d = await (await fetch("/api/flow?code="+encodeURIComponent(code))).json(); }
+  catch(_){ d = {error:"조회 실패"}; }
+  if(SEL !== code) return;   // 그 사이 다른 종목 선택됨
+  renderDetail(d);
+  render();   // 랭킹의 선택 하이라이트 갱신 (SEL 유지 → sideBox는 안 건드림)
+}
+function closeDetail(){ SEL = null; renderSide(); render(); }
+
+function renderDetail(d){
+  const box = document.getElementById("sideBox");
+  const q = d.quote || {};
+  if(d.error || !d.rows){
+    box.innerHTML = `<div class="card"><div class="det-hd"><span class="dnm">${esc(d.name||SEL)}</span>
+      <span class="det-close" onclick="closeDetail()">✕ 닫기</span></div>
+      <div class="empty">상세를 불러오지 못했습니다</div></div>`;
+    return;
+  }
+  const cap = q.mktcap, val = q.value;
+  const turn = (val && cap) ? (val/cap*100).toFixed(2)+"%" : "-";
+  const badges = (d.signals||[]).map(s=>`<span class="bdg ${esc(s.t)}">${esc(s.label)}</span>`).join("")
+    || `<span class="empty" style="font-size:11px">특이 신호 없음</span>`;
+  const rowsH = d.rows.slice().reverse().map(r=>`
+    <tr class="${(r.volx||0)>=2?'surge':''}">
+      <td class="l">${r.date.slice(4,6)}/${r.date.slice(6,8)}</td>
+      <td>${r.close!=null?Number(r.close).toLocaleString():'-'}</td>
+      <td>${rateCell(r.rate)}</td>
+      <td>${r.vol!=null?(r.vol/1e4).toFixed(0)+'만':'-'}${r.volx!=null?` <span class="flat">x${r.volx}</span>`:''}</td>
+      <td>${qty(r.frgn)}</td>
+      <td>${qty(r.org)}</td>
+      <td>${qty(r.indi)}</td>
+    </tr>`).join("");
+  box.innerHTML = `<div class="card det">
+    <div class="det-hd"><span class="dnm">${esc(d.name||"")}</span>
+      <span class="mk ${esc(q.market||'')}">${esc(SEL)}</span>${rateCell(q.rate)}
+      <span class="det-close" onclick="closeDetail()">✕ 닫기</span></div>
+    <div class="det-sub">현재가 ${q.price!=null?Number(q.price).toLocaleString():'-'} · 시총 ${eok(cap)} · 거래대금 ${eok(val)} (회전율 ${turn})</div>
+    <div class="badges">${badges}</div>
+    <table><thead><tr><th class="l">날짜</th><th>종가</th><th>등락</th><th>거래량(배수)</th><th>외국인</th><th>기관</th><th>개인</th></tr></thead>
+      <tbody>${rowsH}</tbody></table>
+    <div class="det-sub" style="margin-top:8px">구간 누적 — 외국인 ${qty(d.cum_frgn)} · 기관 ${qty(d.cum_org)} <span class="flat">(외국인/기관계/개인 3분류 · 세부기관은 KRX 차단)</span></div>
+  </div>`;
+}
+
+// 랭킹 행 · 상승/하락 목록 클릭 → 종목 수급 상세
 document.getElementById("valBody").addEventListener("click",e=>{
   const tr = e.target.closest("tr[data-code]"); if(!tr) return;
-  window.open("https://finance.naver.com/item/main.nhn?code="+tr.dataset.code,"_blank","noopener");
+  openDetail(tr.dataset.code);
+});
+document.getElementById("sideBox").addEventListener("click",e=>{
+  const el = e.target.closest("[data-code]"); if(!el) return;
+  openDetail(el.dataset.code);
 });
 document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
   const m=c.dataset.market; filters[m]=!filters[m]; c.classList.toggle("on",filters[m]); render();
