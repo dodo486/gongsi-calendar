@@ -1,7 +1,49 @@
 {
- "generated_at": "2026-08-06 09:39:22",
- "count": 179,
+ "generated_at": "2026-08-06 13:15:43",
+ "count": 182,
  "events": [
+  {
+   "corp": "덕산네오룩스",
+   "stock": "213420",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260806",
+   "rcept_no": "20260806900096",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806900096",
+   "flr": "덕산네오룩스",
+   "price": "34,050",
+   "rate": 7.41,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "LG유플러스",
+   "stock": "032640",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260806",
+   "rcept_no": "20260806800073",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800073",
+   "flr": "LG유플러스",
+   "price": "15,070",
+   "rate": 1.01,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "LG유플러스",
+   "stock": "032640",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260806",
+   "rcept_no": "20260806800069",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800069",
+   "flr": "LG유플러스",
+   "price": "15,070",
+   "rate": 1.01,
+   "chg_sign": "2"
+  },
   {
    "corp": "카카오",
    "stock": "035720",
@@ -12,8 +54,8 @@
    "rcept_no": "20260806800011",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800011",
    "flr": "카카오",
-   "price": "37,450",
-   "rate": 1.83,
+   "rate": 1.18,
+   "price": "37,700",
    "chg_sign": "5"
   },
   {
@@ -26,8 +68,8 @@
    "rcept_no": "20260806800010",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800010",
    "flr": "카카오",
-   "price": "37,450",
-   "rate": 1.83,
+   "rate": 1.18,
+   "price": "37,700",
    "chg_sign": "5"
   },
   {
@@ -41,10 +83,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900462",
    "flr": "심텍",
    "rate": 6.08,
-   "price": "103,000",
-   "chg_sign": "2",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "103,000",
+   "chg_sign": "2"
   },
   {
    "corp": "심텍",
@@ -57,10 +99,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900457",
    "flr": "심텍",
    "rate": 6.08,
-   "price": "103,000",
-   "chg_sign": "2",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "103,000",
+   "chg_sign": "2"
   },
   {
    "corp": "에스엠",
@@ -73,10 +115,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900312",
    "flr": "에스엠",
    "rate": -3.91,
-   "price": "73,700",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "73,700",
+   "chg_sign": "5"
   },
   {
    "corp": "에스엠",
@@ -89,10 +131,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900311",
    "flr": "에스엠",
    "rate": -3.91,
-   "price": "73,700",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "73,700",
+   "chg_sign": "5"
   },
   {
    "corp": "LS마린솔루션",
@@ -105,10 +147,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900111",
    "flr": "LS마린솔루션",
    "rate": 6.62,
-   "price": "31,400",
-   "chg_sign": "2",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "31,400",
+   "chg_sign": "2"
   },
   {
    "corp": "카카오게임즈",
@@ -121,10 +163,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900059",
    "flr": "카카오게임즈",
    "rate": -6.83,
-   "price": "7,770",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "7,770",
+   "chg_sign": "5"
   },
   {
    "corp": "고려아연",
@@ -137,14 +179,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800529",
    "flr": "고려아연",
    "rate": 4.89,
-   "price": "1,095,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": 4.89,
    "post5": 1.74,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "1,095,000",
+   "chg_sign": "2"
   },
   {
    "corp": "고려아연",
@@ -157,14 +199,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800512",
    "flr": "고려아연",
    "rate": 4.89,
-   "price": "1,095,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": 4.89,
    "post5": 1.74,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "1,095,000",
+   "chg_sign": "2"
   },
   {
    "corp": "넷마블",
@@ -177,14 +219,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800477",
    "flr": "넷마블",
    "rate": -3.44,
-   "price": "37,950",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": -3.44,
    "post5": -0.13,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "37,950",
+   "chg_sign": "5"
   },
   {
    "corp": "현대백화점",
@@ -197,14 +239,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800338",
    "flr": "현대백화점",
    "rate": -7.01,
-   "price": "110,100",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": -7.01,
    "post5": -0.27,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "110,100",
+   "chg_sign": "5"
   },
   {
    "corp": "롯데칠성음료",
@@ -217,14 +259,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800288",
    "flr": "롯데칠성음료",
    "rate": -2.34,
-   "price": "100,300",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": -2.34,
    "post5": 0.1,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "100,300",
+   "chg_sign": "5"
   },
   {
    "corp": "케이씨씨",
@@ -237,14 +279,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800281",
    "flr": "케이씨씨",
    "rate": 8.95,
-   "price": "432,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": 8.95,
    "post5": -0.69,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "432,000",
+   "chg_sign": "2"
   },
   {
    "corp": "에스케이바이오팜",
@@ -257,14 +299,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800117",
    "flr": "에스케이바이오팜",
    "rate": 2.76,
-   "price": "82,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": 2.76,
    "post5": 1.59,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "82,000",
+   "chg_sign": "2"
   },
   {
    "corp": "에이피알",
@@ -277,14 +319,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800100",
    "flr": "에이피알",
    "rate": -0.56,
-   "price": "357,500",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": -0.56,
    "post5": 1.26,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "357,500",
+   "chg_sign": "5"
   },
   {
    "corp": "SK텔레콤",
@@ -297,14 +339,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800077",
    "flr": "SK텔레콤",
    "rate": 1.75,
-   "price": "93,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": 1.75,
    "post5": -1.51,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "93,000",
+   "chg_sign": "2"
   },
   {
    "corp": "SK텔레콤",
@@ -317,14 +359,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800075",
    "flr": "SK텔레콤",
    "rate": 1.75,
-   "price": "93,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": 1.75,
    "post5": -1.51,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "93,000",
+   "chg_sign": "2"
   },
   {
    "corp": "DB하이텍",
@@ -337,14 +379,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800063",
    "flr": "DB하이텍",
    "rate": 5.88,
-   "price": "90,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": 5.88,
    "post5": -1.0,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "90,000",
+   "chg_sign": "2"
   },
   {
    "corp": "카카오뱅크",
@@ -357,14 +399,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800019",
    "flr": "카카오뱅크",
    "rate": -1.37,
-   "price": "21,550",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:26",
    "pre5": -1.37,
    "post5": -0.23,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "21,550",
+   "chg_sign": "5"
   },
   {
    "corp": "디어유",

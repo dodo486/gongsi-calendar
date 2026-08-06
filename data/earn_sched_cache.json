@@ -1296,5 +1296,19 @@
   "time": "",
   "purpose": "",
   "sponsor": "iM증권"
+ },
+ "20260806900128": {
+  "kind": "ir",
+  "expected_date": "2026-08-07",
+  "time": "",
+  "purpose": "",
+  "sponsor": "자사,"
+ },
+ "20260806900102": {
+  "kind": "ir",
+  "expected_date": "2026-08-06",
+  "time": "",
+  "purpose": "",
+  "sponsor": "IBK증권"
  }
 }
