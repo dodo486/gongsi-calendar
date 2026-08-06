@@ -535,6 +535,7 @@ function limHot(e){   // '지금 걸림' = 도달시각 ~ 확대예정시각 사
                       : (now >= s && now <= start + 5*60000);   // 확대예정 없으면 도달 후 5분
 }
 function renderLimits(){
+  indexCodes();   // 시장조치 행(코드 없음)의 회사명→코드 매핑을 최신화
   const q = filters.q.trim().toLowerCase();
   const list = LIM.filter(e=> !q || (e.name||"").toLowerCase().includes(q));
   const upN = list.filter(e=>e.direction==="상승").length;
@@ -545,7 +546,7 @@ function renderLimits(){
   const actRow = e=>{
     const dir = e.direction==="매수" ? " ▲매수" : (e.direction==="매도" ? " ▼매도" : "");
     const hot = actHot(e);
-    return `<div class="li${hot?" hot":""}" data-url="${esc(e.url)}">
+    return `<div class="li${hot?" hot":""}" data-url="${esc(e.url)}" data-code="${esc(NAME2CODE[e.corp]||"")}">
       <span class="t">${esc(e.time)}</span>
       <span class="ak ${actClass(e.kind)}">${esc(e.kind)}${e.action?(" "+esc(e.action)):""}</span>
       <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
@@ -554,12 +555,12 @@ function renderLimits(){
     </div>`;
   };
   let h = `<div class="limhd">🚨 가격제한폭 도달 · 시장조치 (${list.length + acts.length})</div>
-    <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 🏛️ 시장조치 ${acts.length} · 클릭 → KRX 원문 · 5초 자동갱신</div>`;
+    <div class="limsub">▲ 상한(상승) ${upN} · ▼ 하한(하락) ${downN} · 🏛️ 시장조치 ${acts.length} · 클릭 → 차트(코드 없으면 원문) · 5초 자동갱신</div>`;
   const row = e=>{
     const up = e.direction==="상승";
     const idx = e.kind==="지수선물";
     const hot = limHot(e);
-    return `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}">
+    return `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}" data-code="${esc(e.code||"")}">
       <span class="kb ${idx?"idx":"stk"}">${idx?"지수선물":"주식선물"}</span>
       <span class="t">${esc(e.time)}</span>
       <span class="dir${(e.stage||0)>=3?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계 ${up?"(상)":"(하)"}</span>
@@ -587,9 +588,12 @@ function renderLimits(){
 }
 
 const toMD = d => (d && d.length>=8) ? `${d.slice(4,6)}-${d.slice(6,8)}` : (d||"");
-function bindOpen(box){   // .li 항목 클릭 → 원문 새 탭 (상하한가·실적 목록 공용)
+function bindOpen(box){   // .li 항목 클릭 → 종목이면 차트(tvchart 재사용), 코드 없으면 원문 새 탭
   box.querySelectorAll(".li").forEach(el=>
-    el.addEventListener("click",()=>window.open(el.dataset.url,"_blank","noopener")));
+    el.addEventListener("click",()=>{
+      if(openChart(el.dataset.code)) return;   // 종목코드 있으면 같은 탭에서 차트만 스위칭
+      if(el.dataset.url) window.open(el.dataset.url,"_blank","noopener");
+    }));
 }
 async function loadEarnings(){
   try{
@@ -885,6 +889,7 @@ async function loadData(){
     renderEarnCal();
     document.getElementById("meta").textContent =
       `🏛️ 시장조치 ${ACT.length} · 🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · ⏱ 상하한가 갱신 ${LIMGEN}`;
+    indexCodes();
     applyFilters();
     if(divListMode) renderDivToday();
     return;
@@ -892,6 +897,7 @@ async function loadData(){
   const d = await (await fetch("data/disclosures.json?_="+Date.now())).json();
   ALL = d.events||[];
   document.getElementById("meta").textContent = `공시 ${d.count}건 · 갱신 ${d.generated_at||""}`;
+  indexCodes();
   applyFilters();
 }
 
@@ -931,7 +937,7 @@ async function boot(){
     headerToolbar:{left:"prev,next today",center:"title",right:"dayGridMonth,listWeek"},
     buttonText:{today:"오늘",month:"월",list:"목록"},
     dayCellClassNames:(a)=>{ const iso=dISO(a.date), c=[]; if(HOL.has(iso))c.push("holiday"); if(EXPD.has(iso))c.push("expday"); return c; },   // 휴장일 빨간글자·만기일 별표
-    eventClick:(info)=>{ info.jsEvent.preventDefault(); showDetail(info.event.extendedProps); },
+    eventClick:(info)=>{ info.jsEvent.preventDefault(); const p=info.event.extendedProps; showDetail(p); openChart(evCode(p)); },
   });
   calendar.render();
   earnCal = new FullCalendar.Calendar(document.getElementById("earnCal"),{
@@ -944,6 +950,7 @@ async function boot(){
       info.jsEvent.preventDefault();
       const p = info.event.extendedProps;
       p.kind==="eact" ? showEarnFact(p) : showErnDetail(p);
+      openChart(evCode(p));
     },
   });
   earnCal.render();
@@ -960,6 +967,23 @@ async function boot(){
   setInterval(()=>{ if(MODE==="board") renderLimits(); }, 5000);   // 깜빡이(지금 걸림/발동중) 5초마다 갱신
 }
 
+// 토스트/화면 클릭 → 항상 같은 'tvchart' 탭에서 TradingView 1분봉 차트 열기(종목만 교체, 창 안 늘어남)
+function openChart(code){
+  if(!/^\d{6}$/.test(code||"")) return false;
+  window.open("https://www.tradingview.com/chart/?symbol=KRX:"+code+"&interval=1","tvchart");
+  return true;
+}
+const NAME2CODE = {};   // 회사명 → 종목코드 (시장조치처럼 코드 없는 항목의 클릭 차트용)
+function indexCodes(){   // 로드된 데이터에서 이름↔코드 맵 채우기 (loadData 때 호출)
+  const put = (nm,cd)=>{ if(nm && /^\d{6}$/.test(cd||"")) NAME2CODE[nm]=cd; };
+  (ALL||[]).forEach(e=>put(e.corp, e.stock));
+  (DIV||[]).forEach(e=>put(e.corp, e.stock));
+  (CAP||[]).forEach(e=>put(e.corp, e.stock));
+  (EARN||[]).forEach(e=>put(e.corp, e.code||e.stock));
+  (SCHED||[]).forEach(e=>put(e.corp, e.code||e.stock));
+  (LIM||[]).forEach(e=>put(e.name, e.code));
+}
+const evCode = p => (p && (p.stock || p.code)) || NAME2CODE[p && p.corp] || "";   // 이벤트/행 → 종목코드
 let _es = null;
 function connectSSE(){
   try{
@@ -970,6 +994,7 @@ function connectSSE(){
       if(MODE==="board") renderLimits();
     };
     _es.addEventListener("reload", ()=>location.reload());   // index.html 바뀌면 열린 탭 스스로 새로고침
+    _es.addEventListener("openchart", ev=> openChart(ev.data));   // 토스트 클릭 시 차트 열기
     _es.onerror = ()=>{};   // 브라우저 EventSource가 자동 재접속 (폴백 폴링도 병행)
   }catch(_){ /* EventSource 미지원 시 30초 폴링으로 동작 */ }
 }

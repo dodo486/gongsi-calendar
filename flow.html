@@ -243,12 +243,18 @@ setInterval(()=>{ const d=new Date();
   document.getElementById("clock").textContent = d.toLocaleTimeString("ko-KR",{hour12:false}); },1000);
 
 // SSE: data/ 변경 시 즉시 재로드 (flow.json 갱신 반영) + index.html/flow.html 변경 시 reload
+// 토스트 클릭 → 항상 같은 'tvchart' 탭에서 TradingView 1분봉 차트 열기(종목만 교체)
+function openChart(code){
+  if(!/^\d{6}$/.test(code||"")) return;
+  window.open("https://www.tradingview.com/chart/?symbol=KRX:"+code+"&interval=1","tvchart");
+}
 let _es;
 function connectSSE(){
   try{
     _es = new EventSource("/events");
     _es.onmessage = ()=> load();
     _es.addEventListener("reload", ()=> location.reload());
+    _es.addEventListener("openchart", ev=> openChart(ev.data));   // 토스트 클릭 시 차트 열기
     _es.onerror = ()=>{ _es.close(); setTimeout(connectSSE, 3000); };
   }catch(_){}
 }

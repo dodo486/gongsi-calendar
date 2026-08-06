@@ -157,12 +157,9 @@ def _code_of(name):
     return ""
 
 def _chart_url(code):
-    """네이버 금융 종목 차트/현재가 페이지 (토스트 클릭 기본)."""
-    return f"https://finance.naver.com/item/main.naver?code={code}" if code else ""
-
-def _toss_url(code):
-    """토스증권 종목 페이지."""
-    return f"https://tossinvest.com/stocks/{code}" if code else ""
+    """토스트 클릭 → 로컬 서버(/chart)가 대시보드에 'tvchart' 탭으로 TradingView(1분봉) 열기 지시.
+    대시보드가 열려 있으면 항상 같은 탭 재사용(종목만 교체), 없으면 새 탭 폴백."""
+    return f"http://127.0.0.1:8777/chart?code={code}" if code else ""
 
 def _toast(title, msg, launch, buttons):
     """공용 OS 알림 — 윈도우(winotify, reminder 지속) / 맥 / 리눅스.
@@ -188,16 +185,16 @@ def _toast(title, msg, launch, buttons):
         print(f"  [알림실패] {ex}")
 
 def notify(e):
-    """공시 알림 — 클릭 시 네이버 차트(종목 알면) / 버튼: 토스증권·DART 원문"""
+    """공시 알림 — 클릭 시 토스 종목 차트(종목 알면) / 버튼: DART 원문"""
     title = f"[{e['category']}] {e['corp']}{_rate_str(e.get('stock'))} · {e['market']}"
     msg = f"⏰{datetime.datetime.now().strftime('%H:%M')} · {e['title']}"
     code = e.get("stock")
     chart = _chart_url(code)
-    buttons = ([("📊 토스증권", _toss_url(code))] if chart else []) + [("🔗 DART 원문", e["url"])]
+    buttons = [("🔗 DART 원문", e["url"])]
     _toast(title, msg, chart or e["url"], buttons)
 
 def notify_limit(e):
-    """선물 상하한가 알림 — 클릭 시 기초주식 네이버 차트(주식선물) / 버튼: 토스·KRX 원문"""
+    """선물 상하한가 알림 — 클릭 시 기초주식 토스 차트(주식선물) / 버튼: KRX 원문"""
     arrow = "▲상한" if e["direction"] == "상승" else "▼하한"
     r = e.get("rate")
     rate_str = f"({'+' if r > 0 else ''}{r}%)" if isinstance(r, (int, float)) else ""
@@ -206,11 +203,11 @@ def notify_limit(e):
     msg = f"{tm}{e['kind']} {e['stage']}단계 가격제한폭 도달"
     code = e.get("code")   # 주식선물이면 기초주식 코드, 지수선물이면 빈값
     chart = _chart_url(code)
-    buttons = ([("📊 토스증권", _toss_url(code))] if chart else []) + [("🔗 KRX 공시", e["url"])]
+    buttons = [("🔗 KRX 공시", e["url"])]
     _toast(title, msg, chart or e["url"], buttons)
 
 def notify_action(e):
-    """KRX 시장조치 알림 — 클릭 시 해당 종목 네이버 차트(종목조치) / 버튼: 토스·KRX 원문"""
+    """KRX 시장조치 알림 — 클릭 시 해당 종목 토스 차트(종목조치) / 버튼: KRX 원문"""
     dirtag = " ▲매수" if e["direction"] == "매수" else (" ▼매도" if e["direction"] == "매도" else "")
     corp = e.get("corp", "")
     code = _code_of(corp)
@@ -219,7 +216,7 @@ def notify_action(e):
     tm = f"⏰{e['time']} · " if e.get("time") else ""
     msg = f"{tm}{e['title']}"
     chart = _chart_url(code)
-    buttons = ([("📊 토스증권", _toss_url(code))] if chart else []) + [("🔗 KRX", e["url"])]
+    buttons = [("🔗 KRX", e["url"])]
     _toast(title, msg, chart or e["url"], buttons)
 
 CRITICAL_ACTIONS = ("사이드카", "서킷브레이커")   # 시장 전체 조치 — 무조건 알림 대상
