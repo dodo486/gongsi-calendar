@@ -10,7 +10,7 @@ import urllib.parse
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
 INDEX_PATH = os.path.join(BASE, "index.html")
-HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", "flow.html")]
+HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", "flow.html", "sectors.html")]
 PORT = 8777
 
 # 토스트 클릭 → 차트 열기 브로드캐스트용
@@ -72,6 +72,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._serve_earnfacts()
         if route == "/api/flow":
             return self._serve_flow()
+        if route == "/api/quotes":
+            return self._serve_quotes()
         if route == "/chart":
             return self._serve_chart()
         return super().do_GET()
@@ -117,6 +119,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             body = json.dumps(flow.detail(code), ensure_ascii=False).encode("utf-8")
         except Exception as ex:
             body = json.dumps({"error": str(ex)}).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_quotes(self):
+        """실시간 시세 배치 — codes=콤마구분 → {code:{rate,price}} (로스터 장중 등락률용)"""
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        raw = (qs.get("codes") or [""])[0]
+        codes = [c for c in re.findall(r"\d{6}", raw)][:900]
+        out = {}
+        try:
+            import quotes
+            q = quotes.quote_batch(codes)
+            out = {c: {"rate": v.get("rate"), "price": v.get("price")}
+                   for c, v in q.items()}
+        except Exception as ex:
+            out = {"error": str(ex)}
+        body = json.dumps(out, ensure_ascii=False).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))

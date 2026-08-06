@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🔄 섹터 로테이션</title>
+<style>
+  :root{
+    --bg:#0f131a; --panel:#161b23; --line:#252c37; --text:#e6ebf2; --muted:#8b97a7;
+    --kospi:#3b82f6; --kosdaq:#f59e0b; --accent:#22c55e; --est:#eab308;
+    --up:#fca5a5; --down:#93c5fd; --gold:#eab308;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI","맑은 고딕",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+  header h1{font-size:18px;margin:0}
+  .navlink{color:var(--est);text-decoration:none;font-size:13px;font-weight:700;padding:4px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+  .navlink:hover{border-color:var(--est)}
+  .clock{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+  .meta{color:var(--muted);font-size:12px;margin-left:auto}
+  .controls{display:flex;gap:8px;align-items:center}
+  .chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid var(--line);cursor:pointer;user-select:none;color:var(--muted)}
+  .chip.on{background:rgba(234,179,8,.18);color:#fde68a;border-color:var(--est)}
+  .wrap{display:flex;gap:16px;padding:16px;align-items:flex-start;flex-wrap:wrap}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .main{flex:2;min-width:460px}
+  .side{flex:1;min-width:300px;display:flex;flex-direction:column;gap:16px}
+  .ttl{font-size:14px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ttl .sub{font-size:11px;font-weight:400;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:6px 8px;text-align:right;white-space:nowrap}
+  th{color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);font-size:11px;cursor:pointer}
+  th.l,td.l{text-align:left}
+  th.on{color:var(--gold)}
+  tbody tr{border-bottom:1px solid #1d232d;cursor:pointer}
+  tbody tr:hover{background:#1b212b}
+  tbody tr.sel{background:#243040;box-shadow:inset 3px 0 0 var(--est)}
+  .nm{font-weight:700}
+  .rk{color:var(--muted);width:26px}
+  .mk{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:6px}
+  .mk.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
+  .mk.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
+  .tag{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:4px;background:rgba(234,179,8,.15);color:#fde68a}
+  .kind{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:6px}
+  .kind.theme{background:rgba(234,179,8,.2);color:#fde68a}
+  .kind.wics{background:rgba(59,130,246,.15);color:#93c5fd}
+  .kind.etf,.kind.etfgroup{background:rgba(34,197,94,.15);color:#86efac}
+  .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
+  .bar{display:inline-block;height:8px;border-radius:4px;background:var(--est);vertical-align:middle;margin-right:5px}
+  .empty{color:var(--muted);padding:20px;text-align:center}
+  .golden{color:var(--gold);font-weight:800}
+  /* 사분면 */
+  .quad{position:relative;width:100%;height:0;padding-bottom:66%}
+  svg{position:absolute;inset:0;width:100%;height:100%}
+  .qlabel{fill:var(--muted);font-size:10px}
+  .bub{cursor:pointer}
+  .bub text{fill:var(--text);font-size:10px;font-weight:600;pointer-events:none}
+  .legend{font-size:11px;color:var(--muted);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap}
+  .sd-stock{display:flex;justify-content:space-between;gap:8px;padding:5px 4px;border-bottom:1px solid #1d232d;font-size:12px;cursor:pointer}
+  .sd-stock:hover{background:#1b212b}
+  .sd-stock .r{color:var(--muted);font-variant-numeric:tabular-nums}
+  .cons{display:inline-block;min-width:30px;text-align:center;font-size:10px;font-weight:800;color:#86efac;background:rgba(34,197,94,.15);border-radius:5px;padding:1px 5px;margin-right:6px;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔄 섹터 로테이션</h1>
+  <a class="navlink" href="index.html">📅 공시캘린더</a>
+  <a class="navlink" href="flow.html">💰 수급분석기</a>
+  <span class="clock" id="clock">--:--:--</span>
+  <span class="meta" id="meta">불러오는 중…</span>
+  <div class="controls">
+    <span class="chip on" id="vSector" data-view="sector">🔄 섹터</span>
+    <span class="chip" id="vGainers" data-view="gainers">🚀 급등주</span>
+    <span style="width:8px"></span>
+    <span class="chip on" id="tTheme" data-kind="theme">테마</span>
+    <span class="chip" id="tEtf" data-kind="etf">ETF</span>
+  </div>
+</header>
+
+<div class="wrap" id="viewSector">
+  <div class="card main">
+    <div class="ttl">🎯 로테이션 사분면
+      <span class="sub">X=상대거래대금(평소 대비) · Y=등락률 · 크기=종목수 · 색=순매수(빨강 매수/파랑 매도) · 우하단=초기유입(돈↑ 아직 안뜀)</span>
+    </div>
+    <div class="quad"><svg id="quad" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="legend">
+      <span>🟢 우하단 = <b class="golden">초기 유입(매집)</b></span>
+      <span>🔴 우상단 = 주도·과열</span>
+      <span>◀ 좌상단 = 후행(거래없이 상승)</span>
+      <span>좌하단 = 소외</span>
+    </div>
+  </div>
+  <div class="side">
+    <div class="card">
+      <div class="ttl">📊 섹터 랭킹 <span class="sub">헤더 클릭=정렬</span></div>
+      <div style="max-height:44vh;overflow:auto">
+        <table>
+          <thead><tr>
+            <th class="l">섹터</th><th>종목</th>
+            <th data-sort="relvol" class="on">상대<br>거래대금</th>
+            <th data-sort="turnover">회전율</th>
+            <th data-sort="rate">구성평균<br>등락률</th>
+            <th data-sort="netbuy_pct">순매수<br>/시총</th>
+            <th data-sort="breadth">매집</th>
+          </tr></thead>
+          <tbody id="rankBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" id="drill"><div class="empty" style="font-size:12px">섹터를 클릭하면 소속 종목이 여기 열립니다</div></div>
+  </div>
+</div>
+
+<div class="wrap" id="viewGainers" style="display:none">
+  <div class="card main">
+    <div class="ttl">🚀 등락률 급등 <span class="sub">— 전체시장 거래대금 상위 유니버스 기준 · relvol=평소 대비 배수 · 클릭=차트</span></div>
+    <div style="max-height:80vh;overflow:auto">
+      <table>
+        <thead><tr>
+          <th class="rk">#</th><th class="l">종목</th><th>등락률</th><th>거래대금</th>
+          <th>상대<br>거래대금</th><th>회전율</th><th class="l">섹터(ETF테마)</th>
+        </tr></thead>
+        <tbody id="gainBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="side">
+    <div class="card">
+      <div class="ttl">📉 급락 상위</div>
+      <div id="loseBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.addEventListener("error", e=>{ const m=document.getElementById("meta"); if(m) m.textContent="⚠️ JS오류: "+(e.message||"")+" @"+(e.lineno||"?"); });
+let DATA = {themes:[], etfs:[], theme_meta:{}, theme_roster:{}, gainers:[], losers:[], stocks:{}, generated_at:""};
+let KIND = "theme";     // theme | etf
+let VIEW = "sector";    // sector | gainers
+let SORT = "relvol";
+let SEL = null;         // 선택 섹터 key
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// 종목 클릭 → 토스증권 차트(국내주식은 A+코드). 같은 탭 재사용(창 안 늘어남)
+function openStock(code){ if(/^\d{6}$/.test(code||"")) window.open("https://www.tossinvest.com/stocks/A"+code,"tosschart"); }
+
+function rows(){ return (KIND==="etf"?DATA.etfs:DATA.themes)||[]; }
+const KIND_LABEL = {theme:"테마", etf:"ETF 바스켓"};
+function fmt(v,suf,sign){ if(v==null) return `<span class="flat">-</span>`;
+  const cls = sign?(v>0?"up":(v<0?"down":"flat")):""; const s=(sign&&v>0?"+":"")+v+suf;
+  return cls?`<span class="${cls}">${s}</span>`:s; }
+
+function renderRank(){
+  const val=(s,f)=> f==="rate" ? sectorLiveRate(s) : s[f];
+  const rs = rows().slice().sort((a,b)=>((val(b,SORT))??-1e9)-((val(a,SORT))??-1e9));
+  document.getElementById("rankBody").innerHTML = rs.length ? rs.map(s=>`
+    <tr data-key="${esc(s.key)}"${s.key===SEL?' class="sel"':''}>
+      <td class="l"><span class="nm">${esc(s.name)}</span><span class="kind ${s.kind}">${({theme:"테마",etf:"ETF",etfgroup:"ETF묶음"})[s.kind]||""}</span></td>
+      <td>${s.n}</td>
+      <td>${s.relvol!=null?`<span class="${s.relvol>=1.5?'golden':''}">${s.relvol}x</span>`:'<span class="flat">-</span>'}</td>
+      <td>${fmt(s.turnover,"%",false)}</td>
+      <td>${fmt(sectorLiveRate(s),"%",true)}</td>
+      <td>${fmt(s.netbuy_pct,"%",true)}</td>
+      <td>${s.breadth?`${s.breadth}%<span class="flat"> 🔵${s.lead}/🔥${s.lag}</span>`:'<span class="flat">-</span>'}</td>
+    </tr>`).join("") : `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`;
+  document.querySelectorAll("th[data-sort]").forEach(th=>th.classList.toggle("on",th.dataset.sort===SORT));
+}
+
+function renderQuad(){
+  const rs = rows().filter(s=>s.relvol!=null && s.rate!=null).map(s=>({...s, rate:sectorLiveRate(s)}));
+  const W=600,H=400, pad=44;
+  // X: 상대거래대금(0.4~ clamp 3.0), 중심 1.0 / Y: 등락률(실시간 구성평균)
+  const xs=rs.map(s=>s.relvol), ys=rs.map(s=>s.rate);
+  const xMin=0.4, xMax=Math.max(2.2, Math.min(3.5, Math.max(...xs,1.6)));
+  const yMin=Math.min(-1,...ys), yMax=Math.max(1,...ys);
+  const X=v=>pad+(Math.min(v,xMax)-xMin)/(xMax-xMin)*(W-pad*1.5);
+  const Y=v=>H-pad-(v-yMin)/(yMax-yMin)*(H-pad*1.6);
+  const x1=X(1.0);                        // 상대거래대금 기준선(평소)
+  const yMid=(yMin+yMax)/2, y1=Y(yMid);   // 등락률 중앙
+  const nMax=Math.max(...rs.map(s=>s.n),1);
+  const R=n=>6+Math.sqrt(n/nMax)*22;
+  const col=s=> s.netbuy_pct==null?"#64748b":(s.netbuy_pct>0?"#ef4444":(s.netbuy_pct<0?"#3b82f6":"#64748b"));
+  let svg="";
+  // 골든 존(우하단: X>1, Y<중앙) 하이라이트
+  svg+=`<rect x="${x1}" y="${y1}" width="${W-pad*0.5-x1}" height="${H-pad-y1}" fill="rgba(34,197,94,.07)"/>`;
+  svg+=`<line x1="${x1}" y1="${pad*0.5}" x2="${x1}" y2="${H-pad}" stroke="#333c49" stroke-dasharray="4 4"/>`;
+  svg+=`<line x1="${pad}" y1="${y1}" x2="${W-pad*0.5}" y2="${y1}" stroke="#333c49" stroke-dasharray="4 4"/>`;
+  svg+=`<text class="qlabel" x="${x1+6}" y="${pad*0.5+12}">평소 대비 1.0x →</text>`;
+  svg+=`<text class="qlabel" x="${pad}" y="${H-pad+16}">← 소외    상대거래대금(평소 대비)    초기유입 →</text>`;
+  svg+=`<text class="qlabel" x="6" y="${pad*0.5+8}" >등락률↑</text>`;
+  svg+=`<text class="qlabel golden" x="${W-pad*0.5-92}" y="${H-pad-6}" fill="#eab308">🎯초기유입존</text>`;
+  for(const s of rs){
+    const cx=X(s.relvol), cy=Y(s.rate), r=R(s.n), sel=s.key===SEL;
+    svg+=`<g class="bub" data-key="${esc(s.key)}">
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${col(s)}" fill-opacity="${sel?0.85:0.5}" stroke="${sel?'#eab308':col(s)}" stroke-width="${sel?2.5:1}"/>
+      <text x="${cx}" y="${cy-r-3}" text-anchor="middle">${esc(s.name.length>7?s.name.slice(0,6)+'…':s.name)} ${s.relvol}x</text>
+    </g>`;
+  }
+  document.getElementById("quad").innerHTML=svg;
+}
+
+// ── 전역 실시간 등락률 레이어 (랭킹·사분면·급등주·로스터 공통) ──────────
+let LIVE = {};   // code -> 실시간 등락률(%)
+const liveRate = (code, fallback)=> (LIVE[code]!=null ? LIVE[code] : fallback);
+// 섹터(테마/ETF묶음)의 구성종목 평균 등락률 — 로스터 전체 실시간 반영
+function sectorLiveRate(sec){
+  const ros=(DATA.theme_roster||{})[sec.key];
+  if(ros&&ros.length){
+    const rs=ros.map(r=>liveRate(r.code, r.rate)).filter(v=>v!=null);
+    if(rs.length) return Math.round(rs.reduce((a,b)=>a+b,0)/rs.length*100)/100;
+  }
+  return sec.rate;
+}
+function pollLive(){
+  let codes;
+  if(VIEW==="gainers") codes=[...(DATA.gainers||[]),...(DATA.losers||[])].map(r=>r.code);
+  else { const s=new Set(); for(const k in (DATA.theme_roster||{})) (DATA.theme_roster[k]||[]).forEach(r=>s.add(r.code)); codes=[...s]; }
+  if(!codes.length) return;
+  fetch("/api/quotes?codes="+codes.join(","),{cache:"no-store"}).then(r=>r.json()).then(d=>{
+    if(!d||d.error) return;
+    for(const c in d){ if(d[c]&&d[c].rate!=null) LIVE[c]=d[c].rate; }
+    if(VIEW==="gainers") renderGainers(); else { renderQuad(); renderRank(); renderDrill(); }
+  }).catch(()=>{});
+}
+
+// 섹터 ETF들의 PDF 합집합 = 전체 구성종목 나래비(정렬 가능 + 실시간 등락률)
+let ROSTER = {sort:"cnt", dir:-1};
+
+function rosterTable(key){
+  const base=(DATA.theme_roster||{})[key]; if(!base||!base.length) return "";
+  const list=base.map(r=>({...r, rate:liveRate(r.code, r.rate)}));
+  const f=ROSTER.sort, dir=ROSTER.dir;
+  list.sort((a,b)=>{
+    if(f==="name") return dir*String(a.name||"").localeCompare(String(b.name||""));
+    const av=(a[f]==null?-Infinity:a[f]), bv=(b[f]==null?-Infinity:b[f]);
+    return dir*(av-bv);
+  });
+  const arrow=fld=> ROSTER.sort===fld?(ROSTER.dir<0?" ▼":" ▲"):"";
+  const th=(fld,label,cls="")=>`<th data-rsort="${fld}" class="${cls} ${ROSTER.sort===fld?'on':''}">${label}${arrow(fld)}</th>`;
+  const rows=list.map(r=>`<tr data-code="${esc(r.code)}">
+      <td><span class="cons" title="${r.cnt}/${r.etf_count} ETF 공통">${r.cnt}/${r.etf_count}</span></td>
+      <td class="l"><span class="nm">${esc(r.name)}</span>${r.inuniv?"":'<span class="tag" style="background:#2a2f38;color:#8b97a7;margin-left:4px">권외</span>'}</td>
+      <td>${r.weight!=null?r.weight+"%":"-"}</td>
+      <td>${r.relvol!=null?`<b class="${r.relvol>=1.5?'golden':''}">${r.relvol}x</b>`:"-"}</td>
+      <td>${r.rate!=null?`<span class="${r.rate>0?'up':(r.rate<0?'down':'flat')}">${r.rate>0?'+':''}${r.rate}%</span>`:"-"}</td>
+    </tr>`).join("");
+  return `<div class="ttl" style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">
+      📋 구성종목 전체 <span class="sub">${list.length}개 · ETF PDF 합집합 · 헤더클릭=정렬 · 등락률 실시간 · 클릭=차트</span></div>
+    <table class="roster"><thead><tr>
+      ${th("cnt","공통")}<th class="l">종목</th>${th("weight","비중")}${th("relvol","relvol")}${th("rate","등락률")}
+    </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// 구성종목 평균 등락률(실시간)
+function avgRateHtml(key){
+  const ros=(DATA.theme_roster||{})[key]||[];
+  const rs=ros.map(r=>liveRate(r.code, r.rate)).filter(v=>v!=null);
+  if(!rs.length) return "";
+  const v=Math.round(rs.reduce((a,b)=>a+b,0)/rs.length*100)/100;
+  return `<b class="${v>0?'up':(v<0?'down':'flat')}">${v>0?'+':''}${v}%</b>`;
+}
+
+function renderDrill(){
+  const box=document.getElementById("drill");
+  if(!SEL){ stopRosterLive(); box.innerHTML=`<div class="empty" style="font-size:12px">섹터를 클릭하면 소속 ETF·종목이 여기 열립니다</div>`; return; }
+  const sec=rows().find(s=>s.key===SEL);
+  if(!sec){ box.innerHTML=`<div class="empty">-</div>`; return; }
+  // ETF 모드: 묶인 ETF 목록 + 그 밑에 구성종목 전부 합친 나래비
+  if(sec.kind==="etfgroup"){
+    const es=(sec.etfs||[]).slice().sort((a,b)=>(b.relvol??-1)-(a.relvol??-1));
+    box.innerHTML=`<div class="ttl">🧺 ${esc(sec.name)} ETF 클러스터 <span class="sub">${sec.n}개 ETF · 클릭=차트</span></div>`
+      +`<div class="det-sub" style="margin-bottom:8px">📊 구성종목 평균등락률 ${avgRateHtml(sec.key)||'-'} <span class="flat">(실시간·권외포함)</span></div>`+
+      es.map(e=>`<div class="sd-stock" data-code="${esc(e.code)}">
+        <span class="nm">${esc(e.name)}</span>
+        <span class="r">${e.relvol!=null?`<b class="${e.relvol>=1.5?'golden':''}">${e.relvol}x</b>`:'-'} · <span class="${e.rate>0?'up':(e.rate<0?'down':'flat')}">${e.rate>0?'+':''}${e.rate??'-'}%</span></span>
+      </div>`).join("")
+      + rosterTable(sec.key);
+    return;
+  }
+  // 테마 모드: ETF 그룹 요약 + 전체 구성종목 나래비(공통도순)
+  const meta = (KIND==="theme") ? (DATA.theme_meta||{})[sec.key] : null;
+  if(meta){
+    box.innerHTML=`<div class="ttl">${esc(sec.name)} <span class="sub">상대대금 ${sec.relvol}x · 구성평균등락 ${avgRateHtml(sec.key)||(sec.rate>0?'+':'')+sec.rate+'%'}</span></div>`
+      +`<div class="det-sub" style="margin-bottom:4px">🧺 묶인 ETF ${meta.etf_count}개 · <span class="flat" style="font-size:11px">${(meta.etfs||[]).slice(0,8).map(esc).join(" · ")}${(meta.etfs||[]).length>8?" …":""}</span></div>`
+      + rosterTable(sec.key);
+    return;
+  }
+  // 폴백(로스터 없는 수동 테마: 희토류·광통신·HBM): 유니버스 소속 종목
+  const items=(sec.codes||[]).map(c=>DATA.stocks[c]).filter(Boolean)
+    .sort((a,b)=>(b.relvol??-1)-(a.relvol??-1));
+  box.innerHTML=`<div class="ttl">${esc(sec.name)} <span class="sub">${sec.n}종목 · 상대거래대금순 · 클릭=차트</span></div>`+
+    items.map(r=>`<div class="sd-stock" data-code="${esc(r.code)}">
+      <span class="nm">${esc(r.name)}</span>
+      <span class="r">${r.relvol!=null?`<b class="${r.relvol>=1.5?'golden':''}">${r.relvol}x</b>`:'-'} · <span class="${r.rate>0?'up':(r.rate<0?'down':'flat')}">${r.rate>0?'+':''}${r.rate??'-'}%</span></span>
+    </div>`).join("") || `<div class="empty">종목 없음</div>`;
+}
+
+function eok(won){ if(won==null) return "-"; const e=won/1e8;
+  if(e>=10000) return (e/10000).toFixed(2).replace(/\.?0+$/,"")+"조"; return Math.round(e).toLocaleString()+"억"; }
+function tagsHtml(r){
+  const ts=r.themes||[];
+  return ts.length ? ts.map(t=>`<span class="tag">${esc(t)}</span>`).join("") : `<span class="flat">-</span>`;
+}
+function relCell(v){ return v==null?'<span class="flat">-</span>':`<span class="${v>=2?'golden':(v>=1?'':'flat')}">${v}x</span>`; }
+
+function rateSpan(v){ if(v==null) return '<span class="flat">-</span>'; const c=v>0?'up':(v<0?'down':'flat'); return `<span class="${c}">${v>0?'+':''}${v}%</span>`; }
+function renderGainers(){
+  const gs=(DATA.gainers||[]).map(r=>({...r, rate:liveRate(r.code,r.rate)})).sort((a,b)=>(b.rate??-1e9)-(a.rate??-1e9));
+  document.getElementById("gainBody").innerHTML = gs.map((r,i)=>`
+    <tr data-code="${esc(r.code)}">
+      <td class="rk">${i+1}</td>
+      <td class="l"><span class="nm">${esc(r.name)}</span><span class="mk ${esc(r.market)}">${esc(r.market)}</span></td>
+      <td>${rateSpan(r.rate)}</td>
+      <td>${eok(r.value)}</td>
+      <td>${relCell(r.relvol)}</td>
+      <td>${r.turn!=null?r.turn+"%":'<span class="flat">-</span>'}</td>
+      <td class="l">${tagsHtml(r)}</td>
+    </tr>`).join("") || `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`;
+  document.getElementById("loseBody").innerHTML = (DATA.losers||[]).map(r=>`
+    <div class="sd-stock" data-code="${esc(r.code)}"><span class="nm">${esc(r.name)}</span>
+      <span class="r">${rateSpan(liveRate(r.code,r.rate))} · ${relCell(r.relvol)}</span></div>`).join("")
+    || `<div class="empty">해당 없음</div>`;
+}
+
+function renderAll(){
+  const isS = VIEW==="sector";
+  document.getElementById("viewSector").style.display = isS?"flex":"none";
+  document.getElementById("viewGainers").style.display = isS?"none":"flex";
+  document.getElementById("tTheme").style.display = isS?"":"none";
+  document.getElementById("tEtf").style.display = isS?"":"none";
+  if(isS){
+    document.getElementById("meta").textContent=`${KIND_LABEL[KIND]} ${rows().length}개 · ${DATA.universe||0}종목 · 갱신 ${DATA.generated_at||"-"}`;
+    renderQuad(); renderRank(); renderDrill();
+  }else{
+    document.getElementById("meta").textContent=`급등주 · 유니버스 ${DATA.universe||0}종목 · 갱신 ${DATA.generated_at||"-"}`;
+    renderGainers();
+  }
+}
+
+async function load(){
+  try{ DATA = await (await fetch("data/sectors_flow.json?_="+Date.now(),{cache:"no-store"})).json(); }
+  catch(e){ document.getElementById("meta").textContent="sectors_flow.json 로드 실패: "+(e.message||e); return; }
+  renderAll();
+}
+
+// 이벤트
+document.querySelectorAll(".chip[data-view]").forEach(c=>c.addEventListener("click",()=>{
+  VIEW=c.dataset.view;
+  document.querySelectorAll(".chip[data-view]").forEach(x=>x.classList.toggle("on",x.dataset.view===VIEW));
+  renderAll(); pollLive();
+}));
+document.getElementById("viewGainers").addEventListener("click",e=>{
+  const el=e.target.closest("[data-code]"); if(!el) return;
+  openStock(el.dataset.code);
+});
+document.querySelectorAll(".chip[data-kind]").forEach(c=>c.addEventListener("click",()=>{
+  KIND=c.dataset.kind; SEL=null;
+  document.querySelectorAll(".chip[data-kind]").forEach(x=>x.classList.toggle("on",x.dataset.kind===KIND));
+  renderAll(); pollLive();
+}));
+document.querySelector("thead").addEventListener("click",e=>{
+  const th=e.target.closest("th[data-sort]"); if(!th) return; SORT=th.dataset.sort; renderRank();
+});
+document.getElementById("rankBody").addEventListener("click",e=>{
+  const tr=e.target.closest("tr[data-key]"); if(!tr) return;
+  SEL=(SEL===tr.dataset.key)?null:tr.dataset.key; renderAll();
+});
+document.getElementById("quad").addEventListener("click",e=>{
+  const g=e.target.closest(".bub"); if(!g) return;
+  SEL=(SEL===g.dataset.key)?null:g.dataset.key; renderAll();
+});
+document.getElementById("drill").addEventListener("click",e=>{
+  const th=e.target.closest("th[data-rsort]");
+  if(th){ const f=th.dataset.rsort;
+    if(ROSTER.sort===f) ROSTER.dir=-ROSTER.dir; else { ROSTER.sort=f; ROSTER.dir=(f==="name"?1:-1); }
+    renderDrill(); return; }
+  const el=e.target.closest("[data-code]"); if(!el) return;
+  openStock(el.dataset.code);
+});
+
+setInterval(()=>{ document.getElementById("clock").textContent=new Date().toLocaleTimeString("ko-KR",{hour12:false}); },1000);
+
+let _es;
+function connectSSE(){
+  try{
+    _es=new EventSource("/events");
+    _es.onmessage=()=>load();
+    _es.addEventListener("reload",()=>location.reload());
+    _es.onerror=()=>{ _es.close(); setTimeout(connectSSE,3000); };
+  }catch(_){}
+}
+load(); connectSSE(); setInterval(load,30000);
+// 장중 실시간 등락률 — 15초마다 현재 뷰의 종목 시세 폴링(랭킹·사분면·급등주·로스터 공통)
+setInterval(pollLive, 15000);
+setTimeout(pollLive, 1500);
+</script>
+</body>
+</html>
