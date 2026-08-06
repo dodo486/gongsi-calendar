@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-06 15:25:31",
- "count": 47,
+ "generated_at": "2026-08-06 20:47:22",
+ "count": 50,
  "events": [
   {
    "corp": "POSCO홀딩스",
@@ -599,6 +599,48 @@
    "pay_date": "2026-09-02",
    "rcept_no": "20260806900246",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806900246",
+   "div_type": "분기배당",
+   "rcept_dt": "20260806",
+   "confirm_date": "2026-08-19",
+   "ex_date": "2026-08-20"
+  },
+  {
+   "corp": "코오롱인더",
+   "stock": "120110",
+   "market": "KOSPI",
+   "per_share": "900",
+   "record_date": "2026-08-21",
+   "pay_date": "2026-09-04",
+   "rcept_no": "20260806800577",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800577",
+   "div_type": "중간배당",
+   "rcept_dt": "20260806",
+   "confirm_date": "2026-08-19",
+   "ex_date": "2026-08-20"
+  },
+  {
+   "corp": "한국앤컴퍼니",
+   "stock": "000240",
+   "market": "KOSPI",
+   "per_share": "330",
+   "record_date": "2026-08-21",
+   "pay_date": "",
+   "rcept_no": "20260806800421",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800421",
+   "div_type": "중간배당",
+   "rcept_dt": "20260806",
+   "confirm_date": "2026-08-19",
+   "ex_date": "2026-08-20"
+  },
+  {
+   "corp": "케이티앤지",
+   "stock": "033780",
+   "market": "KOSPI",
+   "per_share": "2000",
+   "record_date": "2026-08-21",
+   "pay_date": "2026-09-07",
+   "rcept_no": "20260806800319",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800319",
    "div_type": "분기배당",
    "rcept_dt": "20260806",
    "confirm_date": "2026-08-19",

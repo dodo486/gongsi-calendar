@@ -4409,5 +4409,71 @@
   "record_date": "2026-08-21",
   "pay_date": "",
   "div_type": ""
+ },
+ "20260806800577": {
+  "kind": "decision",
+  "stock": "120110",
+  "corp": "코오롱인더",
+  "market": "KOSPI",
+  "rcept_dt": "20260806",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260806800529": {
+  "kind": "record",
+  "stock": "120110",
+  "corp": "코오롱인더",
+  "market": "KOSPI",
+  "rcept_dt": "20260806",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260806800421": {
+  "kind": "decision",
+  "stock": "000240",
+  "corp": "한국앤컴퍼니",
+  "market": "KOSPI",
+  "rcept_dt": "20260806",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260806800392": {
+  "kind": "record",
+  "stock": "000240",
+  "corp": "한국앤컴퍼니",
+  "market": "KOSPI",
+  "rcept_dt": "20260806",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260806800319": {
+  "kind": "decision",
+  "stock": "033780",
+  "corp": "케이티앤지",
+  "market": "KOSPI",
+  "rcept_dt": "20260806",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260806800311": {
+  "kind": "record",
+  "stock": "033780",
+  "corp": "케이티앤지",
+  "market": "KOSPI",
+  "rcept_dt": "20260806",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
  }
 }

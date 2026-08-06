@@ -1,11 +1,55 @@
 {
- "generated_at": "2026-08-06 15:25:14",
+ "generated_at": "2026-08-06 20:47:10",
  "range": {
   "bgn": "20260506",
-  "end": "20260805"
+  "end": "20260806"
  },
- "count": 310,
+ "count": 314,
  "events": [
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260806",
+   "rcept_no": "20260806000512",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806000512",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "씨앤씨인터내셔널",
+   "stock": "352480",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260806",
+   "rcept_no": "20260806000477",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806000477",
+   "flr": "씨앤씨인터내셔널"
+  },
+  {
+   "corp": "휴젤",
+   "stock": "145020",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260806",
+   "rcept_no": "20260806000359",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806000359",
+   "flr": "휴젤"
+  },
+  {
+   "corp": "현대무벡스",
+   "stock": "319400",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260806",
+   "rcept_no": "20260806000400",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806000400",
+   "flr": "현대무벡스"
+  },
   {
    "corp": "HLB",
    "stock": "028300",
