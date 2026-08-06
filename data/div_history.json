@@ -4387,5 +4387,27 @@
   "record_date": "2025-12-31",
   "pay_date": "",
   "div_type": "결산배당"
+ },
+ "20260806900246": {
+  "kind": "decision",
+  "stock": "069080",
+  "corp": "웹젠",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260806",
+  "per_share": "590",
+  "record_date": "2026-08-21",
+  "pay_date": "2026-09-02",
+  "div_type": "분기배당"
+ },
+ "20260806900243": {
+  "kind": "record",
+  "stock": "069080",
+  "corp": "웹젠",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260806",
+  "per_share": "",
+  "record_date": "2026-08-21",
+  "pay_date": "",
+  "div_type": ""
  }
 }

@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-06 13:19:03",
- "count": 145,
+ "generated_at": "2026-08-06 15:50:36",
+ "count": 148,
  "events": [
   {
    "corp": "두산밥캣",
@@ -1307,6 +1307,17 @@
    "sponsor": "자사"
   },
   {
+   "corp": "지역난방공사",
+   "stock": "071320",
+   "market": "KOSPI",
+   "rcept_no": "20260806800184",
+   "rcept_dt": "20260806",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800184",
+   "src": "예고",
+   "expected_date": "2026-08-10",
+   "period_end": "2026-06-30"
+  },
+  {
    "corp": "코스메카코리아",
    "stock": "241710",
    "market": "KOSDAQ",
@@ -1316,6 +1327,19 @@
    "src": "예고",
    "expected_date": "2026-08-10",
    "period_end": "2026-06-30"
+  },
+  {
+   "corp": "지역난방공사",
+   "stock": "071320",
+   "market": "KOSPI",
+   "rcept_no": "20260806800187",
+   "rcept_dt": "20260806",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800187",
+   "src": "IR",
+   "expected_date": "2026-08-10",
+   "time": "15:00",
+   "purpose": "2026년 2분기 실적 관련 기업설명회",
+   "sponsor": "당사"
   },
   {
    "corp": "SK바이오사이언스",
@@ -1606,6 +1630,17 @@
    "rcept_no": "20260730800315",
    "rcept_dt": "20260730",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800315",
+   "src": "예고",
+   "expected_date": "2026-08-13",
+   "period_end": "2026-06-30"
+  },
+  {
+   "corp": "이마트",
+   "stock": "139480",
+   "market": "KOSPI",
+   "rcept_no": "20260806800162",
+   "rcept_dt": "20260806",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800162",
    "src": "예고",
    "expected_date": "2026-08-13",
    "period_end": "2026-06-30"

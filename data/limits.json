@@ -1,8 +1,137 @@
 {
  "date": "2026-08-06",
- "generated_at": "2026-08-06 13:19:12",
- "count": 7,
+ "generated_at": "2026-08-06 15:50:56",
+ "count": 14,
  "events": [
+  {
+   "time": "14:28",
+   "kind": "주식선물",
+   "name": "LIG디펜스앤에어로스페이스",
+   "code": "079550",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260806000232",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260806000232&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "14:33:37",
+   "rate": 12.03
+  },
+  {
+   "time": "14:28",
+   "kind": "주식선물",
+   "name": "스튜디오드래곤",
+   "code": "253450",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260806000231",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260806000231&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "14:33:11",
+   "rate": 10.36
+  },
+  {
+   "time": "14:16",
+   "kind": "주식선물",
+   "name": "휴젤",
+   "code": "145020",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260806000221",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260806000221&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "14:21:37",
+   "rate": 7.31
+  },
+  {
+   "time": "14:05",
+   "kind": "주식선물",
+   "name": "보로노이",
+   "code": "310210",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260806000211",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260806000211&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "14:10:59",
+   "rate": 6.78
+  },
+  {
+   "time": "14:01",
+   "kind": "주식선물",
+   "name": "LG생활건강",
+   "code": "051900",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260806000205",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260806000205&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "14:06:02",
+   "rate": 10.77
+  },
+  {
+   "time": "13:57",
+   "kind": "주식선물",
+   "name": "알테오젠",
+   "code": "196170",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260806000201",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260806000201&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "14:02:53",
+   "rate": 5.96
+  },
+  {
+   "time": "13:43",
+   "kind": "주식선물",
+   "name": "SK하이닉스",
+   "code": "000660",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260806000191",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260806000191&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300",
+    "KTOP30"
+   ],
+   "expand_time": "13:48:45",
+   "rate": 10.37
+  },
   {
    "time": "10:19",
    "kind": "주식선물",
@@ -19,7 +148,7 @@
     "KRX300"
    ],
    "expand_time": "10:24:17",
-   "rate": 9.96
+   "rate": 9.43
   },
   {
    "time": "09:58",
@@ -52,7 +181,7 @@
     "KTOP30"
    ],
    "expand_time": "09:56:01",
-   "rate": 8.78
+   "rate": 9.37
   },
   {
    "time": "09:44",
@@ -71,7 +200,7 @@
     "KRX300"
    ],
    "expand_time": "09:49:49",
-   "rate": 11.84
+   "rate": 13.32
   },
   {
    "time": "09:19",
@@ -89,7 +218,7 @@
     "KRX300"
    ],
    "expand_time": "09:24:57",
-   "rate": 16.89
+   "rate": 12.69
   },
   {
    "time": "09:13",
@@ -107,7 +236,7 @@
     "KRX300"
    ],
    "expand_time": "09:18:46",
-   "rate": 6.37
+   "rate": 7.59
   },
   {
    "time": "09:06",
@@ -125,7 +254,7 @@
     "KRX300"
    ],
    "expand_time": "09:11:06",
-   "rate": 3.79
+   "rate": 2.91
   }
  ]
 }

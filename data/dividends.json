@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-06 12:50:46",
- "count": 46,
+ "generated_at": "2026-08-06 15:25:31",
+ "count": 47,
  "events": [
   {
    "corp": "POSCO홀딩스",
@@ -589,6 +589,20 @@
    "rcept_dt": "20260805",
    "confirm_date": "2026-08-18",
    "ex_date": "2026-08-19"
+  },
+  {
+   "corp": "웹젠",
+   "stock": "069080",
+   "market": "KOSDAQ",
+   "per_share": "590",
+   "record_date": "2026-08-21",
+   "pay_date": "2026-09-02",
+   "rcept_no": "20260806900246",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806900246",
+   "div_type": "분기배당",
+   "rcept_dt": "20260806",
+   "confirm_date": "2026-08-19",
+   "ex_date": "2026-08-20"
   },
   {
    "corp": "SK텔레콤",
