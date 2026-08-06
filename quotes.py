@@ -5,22 +5,21 @@
 - stock_rate/index_rate: 개별종목/지수 등락률(부호%) — earnings 의 naver_rate 와 동일 파서
 ※ 기존 earnings.naver_rate·consensus.naver_trend 와 중복되나, 향후 그쪽을 이 모듈로 일원화 예정.
 """
-import json, urllib.request
-from fetch import build_ssl_context
-
-_CTX = None
-def _ctx():
-    global _CTX
-    if _CTX is None:
-        _CTX = build_ssl_context()
-    return _CTX
+import requests
+import fetch  # import 시 make_opener()가 truststore로 ssl 전역 패치 → requests도 MITM 인증서 통과
 
 HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Referer": "https://finance.naver.com/"}
 
+# 연결 재사용(keep-alive) — TLS 검사 머신에서 매 호출 핸드셰이크 비용 제거가 핵심
+_SESS = requests.Session()
+_SESS.headers.update(HDR)
+_ADAPTER = requests.adapters.HTTPAdapter(pool_connections=8, pool_maxsize=16)
+_SESS.mount("https://", _ADAPTER)
+
 def _get(url):
-    req = urllib.request.Request(url, headers=HDR)
-    with urllib.request.urlopen(req, timeout=10, context=_ctx()) as r:
-        return json.load(r)
+    r = _SESS.get(url, timeout=10)
+    r.raise_for_status()
+    return r.json()
 
 def _num(x):
     """'5,577' / '+2.50' / '-2,078,706' / '46.67%' → float. 실패 시 None."""

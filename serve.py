@@ -146,10 +146,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
                 break   # 브라우저가 닫음(새로고침/이동) — 스레드 종료, EventSource가 자동 재접속
 
+def _warm_quotes():
+    """네이버 연결(keep-alive)을 미리 데워 첫 /api/flow 클릭의 콜드 핸드셰이크(수 초) 제거."""
+    try:
+        import quotes
+        quotes.quote_batch(["005930"])       # polling.finance 핸드셰이크
+        quotes.daily_price("005930", 1)      # m.stock 핸드셰이크
+        quotes.investor_trend("005930", 1)
+    except Exception:
+        pass
+
 if __name__ == "__main__":
     os.chdir(BASE)
     url = f"http://localhost:{PORT}/index.html"
     print(f"공시캘린더 열림 → {url}\n(종료: Ctrl+C)")
+    threading.Thread(target=_warm_quotes, daemon=True).start()   # 백그라운드 연결 워밍업
     threading.Timer(0.8, lambda: webbrowser.open(url)).start()
     # 127.0.0.1 바인딩 — 같은 네트워크의 다른 기기에서 접속 못 하게 (개인 도구)
     with http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler) as httpd:

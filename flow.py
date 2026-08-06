@@ -6,6 +6,7 @@
   python flow.py            # 1회 스냅샷 → data/flow.json
 """
 import os, datetime
+from concurrent.futures import ThreadPoolExecutor
 from fetch import DATA_DIR, load_watchlist, save_json, TLS_MODE
 import quotes
 
@@ -32,13 +33,15 @@ def build():
             "turnover": round(value / mktcap * 100, 2) if (value and mktcap) else None,
         })
     by_value = sorted(rows, key=lambda r: (r["value"] or 0), reverse=True)[:TOP_N]
-    # 거래대금 상위 종목에 당일 외국인 순매수 부착 + 외국인 순매수가 시총 대비 몇 %
-    for r in by_value[:TREND_N]:
-        tr = quotes.investor_trend(r["code"], n=1)
-        if tr:
-            r["frgn"], r["org"], r["indi"] = tr[0]["frgn"], tr[0]["org"], tr[0]["indi"]
-            if r["price"] and r["mktcap"]:
-                r["frgn_pct"] = round(r["frgn"] * r["price"] / r["mktcap"] * 100, 3)
+    # 거래대금 상위 종목에 당일 외국인 순매수 부착 (병렬 — 순차 40콜은 느림)
+    def _fetch_tr(r):
+        return r, quotes.investor_trend(r["code"], n=1)
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for r, tr in ex.map(_fetch_tr, by_value[:TREND_N]):
+            if tr:
+                r["frgn"], r["org"], r["indi"] = tr[0]["frgn"], tr[0]["org"], tr[0]["indi"]
+                if r["price"] and r["mktcap"]:
+                    r["frgn_pct"] = round(r["frgn"] * r["price"] / r["mktcap"] * 100, 3)
     payload = {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "universe": len(rows),
@@ -98,8 +101,14 @@ def _signals(rows):
 
 def detail(code, show=15):
     """종목 상세 — 일별 가격·거래량·투자자(외국인/기관계/개인) + 신호. serve.py /api/flow 가 호출."""
-    px = {p["date"]: p for p in quotes.daily_price(code, 40)}
-    tr = {t["date"]: t for t in quotes.investor_trend(code, 25)}
+    # 3개 소스 병렬 조회 (순차 콜드 2.2초 → 병렬 ~0.7초)
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        f_px = ex.submit(quotes.daily_price, code, 40)
+        f_tr = ex.submit(quotes.investor_trend, code, 25)
+        f_q = ex.submit(quotes.quote_batch, [code])
+        px_list, tr_list, q = f_px.result(), f_tr.result(), f_q.result().get(code, {})
+    px = {p["date"]: p for p in px_list}
+    tr = {t["date"]: t for t in tr_list}
     dates = sorted(set(px) | set(tr))   # 과거→최신
     vols = [px[d]["vol"] for d in dates if d in px and px[d].get("vol")]
     base = sum(vols[-20:]) / max(1, len(vols[-20:])) if vols else 0   # 최근 20일 평균 거래량
@@ -118,7 +127,6 @@ def detail(code, show=15):
                      "volx": round(vol / base, 1) if (vol and base) else None,
                      "frgn": f, "org": o, "indi": ind})
     signals = _signals(rows)
-    q = quotes.quote_batch([code]).get(code, {})
     name = q.get("name") or ""
     return {"code": code, "name": name, "quote": q,
             "rows": rows[-show:], "signals": signals,
