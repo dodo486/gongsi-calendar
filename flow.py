@@ -35,13 +35,16 @@ def build():
     by_value = sorted(rows, key=lambda r: (r["value"] or 0), reverse=True)[:TOP_N]
     # 거래대금 상위 종목에 당일 외국인 순매수 부착 (병렬 — 순차 40콜은 느림)
     def _fetch_tr(r):
-        return r, quotes.investor_trend(r["code"], n=1)
+        return r, quotes.investor_trend(r["code"], n=10)   # 신호 판정 위해 최근 10일
     with ThreadPoolExecutor(max_workers=8) as ex:
         for r, tr in ex.map(_fetch_tr, by_value[:TREND_N]):
             if tr:
                 r["frgn"], r["org"], r["indi"] = tr[0]["frgn"], tr[0]["org"], tr[0]["indi"]
                 if r["price"] and r["mktcap"]:
                     r["frgn_pct"] = round(r["frgn"] * r["price"] / r["mktcap"] * 100, 3)
+                sig = _flow_signals([{"org": t["org"], "frgn": t["frgn"]} for t in reversed(tr)])
+                if sig:
+                    r["sig"] = sig   # 랭킹 목록의 🔥 매수신호 마크용
     payload = {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "universe": len(rows),
@@ -52,6 +55,29 @@ def build():
     save_json(FLOW_PATH, payload)
     print(f"TLS={TLS_MODE} | flow.json 저장: 거래대금상위 {len(by_value)} · 전체 {len(rows)}종목")
     return payload
+
+MIN_STREAK = 3   # 연속 순매수 최소 일수 (이 이상만 목록에 매집 마크)
+
+def _flow_signals(rows):
+    """수급 '지속 매집' 마크용 — 기관/외국인 연속 순매수 ≥ MIN_STREAK 만 태그(전환은 노이즈라 제외).
+    rows: 과거→최신, org/frgn 순매수. 반환 예: [{'who':'기관','days':4}]."""
+    def streak(key):
+        c = 0
+        for r in reversed(rows):
+            if (r.get(key) or 0) > 0:
+                c += 1
+            else:
+                break
+        return c
+
+    out = []
+    so, sf = streak("org"), streak("frgn")
+    if so >= MIN_STREAK:
+        out.append({"who": "기관", "days": so})
+    if sf >= MIN_STREAK:
+        out.append({"who": "외인", "days": sf})
+    out.sort(key=lambda x: x["days"], reverse=True)
+    return out
 
 def _signals(rows):
     """일별 레코드(과거→최신, 투자자 데이터 포함분)에서 신호 배지 추출.
