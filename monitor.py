@@ -288,8 +288,8 @@ def poll_limits(lim_seen, alert=True):
             alerted += 1
     return alerted
 
-FLOW_POLL_SECONDS = 60      # 수급(거래대금·투자자 순매수) 스냅샷 주기 — 상하한가(5초)와 별개
-SECTORS_POLL_SECONDS = 120  # 섹터/테마 로테이션 집계 주기 — 유니버스 전수라 더 무거워 느리게
+FLOW_POLL_SECONDS = 90      # 수급(거래대금·투자자 순매수) 스냅샷 주기 — 상하한가(5초)와 별개
+SECTORS_POLL_SECONDS = 240  # 섹터/테마 로테이션 집계 주기 — 유니버스 800종목 전수라 가장 무거워 넉넉히
 
 def flow_loop():
     """수급분석기 전용 루프(별도 스레드) — 거래대금/등락 랭킹 + 투자자 순매수 → data/flow.json."""

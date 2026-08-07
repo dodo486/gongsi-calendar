@@ -49,7 +49,7 @@ def fetch_all():
         except Exception:
             continue
         pages = list(range(1, math.ceil(total / PAGE) + 1))
-        with ThreadPoolExecutor(max_workers=10) as ex:
+        with ThreadPoolExecutor(max_workers=5) as ex:   # TLS검사 프록시서 콜당 CPU 큼 → 병렬 낮춰 순간 점유 완화
             for st in ex.map(lambda p: _page(market, p), pages):
                 for s in st:
                     if s.get("stockEndType") != "stock":   # ETF/ETN/리츠 등 제외
