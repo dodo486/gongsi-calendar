@@ -1,21 +1,7 @@
 {
- "generated_at": "2026-08-07 13:26:14",
+ "generated_at": "2026-08-07 16:46:19",
  "count": 47,
  "events": [
-  {
-   "corp": "POSCO홀딩스",
-   "stock": "005490",
-   "market": "KOSPI",
-   "per_share": "2000",
-   "record_date": "2026-05-27",
-   "pay_date": "2026-06-12",
-   "rcept_no": "20260512800729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260512800729",
-   "div_type": "분기배당",
-   "rcept_dt": "20260512",
-   "confirm_date": "2026-05-22",
-   "ex_date": "2026-05-26"
-  },
   {
    "corp": "신세계",
    "stock": "004170",
@@ -603,6 +589,20 @@
    "rcept_dt": "20260806",
    "confirm_date": "2026-08-19",
    "ex_date": "2026-08-20"
+  },
+  {
+   "corp": "POSCO홀딩스",
+   "stock": "005490",
+   "market": "KOSPI",
+   "per_share": "2000",
+   "record_date": "2026-08-24",
+   "pay_date": "2026-09-07",
+   "rcept_no": "20260807800561",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260807800561",
+   "div_type": "분기배당",
+   "rcept_dt": "20260807",
+   "confirm_date": "2026-08-20",
+   "ex_date": "2026-08-21"
   },
   {
    "corp": "SK텔레콤",

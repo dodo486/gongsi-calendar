@@ -4816,5 +4816,71 @@
   "record_date": "2025-12-31",
   "pay_date": "2026-04-23",
   "div_type": "결산배당"
+ },
+ "20260807800596": {
+  "kind": "record",
+  "stock": "000660",
+  "corp": "SK하이닉스",
+  "market": "KOSPI",
+  "rcept_dt": "20260807",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260807800594": {
+  "kind": "decision",
+  "stock": "021240",
+  "corp": "코웨이",
+  "market": "KOSPI",
+  "rcept_dt": "20260807",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260807800591": {
+  "kind": "record",
+  "stock": "021240",
+  "corp": "코웨이",
+  "market": "KOSPI",
+  "rcept_dt": "20260807",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260807800589": {
+  "kind": "decision",
+  "stock": "000660",
+  "corp": "SK하이닉스",
+  "market": "KOSPI",
+  "rcept_dt": "20260807",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260807800561": {
+  "kind": "decision",
+  "stock": "005490",
+  "corp": "POSCO홀딩스",
+  "market": "KOSPI",
+  "rcept_dt": "20260807",
+  "per_share": "2000",
+  "record_date": "2026-08-24",
+  "pay_date": "2026-09-07",
+  "div_type": "분기배당"
+ },
+ "20260807800507": {
+  "kind": "record",
+  "stock": "005490",
+  "corp": "POSCO홀딩스",
+  "market": "KOSPI",
+  "rcept_dt": "20260807",
+  "per_share": "",
+  "record_date": "2026-08-24",
+  "pay_date": "",
+  "div_type": "분기배당"
  }
 }
