@@ -230,6 +230,16 @@ def build():
     # ETF를 섹터(테마)로 묶기 — 낱개 ETF가 아니라 '섹터별 ETF 클러스터'로 집계
     grp = {}
     etf_by_code = {e["key"]: e for e in etfs}
+    # 개별 ETF 등락률은 '구성종목 평균'이 아니라 ETF 본체의 실제 등락률(실시간 시세)로 교체.
+    # (동일가중 구성종목 평균은 소형 급등주를 과대반영 → 실제 ETF 등락률과 크게 어긋남)
+    try:
+        _eq = quotes.quote_batch(list(etf_by_code))
+        for ec, e in etf_by_code.items():
+            lr = (_eq.get(ec) or {}).get("rate")
+            if lr is not None:
+                e["rate"] = lr
+    except Exception:
+        pass
     for ec, e in etf_by_code.items():
         for th in etf_theme_of.get(ec, []):
             if th in ("AI", "인터넷플랫폼", "지주"):   # 광범위 테마 제외
@@ -307,10 +317,8 @@ def build():
         ros = theme_roster.get(key, [])
         rr = [x["rate"] for x in ros if x.get("rate") is not None]
         return round(sum(rr) / len(rr), 2) if rr else None
-    for g in etf_groups:
-        v = _roster_avg(g["key"])
-        if v is not None:
-            g["rate"] = v
+    # ETF 클러스터 등락률은 위에서 '실제 ETF 등락률 평균'으로 이미 산출됨(roster평균 덮어쓰기 안 함).
+    # 테마(WICS/커스텀) 랭킹만 구성종목 동일가중 평균 등락률 사용.
     for t in themes:
         v = _roster_avg(t["key"])
         if v is not None:

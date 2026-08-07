@@ -214,7 +214,11 @@ function sectorLiveRate(sec){
 function pollLive(){
   let codes;
   if(VIEW==="gainers") codes=[...(DATA.gainers||[]),...(DATA.losers||[])].map(r=>r.code);
-  else { const s=new Set(); for(const k in (DATA.theme_roster||{})) (DATA.theme_roster[k]||[]).forEach(r=>s.add(r.code)); codes=[...s]; }
+  else { const s=new Set(); for(const k in (DATA.theme_roster||{})) (DATA.theme_roster[k]||[]).forEach(r=>s.add(r.code));
+    // 선택된 ETF 클러스터의 ETF 본체 코드도 실시간 폴링(ETF는 6자리 숫자가 아니라 별도 추가)
+    const sel=(rows()||[]).find(x=>x.key===SEL);
+    if(sel&&sel.etfs) sel.etfs.forEach(e=>{ if(e.code) s.add(e.code); });
+    codes=[...s]; }
   if(!codes.length) return;
   fetch("/api/quotes?codes="+codes.join(","),{cache:"no-store"}).then(r=>r.json()).then(d=>{
     if(!d||d.error) return;
@@ -270,10 +274,10 @@ function renderDrill(){
     const es=(sec.etfs||[]).slice().sort((a,b)=>(b.relvol??-1)-(a.relvol??-1));
     box.innerHTML=`<div class="ttl">🧺 ${esc(sec.name)} ETF 클러스터 <span class="sub">${sec.n}개 ETF · 클릭=차트</span></div>`
       +`<div class="det-sub" style="margin-bottom:8px">📊 구성종목 평균등락률 ${avgRateHtml(sec.key)||'-'} <span class="flat">(실시간·권외포함)</span></div>`+
-      es.map(e=>`<div class="sd-stock" data-code="${esc(e.code)}">
+      es.map(e=>{ const lr=liveRate(e.code, e.rate); return `<div class="sd-stock" data-code="${esc(e.code)}">
         <span class="nm">${esc(e.name)}</span>
-        <span class="r">${e.relvol!=null?`<b class="${e.relvol>=1.5?'golden':''}">${e.relvol}x</b>`:'-'} · <span class="${e.rate>0?'up':(e.rate<0?'down':'flat')}">${e.rate>0?'+':''}${e.rate??'-'}%</span></span>
-      </div>`).join("")
+        <span class="r">${e.relvol!=null?`<b class="${e.relvol>=1.5?'golden':''}">${e.relvol}x</b>`:'-'} · <span class="${lr>0?'up':(lr<0?'down':'flat')}">${lr>0?'+':''}${lr??'-'}%</span></span>
+      </div>`; }).join("")
       + rosterTable(sec.key);
     return;
   }

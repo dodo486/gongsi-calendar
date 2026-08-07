@@ -129,7 +129,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         """실시간 시세 배치 — codes=콤마구분 → {code:{rate,price}} (로스터 장중 등락률용)"""
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         raw = (qs.get("codes") or [""])[0]
-        codes = [c for c in re.findall(r"\d{6}", raw)][:900]
+        codes = re.findall(r"[A-Za-z0-9]{6}", raw)[:900]   # 6자리 종목 + ETF코드(0207G0 등) 모두 허용
         out = {}
         try:
             import quotes
