@@ -92,6 +92,9 @@
   /* 유상증자 — 권리락(T-1) 파랑 / 권리부매수(T-2) 하늘 */
   .fc-event.cap-rights-ex{background:#3b82f6;border-color:#3b82f6;font-weight:600}
   .fc-event.cap-rights-buy{background:#7dd3fc;border-color:#7dd3fc;color:#04222a;font-weight:600}
+  /* 신주 상장(입고)일 — 무·유 공통 초록 / 유상 신주인수권증서 상장(입고)일 핑크 */
+  .fc-event.cap-list{background:#10b981;border-color:#10b981;color:#022c22;font-weight:700}
+  .fc-event.cap-warrant{background:#ec4899;border-color:#ec4899;color:#2a0716;font-weight:700}
   .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
   .fc-event.ern{background:#06b6d4;border-color:#06b6d4;color:#00222a;font-weight:600}   /* 예상 실적발표(청록) */
   .fc-event.eact{background:var(--div);border-color:var(--div);font-weight:600}          /* 실제 실적공시(보라) */
@@ -231,6 +234,8 @@
           <span class="lg"><i style="background:#dc2626"></i><i style="background:#fca5a5"></i> 배당</span>
           <span class="lg"><i style="background:#a855f7"></i><i style="background:#c4b5fd"></i> 무상</span>
           <span class="lg"><i style="background:#3b82f6"></i><i style="background:#7dd3fc"></i> 유상</span>
+          <span class="lg"><i style="background:#10b981"></i> 신주상장(입고)</span>
+          <span class="lg"><i style="background:#ec4899"></i> 신주인수권(유상)</span>
           <span class="cal-legend-note">· 진한색=권리락(T-1), 연한색=매수일(T-2)</span>
         </span>
       </div>
@@ -317,6 +322,14 @@ function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준
       if(dm.ex && (e.ex_date||e.record_date))
         out.push({id:"cx"+i, title:`[${pre}권리락] ${e.corp}`, start:e.ex_date||e.record_date, allDay:true,
                   classNames:[bonus?"cap-bonus-ex":"cap-rights-ex"], extendedProps:props});
+      // 신주 상장(입고)일 — 무·유 공통, 항상 표시(실제 신주가 계좌에 들어오는 날)
+      if(e.listing_date)
+        out.push({id:"cl"+i, title:`[${pre}신주상장] ${e.corp}`, start:e.listing_date, allDay:true,
+                  classNames:["cap-list"], extendedProps:props});
+      // 신주인수권증서 상장(입고)일 — 유상만(서버에서 유상만 채움)
+      if(e.rights_date)
+        out.push({id:"cw"+i, title:`[유상신주인수권] ${e.corp}`, start:e.rights_date, allDay:true,
+                  classNames:["cap-warrant"], extendedProps:props});
     });
   return out;
 }
@@ -455,10 +468,14 @@ function showDetail(e){
         <div class="row">🗓️ 권리부매수일(T-2) <b style="color:${col}">${esc(e.buy_date||"-")}</b> <span style="color:var(--muted)">— 이날까지 사야 신주배정 권리</span></div>
         <div class="row">🚫 권리락일(T-1) <b style="color:${col}">${esc(e.ex_date||"-")}</b> <span style="color:var(--muted)">— 이날부터 권리락</span></div>
         <div class="row">📌 신주배정기준일 ${esc(e.record_date)}</div>
+        ${e.rights_date?`<div class="row">🎟️ 신주인수권증서 상장(입고) <b style="color:#ec4899">${esc(e.rights_date)}</b> <span style="color:var(--muted)">— 이날부터 신주인수권 거래·입고</span></div>`:""}
+        ${e.listing_date?`<div class="row">📦 신주 상장(입고) <b style="color:#10b981">${esc(e.listing_date)}</b> <span style="color:var(--muted)">— 실제 신주가 계좌에 들어와 거래 시작</span></div>`:""}
         <div class="why"><div class="wh">📍 날짜 안내</div>
           <div class="row">📌 <b>신주배정기준일(${esc(e.record_date)})</b> — 이날 주주명부에 있어야 ${bonus?"무상":"유상"}신주를 배정받습니다.</div>
           <div class="row">🗓️ <b>권리부매수일(${esc(e.buy_date||"-")})</b> — 기준일 2영업일 전(T-2). T+2 결제라 이날까지 매수해야 권리를 받습니다.</div>
           <div class="row">🚫 <b>권리락일(${esc(e.ex_date||"-")})</b> — 기준일 1영업일 전(T-1). 이날부터 신주 권리가 없어 통상 권리락으로 주가가 조정됩니다.</div>
+          ${e.rights_date?`<div class="row">🎟️ <b>신주인수권증서 상장(${esc(e.rights_date)})</b> — 유상 주주배정 시 신주인수권증서가 상장·거래(입고)되는 시작일. 청약 안 할 거면 이 기간에 매도 가능.</div>`:""}
+          ${e.listing_date?`<div class="row">📦 <b>신주 상장(${esc(e.listing_date)})</b> — 청약·배정받은 신주가 실제 계좌에 입고돼 거래를 시작하는 날.</div>`:""}
         </div>
         <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
       </div>`;
