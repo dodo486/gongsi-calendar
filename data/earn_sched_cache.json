@@ -1339,5 +1339,23 @@
   "time": "",
   "purpose": "",
   "sponsor": "신한투자증권"
+ },
+ "20260806900384": {
+  "expected_date": "2026-08-11",
+  "period_end": "2026-06-30"
+ },
+ "20260807800123": {
+  "kind": "ir",
+  "expected_date": "2026-08-11",
+  "time": "09:00",
+  "purpose": "(주)GS리테일 경영현황에 대한 투자자 이해 제고",
+  "sponsor": "DB증권"
+ },
+ "20260806900604": {
+  "kind": "ir",
+  "expected_date": "2026-08-12",
+  "time": "",
+  "purpose": "",
+  "sponsor": "자사,"
  }
 }
