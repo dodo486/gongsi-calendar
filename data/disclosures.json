@@ -1,11 +1,55 @@
 {
- "generated_at": "2026-08-07 16:45:51",
+ "generated_at": "2026-08-07 17:46:16",
  "range": {
   "bgn": "20260506",
-  "end": "20260806"
+  "end": "20260807"
  },
- "count": 314,
+ "count": 318,
  "events": [
+  {
+   "corp": "SK하이닉스",
+   "stock": "000660",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260807",
+   "rcept_no": "20260807000537",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260807000537",
+   "flr": "SK하이닉스"
+  },
+  {
+   "corp": "SK스퀘어",
+   "stock": "402340",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식처분결정)(자회사의 주요경영사항)",
+   "category": "자사주",
+   "date": "20260807",
+   "rcept_no": "20260807800772",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260807800772",
+   "flr": "SK스퀘어"
+  },
+  {
+   "corp": "HPSP",
+   "stock": "403870",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260807",
+   "rcept_no": "20260807000741",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260807000741",
+   "flr": "HPSP"
+  },
+  {
+   "corp": "서진시스템",
+   "stock": "178320",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260807",
+   "rcept_no": "20260807900848",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260807900848",
+   "flr": "서진시스템"
+  },
   {
    "corp": "성호전자",
    "stock": "043260",
