@@ -21,6 +21,13 @@ MAX_DAYS = 92   # DART: corp_code 없이 조회 가능한 최대 기간(3개월)
 RE_REC = re.compile(r"신주배정기준일\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
 # 무상: "1주당 신주배정 주식수 보통주식 (주) 0.5" / 유상: "1주당 신주배정주식수 (주) 0.24" 둘 다 대응
 RE_RATIO = re.compile(r"1주당\s*신주배정\s*주식수\s*(?:보통주식)?\s*\(주\)\s*([\d.]+)")
+# 신주 상장(입고)예정일 — 무상 "신주의 상장 예정일" / 유상 "신주의 상장예정일" 둘 다.
+# 라벨 바로 뒤 날짜만 잡으므로 정정공시의 정정전(라벨~날짜 사이에 사유텍스트) 은 건너뛰고 정정후가 잡힌다.
+RE_LIST = re.compile(r"신주의\s*상장\s*예정일\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
+# 신주인수권증서 상장(입고) 시작일 — 유상 주주배정 "신주인수권증서 상장(예정)기간 : YYYY.MM.DD ~ ..."
+RE_RIGHTS = re.compile(r"신주인수권증서\s*상장(?:예정)?기간\s*[:：]?\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
+
+_FIELD_KEYS = ("record_date", "ratio", "listing_date", "rights_date")
 
 def _is_cap(nm):
     return any(k in (nm or "") for k in ("유상증자결정", "무상증자결정", "유무상증자결정"))
@@ -34,8 +41,12 @@ def cap_type(nm):
 def parse_cap(t):
     m = RE_REC.search(t)
     r = RE_RATIO.search(t)
+    ml = RE_LIST.search(t)
+    mr = RE_RIGHTS.search(t)
     return {"record_date": norm_date(m.group(1)) if m else "",
-            "ratio": r.group(1) if r else ""}
+            "ratio": r.group(1) if r else "",
+            "listing_date": norm_date(ml.group(1)) if ml else "",   # 신주 상장(입고)일
+            "rights_date": norm_date(mr.group(1)) if mr else ""}     # 신주인수권증서 상장(입고)일(유상)
 
 def load_cache():
     if os.path.exists(CACHE_PATH):
@@ -46,14 +57,15 @@ def load_cache():
     return {}
 
 def _fields(rno, cache):
-    """파싱 필드 반환 — 캐시에 있으면 재사용(다운로드 0), 없으면 원문 1회 다운로드+파싱 후 캐시."""
+    """파싱 필드 반환 — 캐시에 있으면 재사용(다운로드 0), 없으면 원문 1회 다운로드+파싱 후 캐시.
+    신규 필드(listing_date 등)가 없는 구캐시는 재파싱해 최신 필드를 채운다."""
     c = cache.get(rno)
-    if c is not None:
-        return {"record_date": c.get("record_date", ""), "ratio": c.get("ratio", "")}
+    if c is not None and "listing_date" in c:
+        return {k: c.get(k, "") for k in _FIELD_KEYS}
     try:
         d = parse_cap(doc_text(rno))
     except Exception:
-        d = {"record_date": "", "ratio": ""}
+        d = {k: "" for k in _FIELD_KEYS}
     cache[rno] = d
     return d
 
@@ -82,6 +94,9 @@ def build_events(rows, cache):
             row = _base(r)
             row["record_date"] = d["record_date"]
             row["ratio"] = d["ratio"]
+            row["listing_date"] = d.get("listing_date", "")
+            # 신주인수권증서는 유상 주주배정에만 존재 — 무상 오탐 방지
+            row["rights_date"] = d.get("rights_date", "") if row["type"] == "유상증자" else ""
             merged[key] = row
     return [_finalize(e) for e in merged.values()]
 
@@ -110,7 +125,10 @@ def main(days=MAX_DAYS):
     _save(events)
     print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 감시대상 {len(watch)} | 증자결정 {len(rows)}건 → {len(events)}건(기준일有) 저장")
     for e in events:
-        print(f"  {e['type']} {e['corp']}({e['stock']}) 기준일 {e['record_date']} · 매수 {e['buy_date']} · 락 {e['ex_date']}")
+        extra = ""
+        if e.get("listing_date"): extra += f" · 신주상장 {e['listing_date']}"
+        if e.get("rights_date"):  extra += f" · 신주인수권상장 {e['rights_date']}"
+        print(f"  {e['type']} {e['corp']}({e['stock']}) 기준일 {e['record_date']} · 매수 {e['buy_date']} · 락 {e['ex_date']}{extra}")
 
 def upsert(cap_events):
     """collect_events 형식의 신규 증자 공시를 capital.json 에 즉시 증분 반영. 변경시 True."""
@@ -136,6 +154,8 @@ def upsert(cap_events):
             if cur is None or r.get("date", "") >= cur.get("rcept_dt", ""):
                 e = {"corp": r["corp"], "stock": r["stock"], "market": r.get("market", ""),
                      "type": typ, "ratio": d["ratio"], "record_date": d["record_date"],
+                     "listing_date": d.get("listing_date", ""),
+                     "rights_date": d.get("rights_date", "") if typ == "유상증자" else "",
                      "rcept_no": r["rcept_no"], "rcept_dt": r.get("date", ""),
                      "url": r.get("url", "")}
                 _finalize(e)
