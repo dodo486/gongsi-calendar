@@ -61,6 +61,7 @@
   .sd-stock .r{color:var(--muted);font-variant-numeric:tabular-nums}
   .cons{display:inline-block;min-width:30px;text-align:center;font-size:10px;font-weight:800;color:#86efac;background:rgba(34,197,94,.15);border-radius:5px;padding:1px 5px;margin-right:6px;font-variant-numeric:tabular-nums}
 </style>
+<script src="common.js"></script>
 </head>
 <body>
 <header>
@@ -140,9 +141,7 @@ let KIND = "theme";     // theme | etf
 let VIEW = "sector";    // sector | gainers
 let SORT = "relvol";
 let SEL = null;         // 선택 섹터 key
-const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-// 종목 클릭 → 토스증권 차트(국내주식은 A+코드). 같은 탭 재사용(창 안 늘어남)
-function openStock(code){ if(/^\d{6}$/.test(code||"")) window.open("https://alphasquare.co.kr/home/stock-summary?code="+code,"alphachart"); }
+// esc() · openChart() 는 common.js 에서 제공 (종목 클릭 → 알파스퀘어 차트, 'alphachart' 탭 재사용)
 
 function rows(){ return (KIND==="etf"?DATA.etfs:DATA.themes)||[]; }
 const KIND_LABEL = {theme:"테마", etf:"ETF 바스켓"};
@@ -355,7 +354,7 @@ document.querySelectorAll(".chip[data-view]").forEach(c=>c.addEventListener("cli
 }));
 document.getElementById("viewGainers").addEventListener("click",e=>{
   const el=e.target.closest("[data-code]"); if(!el) return;
-  openStock(el.dataset.code);
+  openChart(el.dataset.code);
 });
 document.querySelectorAll(".chip[data-kind]").forEach(c=>c.addEventListener("click",()=>{
   KIND=c.dataset.kind; SEL=null;
@@ -379,7 +378,7 @@ document.getElementById("drill").addEventListener("click",e=>{
     if(ROSTER.sort===f) ROSTER.dir=-ROSTER.dir; else { ROSTER.sort=f; ROSTER.dir=(f==="name"?1:-1); }
     renderDrill(); return; }
   const el=e.target.closest("[data-code]"); if(!el) return;
-  openStock(el.dataset.code);
+  openChart(el.dataset.code);
 });
 
 setInterval(()=>{ document.getElementById("clock").textContent=new Date().toLocaleTimeString("ko-KR",{hour12:false}); },1000);
@@ -389,7 +388,7 @@ function connectSSE(){
   try{
     _es=new EventSource("/events");
     _es.onmessage=()=>load();
-    _es.addEventListener("reload",()=>location.reload());
+    bindChartSSE(_es);   // 공통: reload=새로고침 / openchart=토스트 클릭 차트 (common.js)
     _es.onerror=()=>{ _es.close(); setTimeout(connectSSE,3000); };
   }catch(_){}
 }

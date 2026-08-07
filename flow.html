@@ -63,6 +63,7 @@
   .det table td,.det table th{padding:4px 6px;font-size:12px}
   tr.surge{background:rgba(234,179,8,.08)}
 </style>
+<script src="common.js"></script>
 </head>
 <body>
 <header>
@@ -104,7 +105,7 @@ window.addEventListener("unhandledrejection", e=>{
 });
 let FLOW = {by_value:[], up:[], down:[], universe:0, generated_at:""};
 const filters = {KOSPI:true, KOSDAQ:true, q:""};
-const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// esc() 는 common.js 에서 제공
 
 function eok(won){   // 원 → 억/조 표시
   if(won==null) return "-";
@@ -244,18 +245,13 @@ setInterval(()=>{ const d=new Date();
   document.getElementById("clock").textContent = d.toLocaleTimeString("ko-KR",{hour12:false}); },1000);
 
 // SSE: data/ 변경 시 즉시 재로드 (flow.json 갱신 반영) + index.html/flow.html 변경 시 reload
-// 토스트 클릭 → 항상 같은 'alphachart' 탭에서 알파스퀘어 종목 차트 열기(종목만 교체)
-function openChart(code){
-  if(!/^\d{6}$/.test(code||"")) return;
-  window.open("https://alphasquare.co.kr/home/stock-summary?code="+code,"alphachart");
-}
+// openChart() 는 common.js 에서 제공
 let _es;
 function connectSSE(){
   try{
     _es = new EventSource("/events");
     _es.onmessage = ()=> load();
-    _es.addEventListener("reload", ()=> location.reload());
-    _es.addEventListener("openchart", ev=> openChart(ev.data));   // 토스트 클릭 시 차트 열기
+    bindChartSSE(_es);   // 공통: reload=새로고침 / openchart=토스트 클릭 차트 (common.js)
     _es.onerror = ()=>{ _es.close(); setTimeout(connectSSE, 3000); };
   }catch(_){}
 }

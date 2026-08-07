@@ -6,6 +6,7 @@
 <title>📅 공시캘린더</title>
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script src="common.js"></script>
 <style>
   :root{
     --bg:#0f1116; --panel:#171a21; --line:#262b36; --text:#e6e9ef; --muted:#8b93a3;
@@ -263,8 +264,7 @@ const limF = { "지수선물":true, "주식선물":true, "상승":true, "하락"
 
 function toISO(d){ return d.includes("-") ? d : `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`; }
 const won = n => Number(n).toLocaleString("ko-KR");
-// 외부(DART) 데이터를 innerHTML에 넣기 전 이스케이프 (XSS 방지)
-const esc = s => String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+// esc() 는 common.js 에서 제공 (외부 데이터 innerHTML 삽입 전 XSS 이스케이프)
 let divListMode = false;
 function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`; }
 
@@ -985,12 +985,7 @@ async function boot(){
   setInterval(()=>{ if(MODE==="board") renderLimits(); }, 5000);   // 깜빡이(지금 걸림/발동중) 5초마다 갱신
 }
 
-// 토스트/화면 클릭 → 항상 같은 'alphachart' 탭에서 알파스퀘어 종목 차트 열기(종목만 교체, 창 안 늘어남)
-function openChart(code){
-  if(!/^\d{6}$/.test(code||"")) return false;
-  window.open("https://alphasquare.co.kr/home/stock-summary?code="+code,"alphachart");
-  return true;
-}
+// openChart() 는 common.js 에서 제공 (알파스퀘어 차트를 'alphachart' 탭 재사용으로 열기)
 const NAME2CODE = {};   // 회사명 → 종목코드 (시장조치처럼 코드 없는 항목의 클릭 차트용)
 function indexCodes(){   // 로드된 데이터에서 이름↔코드 맵 채우기 (loadData 때 호출)
   const put = (nm,cd)=>{ if(nm && /^\d{6}$/.test(cd||"")) NAME2CODE[nm]=cd; };
@@ -1011,8 +1006,7 @@ function connectSSE(){
       loadData().catch(console.error);
       if(MODE==="board") renderLimits();
     };
-    _es.addEventListener("reload", ()=>location.reload());   // index.html 바뀌면 열린 탭 스스로 새로고침
-    _es.addEventListener("openchart", ev=> openChart(ev.data));   // 토스트 클릭 시 차트 열기
+    bindChartSSE(_es);   // 공통: reload=새로고침 / openchart=토스트 클릭 차트 (common.js)
     _es.onerror = ()=>{};   // 브라우저 EventSource가 자동 재접속 (폴백 폴링도 병행)
   }catch(_){ /* EventSource 미지원 시 30초 폴링으로 동작 */ }
 }
