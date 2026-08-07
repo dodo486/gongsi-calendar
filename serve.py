@@ -18,9 +18,9 @@ _chart_lock = threading.Lock()
 _chart_events = []      # /chart 요청으로 쌓이는 종목코드 (index+1 = seq)
 _sse_count = 0          # 현재 연결된 대시보드(SSE) 수 — 0이면 폴백으로 이 탭에서 직접 오픈
 
-def _tv_url(code):
-    """TradingView 차트 URL — KRX:<코드> 는 코스피·코스닥 공통, interval=1 = 1분봉."""
-    return f"https://www.tradingview.com/chart/?symbol=KRX:{code}&interval=1"
+def _chart_url(code):
+    """알파스퀘어 종목 차트 URL — 6자리 코드 그대로(코스피·코스닥 공통)."""
+    return f"https://alphasquare.co.kr/home/stock-summary?code={code}"
 
 def html_mtime():
     """페이지 HTML 최신 수정 시각 — 바뀌면 SSE로 reload 신호(열린 탭 자동 새로고침)."""
@@ -80,7 +80,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def _serve_chart(self):
         """토스트 클릭 진입점 — 대시보드(SSE)가 떠 있으면 그쪽에 신호를 보내
-        항상 같은 'tvchart' 탭을 재사용해 열게 하고, 없으면 이 응답이 직접 연다."""
+        항상 같은 'alphachart' 탭을 재사용해 열게 하고, 없으면 이 응답이 직접 연다."""
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         code = (qs.get("code") or [""])[0]
         if not re.fullmatch(r"\d{6}", code):
@@ -91,7 +91,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             if has_client:
                 _chart_events.append(code)
         if has_client:
-            # 대시보드가 tvchart 탭을 재사용해 연다 → 이 임시 탭은 스스로 닫기 시도
+            # 대시보드가 alphachart 탭을 재사용해 연다 → 이 임시 탭은 스스로 닫기 시도
             page = ("<!doctype html><meta charset=utf-8><title>차트</title>"
                     "<body style='font:14px sans-serif;background:#0b0e14;color:#8b95a5;padding:20px'>"
                     "차트를 여는 중… (이 탭은 닫으셔도 됩니다)"
@@ -99,7 +99,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         else:
             # 대시보드가 없으니 이 탭을 그대로 차트로 이동(폴백, 재사용은 안 됨)
             page = ("<!doctype html><meta charset=utf-8><title>차트</title>"
-                    f"<script>location.replace({json.dumps(_tv_url(code))});</script>")
+                    f"<script>location.replace({json.dumps(_chart_url(code))});</script>")
         body = page.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")

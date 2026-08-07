@@ -606,7 +606,7 @@ function renderLimits(){
 }
 
 const toMD = d => (d && d.length>=8) ? `${d.slice(4,6)}-${d.slice(6,8)}` : (d||"");
-function bindOpen(box){   // .li 항목 클릭 → 종목이면 차트(tvchart 재사용), 코드 없으면 원문 새 탭
+function bindOpen(box){   // .li 항목 클릭 → 종목이면 차트(alphachart 재사용), 코드 없으면 원문 새 탭
   box.querySelectorAll(".li").forEach(el=>
     el.addEventListener("click",()=>{
       if(openChart(el.dataset.code)) return;   // 종목코드 있으면 같은 탭에서 차트만 스위칭
@@ -985,10 +985,10 @@ async function boot(){
   setInterval(()=>{ if(MODE==="board") renderLimits(); }, 5000);   // 깜빡이(지금 걸림/발동중) 5초마다 갱신
 }
 
-// 토스트/화면 클릭 → 항상 같은 'tvchart' 탭에서 TradingView 1분봉 차트 열기(종목만 교체, 창 안 늘어남)
+// 토스트/화면 클릭 → 항상 같은 'alphachart' 탭에서 알파스퀘어 종목 차트 열기(종목만 교체, 창 안 늘어남)
 function openChart(code){
   if(!/^\d{6}$/.test(code||"")) return false;
-  window.open("https://www.tradingview.com/chart/?symbol=KRX:"+code+"&interval=1","tvchart");
+  window.open("https://alphasquare.co.kr/home/stock-summary?code="+code,"alphachart");
   return true;
 }
 const NAME2CODE = {};   // 회사명 → 종목코드 (시장조치처럼 코드 없는 항목의 클릭 차트용)

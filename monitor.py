@@ -158,7 +158,7 @@ def _code_of(name):
     return ""
 
 def _chart_url(code):
-    """토스트 클릭 → 로컬 서버(/chart)가 대시보드에 'tvchart' 탭으로 TradingView(1분봉) 열기 지시.
+    """토스트 클릭 → 로컬 서버(/chart)가 대시보드에 'alphachart' 탭으로 알파스퀘어 차트 열기 지시.
     대시보드가 열려 있으면 항상 같은 탭 재사용(종목만 교체), 없으면 새 탭 폴백."""
     return f"http://127.0.0.1:8777/chart?code={code}" if code else ""
 

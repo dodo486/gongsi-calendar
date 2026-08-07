@@ -142,7 +142,7 @@ let SORT = "relvol";
 let SEL = null;         // 선택 섹터 key
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 // 종목 클릭 → 토스증권 차트(국내주식은 A+코드). 같은 탭 재사용(창 안 늘어남)
-function openStock(code){ if(/^\d{6}$/.test(code||"")) window.open("https://www.tossinvest.com/stocks/A"+code,"tosschart"); }
+function openStock(code){ if(/^\d{6}$/.test(code||"")) window.open("https://alphasquare.co.kr/home/stock-summary?code="+code,"alphachart"); }
 
 function rows(){ return (KIND==="etf"?DATA.etfs:DATA.themes)||[]; }
 const KIND_LABEL = {theme:"테마", etf:"ETF 바스켓"};
