@@ -1,40 +1,7 @@
 {
- "generated_at": "2026-08-07 20:11:19",
- "count": 140,
+ "generated_at": "2026-08-08 09:13:59",
+ "count": 132,
  "events": [
-  {
-   "corp": "두산로보틱스",
-   "stock": "454910",
-   "market": "KOSPI",
-   "rcept_no": "20260715800461",
-   "rcept_dt": "20260715",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260715800461",
-   "src": "예고",
-   "expected_date": "2026-07-24",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "제일기획",
-   "stock": "030000",
-   "market": "KOSPI",
-   "rcept_no": "20260715800375",
-   "rcept_dt": "20260715",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260715800375",
-   "src": "예고",
-   "expected_date": "2026-07-24",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "현대로템",
-   "stock": "064350",
-   "market": "KOSPI",
-   "rcept_no": "20260710800665",
-   "rcept_dt": "20260710",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260710800665",
-   "src": "예고",
-   "expected_date": "2026-07-24",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "LG이노텍",
    "stock": "011070",
@@ -387,19 +354,6 @@
    "period_end": "2026-06-30"
   },
   {
-   "corp": "포스코DX",
-   "stock": "022100",
-   "market": "KOSPI",
-   "rcept_no": "20260724800083",
-   "rcept_dt": "20260724",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800083",
-   "src": "IR",
-   "expected_date": "2026-07-30",
-   "time": "13:30",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "디에스투자증권"
-  },
-  {
    "corp": "HL만도",
    "stock": "204320",
    "market": "KOSPI",
@@ -662,19 +616,6 @@
    "time": "09:10",
    "purpose": "2026년 2분기 경영실적 발표 및 질의응답",
    "sponsor": "NH투자증권"
-  },
-  {
-   "corp": "S-Oil",
-   "stock": "010950",
-   "market": "KOSPI",
-   "rcept_no": "20260724800690",
-   "rcept_dt": "20260724",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800690",
-   "src": "IR",
-   "expected_date": "2026-08-03",
-   "time": "10:00",
-   "purpose": "2026년 2분기 잠정실적에 대한 투자자 이해 제고",
-   "sponsor": "자사"
   },
   {
    "corp": "강원랜드",
@@ -1172,19 +1113,6 @@
    "period_end": "2026-06-30"
   },
   {
-   "corp": "롯데쇼핑",
-   "stock": "023530",
-   "market": "KOSPI",
-   "rcept_no": "20260724800824",
-   "rcept_dt": "20260724",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800824",
-   "src": "IR",
-   "expected_date": "2026-08-07",
-   "time": "09:30",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사"
-  },
-  {
    "corp": "지역난방공사",
    "stock": "071320",
    "market": "KOSPI",
@@ -1476,19 +1404,6 @@
    "sponsor": "자사"
   },
   {
-   "corp": "메리츠금융지주",
-   "stock": "138040",
-   "market": "KOSPI",
-   "rcept_no": "20260724800760",
-   "rcept_dt": "20260724",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800760",
-   "src": "IR",
-   "expected_date": "2026-08-12",
-   "time": "16:00",
-   "purpose": "2026년 2분기 경영실적 등 발표",
-   "sponsor": "자사"
-  },
-  {
    "corp": "한화생명",
    "stock": "088350",
    "market": "KOSPI",
@@ -1585,19 +1500,6 @@
    "time": "14:00",
    "purpose": "2026 회계연도 상반기 경영실적 발표",
    "sponsor": "자사"
-  },
-  {
-   "corp": "LG",
-   "stock": "003550",
-   "market": "KOSPI",
-   "rcept_no": "20260724800743",
-   "rcept_dt": "20260724",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800743",
-   "src": "IR",
-   "expected_date": "2026-08-13",
-   "time": "15:30",
-   "purpose": "2026년 2분기 경영실적 설명",
-   "sponsor": "당사주관"
   },
   {
    "corp": "DB손해보험",
