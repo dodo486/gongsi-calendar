@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-08 17:30:28",
+ "generated_at": "2026-08-08 18:30:19",
  "count": 218,
  "events": [
   {
@@ -3697,8 +3697,8 @@
    "disc_time": "16:54",
    "pre5": 0.97,
    "post5": 8.67,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "테크윙",
@@ -3729,8 +3729,8 @@
    "disc_time": "17:03",
    "pre5": -3.36,
    "post5": 0.19,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "비츠로셀",
@@ -3747,8 +3747,8 @@
    "disc_time": "16:35",
    "pre5": -0.16,
    "post5": 0.95,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "신세계",
@@ -3765,8 +3765,8 @@
    "disc_time": "16:25",
    "pre5": -3.04,
    "post5": 4.46,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "한국가스공사",
@@ -3783,8 +3783,8 @@
    "disc_time": "16:25",
    "pre5": -2.71,
    "post5": 1.24,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "이마트",
@@ -3801,8 +3801,8 @@
    "disc_time": "16:25",
    "pre5": -1.85,
    "post5": 0.63,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "오리온",
@@ -3819,8 +3819,8 @@
    "disc_time": "16:25",
    "pre5": -3.42,
    "post5": 1.77,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   }
  ]
 }
