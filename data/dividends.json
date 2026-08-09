@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-09 19:53:21",
- "count": 47,
+ "generated_at": "2026-08-10 08:42:45",
+ "count": 46,
  "events": [
   {
    "corp": "신세계",
@@ -27,20 +27,6 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260514801062",
    "div_type": "분기배당",
    "rcept_dt": "20260514",
-   "confirm_date": "2026-05-28",
-   "ex_date": "2026-05-29"
-  },
-  {
-   "corp": "CJ제일제당",
-   "stock": "097950",
-   "market": "KOSPI",
-   "per_share": "1500",
-   "record_date": "2026-05-31",
-   "pay_date": "",
-   "rcept_no": "20260511800793",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260511800793",
-   "div_type": "분기배당",
-   "rcept_dt": "20260511",
    "confirm_date": "2026-05-28",
    "ex_date": "2026-05-29"
   },
@@ -167,7 +153,7 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260706800377",
    "div_type": "분기배당",
    "rcept_dt": "20260706",
-   "confirm_date": "2026-07-16",
+   "confirm_date": "2026-07-17",
    "ex_date": "2026-07-20"
   },
   {
@@ -181,7 +167,7 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260706800354",
    "div_type": "분기배당",
    "rcept_dt": "20260706",
-   "confirm_date": "2026-07-16",
+   "confirm_date": "2026-07-17",
    "ex_date": "2026-07-20"
   },
   {
