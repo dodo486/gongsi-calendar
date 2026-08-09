@@ -352,9 +352,9 @@ document.querySelectorAll(".chip[data-view]").forEach(c=>c.addEventListener("cli
   document.querySelectorAll(".chip[data-view]").forEach(x=>x.classList.toggle("on",x.dataset.view===VIEW));
   renderAll(); pollLive();
 }));
-document.getElementById("viewGainers").addEventListener("click",e=>{
+document.getElementById("viewGainers").addEventListener("dblclick",e=>{
   const el=e.target.closest("[data-code]"); if(!el) return;
-  openChart(el.dataset.code);
+  openChart(el.dataset.code);   // 더블클릭 → 차트
 });
 document.querySelectorAll(".chip[data-kind]").forEach(c=>c.addEventListener("click",()=>{
   KIND=c.dataset.kind; SEL=null;
@@ -376,9 +376,10 @@ document.getElementById("drill").addEventListener("click",e=>{
   const th=e.target.closest("th[data-rsort]");
   if(th){ const f=th.dataset.rsort;
     if(ROSTER.sort===f) ROSTER.dir=-ROSTER.dir; else { ROSTER.sort=f; ROSTER.dir=(f==="name"?1:-1); }
-    renderDrill(); return; }
-  const el=e.target.closest("[data-code]"); if(!el) return;
-  openChart(el.dataset.code);
+    renderDrill(); }
+});
+document.getElementById("drill").addEventListener("dblclick",e=>{
+  const el=e.target.closest("[data-code]"); if(el) openChart(el.dataset.code);   // 더블클릭 → 차트
 });
 
 setInterval(()=>{ document.getElementById("clock").textContent=new Date().toLocaleTimeString("ko-KR",{hour12:false}); },1000);
