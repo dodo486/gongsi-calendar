@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-09 17:37:17",
+ "generated_at": "2026-08-09 18:36:27",
  "count": 213,
  "events": [
   {
@@ -3697,8 +3697,8 @@
    "disc_time": "16:54",
    "pre5": 0.97,
    "post5": 8.67,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "테크윙",
@@ -3729,8 +3729,8 @@
    "disc_time": "17:03",
    "pre5": -3.36,
    "post5": 0.19,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   }
  ]
 }
