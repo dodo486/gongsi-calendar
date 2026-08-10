@@ -1,8 +1,43 @@
 {
  "date": "2026-08-10",
- "generated_at": "2026-08-10 14:35:59",
- "count": 30,
+ "generated_at": "2026-08-10 15:35:41",
+ "count": 32,
  "events": [
+  {
+   "time": "15:17",
+   "kind": "주식선물",
+   "name": "SFA넥셀",
+   "code": "222080",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000405",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000405&docno=",
+   "markets": [
+    "KOSDAQ150"
+   ],
+   "expand_time": "15:22:33",
+   "rate": 5.68
+  },
+  {
+   "time": "15:09",
+   "kind": "주식선물",
+   "name": "넥스틴",
+   "code": "348210",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000397",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000397&docno=",
+   "markets": [
+    "V100",
+    "KOSDAQ150"
+   ],
+   "expand_time": "15:14:57",
+   "rate": 10.47
+  },
   {
    "time": "14:31",
    "kind": "주식선물",
@@ -19,7 +54,7 @@
     "KOSPI200"
    ],
    "expand_time": "14:36:26",
-   "rate": 12.4
+   "rate": 11.63
   },
   {
    "time": "14:05",
@@ -37,7 +72,7 @@
     "KRX300"
    ],
    "expand_time": "14:10:34",
-   "rate": 8.77
+   "rate": 8.86
   },
   {
    "time": "13:40",
@@ -69,7 +104,7 @@
     "KRX300"
    ],
    "expand_time": "13:44:28",
-   "rate": 11.53
+   "rate": 11.97
   },
   {
    "time": "13:06",
@@ -87,7 +122,7 @@
     "KRX300"
    ],
    "expand_time": "13:11:56",
-   "rate": 8.79
+   "rate": 10.2
   },
   {
    "time": "12:45",
@@ -105,7 +140,7 @@
     "KRX300"
    ],
    "expand_time": "12:50:54",
-   "rate": 9.71
+   "rate": 10.02
   },
   {
    "time": "12:44",
@@ -123,7 +158,7 @@
     "KRX300"
    ],
    "expand_time": "12:49:37",
-   "rate": 9.06
+   "rate": 9.29
   },
   {
    "time": "11:40",
@@ -141,7 +176,7 @@
     "KRX300"
    ],
    "expand_time": "11:45:12",
-   "rate": 7.85
+   "rate": 12.27
   },
   {
    "time": "11:26",
@@ -159,7 +194,7 @@
     "KRX300"
    ],
    "expand_time": "11:31:19",
-   "rate": 10.51
+   "rate": 10.91
   },
   {
    "time": "10:51",
@@ -178,7 +213,7 @@
     "KRX300"
    ],
    "expand_time": "10:56:24",
-   "rate": 8.09
+   "rate": 7.89
   },
   {
    "time": "10:24",
@@ -193,7 +228,7 @@
    "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000121&docno=",
    "markets": [],
    "expand_time": "10:29:15",
-   "rate": 7.78
+   "rate": 8.54
   },
   {
    "time": "10:20",
@@ -211,7 +246,7 @@
     "KRX300"
    ],
    "expand_time": "10:25:57",
-   "rate": 11.57
+   "rate": 12.5
   },
   {
    "time": "10:19",
@@ -229,7 +264,7 @@
     "KRX300"
    ],
    "expand_time": "10:24:32",
-   "rate": 10.16
+   "rate": 10.7
   },
   {
    "time": "10:18",
@@ -247,7 +282,7 @@
     "KRX300"
    ],
    "expand_time": "10:23:29",
-   "rate": 7.91
+   "rate": 9.12
   },
   {
    "time": "10:15",
@@ -279,7 +314,7 @@
     "KRX300"
    ],
    "expand_time": "10:20:06",
-   "rate": 11.3
+   "rate": 13.0
   },
   {
    "time": "10:13",
@@ -316,7 +351,7 @@
     "KRX300"
    ],
    "expand_time": "10:14:58",
-   "rate": 5.21
+   "rate": 5.92
   },
   {
    "time": "10:00",
@@ -334,7 +369,7 @@
     "KRX300"
    ],
    "expand_time": "10:05:22",
-   "rate": 12.26
+   "rate": 14.63
   },
   {
    "time": "09:39",
@@ -352,7 +387,7 @@
     "KRX300"
    ],
    "expand_time": "09:44:37",
-   "rate": 7.41
+   "rate": 7.63
   },
   {
    "time": "09:18",
@@ -370,7 +405,7 @@
     "KRX300"
    ],
    "expand_time": "09:23:53",
-   "rate": 19.03
+   "rate": 19.43
   },
   {
    "time": "09:15",
@@ -388,7 +423,7 @@
     "KRX300"
    ],
    "expand_time": "09:20:49",
-   "rate": 12.62
+   "rate": 14.1
   },
   {
    "time": "09:14",
@@ -406,7 +441,7 @@
     "KRX300"
    ],
    "expand_time": "09:19:22",
-   "rate": 10.53
+   "rate": 11.44
   },
   {
    "time": "09:11",
@@ -425,7 +460,7 @@
     "KRX300"
    ],
    "expand_time": "09:16:35",
-   "rate": 9.29
+   "rate": 12.08
   },
   {
    "time": "09:09",
@@ -444,7 +479,7 @@
     "KRX300"
    ],
    "expand_time": "09:14:46",
-   "rate": 21.34
+   "rate": 20.74
   },
   {
    "time": "09:07",
@@ -462,7 +497,7 @@
     "KRX300"
    ],
    "expand_time": "09:12:46",
-   "rate": 12.44
+   "rate": 13.3
   },
   {
    "time": "09:04",
@@ -481,7 +516,7 @@
     "KRX300"
    ],
    "expand_time": "09:09:04",
-   "rate": 11.47
+   "rate": 11.07
   },
   {
    "time": "09:01",
@@ -499,7 +534,7 @@
     "KRX300"
    ],
    "expand_time": "09:06:28",
-   "rate": 11.12
+   "rate": 11.66
   },
   {
    "time": "09:01",
@@ -518,7 +553,7 @@
     "KRX300"
    ],
    "expand_time": "09:06:27",
-   "rate": 15.38
+   "rate": 16.85
   },
   {
    "time": "09:01",
@@ -536,7 +571,7 @@
     "KRX300"
    ],
    "expand_time": "09:06:12",
-   "rate": 13.74
+   "rate": 14.26
   }
  ]
 }

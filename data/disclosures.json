@@ -1,11 +1,44 @@
 {
- "generated_at": "2026-08-10 14:05:54",
+ "generated_at": "2026-08-10 15:21:26",
  "range": {
   "bgn": "20260506",
-  "end": "20260807"
+  "end": "20260810"
  },
- "count": 318,
+ "count": 321,
  "events": [
+  {
+   "corp": "OCI",
+   "stock": "456040",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260810",
+   "rcept_no": "20260810000278",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810000278",
+   "flr": "OCI"
+  },
+  {
+   "corp": "OCI홀딩스",
+   "stock": "010060",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260810",
+   "rcept_no": "20260810000268",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810000268",
+   "flr": "OCI홀딩스"
+  },
+  {
+   "corp": "OCI홀딩스",
+   "stock": "010060",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)(자회사의 주요경영사항)",
+   "category": "자사주",
+   "date": "20260810",
+   "rcept_no": "20260810800314",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800314",
+   "flr": "OCI홀딩스"
+  },
   {
    "corp": "SK하이닉스",
    "stock": "000660",
