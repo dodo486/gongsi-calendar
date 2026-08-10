@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-10 12:19:20",
+ "generated_at": "2026-08-10 14:32:18",
  "count": 217,
  "events": [
   {
@@ -12,8 +12,8 @@
    "rcept_no": "20260810900119",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900119",
    "flr": "씨앤씨인터내셔널",
-   "price": "20,050",
-   "rate": 3.14,
+   "rate": 1.69,
+   "price": "20,350",
    "chg_sign": "5"
   },
   {
@@ -26,8 +26,8 @@
    "rcept_no": "20260810900095",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900095",
    "flr": "성광벤드",
-   "price": "28,600",
-   "rate": 7.32,
+   "rate": 7.13,
+   "price": "28,550",
    "chg_sign": "2"
   },
   {
@@ -40,8 +40,8 @@
    "rcept_no": "20260810800186",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800186",
    "flr": "한전KPS",
-   "price": "45,200",
-   "rate": 4.34,
+   "rate": 3.39,
+   "price": "45,650",
    "chg_sign": "5"
   },
   {
@@ -54,8 +54,8 @@
    "rcept_no": "20260810800081",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800081",
    "flr": "지역난방공사",
-   "rate": 6.98,
-   "price": "69,000",
+   "rate": 11.16,
+   "price": "71,700",
    "chg_sign": "2"
   },
   {

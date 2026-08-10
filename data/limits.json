@@ -1,8 +1,130 @@
 {
  "date": "2026-08-10",
- "generated_at": "2026-08-10 12:21:05",
- "count": 23,
+ "generated_at": "2026-08-10 14:35:59",
+ "count": 30,
  "events": [
+  {
+   "time": "14:31",
+   "kind": "주식선물",
+   "name": "지역난방공사",
+   "code": "071320",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000337",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000337&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200"
+   ],
+   "expand_time": "14:36:26",
+   "rate": 12.4
+  },
+  {
+   "time": "14:05",
+   "kind": "주식선물",
+   "name": "젬백스",
+   "code": "082270",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000292",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000292&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "14:10:34",
+   "rate": 8.77
+  },
+  {
+   "time": "13:40",
+   "kind": "지수선물",
+   "name": "주식선물",
+   "code": "",
+   "market": "지수",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000254",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000254&docno=",
+   "markets": [],
+   "expand_time": "13:45:00"
+  },
+  {
+   "time": "13:39",
+   "kind": "주식선물",
+   "name": "엘앤에프",
+   "code": "066970",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000251",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000251&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "13:44:28",
+   "rate": 11.53
+  },
+  {
+   "time": "13:06",
+   "kind": "주식선물",
+   "name": "두산테스나",
+   "code": "131970",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000218",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000218&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "13:11:56",
+   "rate": 8.79
+  },
+  {
+   "time": "12:45",
+   "kind": "주식선물",
+   "name": "이오테크닉스",
+   "code": "039030",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000208",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000208&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "12:50:54",
+   "rate": 9.71
+  },
+  {
+   "time": "12:44",
+   "kind": "주식선물",
+   "name": "한화엔진",
+   "code": "082740",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260810000207",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000207&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "12:49:37",
+   "rate": 9.06
+  },
   {
    "time": "11:40",
    "kind": "주식선물",
@@ -19,7 +141,7 @@
     "KRX300"
    ],
    "expand_time": "11:45:12",
-   "rate": 6.24
+   "rate": 7.85
   },
   {
    "time": "11:26",
@@ -37,7 +159,7 @@
     "KRX300"
    ],
    "expand_time": "11:31:19",
-   "rate": 10.31
+   "rate": 10.51
   },
   {
    "time": "10:51",
@@ -56,7 +178,7 @@
     "KRX300"
    ],
    "expand_time": "10:56:24",
-   "rate": 7.79
+   "rate": 8.09
   },
   {
    "time": "10:24",
@@ -71,7 +193,7 @@
    "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000121&docno=",
    "markets": [],
    "expand_time": "10:29:15",
-   "rate": 7.89
+   "rate": 7.78
   },
   {
    "time": "10:20",
@@ -89,7 +211,7 @@
     "KRX300"
    ],
    "expand_time": "10:25:57",
-   "rate": 10.82
+   "rate": 11.57
   },
   {
    "time": "10:19",
@@ -107,7 +229,7 @@
     "KRX300"
    ],
    "expand_time": "10:24:32",
-   "rate": 11.33
+   "rate": 10.16
   },
   {
    "time": "10:18",
@@ -125,7 +247,7 @@
     "KRX300"
    ],
    "expand_time": "10:23:29",
-   "rate": 7.51
+   "rate": 7.91
   },
   {
    "time": "10:15",
@@ -157,7 +279,7 @@
     "KRX300"
    ],
    "expand_time": "10:20:06",
-   "rate": 10.33
+   "rate": 11.3
   },
   {
    "time": "10:13",
@@ -176,7 +298,7 @@
     "KRX300"
    ],
    "expand_time": "10:18:51",
-   "rate": 21.04
+   "rate": 20.74
   },
   {
    "time": "10:09",
@@ -194,7 +316,7 @@
     "KRX300"
    ],
    "expand_time": "10:14:58",
-   "rate": 5.92
+   "rate": 5.21
   },
   {
    "time": "10:00",
@@ -212,7 +334,7 @@
     "KRX300"
    ],
    "expand_time": "10:05:22",
-   "rate": 11.41
+   "rate": 12.26
   },
   {
    "time": "09:39",
@@ -248,7 +370,7 @@
     "KRX300"
    ],
    "expand_time": "09:23:53",
-   "rate": 18.75
+   "rate": 19.03
   },
   {
    "time": "09:15",
@@ -266,7 +388,7 @@
     "KRX300"
    ],
    "expand_time": "09:20:49",
-   "rate": 14.26
+   "rate": 12.62
   },
   {
    "time": "09:14",
@@ -284,7 +406,7 @@
     "KRX300"
    ],
    "expand_time": "09:19:22",
-   "rate": 9.63
+   "rate": 10.53
   },
   {
    "time": "09:11",
@@ -303,7 +425,7 @@
     "KRX300"
    ],
    "expand_time": "09:16:35",
-   "rate": 9.63
+   "rate": 9.29
   },
   {
    "time": "09:09",
@@ -322,7 +444,7 @@
     "KRX300"
    ],
    "expand_time": "09:14:46",
-   "rate": 20.44
+   "rate": 21.34
   },
   {
    "time": "09:07",
@@ -340,7 +462,7 @@
     "KRX300"
    ],
    "expand_time": "09:12:46",
-   "rate": 11.42
+   "rate": 12.44
   },
   {
    "time": "09:04",
@@ -359,7 +481,7 @@
     "KRX300"
    ],
    "expand_time": "09:09:04",
-   "rate": 10.26
+   "rate": 11.47
   },
   {
    "time": "09:01",
@@ -377,7 +499,7 @@
     "KRX300"
    ],
    "expand_time": "09:06:28",
-   "rate": 11.39
+   "rate": 11.12
   },
   {
    "time": "09:01",
@@ -396,7 +518,7 @@
     "KRX300"
    ],
    "expand_time": "09:06:27",
-   "rate": 14.94
+   "rate": 15.38
   },
   {
    "time": "09:01",

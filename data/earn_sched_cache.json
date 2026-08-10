@@ -1405,5 +1405,16 @@
   "time": "",
   "purpose": "",
   "sponsor": "-"
+ },
+ "20260810800318": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260810800225": {
+  "kind": "ir",
+  "expected_date": "2026-08-17",
+  "time": "",
+  "purpose": "해외지역 방문 IR (Non-Deal Roadshow) 실시",
+  "sponsor": "Citi"
  }
 }
