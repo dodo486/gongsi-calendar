@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-10 19:11:22",
+ "generated_at": "2026-08-10 20:46:13",
  "count": 221,
  "events": [
   {
@@ -54,8 +54,8 @@
    "rcept_no": "20260810800834",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800834",
    "flr": "한샘",
-   "price": "41,200",
    "rate": 0.86,
+   "price": "41,200",
    "chg_sign": "2"
   },
   {
