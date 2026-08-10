@@ -606,9 +606,9 @@ function renderLimits(){
 }
 
 const toMD = d => (d && d.length>=8) ? `${d.slice(4,6)}-${d.slice(6,8)}` : (d||"");
-function bindOpen(box){   // .li 항목 클릭 → 종목이면 차트(alphachart 재사용), 코드 없으면 원문 새 탭
+function bindOpen(box){   // .li 항목 더블클릭 → 종목이면 차트(alphachart 재사용), 코드 없으면 원문 새 탭
   box.querySelectorAll(".li").forEach(el=>
-    el.addEventListener("click",()=>{
+    el.addEventListener("dblclick",()=>{
       if(openChart(el.dataset.code)) return;   // 종목코드 있으면 같은 탭에서 차트만 스위칭
       if(el.dataset.url) window.open(el.dataset.url,"_blank","noopener");
     }));
@@ -955,7 +955,7 @@ async function boot(){
     headerToolbar:{left:"prev,next today",center:"title",right:"dayGridMonth,listWeek"},
     buttonText:{today:"오늘",month:"월",list:"목록"},
     dayCellClassNames:(a)=>{ const iso=dISO(a.date), c=[]; if(HOL.has(iso))c.push("holiday"); if(EXPD.has(iso))c.push("expday"); return c; },   // 휴장일 빨간글자·만기일 별표
-    eventClick:(info)=>{ info.jsEvent.preventDefault(); const p=info.event.extendedProps; showDetail(p); openChart(evCode(p)); },
+    eventClick:(info)=>{ info.jsEvent.preventDefault(); const p=info.event.extendedProps; showDetail(p); if(info.jsEvent.detail>=2) openChart(evCode(p)); },   // 단일=상세 / 더블=차트
   });
   calendar.render();
   earnCal = new FullCalendar.Calendar(document.getElementById("earnCal"),{
@@ -968,7 +968,7 @@ async function boot(){
       info.jsEvent.preventDefault();
       const p = info.event.extendedProps;
       p.kind==="eact" ? showEarnFact(p) : showErnDetail(p);
-      openChart(evCode(p));
+      if(info.jsEvent.detail>=2) openChart(evCode(p));   // 단일=상세 / 더블=차트
     },
   });
   earnCal.render();
