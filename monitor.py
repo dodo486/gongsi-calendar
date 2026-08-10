@@ -19,7 +19,6 @@ import earnings
 import earn_sched
 import krx_actions
 import capital
-import flow
 import sectors
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
@@ -288,17 +287,7 @@ def poll_limits(lim_seen, alert=True):
             alerted += 1
     return alerted
 
-FLOW_POLL_SECONDS = 90      # 수급(거래대금·투자자 순매수) 스냅샷 주기 — 상하한가(5초)와 별개
 SECTORS_POLL_SECONDS = 240  # 섹터/테마 로테이션 집계 주기 — 유니버스 800종목 전수라 가장 무거워 넉넉히
-
-def flow_loop():
-    """수급분석기 전용 루프(별도 스레드) — 거래대금/등락 랭킹 + 투자자 순매수 → data/flow.json."""
-    while True:
-        try:
-            flow.build()
-        except Exception as ex:
-            print(f"  [수급] 갱신 실패: {ex}")
-        time.sleep(FLOW_POLL_SECONDS)
 
 def sectors_loop():
     """섹터로테이션 전용 루프(별도 스레드) — 테마/ETF 클러스터 수급 집계 → data/sectors_flow.json.
@@ -407,8 +396,6 @@ def main():
         print(f"  [상하한가·시장조치] baseline 실패: {ex}")
     threading.Thread(target=limits_loop, args=(lim_seen, ac_seen), daemon=True).start()   # 5초 고속 갱신 스레드
     print(f"  [상하한가·시장조치] 전용 루프 시작 ({LIMITS_POLL_SECONDS}초 주기)")
-    threading.Thread(target=flow_loop, daemon=True).start()   # 수급 스냅샷 스레드
-    print(f"  [수급] 전용 루프 시작 ({FLOW_POLL_SECONDS}초 주기)")
     threading.Thread(target=sectors_loop, daemon=True).start()   # 섹터로테이션 집계 스레드
     print(f"  [섹터] 전용 루프 시작 ({SECTORS_POLL_SECONDS}초 주기)")
     if first_run:

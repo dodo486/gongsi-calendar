@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 import quotes
 import market_universe as mu
 import get_sectors
+import supply
 from fetch import DATA_DIR, save_json
 
 SECTORS_PATH = os.path.join(DATA_DIR, "sectors.json")
@@ -312,6 +313,58 @@ def build():
         except Exception:
             pass
 
+    # ── 수급 신호(선행매집·외인/기관 순매수)로 '초기유입' 판정 ─────────────
+    # 로스터 구성종목의 investor_trend(하이브리드 캐시) → 종목별 선행/후행 + 섹터 집계
+    roster_codes = sorted({x["code"] for lst in theme_roster.values() for x in lst})
+    try:
+        supply.refresh(roster_codes)
+    except Exception as ex:
+        print(f"  [수급] refresh 실패: {ex}")
+    sup_by_sector = {}   # key -> {lead_cnt, lag_cnt, netbuy_pct(외인)}
+    for key, lst in theme_roster.items():
+        lc = la = 0
+        nb = mc = 0.0
+        for x in lst:
+            s = supply.signal(x["code"])
+            if not s:
+                x["supply"] = None
+                continue
+            x["supply"] = {
+                "poc": s["poc"], "above": s["above"], "accum_days": s["accum_days"],
+                "lead": s["lead"], "lag": s["lag"], "frgn_today": s["frgn_today"],
+                "buy_cases": s["buy_cases"], "buy_from": s["buy_from"], "buy_to": s["buy_to"],
+            }
+            if s["lead"]:
+                lc += 1
+            if s["lag"]:
+                la += 1
+            rp = rec_by_code.get(x["code"])
+            ft = s["frgn_today"]
+            if rp and rp.get("price") and rp.get("mktcap") and ft is not None:
+                nb += ft * rp["price"]   # 외국인 순매수 금액
+                mc += rp["mktcap"]
+        sup_by_sector[key] = {
+            "lead_cnt": lc, "lag_cnt": la,
+            "netbuy_pct": round(nb / mc * 100, 4) if mc else None,
+        }
+
+    def _apply_supply(sec):
+        s = sup_by_sector.get(sec["key"])
+        if not s:
+            return
+        sec["lead_cnt"] = s["lead_cnt"]; sec["lag_cnt"] = s["lag_cnt"]
+        if s["netbuy_pct"] is not None:
+            sec["netbuy_pct"] = s["netbuy_pct"]
+        rv = sec.get("relvol") or 0
+        rate = sec.get("rate") or 0
+        damp = 1.0 if rate <= LEAD_MAX_RET else 0.3
+        sec["inflow_score"] = round(rv * sec["lead_cnt"] * damp, 2)
+        sec["inflow"] = (rv >= 1.0 and sec["lead_cnt"] >= 2 and rate <= LEAD_MAX_RET)
+    for t in themes:
+        _apply_supply(t)
+    for g in etf_groups:
+        _apply_supply(g)
+
     # 섹터 랭킹의 '등락률' = 구성종목 평균 등락률(로스터=ETF 구성종목 전체 기반)
     def _roster_avg(key):
         ros = theme_roster.get(key, [])
@@ -324,15 +377,6 @@ def build():
         if v is not None:
             t["rate"] = v
 
-    # 등락률 급등/급락 종목 랭킹(어웨이크식 급등주 보기)
-    def _slim(r):
-        return {"code": r["code"], "name": r["name"], "market": r["market"],
-                "rate": r["rate"], "value": r["value"], "turn": r["turn"],
-                "relvol": r["relvol"], "themes": r["themes"]}
-    rated = [r for r in recs if r["rate"] is not None]
-    gainers = [_slim(r) for r in sorted(rated, key=lambda r: -r["rate"])[:40]]
-    losers = [_slim(r) for r in sorted(rated, key=lambda r: r["rate"])[:20]]
-
     payload = {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "universe": len(recs),
@@ -340,8 +384,6 @@ def build():
         "etfs": sorted(etf_groups, key=lambda s: -(s["relvol"] or 0)),
         "theme_meta": theme_meta,
         "theme_roster": theme_roster,
-        "gainers": gainers,
-        "losers": losers,
         "stocks": {r["code"]: r for r in recs},
     }
     save_json(OUT_PATH, payload)

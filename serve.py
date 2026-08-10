@@ -10,7 +10,7 @@ import urllib.parse
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
 INDEX_PATH = os.path.join(BASE, "index.html")
-HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", "flow.html", "sectors.html")]
+HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", "sectors.html")]
 PORT = 8777
 
 # 토스트 클릭 → 차트 열기 브로드캐스트용
@@ -70,10 +70,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._serve_sse()
         if route == "/api/earnfacts":
             return self._serve_earnfacts()
-        if route == "/api/flow":
-            return self._serve_flow()
         if route == "/api/quotes":
             return self._serve_quotes()
+        if route == "/api/frgn":
+            return self._serve_frgn()
         if route == "/chart":
             return self._serve_chart()
         return super().do_GET()
@@ -107,24 +107,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _serve_flow(self):
-        """수급 종목 상세 — flow.detail(code) (일별 가격·거래량·투자자 + 신호)"""
-        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        code = (qs.get("code") or [""])[0]
-        if not re.fullmatch(r"[A-Za-z0-9]{6}", code):
-            self.send_error(400)
-            return
-        try:
-            import flow
-            body = json.dumps(flow.detail(code), ensure_ascii=False).encode("utf-8")
-        except Exception as ex:
-            body = json.dumps({"error": str(ex)}).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
     def _serve_quotes(self):
         """실시간 시세 배치 — codes=콤마구분 → {code:{rate,price}} (로스터 장중 등락률용)"""
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -136,6 +118,48 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             q = quotes.quote_batch(codes)
             out = {c: {"rate": v.get("rate"), "price": v.get("price")}
                    for c, v in q.items()}
+        except Exception as ex:
+            out = {"error": str(ex)}
+        body = json.dumps(out, ensure_ascii=False).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_frgn(self):
+        """외국인 일별 순매수 상세(~40일) + 매물대(POC) — 섹터 종목 수급상세용."""
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        code = (qs.get("code") or [""])[0]
+        if not re.fullmatch(r"\d{6}", code):
+            self.send_error(400); return
+        out = {}
+        try:
+            import quotes, supply
+            px = quotes.daily_price(code, 40)
+            fr = quotes.frgn_daily(code, 2)
+            poc = supply._poc(px)
+            pxm = {p["date"]: p for p in px}
+            base = None
+            vols = [p["vol"] for p in px if p.get("vol")]
+            if vols:
+                base = sum(vols[:20]) / min(20, len(vols))
+            rows = []
+            for d in fr:
+                p = pxm.get(d["date"], {})
+                v = p.get("vol")
+                rows.append({"date": d["date"], "close": d["close"], "frgn": d["frgn"],
+                             "org": d["org"], "vol": v,
+                             "open": p.get("open"), "high": p.get("high"), "low": p.get("low"),
+                             "volx": round(v / base, 1) if (v and base) else None,
+                             "hold_qty": d.get("hold_qty"), "hold_pct": d.get("hold_pct")})
+            q = quotes.quote_batch([code]).get(code, {})
+            out = {"code": code, "name": q.get("name", ""), "quote": q,
+                   "poc": round(poc) if poc else None,
+                   "above": bool(poc and q.get("price") and q["price"] > poc),
+                   "min_strength": supply.MIN_STRENGTH,
+                   "float_shares": quotes.float_shares(code),   # 유동가능주식수(강도 분모)
+                   "rows": rows}
         except Exception as ex:
             out = {"error": str(ex)}
         body = json.dumps(out, ensure_ascii=False).encode("utf-8")
@@ -225,7 +249,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 _sse_count -= 1
 
 def _warm_quotes():
-    """네이버 연결(keep-alive)을 미리 데워 첫 /api/flow 클릭의 콜드 핸드셰이크(수 초) 제거."""
+    """네이버 연결(keep-alive)을 미리 데워 첫 종목 클릭의 콜드 핸드셰이크(수 초) 제거."""
     try:
         import quotes
         quotes.quote_batch(["005930"])       # polling.finance 핸드셰이크

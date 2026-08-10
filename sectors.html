@@ -60,6 +60,16 @@
   .sd-stock:hover{background:#1b212b}
   .sd-stock .r{color:var(--muted);font-variant-numeric:tabular-nums}
   .cons{display:inline-block;min-width:30px;text-align:center;font-size:10px;font-weight:800;color:#86efac;background:rgba(34,197,94,.15);border-radius:5px;padding:1px 5px;margin-right:6px;font-variant-numeric:tabular-nums}
+  .hlf{display:inline-block;width:11px;height:11px;background:rgba(234,179,8,.55);border-radius:2px;vertical-align:middle}
+  /* 매수=빨강 계열 / 매도=파랑 계열 · 특별신호(매집/이탈)는 진하게 */
+  tr.buyD td{background:rgba(239,68,68,.10)}                       /* 외인 순매수일(연빨강) */
+  tr.accumfr td{background:rgba(239,68,68,.28)}                    /* 외인 매집일(진빨강) */
+  tr.accumfr td:first-child{box-shadow:inset 3px 0 0 #ef4444}
+  tr.sellD td{background:rgba(59,130,246,.10)}                     /* 외인 순매도일(연파랑) */
+  tr.distrib td{background:rgba(59,130,246,.28)}                   /* 상승인데 외인 순매도=이탈(진파랑) */
+  tr.distrib td:first-child{box-shadow:inset 3px 0 0 #3b82f6}
+  .hlleg{font-size:11px;color:var(--muted);margin:6px 0;line-height:1.6}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:middle;margin:0 3px}
 </style>
 <script src="common.js"></script>
 </head>
@@ -67,79 +77,64 @@
 <header>
   <h1>🔄 섹터 로테이션</h1>
   <a class="navlink" href="index.html">📅 공시캘린더</a>
-  <a class="navlink" href="flow.html">💰 수급분석기</a>
   <span class="clock" id="clock">--:--:--</span>
   <span class="meta" id="meta">불러오는 중…</span>
   <div class="controls">
-    <span class="chip on" id="vSector" data-view="sector">🔄 섹터</span>
-    <span class="chip" id="vGainers" data-view="gainers">🚀 급등주</span>
-    <span style="width:8px"></span>
     <span class="chip on" id="tTheme" data-kind="theme">테마</span>
     <span class="chip" id="tEtf" data-kind="etf">ETF</span>
   </div>
 </header>
 
-<div class="wrap" id="viewSector">
-  <div class="card main">
-    <div class="ttl">🎯 로테이션 사분면
-      <span class="sub">X=상대거래대금(평소 대비) · Y=등락률 · 크기=종목수 · 색=순매수(빨강 매수/파랑 매도) · 우하단=초기유입(돈↑ 아직 안뜀)</span>
-    </div>
-    <div class="quad"><svg id="quad" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet"></svg></div>
-    <div class="legend">
-      <span>🟢 우하단 = <b class="golden">초기 유입(매집)</b></span>
-      <span>🔴 우상단 = 주도·과열</span>
-      <span>◀ 좌상단 = 후행(거래없이 상승)</span>
-      <span>좌하단 = 소외</span>
-    </div>
-  </div>
+<!-- 상단: 급등주 -->
+<!-- 상단: 전체 구성종목(main) + 섹터 랭킹(side) -->
+<div class="wrap">
+  <div class="card main" id="drill"><div class="empty" style="font-size:12px">불러오는 중…</div></div>
   <div class="side">
     <div class="card">
-      <div class="ttl">📊 섹터 랭킹 <span class="sub">헤더 클릭=정렬</span></div>
-      <div style="max-height:44vh;overflow:auto">
+      <div class="ttl">📊 섹터 랭킹 <span class="sub">헤더클릭=정렬 · 🎯=초기유입 · 클릭=필터</span></div>
+      <div style="max-height:52vh;overflow:auto">
         <table>
           <thead><tr>
-            <th class="l">섹터</th><th>종목</th>
-            <th data-sort="relvol" class="on">상대<br>거래대금</th>
-            <th data-sort="turnover">회전율</th>
+            <th class="l">섹터</th>
+            <th data-sort="inflow_score" class="on">초기<br>유입</th>
+            <th data-sort="relvol">상대<br>거래대금</th>
             <th data-sort="rate">구성평균<br>등락률</th>
+            <th data-sort="lead_cnt">선행<br>매집🔵</th>
             <th data-sort="netbuy_pct">순매수<br>/시총</th>
-            <th data-sort="breadth">매집</th>
           </tr></thead>
           <tbody id="rankBody"></tbody>
         </table>
       </div>
     </div>
-    <div class="card" id="drill"><div class="empty" style="font-size:12px">섹터를 클릭하면 소속 종목이 여기 열립니다</div></div>
   </div>
 </div>
-
-<div class="wrap" id="viewGainers" style="display:none">
+<!-- 하단: 사분면(main) + 종목 상세(side) -->
+<div class="wrap">
   <div class="card main">
-    <div class="ttl">🚀 등락률 급등 <span class="sub">— 전체시장 거래대금 상위 유니버스 기준 · relvol=평소 대비 배수 · 클릭=차트</span></div>
-    <div style="max-height:80vh;overflow:auto">
-      <table>
-        <thead><tr>
-          <th class="rk">#</th><th class="l">종목</th><th>등락률</th><th>거래대금</th>
-          <th>상대<br>거래대금</th><th>회전율</th><th class="l">섹터(ETF테마)</th>
-        </tr></thead>
-        <tbody id="gainBody"></tbody>
-      </table>
+    <div class="ttl">🎯 로테이션 사분면
+      <span class="sub">X=상대거래대금 · Y=구성평균등락률 · 크기=선행매집 종목수 · 🟢테두리=초기유입(돈↑·선행매집多·아직 안뜀)</span>
+    </div>
+    <div class="quad"><svg id="quad" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="legend">
+      <span>🟢 우하단 = <b class="golden">초기 유입(선행매집)</b></span>
+      <span>🔴 우상단 = 주도·과열</span>
+      <span>◀ 좌상단 = 후행(거래없이 상승)</span>
+      <span>좌하단 = 소외</span>
     </div>
   </div>
-  <div class="side">
-    <div class="card">
-      <div class="ttl">📉 급락 상위</div>
-      <div id="loseBody"></div>
-    </div>
-  </div>
+  <div class="card side" id="stockDetail" style="min-width:320px"><div class="empty" style="font-size:12px">종목을 클릭하면 일별 투자자 수급 상세가 여기 열립니다</div></div>
 </div>
 
 <script>
 window.addEventListener("error", e=>{ const m=document.getElementById("meta"); if(m) m.textContent="⚠️ JS오류: "+(e.message||"")+" @"+(e.lineno||"?"); });
-let DATA = {themes:[], etfs:[], theme_meta:{}, theme_roster:{}, gainers:[], losers:[], stocks:{}, generated_at:""};
+let DATA = {themes:[], etfs:[], theme_meta:{}, theme_roster:{}, stocks:{}, generated_at:""};
 let KIND = "theme";     // theme | etf
-let VIEW = "sector";    // sector | gainers
-let SORT = "relvol";
+let SORT = "inflow_score";
+// 선행매집 종목수(외국인 기준) / 초기유입 (클라이언트 재계산)
+function leadCnt(s){ return s.lead_cnt || 0; }
+function lagCnt(s){ return s.lag_cnt || 0; }
+function inflowScore(s){ const rv=s.relvol||0, rt=sectorLiveRate(s)||0; return Math.round(rv*leadCnt(s)*(rt<=5?1:0.3)*100)/100; }
+function isInflow(s){ const rv=s.relvol||0, rt=sectorLiveRate(s)||0; return rv>=1.0 && leadCnt(s)>=2 && rt<=5; }
 let SEL = null;         // 선택 섹터 key
 // esc() · openChart() 는 common.js 에서 제공 (종목 클릭 → 알파스퀘어 차트, 'alphachart' 탭 재사용)
 
@@ -150,18 +145,19 @@ function fmt(v,suf,sign){ if(v==null) return `<span class="flat">-</span>`;
   return cls?`<span class="${cls}">${s}</span>`:s; }
 
 function renderRank(){
-  const val=(s,f)=> f==="rate" ? sectorLiveRate(s) : s[f];
+  const val=(s,f)=> f==="rate"?sectorLiveRate(s): f==="inflow_score"?inflowScore(s): f==="lead_cnt"?leadCnt(s): s[f];
   const rs = rows().slice().sort((a,b)=>((val(b,SORT))??-1e9)-((val(a,SORT))??-1e9));
-  document.getElementById("rankBody").innerHTML = rs.length ? rs.map(s=>`
+  document.getElementById("rankBody").innerHTML = rs.length ? rs.map(s=>{
+    const inf=isInflow(s), sc=inflowScore(s);
+    return `
     <tr data-key="${esc(s.key)}"${s.key===SEL?' class="sel"':''}>
-      <td class="l"><span class="nm">${esc(s.name)}</span><span class="kind ${s.kind}">${({theme:"테마",etf:"ETF",etfgroup:"ETF묶음"})[s.kind]||""}</span></td>
-      <td>${s.n}</td>
+      <td class="l">${inf?'🎯':''}<span class="nm">${esc(s.name)}</span><span class="kind ${s.kind}">${({theme:"테마",etf:"ETF",etfgroup:"ETF묶음"})[s.kind]||""}</span> <span class="flat" style="font-size:10px">${s.n}종</span></td>
+      <td>${sc?`<b class="${inf?'golden':''}">${sc}</b>`:'<span class="flat">-</span>'}</td>
       <td>${s.relvol!=null?`<span class="${s.relvol>=1.5?'golden':''}">${s.relvol}x</span>`:'<span class="flat">-</span>'}</td>
-      <td>${fmt(s.turnover,"%",false)}</td>
       <td>${fmt(sectorLiveRate(s),"%",true)}</td>
+      <td>${(leadCnt(s)||lagCnt(s))?`<span class="down">🔵${leadCnt(s)}</span> <span class="up">🔥${lagCnt(s)}</span>`:'<span class="flat">-</span>'}</td>
       <td>${fmt(s.netbuy_pct,"%",true)}</td>
-      <td>${s.breadth?`${s.breadth}%<span class="flat"> 🔵${s.lead}/🔥${s.lag}</span>`:'<span class="flat">-</span>'}</td>
-    </tr>`).join("") : `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`;
+    </tr>`;}).join("") : `<tr><td colspan="6" class="empty">데이터 없음</td></tr>`;
   document.querySelectorAll("th[data-sort]").forEach(th=>th.classList.toggle("on",th.dataset.sort===SORT));
 }
 
@@ -176,8 +172,8 @@ function renderQuad(){
   const Y=v=>H-pad-(v-yMin)/(yMax-yMin)*(H-pad*1.6);
   const x1=X(1.0);                        // 상대거래대금 기준선(평소)
   const yMid=(yMin+yMax)/2, y1=Y(yMid);   // 등락률 중앙
-  const nMax=Math.max(...rs.map(s=>s.n),1);
-  const R=n=>6+Math.sqrt(n/nMax)*22;
+  const lMax=Math.max(...rs.map(s=>leadCnt(s)),1);
+  const R=s=>7+Math.sqrt(leadCnt(s)/lMax)*20;   // 크기=선행매집 종목수(렌즈)
   const col=s=> s.netbuy_pct==null?"#64748b":(s.netbuy_pct>0?"#ef4444":(s.netbuy_pct<0?"#3b82f6":"#64748b"));
   let svg="";
   // 골든 존(우하단: X>1, Y<중앙) 하이라이트
@@ -189,10 +185,13 @@ function renderQuad(){
   svg+=`<text class="qlabel" x="6" y="${pad*0.5+8}" >등락률↑</text>`;
   svg+=`<text class="qlabel golden" x="${W-pad*0.5-92}" y="${H-pad-6}" fill="#eab308">🎯초기유입존</text>`;
   for(const s of rs){
-    const cx=X(s.relvol), cy=Y(s.rate), r=R(s.n), sel=s.key===SEL;
+    const cx=X(s.relvol), cy=Y(s.rate), r=R(s), sel=s.key===SEL;
+    const inf=isInflow(s);
+    const stroke = inf ? "#22c55e" : (sel?'#eab308':col(s));   // 초기유입=초록 테두리
+    const sw = inf ? 3 : (sel?2.5:1);
     svg+=`<g class="bub" data-key="${esc(s.key)}">
-      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${col(s)}" fill-opacity="${sel?0.85:0.5}" stroke="${sel?'#eab308':col(s)}" stroke-width="${sel?2.5:1}"/>
-      <text x="${cx}" y="${cy-r-3}" text-anchor="middle">${esc(s.name.length>7?s.name.slice(0,6)+'…':s.name)} ${s.relvol}x</text>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${col(s)}" fill-opacity="${sel?0.85:0.5}" stroke="${stroke}" stroke-width="${sw}"/>
+      <text x="${cx}" y="${cy-r-3}" text-anchor="middle">${inf?'🎯':''}${esc(s.name.length>7?s.name.slice(0,6)+'…':s.name)}</text>
     </g>`;
   }
   document.getElementById("quad").innerHTML=svg;
@@ -211,47 +210,55 @@ function sectorLiveRate(sec){
   return sec.rate;
 }
 function pollLive(){
-  let codes;
-  if(VIEW==="gainers") codes=[...(DATA.gainers||[]),...(DATA.losers||[])].map(r=>r.code);
-  else { const s=new Set(); for(const k in (DATA.theme_roster||{})) (DATA.theme_roster[k]||[]).forEach(r=>s.add(r.code));
-    // 선택된 ETF 클러스터의 ETF 본체 코드도 실시간 폴링(ETF는 6자리 숫자가 아니라 별도 추가)
-    const sel=(rows()||[]).find(x=>x.key===SEL);
-    if(sel&&sel.etfs) sel.etfs.forEach(e=>{ if(e.code) s.add(e.code); });
-    codes=[...s]; }
+  const s=new Set();
+  for(const k in (DATA.theme_roster||{})) (DATA.theme_roster[k]||[]).forEach(r=>s.add(r.code));  // 섹터 로스터
+  const sel=(rows()||[]).find(x=>x.key===SEL);   // 선택 ETF 클러스터의 ETF 본체
+  if(sel&&sel.etfs) sel.etfs.forEach(e=>{ if(e.code) s.add(e.code); });
+  const codes=[...s];
   if(!codes.length) return;
   fetch("/api/quotes?codes="+codes.join(","),{cache:"no-store"}).then(r=>r.json()).then(d=>{
     if(!d||d.error) return;
     for(const c in d){ if(d[c]&&d[c].rate!=null) LIVE[c]=d[c].rate; }
-    if(VIEW==="gainers") renderGainers(); else { renderQuad(); renderRank(); renderDrill(); }
+    renderQuad(); renderRank(); renderDrill();
   }).catch(()=>{});
 }
 
 // 섹터 ETF들의 PDF 합집합 = 전체 구성종목 나래비(정렬 가능 + 실시간 등락률)
-let ROSTER = {sort:"cnt", dir:-1};
+let ROSTER = {sort:"relvol", dir:-1};
 
-function rosterTable(key){
-  const base=(DATA.theme_roster||{})[key]; if(!base||!base.length) return "";
-  const list=base.map(r=>({...r, rate:liveRate(r.code, r.rate)}));
+function qtyCell(n){ if(n==null) return '<span class="flat">-</span>'; const c=n>0?'up':(n<0?'down':'flat'); return `<span class="${c}">${n>0?'+':''}${Number(n).toLocaleString()}</span>`; }
+// 매물대 기준 외국인 매집 배지: 🔵선행/🔥후행 + 매집 '기간'(첫~마지막 매집일, 검증용)
+function leadBadge(sp){
+  if(!sp) return "";
+  const mark = sp.lead?"🔵":(sp.lag?"🔥":"");
+  if(!sp.buy_cases) return mark?`<span class="sigmk">${mark}</span>`:"";
+  const md=s=>s?s.slice(4,6)+'/'+s.slice(6,8):'';
+  const period = sp.buy_from?`${md(sp.buy_from)}~${md(sp.buy_to)}`:'';
+  const tip = `매물대(POC) ${sp.poc?.toLocaleString?.()||sp.poc} ${sp.above?'돌파':'아래'} · 매집 ${sp.buy_cases}일`;
+  return `<span class="sigmk" title="${tip}">${mark}<span class="flat" style="font-weight:600">매집 ${period}(${sp.buy_cases}일)</span></span>`;
+}
+function rosterTable(baseList){
+  if(!baseList||!baseList.length) return `<div class="empty" style="font-size:12px">종목 없음</div>`;
+  const list=baseList.map(r=>({...r, rate:liveRate(r.code, r.rate), _frgn:r.supply?r.supply.frgn_today:null}));
   const f=ROSTER.sort, dir=ROSTER.dir;
   list.sort((a,b)=>{
     if(f==="name") return dir*String(a.name||"").localeCompare(String(b.name||""));
+    if(f==="_frgn"){ return dir*(Math.abs(a._frgn??0)-Math.abs(b._frgn??0)); }  // 순매수 절댓값
     const av=(a[f]==null?-Infinity:a[f]), bv=(b[f]==null?-Infinity:b[f]);
     return dir*(av-bv);
   });
   const arrow=fld=> ROSTER.sort===fld?(ROSTER.dir<0?" ▼":" ▲"):"";
-  const th=(fld,label,cls="")=>`<th data-rsort="${fld}" class="${cls} ${ROSTER.sort===fld?'on':''}">${label}${arrow(fld)}</th>`;
-  const rows=list.map(r=>`<tr data-code="${esc(r.code)}">
-      <td><span class="cons" title="${r.cnt}/${r.etf_count} ETF 공통">${r.cnt}/${r.etf_count}</span></td>
-      <td class="l"><span class="nm">${esc(r.name)}</span>${r.inuniv?"":'<span class="tag" style="background:#2a2f38;color:#8b97a7;margin-left:4px">권외</span>'}</td>
-      <td>${r.weight!=null?r.weight+"%":"-"}</td>
+  const th=(fld,label)=>`<th data-rsort="${fld}" class="${ROSTER.sort===fld?'on':''}">${label}${arrow(fld)}</th>`;
+  const rows=list.map(r=>`<tr data-code="${esc(r.code)}"${r.code===STK?' class="sel"':''}>
+      <td>${r.cnt!=null?`<span class="cons" title="${r.cnt}/${r.etf_count} ETF 공통">${r.cnt}/${r.etf_count}</span>`:'<span class="flat">-</span>'}</td>
+      <td class="l"><span class="nm">${esc(r.name)}</span>${leadBadge(r.supply)}${r.inuniv===false?'<span class="tag" style="background:#2a2f38;color:#8b97a7;margin-left:4px">권외</span>':''}</td>
       <td>${r.relvol!=null?`<b class="${r.relvol>=1.5?'golden':''}">${r.relvol}x</b>`:"-"}</td>
       <td>${r.rate!=null?`<span class="${r.rate>0?'up':(r.rate<0?'down':'flat')}">${r.rate>0?'+':''}${r.rate}%</span>`:"-"}</td>
+      <td>${qtyCell(r._frgn)}</td>
     </tr>`).join("");
-  return `<div class="ttl" style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">
-      📋 구성종목 전체 <span class="sub">${list.length}개 · ETF PDF 합집합 · 헤더클릭=정렬 · 등락률 실시간 · 클릭=차트</span></div>
-    <table class="roster"><thead><tr>
-      ${th("cnt","공통")}<th class="l">종목</th>${th("weight","비중")}${th("relvol","relvol")}${th("rate","등락률")}
-    </tr></thead><tbody>${rows}</tbody></table>`;
+  return `<div style="max-height:46vh;overflow:auto"><table class="roster"><thead><tr>
+      ${th("cnt","공통")}<th class="l">종목</th>${th("relvol","relvol")}${th("rate","등락률")}${th("_frgn","외인<br>순매수")}
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // 구성종목 평균 등락률(실시간)
@@ -263,81 +270,155 @@ function avgRateHtml(key){
   return `<b class="${v>0?'up':(v<0?'down':'flat')}">${v>0?'+':''}${v}%</b>`;
 }
 
+// ── 종목 일별 투자자 수급 상세 (수급분석기 내용) — /api/frgn ──────────────
+let STK = null, STKDATA = null, STKSORT = {key:"date", dir:-1};
+function q3(n){ if(n==null) return '<span class="flat">-</span>'; const c=n>0?'up':(n<0?'down':'flat'); return `<span class="${c}">${n>0?'+':''}${Number(n).toLocaleString()}</span>`; }
+function findSupply(code){
+  for(const k in (DATA.theme_roster||{})){ const it=(DATA.theme_roster[k]||[]).find(x=>x.code===code); if(it&&it.supply) return it.supply; }
+  return null;
+}
+// 종목 상세 패널(단일 화면 공용)
+function detailBox(){ return document.getElementById("stockDetail"); }
+async function openStockDetail(code){
+  STK=code; STKDATA=null; STKSORT={key:"date",dir:-1}; renderRank(); renderDrill();
+  const box=detailBox();
+  box.innerHTML=`<div class="empty">수급 상세 불러오는 중…</div>`;
+  let d; try{ d=await (await fetch("/api/frgn?code="+encodeURIComponent(code),{cache:"no-store"})).json(); }catch(_){ d={error:"조회 실패"}; }
+  if(STK!==code) return;
+  if(d.error||!d.rows){ box.innerHTML=`<div class="empty">상세 조회 실패</div>`; return; }
+  STKDATA={code, d}; renderStockPanel();
+}
+function renderStockPanel(){
+  if(!STKDATA) return;
+  const {code, d}=STKDATA, box=detailBox();
+  const q=d.quote||{}, poc=d.poc;
+  const cutStart = d.rows.length? d.rows.slice(0,20).slice(-1)[0].date : "";  // 최근 20일 시작
+  const shares = d.float_shares || ((q.mktcap && q.price) ? q.mktcap/q.price : null);  // 유동가능주식수
+  const minStr = d.min_strength!=null ? d.min_strength : 0.03;
+  // 누적 평단(연대순), rate·매집판정 등 파생값을 행 객체로 구성
+  const avgByDate={}; let pos=0, cost=0;
+  for(const r of d.rows.slice().reverse()){
+    const f=r.frgn||0;
+    if(f>0 && r.close){ cost=(pos*cost+f*r.close)/(pos+f); pos+=f; }
+    else if(f<0){ pos+=f; if(pos<=0){pos=0; cost=0;} }
+    avgByDate[r.date]= pos>0? cost : null;
+  }
+  // 저자식 매집봉: ①거래량 평소比 ≥VOLX_MIN ②몸통(|종가-시가|/시가)≤BODY_MAX ③저점권(가격 하위 LOWZONE)
+  const VOLX_MIN=2.0, BODY_MAX=8, LOWZONE=0.4;
+  const closes=d.rows.map(r=>r.close).filter(v=>v!=null);
+  const winMin=Math.min(...closes), winMax=Math.max(...closes), rng=(winMax-winMin)||1;
+  let bongVol=0, bongPxVol=0; const bongDates=[];   // 세력 매집원가 산출
+  let cf=0, cfAll=0;
+  const rows=d.rows.map((r,i)=>{
+    const inWin=r.date>=cutStart;
+    const under=poc!=null && r.close!=null && r.close<=poc;
+    const frg=r.frgn||0;
+    const fpct= shares? Math.round(frg/shares*10000)/100 : null;
+    const fBuy= under && frg>0 && fpct!=null && fpct>=minStr;
+    if(fBuy){ cfAll++; if(inWin) cf++; }
+    const prev=d.rows[i+1] && d.rows[i+1].close;
+    const rate=(r.close && prev)? Math.round((r.close/prev-1)*10000)/100 : null;
+    const distrib=(rate!=null && rate>0 && frg<0);
+    const cls= fBuy?'accumfr':(distrib?'distrib':(frg>0?'buyD':(frg<0?'sellD':'')));
+    // 매집봉 판정 (OHLC 있어야)
+    const body=(r.open&&r.close)? Math.abs(r.close-r.open)/r.open*100 : null;
+    const lowzone=(r.close!=null)? ((r.close-winMin)/rng<=LOWZONE) : false;
+    const bong=(r.volx!=null&&r.volx>=VOLX_MIN)&&(body!=null&&body<=BODY_MAX)&&lowzone;
+    if(bong && r.vol){ const rep=(r.high&&r.low)?(r.high+r.low)/2:r.close; bongVol+=r.vol; bongPxVol+=rep*r.vol; bongDates.push(r.date); }
+    return {date:r.date, close:r.close, rate, frgn:frg, fpct, hold:r.hold_pct,
+            av:avgByDate[r.date], under, fBuy, cls, bong, volx:r.volx, body};
+  });
+  const q2=q;   // 요약 계산
+  const avgNow=avgByDate[d.rows[0].date];
+  const profit=(avgNow && q2.price)? (q2.price/avgNow-1)*100 : null;
+  const hpNow=d.rows[0].hold_pct, hpOld=(d.rows.find(r=>r.date>=cutStart)||{}).hold_pct;
+  const hpUp=(hpNow!=null && hpOld!=null)? (hpNow-hpOld) : null;
+  let verdict="—";
+  if(hpUp!=null && profit!=null){
+    if(hpUp>0.05) verdict= profit>=0?"🔴 수익 중 매집":"🔴 저점 매집(물림)";
+    else if(hpUp<-0.05) verdict= profit>0?"🔵 익절(이익실현)":"🔵 손절·이탈";
+    else verdict="⚪ 관망(보유 유지)";
+  }
+  // 저자식 세력 매집원가(매집봉 거래량가중 평균가) + 기간
+  const bongCost = bongVol? Math.round(bongPxVol/bongVol) : null;
+  const bongProfit = (bongCost && q.price)? (q.price/bongCost-1)*100 : null;
+  const md=s=>s?s.slice(4,6)+'/'+s.slice(6,8):'';
+  const bongPeriod = bongDates.length? `${md(bongDates[bongDates.length-1])}~${md(bongDates[0])}` : '';
+  // 정렬 (순매수·순매수/유동주식은 절댓값 크기순)
+  const K=STKSORT.key, D=STKSORT.dir, ABS=(K==="fpct"||K==="frgn");
+  rows.sort((a,b)=>{
+    if(K==="date") return D*String(a.date).localeCompare(String(b.date));
+    let av=a[K], bv=b[K];
+    if(ABS){ av=Math.abs(av??0); bv=Math.abs(bv??0); } else { av=av??-1e15; bv=bv??-1e15; }
+    return D*(av-bv);
+  });
+  const arrow=k=> STKSORT.key===k?(D<0?" ▼":" ▲"):"";
+  const th=(k,label)=>`<th data-dsort="${k}" class="${STKSORT.key===k?'on':''}">${label}${arrow(k)}</th>`;
+  const rowsH=rows.map(r=>`<tr class="${r.cls}">
+      <td class="l">${r.date.slice(4,6)}/${r.date.slice(6,8)}${r.bong?`<span title="매집봉: 거래량 x${r.volx} · 몸통 ${r.body!=null?r.body.toFixed(1):'-'}% · 저점권">🕯️</span>`:''}</td>
+      <td>${r.close!=null?Number(r.close).toLocaleString():'-'}${r.under?'<span class="flat" title="매물대 아래">▾</span>':''}</td>
+      <td>${r.rate!=null?`<span class="${r.rate>0?'up':(r.rate<0?'down':'flat')}">${r.rate>0?'+':''}${r.rate}%</span>`:'-'}</td>
+      <td>${q3(r.frgn)}</td>
+      <td>${r.fpct!=null?`<span class="${r.fpct>0?'up':(r.fpct<0?'down':'flat')}" title="${r.fpct>0?'순매수':'순매도'}">${Math.abs(r.fpct)}%${r.fBuy?' ●':''}</span>`:'-'}</td>
+      <td>${r.hold!=null?r.hold+'%':'-'}</td>
+      <td>${r.av?Number(Math.round(r.av)).toLocaleString():'-'}</td>
+    </tr>`).join("");
+  box.innerHTML=`<div class="ttl">${esc(d.name||code)} <span class="flat" style="font-size:11px">${code}</span>
+      <a class="navlink" style="margin-left:auto;padding:1px 8px" href="#" onclick="openChart('${code}');return false;">차트</a></div>
+    <div class="det-sub">현재가 ${q2.price!=null?Number(q2.price).toLocaleString():'-'} · 매물대 ${poc?Number(poc).toLocaleString():'-'} ${d.above?'<span class="up">돌파</span>':'<span class="flat">아래</span>'}</div>
+    <div class="det-sub" style="font-size:12px;color:var(--text)">외국인 추정평단 <b>${avgNow?Number(Math.round(avgNow)).toLocaleString():'-'}</b> · 수익률 ${profit!=null?`<b class="${profit>0?'up':(profit<0?'down':'flat')}">${profit>0?'+':''}${profit.toFixed(1)}%</b>`:'-'} · 보유율 <b>${hpNow!=null?hpNow+'%':'-'}</b>${hpUp!=null?` <span class="${hpUp>0?'up':(hpUp<0?'down':'flat')}">(${hpUp>0?'+':''}${hpUp.toFixed(2)}p)</span>`:''} · <b>${verdict}</b></div>
+    <div class="det-sub" style="font-size:12px;color:var(--text)">🕯️ 세력 매집원가(추정) <b>${bongCost?Number(bongCost).toLocaleString():'-'}</b>${bongProfit!=null?` · 현재가 <b class="${bongProfit>0?'up':(bongProfit<0?'down':'flat')}">${bongProfit>0?'+':''}${bongProfit.toFixed(1)}%</b>`:''}${bongDates.length?` · 매집봉 ${bongDates.length}개 (${bongPeriod})`:' · 매집봉 없음'}</div>
+    <div class="hlleg">📏 현재가 <b>${q2.price!=null?Number(q2.price).toLocaleString():'-'}</b> | 외인평단 ${avgNow?Number(Math.round(avgNow)).toLocaleString():'-'} | 세력원가 ${bongCost?Number(bongCost).toLocaleString():'-'} | 매물대 ${poc?Number(poc).toLocaleString():'-'}</div>
+    <div class="hlleg"><span class="swatch hlf"></span> 매집일(매물대▾ & 순매수/유동주식≥${minStr}% ●) 전체 <b>${cfAll}</b>/최근20 <b>${cf}</b> · <span class="swatch" style="background:rgba(59,130,246,.5)"></span> 상승인데 외인매도(이탈) · 헤더클릭=정렬</div>
+    <div style="max-height:40vh;overflow:auto"><table>
+      <thead><tr>${th("date","날짜")}${th("close","종가")}${th("rate","등락")}${th("frgn","외인<br>순매수")}${th("fpct","순매수/<br>유동주식")}${th("hold","보유율")}${th("av","추정<br>평단")}</tr></thead>
+      <tbody>${rowsH}</tbody></table></div>`;
+}
+
+// 전체 구성종목 = 거래대금 상위 800 유니버스 전체 (ETF 구성종목은 매집배지·공통도 병합)
+function unionRoster(){
+  const rmap={};   // code -> 로스터 항목(supply/cnt 보유)
+  for(const k in (DATA.theme_roster||{})) for(const x of (DATA.theme_roster[k]||[])) if(!rmap[x.code]) rmap[x.code]=x;
+  const out=[];
+  for(const code in (DATA.stocks||{})){
+    const s=DATA.stocks[code], r=rmap[code];
+    out.push({code, name:s.name, relvol:s.relvol, rate:s.rate, inuniv:true,
+              cnt: r?r.cnt:null, etf_count: r?r.etf_count:null, supply: r?r.supply:null});
+  }
+  return out;
+}
+function clearSel(){ SEL=null; renderAll(); }
 function renderDrill(){
   const box=document.getElementById("drill");
-  if(!SEL){ stopRosterLive(); box.innerHTML=`<div class="empty" style="font-size:12px">섹터를 클릭하면 소속 ETF·종목이 여기 열립니다</div>`; return; }
-  const sec=rows().find(s=>s.key===SEL);
-  if(!sec){ box.innerHTML=`<div class="empty">-</div>`; return; }
-  // ETF 모드: 묶인 ETF 목록 + 그 밑에 구성종목 전부 합친 나래비
-  if(sec.kind==="etfgroup"){
+  const sec = SEL ? rows().find(s=>s.key===SEL) : null;
+  const clearBtn=`<a class="navlink" style="padding:1px 8px;margin-left:8px" href="#" onclick="clearSel();return false;">✕ 전체</a>`;
+  if(!sec){   // 기본: 전체 구성종목
+    const list=unionRoster();
+    box.innerHTML=`<div class="ttl">📋 전체 구성종목 <span class="sub">${list.length}개 · 사분면·랭킹에서 섹터 클릭 시 필터 · 헤더=정렬 · 종목클릭=상세</span></div>`
+      + rosterTable(list);
+    return;
+  }
+  if(sec.kind==="etfgroup"){   // ETF 클러스터: 멤버 ETF + 구성종목
     const es=(sec.etfs||[]).slice().sort((a,b)=>(b.relvol??-1)-(a.relvol??-1));
-    box.innerHTML=`<div class="ttl">🧺 ${esc(sec.name)} ETF 클러스터 <span class="sub">${sec.n}개 ETF · 클릭=차트</span></div>`
-      +`<div class="det-sub" style="margin-bottom:8px">📊 구성종목 평균등락률 ${avgRateHtml(sec.key)||'-'} <span class="flat">(실시간·권외포함)</span></div>`+
-      es.map(e=>{ const lr=liveRate(e.code, e.rate); return `<div class="sd-stock" data-code="${esc(e.code)}">
+    box.innerHTML=`<div class="ttl">🧺 ${esc(sec.name)} ETF 클러스터 <span class="sub">${sec.n}개 ETF · 구성평균등락 ${avgRateHtml(sec.key)||'-'}</span>${clearBtn}</div>`
+      + es.map(e=>{ const lr=liveRate(e.code, e.rate); return `<div class="sd-stock" data-code="${esc(e.code)}">
         <span class="nm">${esc(e.name)}</span>
-        <span class="r">${e.relvol!=null?`<b class="${e.relvol>=1.5?'golden':''}">${e.relvol}x</b>`:'-'} · <span class="${lr>0?'up':(lr<0?'down':'flat')}">${lr>0?'+':''}${lr??'-'}%</span></span>
-      </div>`; }).join("")
-      + rosterTable(sec.key);
+        <span class="r">${e.relvol!=null?`<b class="${e.relvol>=1.5?'golden':''}">${e.relvol}x</b>`:'-'} · <span class="${lr>0?'up':(lr<0?'down':'flat')}">${lr>0?'+':''}${lr??'-'}%</span></span></div>`; }).join("")
+      + `<div class="ttl" style="margin-top:10px;border-top:1px solid var(--line);padding-top:8px">📋 구성종목 <span class="sub">종목클릭=상세</span></div>`
+      + rosterTable((DATA.theme_roster||{})[sec.key]||[]);
     return;
   }
-  // 테마 모드: ETF 그룹 요약 + 전체 구성종목 나래비(공통도순)
-  const meta = (KIND==="theme") ? (DATA.theme_meta||{})[sec.key] : null;
-  if(meta){
-    box.innerHTML=`<div class="ttl">${esc(sec.name)} <span class="sub">상대대금 ${sec.relvol}x · 구성평균등락 ${avgRateHtml(sec.key)||(sec.rate>0?'+':'')+sec.rate+'%'}</span></div>`
-      +`<div class="det-sub" style="margin-bottom:4px">🧺 묶인 ETF ${meta.etf_count}개 · <span class="flat" style="font-size:11px">${(meta.etfs||[]).slice(0,8).map(esc).join(" · ")}${(meta.etfs||[]).length>8?" …":""}</span></div>`
-      + rosterTable(sec.key);
-    return;
-  }
-  // 폴백(로스터 없는 수동 테마: 희토류·광통신·HBM): 유니버스 소속 종목
-  const items=(sec.codes||[]).map(c=>DATA.stocks[c]).filter(Boolean)
-    .sort((a,b)=>(b.relvol??-1)-(a.relvol??-1));
-  box.innerHTML=`<div class="ttl">${esc(sec.name)} <span class="sub">${sec.n}종목 · 상대거래대금순 · 클릭=차트</span></div>`+
-    items.map(r=>`<div class="sd-stock" data-code="${esc(r.code)}">
-      <span class="nm">${esc(r.name)}</span>
-      <span class="r">${r.relvol!=null?`<b class="${r.relvol>=1.5?'golden':''}">${r.relvol}x</b>`:'-'} · <span class="${r.rate>0?'up':(r.rate<0?'down':'flat')}">${r.rate>0?'+':''}${r.rate??'-'}%</span></span>
-    </div>`).join("") || `<div class="empty">종목 없음</div>`;
-}
-
-function eok(won){ if(won==null) return "-"; const e=won/1e8;
-  if(e>=10000) return (e/10000).toFixed(2).replace(/\.?0+$/,"")+"조"; return Math.round(e).toLocaleString()+"억"; }
-function tagsHtml(r){
-  const ts=r.themes||[];
-  return ts.length ? ts.map(t=>`<span class="tag">${esc(t)}</span>`).join("") : `<span class="flat">-</span>`;
-}
-function relCell(v){ return v==null?'<span class="flat">-</span>':`<span class="${v>=2?'golden':(v>=1?'':'flat')}">${v}x</span>`; }
-
-function rateSpan(v){ if(v==null) return '<span class="flat">-</span>'; const c=v>0?'up':(v<0?'down':'flat'); return `<span class="${c}">${v>0?'+':''}${v}%</span>`; }
-function renderGainers(){
-  const gs=(DATA.gainers||[]).map(r=>({...r, rate:liveRate(r.code,r.rate)})).sort((a,b)=>(b.rate??-1e9)-(a.rate??-1e9));
-  document.getElementById("gainBody").innerHTML = gs.map((r,i)=>`
-    <tr data-code="${esc(r.code)}">
-      <td class="rk">${i+1}</td>
-      <td class="l"><span class="nm">${esc(r.name)}</span><span class="mk ${esc(r.market)}">${esc(r.market)}</span></td>
-      <td>${rateSpan(r.rate)}</td>
-      <td>${eok(r.value)}</td>
-      <td>${relCell(r.relvol)}</td>
-      <td>${r.turn!=null?r.turn+"%":'<span class="flat">-</span>'}</td>
-      <td class="l">${tagsHtml(r)}</td>
-    </tr>`).join("") || `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`;
-  document.getElementById("loseBody").innerHTML = (DATA.losers||[]).map(r=>`
-    <div class="sd-stock" data-code="${esc(r.code)}"><span class="nm">${esc(r.name)}</span>
-      <span class="r">${rateSpan(liveRate(r.code,r.rate))} · ${relCell(r.relvol)}</span></div>`).join("")
-    || `<div class="empty">해당 없음</div>`;
+  // 테마: 묶인 ETF 요약 + 구성종목(로스터 없으면 유니버스 소속)
+  const meta=(DATA.theme_meta||{})[sec.key];
+  const list=(DATA.theme_roster||{})[sec.key] || (sec.codes||[]).map(c=>DATA.stocks[c]).filter(Boolean);
+  box.innerHTML=`<div class="ttl">${esc(sec.name)} <span class="sub">상대대금 ${sec.relvol}x · 구성평균등락 ${avgRateHtml(sec.key)||((sec.rate>0?'+':'')+sec.rate+'%')}</span>${clearBtn}</div>`
+    + (meta?`<div class="det-sub" style="margin-bottom:4px">🧺 묶인 ETF ${meta.etf_count}개 · <span class="flat" style="font-size:11px">${(meta.etfs||[]).slice(0,8).map(esc).join(" · ")}${(meta.etfs||[]).length>8?" …":""}</span></div>`:"")
+    + rosterTable(list);
 }
 
 function renderAll(){
-  const isS = VIEW==="sector";
-  document.getElementById("viewSector").style.display = isS?"flex":"none";
-  document.getElementById("viewGainers").style.display = isS?"none":"flex";
-  document.getElementById("tTheme").style.display = isS?"":"none";
-  document.getElementById("tEtf").style.display = isS?"":"none";
-  if(isS){
-    document.getElementById("meta").textContent=`${KIND_LABEL[KIND]} ${rows().length}개 · ${DATA.universe||0}종목 · 갱신 ${DATA.generated_at||"-"}`;
-    renderQuad(); renderRank(); renderDrill();
-  }else{
-    document.getElementById("meta").textContent=`급등주 · 유니버스 ${DATA.universe||0}종목 · 갱신 ${DATA.generated_at||"-"}`;
-    renderGainers();
-  }
+  document.getElementById("meta").textContent=`${KIND_LABEL[KIND]} ${rows().length}개 · 유니버스 ${DATA.universe||0}종목 · 갱신 ${DATA.generated_at||"-"}`;
+  renderQuad(); renderRank(); renderDrill();
 }
 
 async function load(){
@@ -347,15 +428,6 @@ async function load(){
 }
 
 // 이벤트
-document.querySelectorAll(".chip[data-view]").forEach(c=>c.addEventListener("click",()=>{
-  VIEW=c.dataset.view;
-  document.querySelectorAll(".chip[data-view]").forEach(x=>x.classList.toggle("on",x.dataset.view===VIEW));
-  renderAll(); pollLive();
-}));
-document.getElementById("viewGainers").addEventListener("click",e=>{
-  const el=e.target.closest("[data-code]"); if(!el) return;
-  openChart(el.dataset.code);
-});
 document.querySelectorAll(".chip[data-kind]").forEach(c=>c.addEventListener("click",()=>{
   KIND=c.dataset.kind; SEL=null;
   document.querySelectorAll(".chip[data-kind]").forEach(x=>x.classList.toggle("on",x.dataset.kind===KIND));
@@ -377,8 +449,16 @@ document.getElementById("drill").addEventListener("click",e=>{
   if(th){ const f=th.dataset.rsort;
     if(ROSTER.sort===f) ROSTER.dir=-ROSTER.dir; else { ROSTER.sort=f; ROSTER.dir=(f==="name"?1:-1); }
     renderDrill(); return; }
-  const el=e.target.closest("[data-code]"); if(!el) return;
-  openChart(el.dataset.code);
+  const tr=e.target.closest("tr[data-code]");         // 로스터 종목 → 일별 수급 상세
+  if(tr){ openStockDetail(tr.dataset.code); return; }
+  const el=e.target.closest(".sd-stock[data-code]");  // ETF 멤버행 → 차트
+  if(el) openChart(el.dataset.code);
+});
+document.getElementById("stockDetail").addEventListener("click",e=>{   // 상세표 헤더 클릭=정렬
+  const th=e.target.closest("th[data-dsort]"); if(!th) return;
+  const k=th.dataset.dsort;
+  if(STKSORT.key===k) STKSORT.dir=-STKSORT.dir; else { STKSORT.key=k; STKSORT.dir=-1; }
+  renderStockPanel();
 });
 
 setInterval(()=>{ document.getElementById("clock").textContent=new Date().toLocaleTimeString("ko-KR",{hour12:false}); },1000);

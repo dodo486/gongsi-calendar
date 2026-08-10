@@ -81,10 +81,60 @@ def investor_trend(code, n=20):
         })
     return out[:n]
 
+import re as _re
+FRGN_PAGE = "https://finance.naver.com/item/frgn.naver?code={}&page={}"
+WISE_COMP = "https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={}"
+_FLOAT_CACHE = {}   # code -> 유동주식수(거의 정적, 프로세스 캐시)
+
+def float_shares(code):
+    """유동가능주식수 = 발행주식수 × 유동비율. (wisereport, 거의 정적 → 캐시)
+    실패 시 None."""
+    if code in _FLOAT_CACHE:
+        return _FLOAT_CACHE[code]
+    try:
+        t = _SESS.get(WISE_COMP.format(code), timeout=10).content.decode("utf-8", "replace")
+        m = _re.search(r"발행주식수/유동비율[^0-9]*([\d,]+)\s*주\s*/\s*([\d.]+)\s*%", t)
+        if m:
+            issued = float(m.group(1).replace(",", ""))
+            ratio = float(m.group(2))
+            fs = int(issued * ratio / 100)
+            _FLOAT_CACHE[code] = fs
+            return fs
+    except Exception:
+        pass
+    _FLOAT_CACHE[code] = None
+    return None
+
+def frgn_daily(code, pages=2):
+    """일별 외국인·기관 순매매(주) — 데스크톱 소스(페이지당 ~21일, 모바일 10일 한계 극복).
+    [{date(YYYYMMDD), close, frgn, org}] 최신→과거. 부호 포함."""
+    out = []
+    for pg in range(1, pages + 1):
+        try:
+            r = _SESS.get(FRGN_PAGE.format(code, pg), timeout=10)
+            html = r.content.decode("euc-kr", "replace")
+        except Exception:
+            break
+        for row in _re.split(r'onMouseOver="mouseOver\(this\)"', html)[1:]:
+            tds = _re.findall(r"<td[^>]*>(.*?)</td>", row, _re.S)
+            if len(tds) < 7:
+                continue
+            txt = [_re.sub(r"<[^>]+>", "", c).replace(",", "").strip() for c in tds]
+            dt = txt[0].replace(".", "")
+            if len(dt) != 8 or not dt.isdigit():
+                continue
+            row = {"date": dt, "close": int(_num(txt[1]) or 0),
+                   "org": int(_num(txt[5]) or 0), "frgn": int(_num(txt[6]) or 0)}
+            if len(txt) > 8:                       # 보유주수·보유율(외국인)
+                row["hold_qty"] = int(_num(txt[7]) or 0)
+                row["hold_pct"] = _num(txt[8])
+            out.append(row)
+    return out
+
 PRICE = "https://m.stock.naver.com/api/stock/{}/price?pageSize={}&page=1"
 
 def daily_price(code, n=40):
-    """일별 종가·거래량 [{date(YYYYMMDD), close, vol}] 최신→과거.
+    """일별 OHLC·거래량 [{date, open, high, low, close, vol}] 최신→과거.
     ※ 이 API의 등락률 부호는 신뢰 불가 → 등락률은 호출측에서 종가대비 재계산할 것."""
     try:
         d = _get(PRICE.format(code, n))
@@ -96,6 +146,8 @@ def daily_price(code, n=40):
         if not dt:
             continue
         out.append({"date": dt, "close": _num(it.get("closePrice")),
+                    "open": _num(it.get("openPrice")), "high": _num(it.get("highPrice")),
+                    "low": _num(it.get("lowPrice")),
                     "vol": _num(it.get("accumulatedTradingVolume"))})
     return out
 
