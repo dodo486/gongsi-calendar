@@ -1,7 +1,49 @@
 {
- "generated_at": "2026-08-10 09:56:21",
- "count": 214,
+ "generated_at": "2026-08-10 12:19:20",
+ "count": 217,
  "events": [
+  {
+   "corp": "씨앤씨인터내셔널",
+   "stock": "352480",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260810",
+   "rcept_no": "20260810900119",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900119",
+   "flr": "씨앤씨인터내셔널",
+   "price": "20,050",
+   "rate": 3.14,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "성광벤드",
+   "stock": "014620",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260810",
+   "rcept_no": "20260810900095",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900095",
+   "flr": "성광벤드",
+   "price": "28,600",
+   "rate": 7.32,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "한전KPS",
+   "stock": "051600",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260810",
+   "rcept_no": "20260810800186",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800186",
+   "flr": "한전KPS",
+   "price": "45,200",
+   "rate": 4.34,
+   "chg_sign": "5"
+  },
   {
    "corp": "지역난방공사",
    "stock": "071320",
@@ -12,8 +54,8 @@
    "rcept_no": "20260810800081",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800081",
    "flr": "지역난방공사",
-   "price": "66,600",
-   "rate": 3.26,
+   "rate": 6.98,
+   "price": "69,000",
    "chg_sign": "2"
   },
   {
