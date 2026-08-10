@@ -5135,5 +5135,71 @@
   "record_date": "2025-12-31",
   "pay_date": "",
   "div_type": "결산배당"
+ },
+ "20260810800750": {
+  "kind": "decision",
+  "stock": "097950",
+  "corp": "CJ제일제당",
+  "market": "KOSPI",
+  "rcept_dt": "20260810",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260810800673": {
+  "kind": "record",
+  "stock": "097950",
+  "corp": "CJ제일제당",
+  "market": "KOSPI",
+  "rcept_dt": "20260810",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260810800633": {
+  "kind": "decision",
+  "stock": "161390",
+  "corp": "한국타이어앤테크놀로지",
+  "market": "KOSPI",
+  "rcept_dt": "20260810",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260810800629": {
+  "kind": "record",
+  "stock": "161390",
+  "corp": "한국타이어앤테크놀로지",
+  "market": "KOSPI",
+  "rcept_dt": "20260810",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260810800458": {
+  "kind": "decision",
+  "stock": "010950",
+  "corp": "S-Oil",
+  "market": "KOSPI",
+  "rcept_dt": "20260810",
+  "per_share": "800",
+  "record_date": "2026-08-25",
+  "pay_date": "2026-09-15",
+  "div_type": "중간배당"
+ },
+ "20260810800438": {
+  "kind": "record",
+  "stock": "010950",
+  "corp": "S-Oil",
+  "market": "KOSPI",
+  "rcept_dt": "20260810",
+  "per_share": "",
+  "record_date": "2026-08-25",
+  "pay_date": "",
+  "div_type": "중간배당"
  }
 }

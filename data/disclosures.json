@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-08-10 15:21:26",
+ "generated_at": "2026-08-10 17:20:04",
  "range": {
   "bgn": "20260506",
   "end": "20260810"
  },
- "count": 321,
+ "count": 324,
  "events": [
+  {
+   "corp": "HD건설기계",
+   "stock": "267270",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260810",
+   "rcept_no": "20260810000659",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810000659",
+   "flr": "HD건설기계"
+  },
+  {
+   "corp": "금호석유화학",
+   "stock": "011780",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260810",
+   "rcept_no": "20260810000482",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810000482",
+   "flr": "금호석유화학"
+  },
   {
    "corp": "OCI",
    "stock": "456040",
@@ -38,6 +60,17 @@
    "rcept_no": "20260810800314",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800314",
    "flr": "OCI홀딩스"
+  },
+  {
+   "corp": "인카금융서비스",
+   "stock": "211050",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260810",
+   "rcept_no": "20260810000474",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810000474",
+   "flr": "인카금융서비스"
   },
   {
    "corp": "SK하이닉스",

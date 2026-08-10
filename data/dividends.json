@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-10 15:21:35",
- "count": 46,
+ "generated_at": "2026-08-10 17:20:18",
+ "count": 47,
  "events": [
   {
    "corp": "신세계",
@@ -589,6 +589,20 @@
    "rcept_dt": "20260807",
    "confirm_date": "2026-08-20",
    "ex_date": "2026-08-21"
+  },
+  {
+   "corp": "S-Oil",
+   "stock": "010950",
+   "market": "KOSPI",
+   "per_share": "800",
+   "record_date": "2026-08-25",
+   "pay_date": "2026-09-15",
+   "rcept_no": "20260810800458",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800458",
+   "div_type": "중간배당",
+   "rcept_dt": "20260810",
+   "confirm_date": "2026-08-21",
+   "ex_date": "2026-08-24"
   },
   {
    "corp": "SK텔레콤",

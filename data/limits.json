@@ -1,6 +1,6 @@
 {
  "date": "2026-08-10",
- "generated_at": "2026-08-10 15:35:41",
+ "generated_at": "2026-08-10 17:35:12",
  "count": 32,
  "events": [
   {
@@ -76,17 +76,21 @@
   },
   {
    "time": "13:40",
-   "kind": "지수선물",
-   "name": "주식선물",
-   "code": "",
-   "market": "지수",
+   "kind": "주식선물",
+   "name": "에이비엘바이오",
+   "code": "298380",
+   "market": "KOSDAQ150",
    "stage": 2,
    "direction": "상승",
    "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
    "rcept_no": "20260810000254",
    "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260810000254&docno=",
-   "markets": [],
-   "expand_time": "13:45:00"
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "13:45:00",
+   "rate": 8.08
   },
   {
    "time": "13:39",
