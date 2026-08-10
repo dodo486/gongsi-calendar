@@ -449,10 +449,11 @@ document.getElementById("drill").addEventListener("click",e=>{
   if(th){ const f=th.dataset.rsort;
     if(ROSTER.sort===f) ROSTER.dir=-ROSTER.dir; else { ROSTER.sort=f; ROSTER.dir=(f==="name"?1:-1); }
     renderDrill(); return; }
-  const tr=e.target.closest("tr[data-code]");         // 로스터 종목 → 일별 수급 상세
+  const tr=e.target.closest("tr[data-code]");         // 로스터 종목(단일클릭) → 일별 수급 상세
   if(tr){ openStockDetail(tr.dataset.code); return; }
-  const el=e.target.closest(".sd-stock[data-code]");  // ETF 멤버행 → 차트
-  if(el) openChart(el.dataset.code);
+});
+document.getElementById("drill").addEventListener("dblclick",e=>{
+  const el=e.target.closest("[data-code]"); if(el) openChart(el.dataset.code);   // 더블클릭 → 차트
 });
 document.getElementById("stockDetail").addEventListener("click",e=>{   // 상세표 헤더 클릭=정렬
   const th=e.target.closest("th[data-dsort]"); if(!th) return;
