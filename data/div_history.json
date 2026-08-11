@@ -5531,5 +5531,27 @@
   "record_date": "2025-12-31",
   "pay_date": "",
   "div_type": "결산배당"
+ },
+ "20260811800237": {
+  "kind": "decision",
+  "stock": "004170",
+  "corp": "신세계",
+  "market": "KOSPI",
+  "rcept_dt": "20260811",
+  "per_share": "1300",
+  "record_date": "2026-08-31",
+  "pay_date": "2026-09-18",
+  "div_type": "분기배당"
+ },
+ "20260811800233": {
+  "kind": "record",
+  "stock": "004170",
+  "corp": "신세계",
+  "market": "KOSPI",
+  "rcept_dt": "20260811",
+  "per_share": "",
+  "record_date": "2026-08-31",
+  "pay_date": "",
+  "div_type": "분기배당"
  }
 }

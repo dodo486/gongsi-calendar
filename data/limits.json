@@ -1,8 +1,100 @@
 {
  "date": "2026-08-11",
- "generated_at": "2026-08-11 09:55:25",
- "count": 8,
+ "generated_at": "2026-08-11 14:03:43",
+ "count": 13,
  "events": [
+  {
+   "time": "14:00",
+   "kind": "주식선물",
+   "name": "NC",
+   "code": "036570",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260811000286",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260811000286&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "14:05:31",
+   "rate": 8.42
+  },
+  {
+   "time": "12:28",
+   "kind": "주식선물",
+   "name": "케어젠",
+   "code": "214370",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260811000207",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260811000207&docno=",
+   "markets": [
+    "V100",
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "12:33:57",
+   "rate": 7.71
+  },
+  {
+   "time": "11:46",
+   "kind": "주식선물",
+   "name": "한국항공우주",
+   "code": "047810",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260811000200",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260811000200&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "11:51:32",
+   "rate": 12.07
+  },
+  {
+   "time": "11:34",
+   "kind": "주식선물",
+   "name": "엔켐",
+   "code": "348370",
+   "market": "KOSDAQ150",
+   "stage": 3,
+   "direction": "하락",
+   "title": "주식선물 3단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260811000194",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260811000194&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "11:39:48",
+   "rate": 5.56
+  },
+  {
+   "time": "10:02",
+   "kind": "주식선물",
+   "name": "현대해상",
+   "code": "001450",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260811000131",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260811000131&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "10:07:20",
+   "rate": 6.22
+  },
   {
    "time": "09:45",
    "kind": "주식선물",
@@ -19,7 +111,7 @@
     "KRX300"
    ],
    "expand_time": "09:50:31",
-   "rate": 14.3
+   "rate": 10.57
   },
   {
    "time": "09:42",
@@ -37,7 +129,7 @@
     "KRX300"
    ],
    "expand_time": "09:47:56",
-   "rate": 3.05
+   "rate": 5.56
   },
   {
    "time": "09:27",
@@ -55,7 +147,7 @@
     "KRX300"
    ],
    "expand_time": "09:32:15",
-   "rate": 6.22
+   "rate": 8.44
   },
   {
    "time": "09:25",
@@ -73,7 +165,7 @@
     "KRX300"
    ],
    "expand_time": "09:30:58",
-   "rate": 13.72
+   "rate": 11.19
   },
   {
    "time": "09:20",
@@ -91,7 +183,7 @@
     "KRX300"
    ],
    "expand_time": "09:25:29",
-   "rate": 4.73
+   "rate": 1.5
   },
   {
    "time": "09:19",
@@ -109,7 +201,7 @@
     "KRX300"
    ],
    "expand_time": "09:24:37",
-   "rate": 7.64
+   "rate": 4.88
   },
   {
    "time": "09:02",
@@ -127,7 +219,7 @@
     "KRX300"
    ],
    "expand_time": "09:07:35",
-   "rate": 1.54
+   "rate": 1.88
   },
   {
    "time": "09:02",
@@ -144,7 +236,7 @@
     "KOSDAQ150"
    ],
    "expand_time": "09:07:10",
-   "rate": 13.31
+   "rate": 13.42
   }
  ]
 }

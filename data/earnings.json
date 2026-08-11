@@ -1,7 +1,35 @@
 {
- "generated_at": "2026-08-11 09:53:48",
- "count": 225,
+ "generated_at": "2026-08-11 14:00:02",
+ "count": 230,
  "events": [
+  {
+   "corp": "엘앤씨바이오",
+   "stock": "290650",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811900225",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900225",
+   "flr": "엘앤씨바이오",
+   "price": "62,700",
+   "rate": 2.94,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "엘앤씨바이오",
+   "stock": "290650",
+   "market": "KOSDAQ",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811900222",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900222",
+   "flr": "엘앤씨바이오",
+   "price": "62,700",
+   "rate": 2.94,
+   "chg_sign": "5"
+  },
   {
    "corp": "NHN KCP",
    "stock": "060250",
@@ -12,8 +40,8 @@
    "rcept_no": "20260811900006",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900006",
    "flr": "NHN KCP",
-   "rate": 4.38,
-   "price": "14,760",
+   "rate": 3.82,
+   "price": "14,680",
    "chg_sign": "2"
   },
   {
@@ -26,9 +54,51 @@
    "rcept_no": "20260811900001",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900001",
    "flr": "NHN KCP",
-   "rate": 4.38,
-   "price": "14,760",
+   "rate": 3.82,
+   "price": "14,680",
    "chg_sign": "2"
+  },
+  {
+   "corp": "NC",
+   "stock": "036570",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811800245",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800245",
+   "flr": "NC",
+   "price": "253,500",
+   "rate": 4.11,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "신세계",
+   "stock": "004170",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811800243",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800243",
+   "flr": "신세계",
+   "price": "416,500",
+   "rate": 3.59,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "신세계",
+   "stock": "004170",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811800241",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800241",
+   "flr": "신세계",
+   "price": "416,500",
+   "rate": 3.59,
+   "chg_sign": "5"
   },
   {
    "corp": "CJ제일제당",
@@ -40,8 +110,8 @@
    "rcept_no": "20260811800053",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800053",
    "flr": "CJ제일제당",
-   "rate": 7.25,
-   "price": "190,600",
+   "rate": 8.37,
+   "price": "188,300",
    "chg_sign": "5"
   },
   {
@@ -54,9 +124,9 @@
    "rcept_no": "20260811800040",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800040",
    "flr": "CJ대한통운",
-   "rate": 0.25,
-   "price": "78,900",
-   "chg_sign": "2"
+   "rate": 1.27,
+   "price": "77,700",
+   "chg_sign": "5"
   },
   {
    "corp": "코스메카코리아",

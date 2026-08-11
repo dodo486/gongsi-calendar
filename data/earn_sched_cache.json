@@ -1455,5 +1455,12 @@
   "time": "14:00",
   "purpose": "'이수그룹 통합 IR DAY' 개최",
   "sponsor": "NH투자증권"
+ },
+ "20260811900144": {
+  "kind": "ir",
+  "expected_date": "2026-08-11",
+  "time": "",
+  "purpose": "",
+  "sponsor": "하나증권,"
  }
 }
