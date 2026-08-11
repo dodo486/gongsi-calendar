@@ -163,13 +163,16 @@ function renderRank(){
 
 function renderQuad(){
   const rs = rows().filter(s=>s.relvol!=null && s.rate!=null).map(s=>({...s, rate:sectorLiveRate(s)}));
-  const W=600,H=400, pad=44;
-  // X: 상대거래대금(0.4~ clamp 3.0), 중심 1.0 / Y: 등락률(실시간 구성평균)
+  const W=600,H=400;
+  // 바깥 여백 — 버블 최대반지름(~27)+라벨이 viewBox 밖으로 나가 잘리지 않게 확보
+  const mL=50,mR=56,mT=52,mB=54;
+  // X: 상대거래대금(0.4~ clamp 3.5), 중심 1.0 / Y: 등락률(실시간 구성평균)
   const xs=rs.map(s=>s.relvol), ys=rs.map(s=>s.rate);
   const xMin=0.4, xMax=Math.max(2.2, Math.min(3.5, Math.max(...xs,1.6)));
   const yMin=Math.min(-1,...ys), yMax=Math.max(1,...ys);
-  const X=v=>pad+(Math.min(v,xMax)-xMin)/(xMax-xMin)*(W-pad*1.5);
-  const Y=v=>H-pad-(v-yMin)/(yMax-yMin)*(H-pad*1.6);
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const X=v=>mL+(clamp(v,xMin,xMax)-xMin)/(xMax-xMin)*(W-mL-mR);
+  const Y=v=>(H-mB)-(v-yMin)/(yMax-yMin)*(H-mT-mB);
   const x1=X(1.0);                        // 상대거래대금 기준선(평소)
   const yMid=(yMin+yMax)/2, y1=Y(yMid);   // 등락률 중앙
   const lMax=Math.max(...rs.map(s=>leadCnt(s)),1);
@@ -177,13 +180,13 @@ function renderQuad(){
   const col=s=> s.netbuy_pct==null?"#64748b":(s.netbuy_pct>0?"#ef4444":(s.netbuy_pct<0?"#3b82f6":"#64748b"));
   let svg="";
   // 골든 존(우하단: X>1, Y<중앙) 하이라이트
-  svg+=`<rect x="${x1}" y="${y1}" width="${W-pad*0.5-x1}" height="${H-pad-y1}" fill="rgba(34,197,94,.07)"/>`;
-  svg+=`<line x1="${x1}" y1="${pad*0.5}" x2="${x1}" y2="${H-pad}" stroke="#333c49" stroke-dasharray="4 4"/>`;
-  svg+=`<line x1="${pad}" y1="${y1}" x2="${W-pad*0.5}" y2="${y1}" stroke="#333c49" stroke-dasharray="4 4"/>`;
-  svg+=`<text class="qlabel" x="${x1+6}" y="${pad*0.5+12}">평소 대비 1.0x →</text>`;
-  svg+=`<text class="qlabel" x="${pad}" y="${H-pad+16}">← 소외    상대거래대금(평소 대비)    초기유입 →</text>`;
-  svg+=`<text class="qlabel" x="6" y="${pad*0.5+8}" >등락률↑</text>`;
-  svg+=`<text class="qlabel golden" x="${W-pad*0.5-92}" y="${H-pad-6}" fill="#eab308">🎯초기유입존</text>`;
+  svg+=`<rect x="${x1}" y="${y1}" width="${(W-mR)-x1}" height="${(H-mB)-y1}" fill="rgba(34,197,94,.07)"/>`;
+  svg+=`<line x1="${x1}" y1="${mT-10}" x2="${x1}" y2="${H-mB}" stroke="#333c49" stroke-dasharray="4 4"/>`;
+  svg+=`<line x1="${mL}" y1="${y1}" x2="${W-mR}" y2="${y1}" stroke="#333c49" stroke-dasharray="4 4"/>`;
+  svg+=`<text class="qlabel" x="${x1+6}" y="${mT-6}">평소 대비 1.0x →</text>`;
+  svg+=`<text class="qlabel" x="${mL}" y="${H-mB+18}">← 소외    상대거래대금(평소 대비)    초기유입 →</text>`;
+  svg+=`<text class="qlabel" x="6" y="${mT-2}">등락률↑</text>`;
+  svg+=`<text class="qlabel golden" x="${W-mR-92}" y="${H-mB-6}" fill="#eab308">🎯초기유입존</text>`;
   for(const s of rs){
     const cx=X(s.relvol), cy=Y(s.rate), r=R(s), sel=s.key===SEL;
     const inf=isInflow(s);
