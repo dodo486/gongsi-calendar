@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-11 18:18:18",
+ "generated_at": "2026-08-11 19:18:27",
  "range": {
   "bgn": "20260506",
   "end": "20260811"
  },
- "count": 330,
+ "count": 331,
  "events": [
   {
    "corp": "클로봇",
@@ -27,6 +27,17 @@
    "rcept_no": "20260811000401",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811000401",
    "flr": "RFHIC"
+  },
+  {
+   "corp": "엔켐",
+   "stock": "348370",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260811",
+   "rcept_no": "20260811901010",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811901010",
+   "flr": "엔켐"
   },
   {
    "corp": "성호전자",
