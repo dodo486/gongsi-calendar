@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-11 08:59:37",
+ "generated_at": "2026-08-11 09:53:48",
  "count": 225,
  "events": [
   {
@@ -12,9 +12,9 @@
    "rcept_no": "20260811900006",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900006",
    "flr": "NHN KCP",
-   "price": "14,140",
-   "rate": 0.0,
-   "chg_sign": "3"
+   "rate": 4.38,
+   "price": "14,760",
+   "chg_sign": "2"
   },
   {
    "corp": "NHN KCP",
@@ -26,9 +26,9 @@
    "rcept_no": "20260811900001",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900001",
    "flr": "NHN KCP",
-   "price": "14,140",
-   "rate": 0.0,
-   "chg_sign": "3"
+   "rate": 4.38,
+   "price": "14,760",
+   "chg_sign": "2"
   },
   {
    "corp": "CJ제일제당",
@@ -40,9 +40,9 @@
    "rcept_no": "20260811800053",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800053",
    "flr": "CJ제일제당",
-   "price": "205,500",
-   "rate": 0.0,
-   "chg_sign": "3"
+   "rate": 7.25,
+   "price": "190,600",
+   "chg_sign": "5"
   },
   {
    "corp": "CJ대한통운",
@@ -54,9 +54,9 @@
    "rcept_no": "20260811800040",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800040",
    "flr": "CJ대한통운",
-   "price": "78,700",
-   "rate": 0.0,
-   "chg_sign": "3"
+   "rate": 0.25,
+   "price": "78,900",
+   "chg_sign": "2"
   },
   {
    "corp": "코스메카코리아",
@@ -69,10 +69,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900426",
    "flr": "코스메카코리아",
    "rate": -0.94,
-   "price": "95,000",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "95,000",
+   "chg_sign": "5"
   },
   {
    "corp": "씨앤씨인터내셔널",
@@ -85,10 +85,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900119",
    "flr": "씨앤씨인터내셔널",
    "rate": -1.69,
-   "price": "20,350",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "20,350",
+   "chg_sign": "5"
   },
   {
    "corp": "성광벤드",
@@ -101,10 +101,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900095",
    "flr": "성광벤드",
    "rate": 7.32,
-   "price": "28,600",
-   "chg_sign": "2",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "28,600",
+   "chg_sign": "2"
   },
   {
    "corp": "한샘",
@@ -117,14 +117,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800834",
    "flr": "한샘",
    "rate": 0.86,
-   "price": "41,200",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:58",
    "pre5": 0.86,
    "post5": 0.0,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "41,200",
+   "chg_sign": "2"
   },
   {
    "corp": "SK바이오사이언스",
@@ -137,14 +137,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800429",
    "flr": "SK바이오사이언스",
    "rate": 1.09,
-   "price": "37,250",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:58",
    "pre5": 1.09,
    "post5": -0.67,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "37,250",
+   "chg_sign": "2"
   },
   {
    "corp": "한국가스공사",
@@ -157,14 +157,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800407",
    "flr": "한국가스공사",
    "rate": -0.14,
-   "price": "35,700",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:58",
    "pre5": -0.14,
    "post5": -0.56,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "35,700",
+   "chg_sign": "5"
   },
   {
    "corp": "한전KPS",
@@ -177,14 +177,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800186",
    "flr": "한전KPS",
    "rate": -2.43,
-   "price": "46,100",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:58",
    "pre5": -2.43,
    "post5": 0.22,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "46,100",
+   "chg_sign": "5"
   },
   {
    "corp": "지역난방공사",
@@ -197,14 +197,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800081",
    "flr": "지역난방공사",
    "rate": 11.63,
-   "price": "72,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:58",
    "pre5": 11.63,
    "post5": 0.0,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "72,000",
+   "chg_sign": "2"
   },
   {
    "corp": "메가스터디교육",
