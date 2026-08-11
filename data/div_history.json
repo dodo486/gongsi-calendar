@@ -5553,5 +5553,27 @@
   "record_date": "2026-08-31",
   "pay_date": "",
   "div_type": "분기배당"
+ },
+ "20260811800749": {
+  "kind": "record",
+  "stock": "111770",
+  "corp": "영원무역",
+  "market": "KOSPI",
+  "rcept_dt": "20260811",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260811800745": {
+  "kind": "decision",
+  "stock": "111770",
+  "corp": "영원무역",
+  "market": "KOSPI",
+  "rcept_dt": "20260811",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
  }
 }

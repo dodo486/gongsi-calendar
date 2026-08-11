@@ -1474,5 +1474,33 @@
  "20260811800515": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260811800640": {
+  "kind": "ir",
+  "expected_date": "2026-08-13",
+  "time": "",
+  "purpose": "ㅁ투자자 미팅을 통한 이해증진 및 투자유치 ㅁ경영실적 및 주요 관심사항 Q&amp;A 진행",
+  "sponsor": "대신증권"
+ },
+ "20260811800548": {
+  "kind": "ir",
+  "expected_date": "2026-08-14",
+  "time": "16:30",
+  "purpose": "2026년 2분기 실적발표",
+  "sponsor": "당사"
+ },
+ "20260811900536": {
+  "kind": "ir",
+  "expected_date": "",
+  "time": "",
+  "purpose": "",
+  "sponsor": "자사"
+ },
+ "20260811900534": {
+  "kind": "ir",
+  "expected_date": "2026-08-13",
+  "time": "",
+  "purpose": "",
+  "sponsor": "BNK투자증권"
  }
 }

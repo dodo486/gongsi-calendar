@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-08-11 15:44:04",
+ "generated_at": "2026-08-11 17:08:06",
  "range": {
   "bgn": "20260506",
   "end": "20260811"
  },
- "count": 326,
+ "count": 328,
  "events": [
+  {
+   "corp": "클로봇",
+   "stock": "466100",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(유상증자결정)",
+   "category": "유상증자",
+   "date": "20260811",
+   "rcept_no": "20260811000472",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811000472",
+   "flr": "클로봇"
+  },
   {
    "corp": "RFHIC",
    "stock": "218410",
@@ -16,6 +27,17 @@
    "rcept_no": "20260811000401",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811000401",
    "flr": "RFHIC"
+  },
+  {
+   "corp": "클로봇",
+   "stock": "466100",
+   "market": "KOSDAQ",
+   "title": "유상증자최종발행가액확정",
+   "category": "유상증자",
+   "date": "20260811",
+   "rcept_no": "20260811900613",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900613",
+   "flr": "클로봇"
   },
   {
    "corp": "에스티팜",
