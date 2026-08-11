@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-11 17:08:06",
+ "generated_at": "2026-08-11 18:18:18",
  "range": {
   "bgn": "20260506",
   "end": "20260811"
  },
- "count": 328,
+ "count": 330,
  "events": [
   {
    "corp": "클로봇",
@@ -27,6 +27,28 @@
    "rcept_no": "20260811000401",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811000401",
    "flr": "RFHIC"
+  },
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "[기재정정]기타경영사항(자율공시)              (제14회차 신주인수권부사채 만기전 취득 후 재매각)",
+   "category": "메자닌",
+   "date": "20260811",
+   "rcept_no": "20260811900832",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900832",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "다우데이타",
+   "stock": "032190",
+   "market": "KOSDAQ",
+   "title": "[기재정정]회사합병결정(종속회사의주요경영사항)",
+   "category": "합병/분할",
+   "date": "20260811",
+   "rcept_no": "20260811900833",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900833",
+   "flr": "다우데이타"
   },
   {
    "corp": "클로봇",
