@@ -1,84 +1,7 @@
 {
- "generated_at": "2026-08-10 20:49:15",
- "count": 133,
+ "generated_at": "2026-08-11 09:01:32",
+ "count": 118,
  "events": [
-  {
-   "corp": "LG이노텍",
-   "stock": "011070",
-   "market": "KOSPI",
-   "rcept_no": "20260701800369",
-   "rcept_dt": "20260701",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260701800369",
-   "src": "예고",
-   "expected_date": "2026-07-27",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "SKC",
-   "stock": "011790",
-   "market": "KOSPI",
-   "rcept_no": "20260720800283",
-   "rcept_dt": "20260720",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260720800283",
-   "src": "예고",
-   "expected_date": "2026-07-27",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "기업은행",
-   "stock": "024110",
-   "market": "KOSPI",
-   "rcept_no": "20260720800463",
-   "rcept_dt": "20260720",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260720800463",
-   "src": "예고",
-   "expected_date": "2026-07-27",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "두산",
-   "stock": "000150",
-   "market": "KOSPI",
-   "rcept_no": "20260715800633",
-   "rcept_dt": "20260715",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260715800633",
-   "src": "예고",
-   "expected_date": "2026-07-27",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "두산에너빌리티",
-   "stock": "034020",
-   "market": "KOSPI",
-   "rcept_no": "20260720800415",
-   "rcept_dt": "20260720",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260720800415",
-   "src": "예고",
-   "expected_date": "2026-07-27",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "에스티팜",
-   "stock": "237690",
-   "market": "KOSDAQ",
-   "rcept_no": "20260723900196",
-   "rcept_dt": "20260723",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723900196",
-   "src": "예고",
-   "expected_date": "2026-07-27",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "한화오션",
-   "stock": "042660",
-   "market": "KOSPI",
-   "rcept_no": "20260713800412",
-   "rcept_dt": "20260713",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260713800412",
-   "src": "예고",
-   "expected_date": "2026-07-27",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "HL만도",
    "stock": "204320",
@@ -126,19 +49,6 @@
    "period_end": "2026-06-30"
   },
   {
-   "corp": "현대로템",
-   "stock": "064350",
-   "market": "KOSPI",
-   "rcept_no": "20260727800668",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800668",
-   "src": "IR",
-   "expected_date": "2026-07-28",
-   "time": "09:00",
-   "purpose": "26년 2분기 경영실적 및 주요 경영현황 설명",
-   "sponsor": "키움증권,"
-  },
-  {
    "corp": "HK이노엔",
    "stock": "195940",
    "market": "KOSDAQ",
@@ -159,19 +69,6 @@
    "src": "예고",
    "expected_date": "2026-07-29",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "iM금융지주",
-   "stock": "139130",
-   "market": "KOSPI",
-   "rcept_no": "20260727800566",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800566",
-   "src": "IR",
-   "expected_date": "2026-07-29",
-   "time": "",
-   "purpose": "2026년 상반기 경영실적 등 주요 관심사항 설명",
-   "sponsor": "미래에셋증권"
   },
   {
    "corp": "삼성E&A",
@@ -380,19 +277,6 @@
    "sponsor": "자사주관"
   },
   {
-   "corp": "금호타이어",
-   "stock": "073240",
-   "market": "KOSPI",
-   "rcept_no": "20260727800644",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800644",
-   "src": "IR",
-   "expected_date": "2026-07-30",
-   "time": "17:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사"
-  },
-  {
    "corp": "F&F",
    "stock": "383220",
    "market": "KOSPI",
@@ -516,19 +400,6 @@
    "sponsor": "NH투자증권"
   },
   {
-   "corp": "팬오션",
-   "stock": "028670",
-   "market": "KOSPI",
-   "rcept_no": "20260727800239",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800239",
-   "src": "IR",
-   "expected_date": "2026-07-31",
-   "time": "14:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사"
-  },
-  {
    "corp": "풍산",
    "stock": "103140",
    "market": "KOSPI",
@@ -540,19 +411,6 @@
    "time": "14:00",
    "purpose": "2026년 2분기 경영실적 발표",
    "sponsor": "당사주관"
-  },
-  {
-   "corp": "HD현대",
-   "stock": "267250",
-   "market": "KOSPI",
-   "rcept_no": "20260727800408",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800408",
-   "src": "IR",
-   "expected_date": "2026-07-31",
-   "time": "16:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
   },
   {
    "corp": "DL",
@@ -577,19 +435,6 @@
    "time": "09:00",
    "purpose": "실적발표 IR 미팅 실시",
    "sponsor": "삼성증권"
-  },
-  {
-   "corp": "팬오션",
-   "stock": "028670",
-   "market": "KOSPI",
-   "rcept_no": "20260727800243",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800243",
-   "src": "IR",
-   "expected_date": "2026-08-03",
-   "time": "09:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "하나증권"
   },
   {
    "corp": "효성중공업",
@@ -776,19 +621,6 @@
    "time": "09:10",
    "purpose": "실적발표 IR 미팅 실시",
    "sponsor": "삼성증권,"
-  },
-  {
-   "corp": "에이피알",
-   "stock": "278470",
-   "market": "KOSPI",
-   "rcept_no": "20260727800460",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800460",
-   "src": "IR",
-   "expected_date": "2026-08-05",
-   "time": "10:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
   },
   {
    "corp": "에스케이바이오팜",
@@ -1500,19 +1332,6 @@
    "time": "10:30",
    "purpose": "2026년 2분기 경영실적 발표",
    "sponsor": "-"
-  },
-  {
-   "corp": "삼성생명",
-   "stock": "032830",
-   "market": "KOSPI",
-   "rcept_no": "20260727800655",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800655",
-   "src": "IR",
-   "expected_date": "2026-08-13",
-   "time": "14:00",
-   "purpose": "2026 회계연도 상반기 경영실적 발표",
-   "sponsor": "자사"
   },
   {
    "corp": "DB손해보험",

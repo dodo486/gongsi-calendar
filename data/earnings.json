@@ -1,7 +1,63 @@
 {
- "generated_at": "2026-08-10 20:46:13",
- "count": 221,
+ "generated_at": "2026-08-11 08:59:37",
+ "count": 225,
  "events": [
+  {
+   "corp": "NHN KCP",
+   "stock": "060250",
+   "market": "KOSDAQ",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811900006",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900006",
+   "flr": "NHN KCP",
+   "price": "14,140",
+   "rate": 0.0,
+   "chg_sign": "3"
+  },
+  {
+   "corp": "NHN KCP",
+   "stock": "060250",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811900001",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900001",
+   "flr": "NHN KCP",
+   "price": "14,140",
+   "rate": 0.0,
+   "chg_sign": "3"
+  },
+  {
+   "corp": "CJ제일제당",
+   "stock": "097950",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811800053",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800053",
+   "flr": "CJ제일제당",
+   "price": "205,500",
+   "rate": 0.0,
+   "chg_sign": "3"
+  },
+  {
+   "corp": "CJ대한통운",
+   "stock": "000120",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260811",
+   "rcept_no": "20260811800040",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800040",
+   "flr": "CJ대한통운",
+   "price": "78,700",
+   "rate": 0.0,
+   "chg_sign": "3"
+  },
   {
    "corp": "코스메카코리아",
    "stock": "241710",
@@ -12,9 +68,11 @@
    "rcept_no": "20260810900426",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900426",
    "flr": "코스메카코리아",
-   "rate": 0.94,
+   "rate": -0.94,
    "price": "95,000",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "씨앤씨인터내셔널",
@@ -26,9 +84,11 @@
    "rcept_no": "20260810900119",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810900119",
    "flr": "씨앤씨인터내셔널",
-   "rate": 1.69,
+   "rate": -1.69,
    "price": "20,350",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "성광벤드",
@@ -42,7 +102,9 @@
    "flr": "성광벤드",
    "rate": 7.32,
    "price": "28,600",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "tick_state": "notime"
   },
   {
    "corp": "한샘",
@@ -56,7 +118,13 @@
    "flr": "한샘",
    "rate": 0.86,
    "price": "41,200",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "17:58",
+   "pre5": 0.86,
+   "post5": 0.0,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "SK바이오사이언스",
@@ -70,7 +138,13 @@
    "flr": "SK바이오사이언스",
    "rate": 1.09,
    "price": "37,250",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "17:58",
+   "pre5": 1.09,
+   "post5": -0.67,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "한국가스공사",
@@ -82,9 +156,15 @@
    "rcept_no": "20260810800407",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800407",
    "flr": "한국가스공사",
-   "rate": 0.14,
+   "rate": -0.14,
    "price": "35,700",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "17:58",
+   "pre5": -0.14,
+   "post5": -0.56,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "한전KPS",
@@ -96,9 +176,15 @@
    "rcept_no": "20260810800186",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800186",
    "flr": "한전KPS",
-   "rate": 2.43,
+   "rate": -2.43,
    "price": "46,100",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "17:58",
+   "pre5": -2.43,
+   "post5": 0.22,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "지역난방공사",
@@ -112,7 +198,13 @@
    "flr": "지역난방공사",
    "rate": 11.63,
    "price": "72,000",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "17:58",
+   "pre5": 11.63,
+   "post5": 0.0,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "메가스터디교육",

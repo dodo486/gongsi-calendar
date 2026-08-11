@@ -1,21 +1,7 @@
 {
- "generated_at": "2026-08-10 20:22:10",
- "count": 47,
+ "generated_at": "2026-08-11 08:45:52",
+ "count": 46,
  "events": [
-  {
-   "corp": "신세계",
-   "stock": "004170",
-   "market": "KOSPI",
-   "per_share": "1300",
-   "record_date": "2026-05-29",
-   "pay_date": "2026-06-19",
-   "rcept_no": "20260512800367",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260512800367",
-   "div_type": "분기배당",
-   "rcept_dt": "20260512",
-   "confirm_date": "2026-05-27",
-   "ex_date": "2026-05-28"
-  },
   {
    "corp": "현대엘리베이터",
    "stock": "017800",
@@ -597,10 +583,10 @@
    "per_share": "800",
    "record_date": "2026-08-25",
    "pay_date": "2026-09-15",
-   "rcept_no": "20260810800458",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800458",
+   "rcept_no": "20260811800009",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800009",
    "div_type": "중간배당",
-   "rcept_dt": "20260810",
+   "rcept_dt": "20260811",
    "confirm_date": "2026-08-21",
    "ex_date": "2026-08-24"
   },
