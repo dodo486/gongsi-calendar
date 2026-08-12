@@ -60,10 +60,16 @@
   .divlist .di b{font-size:14px}
   .divlist .di .sub{font-size:12px;color:var(--muted)}
   .divlist .mkt{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:4px}
-  .divlist .dor{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px}
-  .divlist .dor:hover{background:var(--bg)}
-  .divlist .dor .px{font-size:12px;color:var(--muted);margin-left:4px}
-  .divlist .dor .dor-dt{color:var(--muted);font-size:11px;white-space:nowrap}
+  .dortab{width:100%;border-collapse:collapse;font-size:13px}
+  .dortab th{text-align:left;color:var(--muted);font-size:11px;font-weight:600;padding:5px 8px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+  .dortab th[data-sk]:hover{color:var(--div)}
+  .dortab th .ar{font-size:10px;color:var(--muted)}
+  .dortab td{padding:6px 8px;border-bottom:1px solid var(--line)}
+  .dortab tr.dor{cursor:pointer}
+  .dortab tr.dor:hover td{background:var(--bg)}
+  .dortab td.nm{font-weight:600}
+  .dortab td.px{text-align:right;color:var(--muted);white-space:nowrap}
+  .dortab td.dt{text-align:right;color:var(--muted);font-size:11px;white-space:nowrap}
   .mkt.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
   .mkt.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
   .back{display:inline-block;margin-bottom:10px;color:var(--div);cursor:pointer;font-size:13px}
@@ -275,17 +281,44 @@ function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.ge
 const dm = {buy:true, ex:true};
 
 function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
-function fillDivPrices(codes){   // 하단 배당락 리스트에 실시간 현재가·등락률 부착
+let _divUp = [], _divPx = {}, _divSort = {key:"name", dir:1};
+function divRowsHtml(){                 // 정렬 상태(_divSort) 반영해 배당락 표 행 생성
+  const arr = _divUp.slice(), k = _divSort.key, dir = _divSort.dir;
+  arr.sort((a,b)=>{
+    if(k==="px"){
+      const pa=(_divPx[a.stock]&&_divPx[a.stock].price!=null)?_divPx[a.stock].price:-Infinity;
+      const pb=(_divPx[b.stock]&&_divPx[b.stock].price!=null)?_divPx[b.stock].price:-Infinity;
+      return dir*(pa-pb);
+    }
+    return dir*(a.corp||"").localeCompare(b.corp||"","ko");
+  });
+  return arr.map(e=>{
+    const q=_divPx[e.stock], px = (q&&q.price!=null)?won(q.price)+"원":"·····";
+    return `<tr class="dor" data-url="${esc(e.url)}"><td class="nm">${esc(e.corp)}</td><td class="px">${px}</td><td class="dt">락 ${esc((e.ex_date||"").slice(5))}</td></tr>`;
+  }).join("");
+}
+function renderDivUpTable(){
+  const tb = document.getElementById("divUpBody"); if(!tb) return;
+  tb.innerHTML = divRowsHtml();
+  tb.querySelectorAll("tr.dor").forEach(el=> el.addEventListener("click",()=>{
+    if(el.dataset.url) window.open(el.dataset.url,"_blank","noopener");   // 클릭 → DART 원문
+  }));
+  document.querySelectorAll("#divUpTab th[data-sk]").forEach(th=>{
+    const on = th.dataset.sk===_divSort.key, ar = th.querySelector(".ar");
+    if(ar) ar.textContent = on ? (_divSort.dir>0?"▲":"▼") : "⇅";
+  });
+}
+function sortDivUp(k){                  // 헤더 클릭 → 정렬 키/방향 토글
+  if(_divSort.key===k) _divSort.dir*=-1;
+  else { _divSort.key=k; _divSort.dir = (k==="px")?-1:1; }   // 가격은 높은순 먼저, 이름은 가나다순
+  renderDivUpTable();
+}
+function fillDivPrices(codes){          // 실시간 현재가 조회 후 표 갱신
   if(!codes || !codes.length) return;
   fetch("/api/quotes?codes="+codes.join(","),{cache:"no-store"}).then(r=>r.json()).then(d=>{
     if(!d || d.error) return;
-    codes.forEach(c=>{
-      const el = document.querySelector(`.px[data-px="${c}"]`); const q = d[c];
-      if(el && q && q.price!=null){
-        const rt = q.rate, col = rt>0?"#ef4444":(rt<0?"#3b82f6":"#8b95a5");
-        el.innerHTML = `<span style="color:${col}">${won(q.price)}${rt!=null?` ${rt>0?"+":""}${rt}%`:""}</span>`;
-      } else if(el){ el.textContent = "-"; }
-    });
+    codes.forEach(c=>{ if(d[c]) _divPx[c]=d[c]; });
+    renderDivUpTable();
   }).catch(()=>{});
 }
 function renderDivToday(){
@@ -303,23 +336,21 @@ function renderDivToday(){
   // 하단: 다음 만기 전까지 배당락 리스트 (종목명·현재가, 클릭→DART)
   const ti = todayISO();
   const nextExp = (EXP.map(x=>x.date).filter(d=>d>ti).sort()[0]) || "";
-  const up = DIV.filter(e=> e.ex_date && e.ex_date>ti && (!nextExp || e.ex_date<=nextExp))
-                .sort((a,b)=> a.ex_date<b.ex_date?-1:1);
+  _divUp = DIV.filter(e=> e.ex_date && e.ex_date>ti && (!nextExp || e.ex_date<=nextExp));
   h += `<div class="divlist" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">
-    <div class="lh">🗓️ 다음 만기${nextExp?`(${esc(nextExp.slice(5))})`:""} 전 배당락 (${up.length}) <span style="font-weight:400;color:var(--muted);font-size:11px">· 클릭→DART</span></div>`;
-  if(!up.length) h += `<div class="empty">해당 없음</div>`;
-  up.forEach(e=>{
-    h += `<div class="dor" data-url="${esc(e.url)}"><span class="dor-nm"><b>${esc(e.corp)}</b> <span class="px" data-px="${esc(e.stock)}">·····</span></span><span class="dor-dt">락 ${esc((e.ex_date||"").slice(5))}</span></div>`;
-  });
+    <div class="lh">🗓️ 다음 만기${nextExp?`(${esc(nextExp.slice(5))})`:""} 전 배당락 (${_divUp.length}) <span style="font-weight:400;color:var(--muted);font-size:11px">· 헤더 클릭 정렬 · 행 클릭→DART</span></div>`;
+  if(!_divUp.length) h += `<div class="empty">해당 없음</div>`;
+  else h += `<table class="dortab" id="divUpTab"><thead><tr>
+      <th data-sk="name" onclick="sortDivUp('name')">종목명 <span class="ar">⇅</span></th>
+      <th data-sk="px" onclick="sortDivUp('px')">현재가 <span class="ar">⇅</span></th>
+      <th>배당락</th></tr></thead><tbody id="divUpBody"></tbody></table>`;
   h += `</div>`;
   box.innerHTML = h;
   box.querySelectorAll(".di").forEach(el=> el.addEventListener("click",()=>{
     const e = DIV.find(x=>x.rcept_no===el.dataset.rc); if(e) showDetail({...e, kind:"div"});
   }));
-  box.querySelectorAll(".dor").forEach(el=> el.addEventListener("click",()=>{
-    if(el.dataset.url) window.open(el.dataset.url,"_blank","noopener");   // 클릭 → DART 원문
-  }));
-  fillDivPrices(up.map(e=>e.stock).filter(Boolean));
+  renderDivUpTable();
+  fillDivPrices(_divUp.map(e=>e.stock).filter(Boolean));
 }
 
 function discEvents(list){
