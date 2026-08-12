@@ -219,6 +219,18 @@ def notify_action(e):
     buttons = [("🔗 KRX", e["url"])]
     _toast(title, msg, chart or e["url"], buttons)
 
+def notify_halt(e):
+    """매매거래정지 알림 — 클릭 시 해당 종목 차트 / 버튼: KIND 원문"""
+    code = e.get("code")
+    who = f"{e.get('corp','')}{_rate_str(code)} · " if e.get("corp") else ""
+    title = f"[🚫거래정지] {who}{e.get('market','')}"
+    rr = e.get("resume_date") or "미정"
+    tag = "" if e.get("resume_confirmed") else "(예정)"
+    msg = f"{e.get('reason','')} · 정지 {e.get('halt_date','')} → 재개 {rr}{tag}"
+    chart = _chart_url(code)
+    buttons = [("🔗 KIND 공시", e["url"])]
+    _toast(title, msg, chart or e["url"], buttons)
+
 CRITICAL_ACTIONS = ("사이드카", "서킷브레이커")   # 시장 전체 조치 — 무조건 알림 대상
 
 def _action_active(e):
@@ -298,6 +310,30 @@ def sectors_loop():
         except Exception as ex:
             print(f"  [섹터] 갱신 실패: {ex}")
         time.sleep(SECTORS_POLL_SECONDS)
+
+HALT_POLL_SECONDS = 1800  # 거래정지/재개 — 하루 단위로만 바뀌어 30분이면 충분 (KIND+DART 무거움)
+
+def halt_loop():
+    """거래정지/재개 전용 루프(별도 스레드) — KIND 정지·해제 공시 + DART 재개예정일 → data/halts.json.
+    신규 정지 종목은 OS 토스트(첫 주기는 시딩만, 폭주 방지)."""
+    import kind_halt
+    halt_seen, first = set(), True
+    while True:
+        try:
+            evs = kind_halt.collect()
+            payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                       "count": len(evs), "events": evs}
+            save_json(os.path.join(DATA_DIR, "halts.json"), payload)
+            for e in evs:
+                rc = e.get("rcept_no")
+                if rc and rc not in halt_seen:
+                    halt_seen.add(rc)
+                    if not first:
+                        notify_halt(e)
+            first = False
+        except Exception as ex:
+            print(f"  [거래정지] 갱신 실패: {ex}")
+        time.sleep(HALT_POLL_SECONDS)
 
 def limits_loop(lim_seen, ac_seen):
     """상하한가·시장조치 전용 고속 루프(별도 스레드) — 공시/실적과 무관하게 LIMITS_POLL_SECONDS 마다 갱신."""
@@ -398,6 +434,8 @@ def main():
     print(f"  [상하한가·시장조치] 전용 루프 시작 ({LIMITS_POLL_SECONDS}초 주기)")
     threading.Thread(target=sectors_loop, daemon=True).start()   # 섹터로테이션 집계 스레드
     print(f"  [섹터] 전용 루프 시작 ({SECTORS_POLL_SECONDS}초 주기)")
+    threading.Thread(target=halt_loop, daemon=True).start()   # 거래정지/재개 집계 스레드
+    print(f"  [거래정지] 전용 루프 시작 ({HALT_POLL_SECONDS}초 주기)")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)
