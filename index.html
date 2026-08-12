@@ -60,6 +60,10 @@
   .divlist .di b{font-size:14px}
   .divlist .di .sub{font-size:12px;color:var(--muted)}
   .divlist .mkt{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:4px}
+  .divlist .dor{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px}
+  .divlist .dor:hover{background:var(--bg)}
+  .divlist .dor .px{font-size:12px;color:var(--muted);margin-left:4px}
+  .divlist .dor .dor-dt{color:var(--muted);font-size:11px;white-space:nowrap}
   .mkt.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
   .mkt.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
   .back{display:inline-block;margin-bottom:10px;color:var(--div);cursor:pointer;font-size:13px}
@@ -270,21 +274,52 @@ function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.ge
 // 배당 캘린더 날짜 표시: 매수일·권리락 항상 모두 표시(체크박스 제거)
 const dm = {buy:true, ex:true};
 
+function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+function fillDivPrices(codes){   // 하단 배당락 리스트에 실시간 현재가·등락률 부착
+  if(!codes || !codes.length) return;
+  fetch("/api/quotes?codes="+codes.join(","),{cache:"no-store"}).then(r=>r.json()).then(d=>{
+    if(!d || d.error) return;
+    codes.forEach(c=>{
+      const el = document.querySelector(`.px[data-px="${c}"]`); const q = d[c];
+      if(el && q && q.price!=null){
+        const rt = q.rate, col = rt>0?"#ef4444":(rt<0?"#3b82f6":"#8b95a5");
+        el.innerHTML = `<span style="color:${col}">${won(q.price)}${rt!=null?` ${rt>0?"+":""}${rt}%`:""}</span>`;
+      } else if(el){ el.textContent = "-"; }
+    });
+  }).catch(()=>{});
+}
 function renderDivToday(){
   divListMode = true;
-  const t = todayStr();
-  const list = DIV.filter(e => (e.rcept_dt||"") === t);
   const box = document.getElementById("detail"); box.className = "";
+  // 상단: 오늘 뜬 배당공시 (접수일=오늘)
+  const list = DIV.filter(e => (e.rcept_dt||"") === todayStr());
   let h = `<div class="divlist"><div class="lh">📢 오늘 뜬 배당공시 (${list.length})</div>`;
   if(!list.length) h += `<div class="empty">오늘 접수된 배당 공시가 없습니다.</div>`;
   list.forEach(e=>{
     h += `<div class="di" data-rc="${esc(e.rcept_no)}"><b>${esc(e.corp)}</b><span class="mkt ${esc(e.market)}">${esc(e.market)}</span><br>
       <span class="sub">${esc(e.div_type||"배당")} · ${e.per_share?won(e.per_share)+"원":"금액 미정"} · 매수 ${esc(e.confirm_date||"-")} · 락 ${esc(e.ex_date||"-")} · 기준 ${esc(e.record_date)}</span></div>`;
   });
-  box.innerHTML = h + `</div>`;
+  h += `</div>`;
+  // 하단: 다음 만기 전까지 배당락 리스트 (종목명·현재가, 클릭→DART)
+  const ti = todayISO();
+  const nextExp = (EXP.map(x=>x.date).filter(d=>d>ti).sort()[0]) || "";
+  const up = DIV.filter(e=> e.ex_date && e.ex_date>ti && (!nextExp || e.ex_date<=nextExp))
+                .sort((a,b)=> a.ex_date<b.ex_date?-1:1);
+  h += `<div class="divlist" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">
+    <div class="lh">🗓️ 다음 만기${nextExp?`(${esc(nextExp.slice(5))})`:""} 전 배당락 (${up.length}) <span style="font-weight:400;color:var(--muted);font-size:11px">· 클릭→DART</span></div>`;
+  if(!up.length) h += `<div class="empty">해당 없음</div>`;
+  up.forEach(e=>{
+    h += `<div class="dor" data-url="${esc(e.url)}"><span class="dor-nm"><b>${esc(e.corp)}</b> <span class="px" data-px="${esc(e.stock)}">·····</span></span><span class="dor-dt">락 ${esc((e.ex_date||"").slice(5))}</span></div>`;
+  });
+  h += `</div>`;
+  box.innerHTML = h;
   box.querySelectorAll(".di").forEach(el=> el.addEventListener("click",()=>{
     const e = DIV.find(x=>x.rcept_no===el.dataset.rc); if(e) showDetail({...e, kind:"div"});
   }));
+  box.querySelectorAll(".dor").forEach(el=> el.addEventListener("click",()=>{
+    if(el.dataset.url) window.open(el.dataset.url,"_blank","noopener");   // 클릭 → DART 원문
+  }));
+  fillDivPrices(up.map(e=>e.stock).filter(Boolean));
 }
 
 function discEvents(list){
@@ -333,11 +368,17 @@ function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준
   return out;
 }
 
-function estEvents(){   // 예상배당(리서치 추정) — 배당 탭 전용, 노란색 (체크된 날짜 기준 따름)
+function estEvents(){   // 예상배당(리서치 추정) — 배당 탭 전용, 노란색. 실제 배당공시 나온 시즌은 숨김.
   const q = filters.q.trim().toLowerCase();
   const out = [];
+  // 실제 배당(DIV)이 이미 나온 종목·기준일(±30일)의 예상배당은 중복 → 제거 (예: 삼양식품)
+  const realRec = {};
+  (DIV||[]).forEach(e=>{ if(e.stock && e.record_date) (realRec[e.stock]=realRec[e.stock]||[]).push(e.record_date); });
+  const dday = (a,b)=> Math.abs((new Date(a)-new Date(b))/864e5);
+  const superseded = e => e.record_date && (realRec[e.stock]||[]).some(rd => dday(rd, e.record_date) <= 30);
   (RES.events||[])
     .filter(e => filters[e.market] && (!q || `${e.corp}`.toLowerCase().includes(q)))
+    .filter(e => !superseded(e))
     .forEach((e,i)=>{
       const title = `💡 ${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"})`;
       const props = {...e, kind:"est"};
