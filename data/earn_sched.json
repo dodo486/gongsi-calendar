@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-12 09:30:05",
- "count": 108,
+ "generated_at": "2026-08-12 11:46:39",
+ "count": 109,
  "events": [
   {
    "corp": "HK이노엔",
@@ -1221,6 +1221,19 @@
    "time": "16:00",
    "purpose": "2026년 상반기 경영실적 발표",
    "sponsor": "자사주관"
+  },
+  {
+   "corp": "미래에셋증권",
+   "stock": "006800",
+   "market": "KOSPI",
+   "rcept_no": "20260812800143",
+   "rcept_dt": "20260812",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800143",
+   "src": "IR",
+   "expected_date": "2026-08-14",
+   "time": "",
+   "purpose": "2026년 2분기 실적 NDR 진행",
+   "sponsor": "NH투자증권"
   },
   {
    "corp": "에스디바이오센서",

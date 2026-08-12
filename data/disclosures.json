@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-08-12 08:58:08",
+ "generated_at": "2026-08-12 11:31:16",
  "range": {
   "bgn": "20260506",
-  "end": "20260811"
+  "end": "20260812"
  },
- "count": 331,
+ "count": 332,
  "events": [
+  {
+   "corp": "네오위즈",
+   "stock": "095660",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식취득신탁계약체결결정)",
+   "category": "자사주",
+   "date": "20260812",
+   "rcept_no": "20260812000035",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812000035",
+   "flr": "네오위즈"
+  },
   {
    "corp": "클로봇",
    "stock": "466100",
