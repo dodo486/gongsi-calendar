@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-12 15:09:41",
+ "generated_at": "2026-08-12 16:56:01",
  "count": 56,
  "events": [
   {
@@ -104,13 +104,13 @@
    "corp": "SFA",
    "stock": "056190",
    "market": "KOSDAQ",
-   "per_share": "",
+   "per_share": "365",
    "record_date": "2026-06-30",
-   "pay_date": "",
-   "rcept_no": "20260615900521",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260615900521",
-   "div_type": "",
-   "rcept_dt": "20260615",
+   "pay_date": "2026-08-28",
+   "rcept_no": "20260812900473",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900473",
+   "div_type": "분기배당",
+   "rcept_dt": "20260812",
    "confirm_date": "2026-06-26",
    "ex_date": "2026-06-29"
   },
