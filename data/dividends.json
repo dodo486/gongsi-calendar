@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-12 16:56:01",
- "count": 56,
+ "generated_at": "2026-08-12 19:42:04",
+ "count": 59,
  "events": [
   {
    "corp": "현대엘리베이터",
@@ -661,6 +661,20 @@
    "ex_date": "2026-08-26"
   },
   {
+   "corp": "삼양식품",
+   "stock": "003230",
+   "market": "KOSPI",
+   "per_share": "3200",
+   "record_date": "2026-08-27",
+   "pay_date": "",
+   "rcept_no": "20260812800659",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800659",
+   "div_type": "중간배당",
+   "rcept_dt": "20260812",
+   "confirm_date": "2026-08-25",
+   "ex_date": "2026-08-26"
+  },
+  {
    "corp": "영원무역",
    "stock": "111770",
    "market": "KOSPI",
@@ -773,6 +787,20 @@
    "ex_date": "2026-08-28"
   },
   {
+   "corp": "동원산업",
+   "stock": "006040",
+   "market": "KOSPI",
+   "per_share": "600",
+   "record_date": "2026-08-31",
+   "pay_date": "2025-09-11",
+   "rcept_no": "20260812800750",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800750",
+   "div_type": "중간배당",
+   "rcept_dt": "20260812",
+   "confirm_date": "2026-08-27",
+   "ex_date": "2026-08-28"
+  },
+  {
    "corp": "현대백화점",
    "stock": "069960",
    "market": "KOSPI",
@@ -783,6 +811,20 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800355",
    "div_type": "중간배당",
    "rcept_dt": "20260805",
+   "confirm_date": "2026-09-28",
+   "ex_date": "2026-09-29"
+  },
+  {
+   "corp": "씨젠",
+   "stock": "096530",
+   "market": "KOSDAQ",
+   "per_share": "300",
+   "record_date": "2026-09-30",
+   "pay_date": "2026-08-21",
+   "rcept_no": "20260812900644",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900644",
+   "div_type": "분기배당",
+   "rcept_dt": "20260812",
    "confirm_date": "2026-09-28",
    "ex_date": "2026-09-29"
   }

@@ -6066,10 +6066,10 @@
   "corp": "동원산업",
   "market": "KOSPI",
   "rcept_dt": "20260812",
-  "per_share": "",
-  "record_date": "",
-  "pay_date": "",
-  "div_type": ""
+  "per_share": "600",
+  "record_date": "2026-08-31",
+  "pay_date": "2025-09-11",
+  "div_type": "중간배당"
  },
  "20260812800661": {
   "kind": "record",
@@ -6078,9 +6078,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260812",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-31",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "중간배당"
  },
  "20260812800669": {
   "kind": "record",
@@ -6089,9 +6089,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260812",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-27",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "중간배당"
  },
  "20260812800659": {
   "kind": "decision",
@@ -6099,10 +6099,10 @@
   "corp": "삼양식품",
   "market": "KOSPI",
   "rcept_dt": "20260812",
-  "per_share": "",
-  "record_date": "",
+  "per_share": "3200",
+  "record_date": "2026-08-27",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "중간배당"
  },
  "20260812900644": {
   "kind": "decision",
@@ -6110,10 +6110,10 @@
   "corp": "씨젠",
   "market": "KOSDAQ",
   "rcept_dt": "20260812",
-  "per_share": "",
-  "record_date": "",
-  "pay_date": "",
-  "div_type": ""
+  "per_share": "300",
+  "record_date": "2026-06-30",
+  "pay_date": "2026-08-21",
+  "div_type": "분기배당"
  },
  "20260812900656": {
   "kind": "record",
@@ -6122,7 +6122,7 @@
   "market": "KOSDAQ",
   "rcept_dt": "20260812",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-09-30",
   "pay_date": "",
   "div_type": ""
  },

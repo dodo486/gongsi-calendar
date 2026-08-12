@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-12 16:55:29",
+ "generated_at": "2026-08-12 19:41:50",
  "range": {
   "bgn": "20260506",
   "end": "20260812"
  },
- "count": 336,
+ "count": 337,
  "events": [
   {
    "corp": "미스토홀딩스",
@@ -60,6 +60,17 @@
    "rcept_no": "20260812000035",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812000035",
    "flr": "네오위즈"
+  },
+  {
+   "corp": "젬백스",
+   "stock": "082270",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260812",
+   "rcept_no": "20260812900967",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900967",
+   "flr": "젬백스"
   },
   {
    "corp": "클로봇",
