@@ -4416,10 +4416,10 @@
   "corp": "코오롱인더",
   "market": "KOSPI",
   "rcept_dt": "20260806",
-  "per_share": "",
-  "record_date": "",
-  "pay_date": "",
-  "div_type": ""
+  "per_share": "900",
+  "record_date": "2026-08-21",
+  "pay_date": "2026-09-04",
+  "div_type": "중간배당"
  },
  "20260806800529": {
   "kind": "record",
@@ -4428,9 +4428,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260806",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-21",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "중간배당"
  },
  "20260806800421": {
   "kind": "decision",
@@ -4438,10 +4438,10 @@
   "corp": "한국앤컴퍼니",
   "market": "KOSPI",
   "rcept_dt": "20260806",
-  "per_share": "",
-  "record_date": "",
+  "per_share": "330",
+  "record_date": "2026-08-21",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "중간배당"
  },
  "20260806800392": {
   "kind": "record",
@@ -4450,9 +4450,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260806",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-21",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "중간배당"
  },
  "20260806800319": {
   "kind": "decision",
@@ -4460,10 +4460,10 @@
   "corp": "케이티앤지",
   "market": "KOSPI",
   "rcept_dt": "20260806",
-  "per_share": "",
-  "record_date": "",
-  "pay_date": "",
-  "div_type": ""
+  "per_share": "2000",
+  "record_date": "2026-08-21",
+  "pay_date": "2026-09-07",
+  "div_type": "분기배당"
  },
  "20260806800311": {
   "kind": "record",
@@ -4472,9 +4472,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260806",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-21",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "분기배당"
  },
  "20260206802715": {
   "kind": "record",
@@ -4824,9 +4824,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260807",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-31",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "분기배당"
  },
  "20260807800594": {
   "kind": "decision",
@@ -4834,10 +4834,10 @@
   "corp": "코웨이",
   "market": "KOSPI",
   "rcept_dt": "20260807",
-  "per_share": "",
-  "record_date": "",
+  "per_share": "700",
+  "record_date": "2026-08-31",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "분기배당"
  },
  "20260807800591": {
   "kind": "record",
@@ -4846,9 +4846,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260807",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-31",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "분기배당"
  },
  "20260807800589": {
   "kind": "decision",
@@ -4856,10 +4856,10 @@
   "corp": "SK하이닉스",
   "market": "KOSPI",
   "rcept_dt": "20260807",
-  "per_share": "",
-  "record_date": "",
+  "per_share": "375",
+  "record_date": "2026-08-31",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "분기배당"
  },
  "20260807800561": {
   "kind": "decision",
@@ -5142,10 +5142,10 @@
   "corp": "CJ제일제당",
   "market": "KOSPI",
   "rcept_dt": "20260810",
-  "per_share": "",
-  "record_date": "",
+  "per_share": "1500",
+  "record_date": "2026-08-31",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "분기배당"
  },
  "20260810800673": {
   "kind": "record",
@@ -5154,9 +5154,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260810",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-31",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "분기배당"
  },
  "20260810800633": {
   "kind": "decision",
@@ -5164,10 +5164,10 @@
   "corp": "한국타이어앤테크놀로지",
   "market": "KOSPI",
   "rcept_dt": "20260810",
-  "per_share": "",
-  "record_date": "",
-  "pay_date": "",
-  "div_type": ""
+  "per_share": "900",
+  "record_date": "2026-08-25",
+  "pay_date": "2026-09-09",
+  "div_type": "중간배당"
  },
  "20260810800629": {
   "kind": "record",
@@ -5176,9 +5176,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260810",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-25",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "중간배당"
  },
  "20260810800458": {
   "kind": "decision",
@@ -5561,9 +5561,9 @@
   "market": "KOSPI",
   "rcept_dt": "20260811",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-28",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "중간배당"
  },
  "20260811800745": {
   "kind": "decision",
@@ -5571,9 +5571,471 @@
   "corp": "영원무역",
   "market": "KOSPI",
   "rcept_dt": "20260811",
+  "per_share": "1050",
+  "record_date": "2026-08-28",
+  "pay_date": "2026-09-18",
+  "div_type": "중간배당"
+ },
+ "20260211801829": {
+  "kind": "decision",
+  "stock": "006280",
+  "corp": "녹십자",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "1500",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801828": {
+  "kind": "record",
+  "stock": "006280",
+  "corp": "녹십자",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801536": {
+  "kind": "record",
+  "stock": "241560",
+  "corp": "두산밥캣",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801518": {
+  "kind": "decision",
+  "stock": "241560",
+  "corp": "두산밥캣",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "500",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801509": {
+  "kind": "decision",
+  "stock": "006260",
+  "corp": "LS",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "2500",
+  "record_date": "2026-03-31",
+  "pay_date": "2026-04-21",
+  "div_type": "결산배당"
+ },
+ "20260211801500": {
+  "kind": "record",
+  "stock": "071320",
+  "corp": "지역난방공사",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-30",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801488": {
+  "kind": "record",
+  "stock": "006260",
+  "corp": "LS",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801349": {
+  "kind": "decision",
+  "stock": "069260",
+  "corp": "티케이지휴켐스",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "1000",
+  "record_date": "2026-02-27",
+  "pay_date": "2026-04-24",
+  "div_type": "결산배당"
+ },
+ "20260211801481": {
+  "kind": "record",
+  "stock": "035720",
+  "corp": "카카오",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-10",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801334": {
+  "kind": "record",
+  "stock": "069260",
+  "corp": "티케이지휴켐스",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801115": {
+  "kind": "decision",
+  "stock": "071050",
+  "corp": "한국금융지주",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "8690",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801094": {
+  "kind": "record",
+  "stock": "071050",
+  "corp": "한국금융지주",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801023": {
+  "kind": "decision",
+  "stock": "002380",
+  "corp": "케이씨씨",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "14000",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801045": {
+  "kind": "decision",
+  "stock": "081660",
+  "corp": "미스토홀딩스",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "1040",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211801027": {
+  "kind": "record",
+  "stock": "081660",
+  "corp": "미스토홀딩스",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800914": {
+  "kind": "record",
+  "stock": "002380",
+  "corp": "케이씨씨",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800957": {
+  "kind": "decision",
+  "stock": "035720",
+  "corp": "카카오",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "75",
+  "record_date": "2026-03-10",
+  "pay_date": "2026-04-23",
+  "div_type": "결산배당"
+ },
+ "20260211800925": {
+  "kind": "decision",
+  "stock": "000100",
+  "corp": "유한양행",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "600",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800902": {
+  "kind": "record",
+  "stock": "000100",
+  "corp": "유한양행",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800752": {
+  "kind": "record",
+  "stock": "011200",
+  "corp": "HMM",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800748": {
+  "kind": "decision",
+  "stock": "011200",
+  "corp": "HMM",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "700",
+  "record_date": "2026-02-27",
+  "pay_date": "2026-04-24",
+  "div_type": "결산배당"
+ },
+ "20260211800720": {
+  "kind": "decision",
+  "stock": "010060",
+  "corp": "OCI홀딩스",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "1000",
+  "record_date": "2025-12-31",
+  "pay_date": "2026-04-10",
+  "div_type": "결산배당"
+ },
+ "20260211800617": {
+  "kind": "decision",
+  "stock": "006040",
+  "corp": "동원산업",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "600",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800612": {
+  "kind": "record",
+  "stock": "006040",
+  "corp": "동원산업",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800403": {
+  "kind": "record",
+  "stock": "069960",
+  "corp": "현대백화점",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-04-03",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800400": {
+  "kind": "decision",
+  "stock": "069960",
+  "corp": "현대백화점",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "1650",
+  "record_date": "2026-04-03",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800385": {
+  "kind": "record",
+  "stock": "139480",
+  "corp": "이마트",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-04-01",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800383": {
+  "kind": "decision",
+  "stock": "139480",
+  "corp": "이마트",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "2500",
+  "record_date": "2026-04-01",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800371": {
+  "kind": "decision",
+  "stock": "028670",
+  "corp": "팬오션",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "150",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800321": {
+  "kind": "record",
+  "stock": "001800",
+  "corp": "오리온홀딩스",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800304": {
+  "kind": "decision",
+  "stock": "001800",
+  "corp": "오리온홀딩스",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "1100",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800300": {
+  "kind": "record",
+  "stock": "271560",
+  "corp": "오리온",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800290": {
+  "kind": "decision",
+  "stock": "271560",
+  "corp": "오리온",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "3500",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211800153": {
+  "kind": "decision",
+  "stock": "042700",
+  "corp": "한미반도체",
+  "market": "KOSPI",
+  "rcept_dt": "20260211",
+  "per_share": "800",
+  "record_date": "2026-03-07",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211901731": {
+  "kind": "decision",
+  "stock": "140860",
+  "corp": "파크시스템스",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260211",
+  "per_share": "500",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211901521": {
+  "kind": "decision",
+  "stock": "038500",
+  "corp": "삼표시멘트",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260211",
+  "per_share": "121",
+  "record_date": "2025-12-31",
+  "pay_date": "2026-04-29",
+  "div_type": "결산배당"
+ },
+ "20260211901203": {
+  "kind": "decision",
+  "stock": "069080",
+  "corp": "웹젠",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260211",
+  "per_share": "700",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211900895": {
+  "kind": "decision",
+  "stock": "112040",
+  "corp": "위메이드",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260211",
+  "per_share": "295",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211900775": {
+  "kind": "decision",
+  "stock": "036830",
+  "corp": "솔브레인홀딩스",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260211",
+  "per_share": "500",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211900770": {
+  "kind": "record",
+  "stock": "036830",
+  "corp": "솔브레인홀딩스",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260211",
+  "per_share": "",
+  "record_date": "2026-03-31",
   "pay_date": "",
   "div_type": ""
+ },
+ "20260211900729": {
+  "kind": "decision",
+  "stock": "041510",
+  "corp": "에스엠",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260211",
+  "per_share": "1620",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260211900396": {
+  "kind": "decision",
+  "stock": "196170",
+  "corp": "알테오젠",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260211",
+  "per_share": "371",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
  }
 }

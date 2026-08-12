@@ -1,7 +1,105 @@
 {
- "generated_at": "2026-08-11 20:39:34",
- "count": 237,
+ "generated_at": "2026-08-12 09:26:53",
+ "count": 244,
  "events": [
+  {
+   "corp": "컴투스",
+   "stock": "078340",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812900071",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900071",
+   "flr": "컴투스",
+   "price": "32,700",
+   "rate": 3.68,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "네오위즈",
+   "stock": "095660",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812900051",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900051",
+   "flr": "네오위즈",
+   "price": "19,420",
+   "rate": 1.12,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "미래에셋증권",
+   "stock": "006800",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812800085",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800085",
+   "flr": "미래에셋증권",
+   "price": "35,850",
+   "rate": 0.99,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "한국콜마",
+   "stock": "161890",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812800082",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800082",
+   "flr": "한국콜마",
+   "price": "123,700",
+   "rate": 14.64,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "한국콜마",
+   "stock": "161890",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812800079",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800079",
+   "flr": "한국콜마",
+   "price": "123,700",
+   "rate": 14.64,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "더블유게임즈",
+   "stock": "192080",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812800023",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800023",
+   "flr": "더블유게임즈",
+   "price": "62,300",
+   "rate": 0.81,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "더블유게임즈",
+   "stock": "192080",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812800020",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800020",
+   "flr": "더블유게임즈",
+   "price": "62,300",
+   "rate": 0.81,
+   "chg_sign": "2"
+  },
   {
    "corp": "펄어비스",
    "stock": "263750",
@@ -14,7 +112,13 @@
    "flr": "펄어비스",
    "rate": 2.07,
    "price": "36,900",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "18:07",
+   "pre5": 2.07,
+   "post5": -7.86,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "펄어비스",
@@ -28,7 +132,13 @@
    "flr": "펄어비스",
    "rate": 2.07,
    "price": "36,900",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "18:07",
+   "pre5": 2.07,
+   "post5": -7.86,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "펌텍코리아",
@@ -42,7 +152,13 @@
    "flr": "펌텍코리아",
    "rate": 3.12,
    "price": "51,200",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "18:07",
+   "pre5": 3.12,
+   "post5": 3.12,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "레이크머티리얼즈",
@@ -54,9 +170,15 @@
    "rcept_no": "20260811900511",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900511",
    "flr": "레이크머티리얼즈",
-   "rate": 3.35,
+   "rate": -3.35,
    "price": "13,290",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "18:07",
+   "pre5": -3.35,
+   "post5": 0.08,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "엘앤씨바이오",
@@ -68,9 +190,15 @@
    "rcept_no": "20260811900225",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900225",
    "flr": "엘앤씨바이오",
-   "rate": 1.7,
+   "rate": -1.7,
    "price": "63,500",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "18:07",
+   "pre5": -1.7,
+   "post5": 0.47,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "엘앤씨바이오",
@@ -82,9 +210,15 @@
    "rcept_no": "20260811900222",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811900222",
    "flr": "엘앤씨바이오",
-   "rate": 1.7,
+   "rate": -1.7,
    "price": "63,500",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "18:07",
+   "pre5": -1.7,
+   "post5": 0.47,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "NHN KCP",
@@ -98,7 +232,13 @@
    "flr": "NHN KCP",
    "rate": 4.17,
    "price": "14,730",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "18:07",
+   "pre5": 4.17,
+   "post5": -0.88,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "NHN KCP",
@@ -112,7 +252,13 @@
    "flr": "NHN KCP",
    "rate": 4.17,
    "price": "14,730",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "18:07",
+   "pre5": 4.17,
+   "post5": -0.88,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "코스맥스",
@@ -126,7 +272,13 @@
    "flr": "코스맥스",
    "rate": 3.19,
    "price": "210,000",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "18:09",
+   "pre5": 3.19,
+   "post5": 10.48,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "GS",
@@ -140,7 +292,13 @@
    "flr": "GS",
    "rate": 0.21,
    "price": "97,500",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "18:09",
+   "pre5": 0.21,
+   "post5": 1.64,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "한국타이어앤테크놀로지",
@@ -152,9 +310,15 @@
    "rcept_no": "20260811800304",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800304",
    "flr": "한국타이어앤테크놀로지",
-   "rate": 6.43,
+   "rate": -6.43,
    "price": "65,500",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "18:09",
+   "pre5": -6.43,
+   "post5": 1.22,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "NC",
@@ -168,7 +332,13 @@
    "flr": "NC",
    "rate": 4.93,
    "price": "255,500",
-   "chg_sign": "2"
+   "chg_sign": "2",
+   "rate_fixed": true,
+   "disc_time": "18:09",
+   "pre5": 4.93,
+   "post5": 1.17,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "신세계",
@@ -180,9 +350,15 @@
    "rcept_no": "20260811800243",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800243",
    "flr": "신세계",
-   "rate": 0.81,
+   "rate": -0.81,
    "price": "428,500",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "18:09",
+   "pre5": -0.81,
+   "post5": 1.05,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "신세계",
@@ -194,9 +370,15 @@
    "rcept_no": "20260811800241",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800241",
    "flr": "신세계",
-   "rate": 0.81,
+   "rate": -0.81,
    "price": "428,500",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "18:09",
+   "pre5": -0.81,
+   "post5": 1.05,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "CJ제일제당",
@@ -208,9 +390,15 @@
    "rcept_no": "20260811800053",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800053",
    "flr": "CJ제일제당",
-   "rate": 8.52,
+   "rate": -8.52,
    "price": "188,000",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "18:09",
+   "pre5": -8.52,
+   "post5": 0.21,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "CJ대한통운",
@@ -222,9 +410,15 @@
    "rcept_no": "20260811800040",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800040",
    "flr": "CJ대한통운",
-   "rate": 1.65,
+   "rate": -1.65,
    "price": "77,400",
-   "chg_sign": "5"
+   "chg_sign": "5",
+   "rate_fixed": true,
+   "disc_time": "18:09",
+   "pre5": -1.65,
+   "post5": 2.71,
+   "tick_kind": "close_gap",
+   "tick_state": "ok"
   },
   {
    "corp": "코스메카코리아",

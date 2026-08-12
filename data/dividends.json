@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-11 20:16:46",
- "count": 47,
+ "generated_at": "2026-08-12 08:58:41",
+ "count": 55,
  "events": [
   {
    "corp": "현대엘리베이터",
@@ -563,6 +563,48 @@
    "ex_date": "2026-08-20"
   },
   {
+   "corp": "코오롱인더",
+   "stock": "120110",
+   "market": "KOSPI",
+   "per_share": "900",
+   "record_date": "2026-08-21",
+   "pay_date": "2026-09-04",
+   "rcept_no": "20260806800577",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800577",
+   "div_type": "중간배당",
+   "rcept_dt": "20260806",
+   "confirm_date": "2026-08-19",
+   "ex_date": "2026-08-20"
+  },
+  {
+   "corp": "한국앤컴퍼니",
+   "stock": "000240",
+   "market": "KOSPI",
+   "per_share": "330",
+   "record_date": "2026-08-21",
+   "pay_date": "",
+   "rcept_no": "20260806800421",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800421",
+   "div_type": "중간배당",
+   "rcept_dt": "20260806",
+   "confirm_date": "2026-08-19",
+   "ex_date": "2026-08-20"
+  },
+  {
+   "corp": "케이티앤지",
+   "stock": "033780",
+   "market": "KOSPI",
+   "per_share": "2000",
+   "record_date": "2026-08-21",
+   "pay_date": "2026-09-07",
+   "rcept_no": "20260806800319",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800319",
+   "div_type": "분기배당",
+   "rcept_dt": "20260806",
+   "confirm_date": "2026-08-19",
+   "ex_date": "2026-08-20"
+  },
+  {
    "corp": "POSCO홀딩스",
    "stock": "005490",
    "market": "KOSPI",
@@ -577,6 +619,20 @@
    "ex_date": "2026-08-21"
   },
   {
+   "corp": "한국타이어앤테크놀로지",
+   "stock": "161390",
+   "market": "KOSPI",
+   "per_share": "900",
+   "record_date": "2026-08-25",
+   "pay_date": "2026-09-09",
+   "rcept_no": "20260810800633",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800633",
+   "div_type": "중간배당",
+   "rcept_dt": "20260810",
+   "confirm_date": "2026-08-21",
+   "ex_date": "2026-08-24"
+  },
+  {
    "corp": "S-Oil",
    "stock": "010950",
    "market": "KOSPI",
@@ -589,6 +645,20 @@
    "rcept_dt": "20260811",
    "confirm_date": "2026-08-21",
    "ex_date": "2026-08-24"
+  },
+  {
+   "corp": "영원무역",
+   "stock": "111770",
+   "market": "KOSPI",
+   "per_share": "1050",
+   "record_date": "2026-08-28",
+   "pay_date": "2026-09-18",
+   "rcept_no": "20260811800745",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800745",
+   "div_type": "중간배당",
+   "rcept_dt": "20260811",
+   "confirm_date": "2026-08-26",
+   "ex_date": "2026-08-27"
   },
   {
    "corp": "SK텔레콤",
@@ -629,6 +699,48 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721801066",
    "div_type": "중간배당",
    "rcept_dt": "20260721",
+   "confirm_date": "2026-08-27",
+   "ex_date": "2026-08-28"
+  },
+  {
+   "corp": "코웨이",
+   "stock": "021240",
+   "market": "KOSPI",
+   "per_share": "700",
+   "record_date": "2026-08-31",
+   "pay_date": "",
+   "rcept_no": "20260807800594",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260807800594",
+   "div_type": "분기배당",
+   "rcept_dt": "20260807",
+   "confirm_date": "2026-08-27",
+   "ex_date": "2026-08-28"
+  },
+  {
+   "corp": "SK하이닉스",
+   "stock": "000660",
+   "market": "KOSPI",
+   "per_share": "375",
+   "record_date": "2026-08-31",
+   "pay_date": "",
+   "rcept_no": "20260807800589",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260807800589",
+   "div_type": "분기배당",
+   "rcept_dt": "20260807",
+   "confirm_date": "2026-08-27",
+   "ex_date": "2026-08-28"
+  },
+  {
+   "corp": "CJ제일제당",
+   "stock": "097950",
+   "market": "KOSPI",
+   "per_share": "1500",
+   "record_date": "2026-08-31",
+   "pay_date": "",
+   "rcept_no": "20260810800750",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800750",
+   "div_type": "분기배당",
+   "rcept_dt": "20260810",
    "confirm_date": "2026-08-27",
    "ex_date": "2026-08-28"
   },
