@@ -1,7 +1,49 @@
 {
- "generated_at": "2026-08-12 11:45:07",
- "count": 248,
+ "generated_at": "2026-08-12 15:37:07",
+ "count": 252,
  "events": [
+  {
+   "corp": "원익QnC",
+   "stock": "074600",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812900356",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900356",
+   "flr": "원익QnC",
+   "price": "31,750",
+   "rate": 5.31,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "클래시스",
+   "stock": "214150",
+   "market": "KOSDAQ",
+   "title": "[기재정정]연결재무제표기준영업실적등에대한전망(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812900270",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900270",
+   "flr": "클래시스",
+   "price": "43,800",
+   "rate": 5.5,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "클래시스",
+   "stock": "214150",
+   "market": "KOSDAQ",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812900269",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900269",
+   "flr": "클래시스",
+   "price": "43,800",
+   "rate": 5.5,
+   "chg_sign": "5"
+  },
   {
    "corp": "실리콘투",
    "stock": "257720",
@@ -12,8 +54,8 @@
    "rcept_no": "20260812900140",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900140",
    "flr": "실리콘투",
-   "price": "45,900",
-   "rate": 14.61,
+   "rate": 12.98,
+   "price": "45,250",
    "chg_sign": "2"
   },
   {
@@ -26,8 +68,8 @@
    "rcept_no": "20260812900128",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900128",
    "flr": "에스피지",
-   "price": "110,500",
-   "rate": 3.07,
+   "rate": 1.58,
+   "price": "112,200",
    "chg_sign": "5"
   },
   {
@@ -40,8 +82,8 @@
    "rcept_no": "20260812900071",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900071",
    "flr": "컴투스",
-   "rate": 2.95,
-   "price": "32,950",
+   "rate": 2.5,
+   "price": "33,100",
    "chg_sign": "5"
   },
   {
@@ -54,9 +96,23 @@
    "rcept_no": "20260812900051",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900051",
    "flr": "네오위즈",
-   "rate": 2.24,
-   "price": "19,200",
+   "rate": 1.93,
+   "price": "19,260",
    "chg_sign": "5"
+  },
+  {
+   "corp": "한국앤컴퍼니",
+   "stock": "000240",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260812",
+   "rcept_no": "20260812800307",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800307",
+   "flr": "한국앤컴퍼니",
+   "price": "25,400",
+   "rate": 1.6,
+   "chg_sign": "2"
   },
   {
    "corp": "케이티",
@@ -68,9 +124,9 @@
    "rcept_no": "20260812800090",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800090",
    "flr": "케이티",
-   "price": "53,100",
-   "rate": 0.57,
-   "chg_sign": "2"
+   "rate": 0.19,
+   "price": "52,700",
+   "chg_sign": "5"
   },
   {
    "corp": "케이티",
@@ -82,9 +138,9 @@
    "rcept_no": "20260812800089",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800089",
    "flr": "케이티",
-   "price": "53,100",
-   "rate": 0.57,
-   "chg_sign": "2"
+   "rate": 0.19,
+   "price": "52,700",
+   "chg_sign": "5"
   },
   {
    "corp": "미래에셋증권",
@@ -96,8 +152,8 @@
    "rcept_no": "20260812800085",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800085",
    "flr": "미래에셋증권",
-   "rate": 3.1,
-   "price": "36,600",
+   "rate": 2.82,
+   "price": "36,500",
    "chg_sign": "2"
   },
   {
@@ -110,8 +166,8 @@
    "rcept_no": "20260812800082",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800082",
    "flr": "한국콜마",
-   "rate": 25.21,
-   "price": "135,100",
+   "rate": 22.8,
+   "price": "132,500",
    "chg_sign": "2"
   },
   {
@@ -124,8 +180,8 @@
    "rcept_no": "20260812800079",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800079",
    "flr": "한국콜마",
-   "rate": 25.21,
-   "price": "135,100",
+   "rate": 22.8,
+   "price": "132,500",
    "chg_sign": "2"
   },
   {
@@ -138,8 +194,8 @@
    "rcept_no": "20260812800023",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800023",
    "flr": "더블유게임즈",
-   "rate": 1.29,
-   "price": "62,600",
+   "rate": 0.32,
+   "price": "62,000",
    "chg_sign": "2"
   },
   {
@@ -152,8 +208,8 @@
    "rcept_no": "20260812800020",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800020",
    "flr": "더블유게임즈",
-   "rate": 1.29,
-   "price": "62,600",
+   "rate": 0.32,
+   "price": "62,000",
    "chg_sign": "2"
   },
   {

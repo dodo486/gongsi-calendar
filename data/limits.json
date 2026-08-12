@@ -1,8 +1,100 @@
 {
  "date": "2026-08-12",
- "generated_at": "2026-08-12 11:46:52",
- "count": 12,
+ "generated_at": "2026-08-12 15:40:52",
+ "count": 17,
  "events": [
+  {
+   "time": "15:28",
+   "kind": "주식선물",
+   "name": "신세계",
+   "code": "004170",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260812000511",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260812000511&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "15:33:47",
+   "rate": 6.88
+  },
+  {
+   "time": "13:18",
+   "kind": "주식선물",
+   "name": "클래시스",
+   "code": "214150",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260812000286",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260812000286&docno=",
+   "markets": [
+    "V100",
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "13:23:22",
+   "rate": 5.5
+  },
+  {
+   "time": "12:18",
+   "kind": "주식선물",
+   "name": "SK스퀘어",
+   "code": "402340",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260812000261",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260812000261&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "12:23:00",
+   "rate": 8.36
+  },
+  {
+   "time": "11:51",
+   "kind": "주식선물",
+   "name": "주성엔지니어링",
+   "code": "036930",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260812000250",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260812000250&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "11:56:44",
+   "rate": 7.14
+  },
+  {
+   "time": "11:50",
+   "kind": "주식선물",
+   "name": "두산테스나",
+   "code": "131970",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260812000249",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260812000249&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "11:55:58",
+   "rate": 15.14
+  },
   {
    "time": "10:55",
    "kind": "주식선물",
@@ -20,7 +112,7 @@
     "KRX300"
    ],
    "expand_time": "11:00:12",
-   "rate": 9.84
+   "rate": 10.02
   },
   {
    "time": "10:51",
@@ -38,7 +130,7 @@
     "KRX300"
    ],
    "expand_time": "10:56:39",
-   "rate": 7.48
+   "rate": 7.02
   },
   {
    "time": "10:04",
@@ -57,7 +149,7 @@
     "KRX300"
    ],
    "expand_time": "10:09:58",
-   "rate": 10.72
+   "rate": 14.21
   },
   {
    "time": "09:52",
@@ -76,7 +168,7 @@
     "KRX300"
    ],
    "expand_time": "09:57:19",
-   "rate": 16.43
+   "rate": 18.81
   },
   {
    "time": "09:48",
@@ -94,7 +186,7 @@
     "KRX300"
    ],
    "expand_time": "09:53:55",
-   "rate": 8.69
+   "rate": 8.17
   },
   {
    "time": "09:44",
@@ -113,7 +205,7 @@
     "KTOP30"
    ],
    "expand_time": "09:49:46",
-   "rate": 15.02
+   "rate": 12.82
   },
   {
    "time": "09:44",
@@ -131,7 +223,7 @@
     "KRX300"
    ],
    "expand_time": "09:49:42",
-   "rate": 14.61
+   "rate": 12.98
   },
   {
    "time": "09:42",
@@ -149,7 +241,7 @@
     "KRX300"
    ],
    "expand_time": "09:47:05",
-   "rate": 25.86
+   "rate": 22.8
   },
   {
    "time": "09:15",
@@ -167,7 +259,7 @@
     "KRX300"
    ],
    "expand_time": "09:20:30",
-   "rate": 25.86
+   "rate": 22.8
   },
   {
    "time": "09:15",
@@ -185,7 +277,7 @@
     "KRX300"
    ],
    "expand_time": "09:20:09",
-   "rate": 7.44
+   "rate": 7.83
   },
   {
    "time": "09:05",
@@ -204,7 +296,7 @@
     "KRX300"
    ],
    "expand_time": "09:10:31",
-   "rate": 16.43
+   "rate": 18.81
   },
   {
    "time": "09:00",
@@ -222,7 +314,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:18",
-   "rate": 13.96
+   "rate": 14.5
   }
  ]
 }
