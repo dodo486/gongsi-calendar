@@ -281,20 +281,19 @@ function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.ge
 const dm = {buy:true, ex:true};
 
 function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
-let _divUp = [], _divPx = {}, _divSort = {key:"name", dir:1};
+let _divUp = [], _divSort = {key:"name", dir:1};
 function divRowsHtml(){                 // 정렬 상태(_divSort) 반영해 배당락 표 행 생성
   const arr = _divUp.slice(), k = _divSort.key, dir = _divSort.dir;
   arr.sort((a,b)=>{
-    if(k==="px"){
-      const pa=(_divPx[a.stock]&&_divPx[a.stock].price!=null)?_divPx[a.stock].price:-Infinity;
-      const pb=(_divPx[b.stock]&&_divPx[b.stock].price!=null)?_divPx[b.stock].price:-Infinity;
+    if(k==="amt"){
+      const pa=(a.per_share!=null)?+a.per_share:-Infinity, pb=(b.per_share!=null)?+b.per_share:-Infinity;
       return dir*(pa-pb);
     }
     return dir*(a.corp||"").localeCompare(b.corp||"","ko");
   });
   return arr.map(e=>{
-    const q=_divPx[e.stock], px = (q&&q.price!=null)?won(q.price)+"원":"·····";
-    return `<tr class="dor" data-url="${esc(e.url)}"><td class="nm">${esc(e.corp)}</td><td class="px">${px}</td><td class="dt">락 ${esc((e.ex_date||"").slice(5))}</td></tr>`;
+    const amt = (e.per_share!=null)?won(e.per_share)+"원":"미정";
+    return `<tr class="dor" data-url="${esc(e.url)}"><td class="nm">${esc(e.corp)}</td><td class="px">${amt}</td><td class="dt">락 ${esc((e.ex_date||"").slice(5))}</td></tr>`;
   }).join("");
 }
 function renderDivUpTable(){
@@ -310,16 +309,8 @@ function renderDivUpTable(){
 }
 function sortDivUp(k){                  // 헤더 클릭 → 정렬 키/방향 토글
   if(_divSort.key===k) _divSort.dir*=-1;
-  else { _divSort.key=k; _divSort.dir = (k==="px")?-1:1; }   // 가격은 높은순 먼저, 이름은 가나다순
+  else { _divSort.key=k; _divSort.dir = (k==="amt")?-1:1; }   // 배당금은 높은순 먼저, 이름은 가나다순
   renderDivUpTable();
-}
-function fillDivPrices(codes){          // 실시간 현재가 조회 후 표 갱신
-  if(!codes || !codes.length) return;
-  fetch("/api/quotes?codes="+codes.join(","),{cache:"no-store"}).then(r=>r.json()).then(d=>{
-    if(!d || d.error) return;
-    codes.forEach(c=>{ if(d[c]) _divPx[c]=d[c]; });
-    renderDivUpTable();
-  }).catch(()=>{});
 }
 function renderDivToday(){
   divListMode = true;
@@ -342,7 +333,7 @@ function renderDivToday(){
   if(!_divUp.length) h += `<div class="empty">해당 없음</div>`;
   else h += `<table class="dortab" id="divUpTab"><thead><tr>
       <th data-sk="name" onclick="sortDivUp('name')">종목명 <span class="ar">⇅</span></th>
-      <th data-sk="px" onclick="sortDivUp('px')">현재가 <span class="ar">⇅</span></th>
+      <th data-sk="amt" onclick="sortDivUp('amt')">배당금 <span class="ar">⇅</span></th>
       <th>배당락</th></tr></thead><tbody id="divUpBody"></tbody></table>`;
   h += `</div>`;
   box.innerHTML = h;
@@ -350,7 +341,6 @@ function renderDivToday(){
     const e = DIV.find(x=>x.rcept_no===el.dataset.rc); if(e) showDetail({...e, kind:"div"});
   }));
   renderDivUpTable();
-  fillDivPrices(_divUp.map(e=>e.stock).filter(Boolean));
 }
 
 function discEvents(list){
