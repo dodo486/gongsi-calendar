@@ -74,6 +74,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._serve_quotes()
         if route == "/api/frgn":
             return self._serve_frgn()
+        if route == "/api/why":
+            return self._serve_why()
         if route == "/chart":
             return self._serve_chart()
         return super().do_GET()
@@ -163,6 +165,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except Exception as ex:
             out = {"error": str(ex)}
         body = json.dumps(out, ensure_ascii=False).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_why(self):
+        """종목 리서치 요약 — 태그 테마 강세 + 수급 + 최근 뉴스 (섹터 종목 클릭 상단)."""
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        code = (qs.get("code") or [""])[0]
+        if not re.fullmatch(r"\d{6}", code):
+            self.send_error(400); return
+        try:
+            import whyup
+            body = json.dumps(whyup.build(code), ensure_ascii=False).encode("utf-8")
+        except Exception as ex:
+            body = json.dumps({"error": str(ex)}).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))

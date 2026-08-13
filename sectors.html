@@ -48,6 +48,17 @@
   .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
   .bar{display:inline-block;height:8px;border-radius:4px;background:var(--est);vertical-align:middle;margin-right:5px}
   .empty{color:var(--muted);padding:20px;text-align:center}
+  /* 리서치 요약 블록 (종목 수급 패널 상단) */
+  .whybox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;background:var(--bg)}
+  .whybox .wh-h{font-size:13px;font-weight:800;margin-bottom:6px}
+  .whybox .wh-sum{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:7px}
+  .whybox .wh-themes{display:flex;flex-wrap:wrap;gap:5px}
+  .whybox .wchip{font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  .whybox .wh-news{margin-top:8px;display:flex;flex-direction:column;gap:5px}
+  .whybox .wnews{display:block;text-decoration:none;padding:5px 7px;border-radius:7px;background:var(--panel);border:1px solid var(--line)}
+  .whybox .wnews:hover{border-color:var(--est)}
+  .whybox .wn-t{display:block;font-size:12px;color:var(--text);line-height:1.35}
+  .whybox .wn-m{display:block;font-size:10px;color:var(--muted);margin-top:2px}
   .golden{color:var(--gold);font-weight:800}
   /* 사분면 */
   .quad{position:relative;width:100%;height:0;padding-bottom:66%}
@@ -274,7 +285,22 @@ function avgRateHtml(key){
 }
 
 // ── 종목 일별 투자자 수급 상세 (수급분석기 내용) — /api/frgn ──────────────
-let STK = null, STKDATA = null, STKSORT = {key:"date", dir:-1};
+let STK = null, STKDATA = null, STKSORT = {key:"date", dir:-1}, WHY = null;
+function whyHtml(w){   // 🔎 리서치 요약(테마 강세 + 수급 한줄 + 최근 뉴스)
+  if(!w || w.error) return "";
+  const chip = (w.themes||[]).map(t=>{
+    const r=t.rate, strong=(r!=null&&r>=1.5);
+    const col=r==null?"#64748b":(r>0?"#ef4444":(r<0?"#3b82f6":"#64748b"));
+    return `<span class="wchip"${strong?' style="border-color:#ef4444"':''}>${esc(t.name)}${r!=null?` <b style="color:${col}">${r>0?"+":""}${r}%</b>`:""}${t.inflow?" 🔥":""}</span>`;
+  }).join("");
+  const news = (w.news||[]).map(n=>`<a class="wnews" href="${esc(n.url)}" target="_blank" rel="noopener"><span class="wn-t">${esc(n.title)}</span><span class="wn-m">${esc(n.office)}${n.dt?" · "+esc(n.dt):""}</span></a>`).join("");
+  return `<div class="whybox">
+    <div class="wh-h">🔎 리서치 요약 <span class="flat" style="font-weight:400;font-size:10px">테마·수급·뉴스</span></div>
+    ${w.summary?`<div class="wh-sum">${esc(w.summary)}</div>`:""}
+    <div class="wh-themes">${chip||'<span class="flat" style="font-size:11px">태그된 테마 없음</span>'}</div>
+    ${news?`<div class="wh-news">${news}</div>`:'<div class="flat" style="font-size:11px;margin-top:4px">최근 뉴스 없음</div>'}
+  </div>`;
+}
 function q3(n){ if(n==null) return '<span class="flat">-</span>'; const c=n>0?'up':(n<0?'down':'flat'); return `<span class="${c}">${n>0?'+':''}${Number(n).toLocaleString()}</span>`; }
 function findSupply(code){
   for(const k in (DATA.theme_roster||{})){ const it=(DATA.theme_roster[k]||[]).find(x=>x.code===code); if(it&&it.supply) return it.supply; }
@@ -283,12 +309,15 @@ function findSupply(code){
 // 종목 상세 패널(단일 화면 공용)
 function detailBox(){ return document.getElementById("stockDetail"); }
 async function openStockDetail(code){
-  STK=code; STKDATA=null; STKSORT={key:"date",dir:-1}; renderRank(); renderDrill();
+  STK=code; STKDATA=null; WHY=null; STKSORT={key:"date",dir:-1}; renderRank(); renderDrill();
   const box=detailBox();
   box.innerHTML=`<div class="empty">수급 상세 불러오는 중…</div>`;
+  // 리서치 요약(테마·뉴스)은 병렬로 — 늦게 와도 수급 패널 위에 끼워넣음
+  fetch("/api/why?code="+encodeURIComponent(code),{cache:"no-store"}).then(r=>r.json())
+    .then(w=>{ if(STK===code){ WHY={...w, code}; if(STKDATA) renderStockPanel(); } }).catch(()=>{});
   let d; try{ d=await (await fetch("/api/frgn?code="+encodeURIComponent(code),{cache:"no-store"})).json(); }catch(_){ d={error:"조회 실패"}; }
   if(STK!==code) return;
-  if(d.error||!d.rows){ box.innerHTML=`<div class="empty">상세 조회 실패</div>`; return; }
+  if(d.error||!d.rows){ box.innerHTML=(WHY&&WHY.code===code?whyHtml(WHY):"")+`<div class="empty">수급 상세 조회 실패</div>`; return; }
   STKDATA={code, d}; renderStockPanel();
 }
 function renderStockPanel(){
@@ -366,7 +395,7 @@ function renderStockPanel(){
       <td>${r.hold!=null?r.hold+'%':'-'}</td>
       <td>${r.av?Number(Math.round(r.av)).toLocaleString():'-'}</td>
     </tr>`).join("");
-  box.innerHTML=`<div class="ttl">${esc(d.name||code)} <span class="flat" style="font-size:11px">${code}</span>
+  box.innerHTML=(WHY&&WHY.code===code?whyHtml(WHY):"")+`<div class="ttl">${esc(d.name||code)} <span class="flat" style="font-size:11px">${code}</span>
       <a class="navlink" style="margin-left:auto;padding:1px 8px" href="#" onclick="openChart('${code}');return false;">차트</a></div>
     <div class="det-sub">현재가 ${q2.price!=null?Number(q2.price).toLocaleString():'-'} · 매물대 ${poc?Number(poc).toLocaleString():'-'} ${d.above?'<span class="up">돌파</span>':'<span class="flat">아래</span>'}</div>
     <div class="det-sub" style="font-size:12px;color:var(--text)">외국인 추정평단 <b>${avgNow?Number(Math.round(avgNow)).toLocaleString():'-'}</b> · 수익률 ${profit!=null?`<b class="${profit>0?'up':(profit<0?'down':'flat')}">${profit>0?'+':''}${profit.toFixed(1)}%</b>`:'-'} · 보유율 <b>${hpNow!=null?hpNow+'%':'-'}</b>${hpUp!=null?` <span class="${hpUp>0?'up':(hpUp<0?'down':'flat')}">(${hpUp>0?'+':''}${hpUp.toFixed(2)}p)</span>`:''} · <b>${verdict}</b></div>
