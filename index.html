@@ -106,6 +106,10 @@
   /* 신주 상장(입고)일 — 무·유 공통 초록 / 유상 신주인수권증서 상장(입고)일 핑크 */
   .fc-event.cap-list{background:#10b981;border-color:#10b981;color:#022c22;font-weight:700}
   .fc-event.cap-warrant{background:#ec4899;border-color:#ec4899;color:#2a0716;font-weight:700}
+  /* 거래정지 — 정지 시작(진회색/빗금) / 거래재개 초록, 예정이면 점선 테두리 */
+  .fc-event.halt-stop{background:#4b5563;border-color:#374151;color:#f3f4f6;font-weight:700}
+  .fc-event.halt-resume{background:#10b981;border-color:#10b981;color:#022c22;font-weight:700}
+  .fc-event.halt-tent{background:transparent;border:1.5px dashed #10b981;color:#10b981}
   .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
   .fc-event.ern{background:#06b6d4;border-color:#06b6d4;color:#00222a;font-weight:600}   /* 예상 실적발표(청록) */
   .fc-event.eact{background:var(--div);border-color:var(--div);font-weight:600}          /* 실제 실적공시(보라) */
@@ -259,7 +263,7 @@
 </div>
 <script>
 let MODE = "board";         // 'board'(상하한가+배당 결합, 기본) | 'disc'(공시)
-let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [], ACT = [], CAP = [];
+let ALL = [], DIV = [], EXP = [], LIM = [], EARN = [], SCHED = [], ACT = [], CAP = [], HALT = [];
 let earnCal;   // 예상 실적발표 전용 캘린더 (실적 그리드 오른쪽)
 let LIMGEN = "";   // 상하한가(limits.json) 생성 시각 — 상단 '갱신 시각'에 표시(5초마다 갱신)
 let HOL = new Set();   // 휴장일(공휴일) ISO 날짜 — 캘린더에 빨간 글자로 표시
@@ -350,6 +354,21 @@ function discEvents(list){
     extendedProps:{...e, kind:"disc"},
   }));
 }
+function haltEvents(){   // 거래정지 → '🚫정지 시작' + '✅거래재개' 2점 이벤트 (공시 캘린더)
+  const q = filters.q.trim().toLowerCase();
+  const out = [];
+  (HALT||[]).filter(e => filters[e.market] && (!q || `${e.corp}`.toLowerCase().includes(q)))
+    .forEach((e,i)=>{
+      const props = {...e, kind:"halt"};
+      if(e.halt_date)
+        out.push({id:"hs"+i, title:`🚫 ${e.corp} 정지·${e.reason||""}`, start:e.halt_date,
+                  allDay:true, classNames:["halt-stop"], extendedProps:props});
+      if(e.resume_date)
+        out.push({id:"hr"+i, title:`✅ ${e.corp} 재개${e.resume_confirmed?"":"(예정)"}`, start:e.resume_date,
+                  allDay:true, classNames:["halt-resume", ...(e.resume_confirmed?[]:["halt-tent"])], extendedProps:props});
+    });
+  return out;
+}
 function divEvents(list){
   const out = [];
   list.forEach((e,i)=>{
@@ -423,7 +442,8 @@ function currentFiltered(){
 function applyFilters(){
   const list = currentFiltered();
   calendar.removeAllEvents();
-  const base = MODE==="disc" ? discEvents(list) : divEvents(list).concat(estEvents()).concat(capEvents());
+  const base = MODE==="disc" ? discEvents(list).concat(haltEvents())
+                             : divEvents(list).concat(estEvents()).concat(capEvents()).concat(haltEvents());
   calendar.addEventSource(base);   // 만기일은 날짜 별표로 표시(이벤트 알약 아님)
 }
 
@@ -539,6 +559,25 @@ function showDetail(e){
           ${e.listing_date?`<div class="row">📦 <b>신주 상장(${esc(e.listing_date)})</b> — 청약·배정받은 신주가 실제 계좌에 입고돼 거래를 시작하는 날.</div>`:""}
         </div>
         <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
+      </div>`;
+    return;
+  }
+  if(e.kind==="halt"){
+    divListMode = false; box.className="";
+    const conf = e.resume_confirmed;
+    box.innerHTML = `
+      <div class="detail">
+        <div class="corp">🚫 ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
+        <div class="row">종목코드 ${esc(e.code||"-")} · <b style="color:#ef4444">매매거래정지</b></div>
+        <div class="row">📄 사유 <b>${esc(e.reason||"-")}</b>${e.reason_full?` <span style="color:var(--muted)">(${esc(e.reason_full)})</span>`:""}</div>
+        <div class="row">🚫 정지 시작 <b style="color:#ef4444">${esc(e.halt_date||"-")}</b></div>
+        <div class="row">✅ 거래 재개 <b style="color:${conf?"#10b981":"#f59e0b"}">${esc(e.resume_date||"미정")}</b> <span style="color:var(--muted)">${e.resume_date?(conf?"(확정)":"(예정 — 확정 시 갱신)"):"(거래소 재개공시 대기)"}</span></div>
+        <div class="why"><div class="wh">📍 안내</div>
+          <div class="row">🚫 <b>정지 시작(${esc(e.halt_date||"-")})</b> — 이날부터 해당 종목 매매가 정지됩니다.</div>
+          <div class="row">✅ <b>거래 재개(${esc(e.resume_date||"미정")})</b> — ${conf?"거래소 확정일":"원본 결정공시의 상장예정일 기준 <b>예정</b>. 거래소 재개공시가 나오면 확정일로 자동 교체됩니다."}</div>
+          <div class="ev" style="margin-top:8px">※ 출처: 한국거래소(KIND) 매매거래정지 공시${conf?"":" + DART 결정공시(상장예정일)"}. 주식분할·병합·감자 등은 신주 변경상장일에 거래가 재개됩니다.</div>
+        </div>
+        <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 KIND 공시 원문 보기</a>
       </div>`;
     return;
   }
@@ -961,6 +1000,7 @@ async function loadData(){
     DIV = d.events||[];
     try{ const cp = await (await fetch("data/capital.json?_="+Date.now())).json(); CAP = cp.events||[]; }catch(_){ CAP = []; }
     try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
+    try{ const hh = await (await fetch("data/halts.json?_="+Date.now())).json(); HALT = hh.events||[]; }catch(_){ HALT = []; }
     await loadActions();    // 최상단 KRX 시장조치(사이드카·서킷 등)
     await loadLimits();     // 상단 상하한가 밴드
     await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
@@ -975,7 +1015,8 @@ async function loadData(){
   }
   const d = await (await fetch("data/disclosures.json?_="+Date.now())).json();
   ALL = d.events||[];
-  document.getElementById("meta").textContent = `공시 ${d.count}건 · 갱신 ${d.generated_at||""}`;
+  try{ const hh = await (await fetch("data/halts.json?_="+Date.now())).json(); HALT = hh.events||[]; }catch(_){ HALT = []; }
+  document.getElementById("meta").textContent = `공시 ${d.count}건 · 🚫거래정지 ${HALT.length} · 갱신 ${d.generated_at||""}`;
   indexCodes();
   applyFilters();
 }
@@ -1051,6 +1092,7 @@ const NAME2CODE = {};   // 회사명 → 종목코드 (시장조치처럼 코드
 function indexCodes(){   // 로드된 데이터에서 이름↔코드 맵 채우기 (loadData 때 호출)
   const put = (nm,cd)=>{ if(nm && /^\d{6}$/.test(cd||"")) NAME2CODE[nm]=cd; };
   (ALL||[]).forEach(e=>put(e.corp, e.stock));
+  (HALT||[]).forEach(e=>put(e.corp, e.code));
   (DIV||[]).forEach(e=>put(e.corp, e.stock));
   (CAP||[]).forEach(e=>put(e.corp, e.stock));
   (EARN||[]).forEach(e=>put(e.corp, e.code||e.stock));

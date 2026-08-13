@@ -1521,5 +1521,12 @@
  "20260812900803": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260813800089": {
+  "kind": "ir",
+  "expected_date": "2026-08-14",
+  "time": "09:00",
+  "purpose": "국내 NDR",
+  "sponsor": "KB증권"
  }
 }

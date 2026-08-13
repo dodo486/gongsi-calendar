@@ -1,7 +1,35 @@
 {
- "generated_at": "2026-08-13 09:09:29",
- "count": 262,
+ "generated_at": "2026-08-13 11:59:26",
+ "count": 264,
  "events": [
+  {
+   "corp": "삼성생명",
+   "stock": "032830",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260813",
+   "rcept_no": "20260813800256",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800256",
+   "flr": "삼성생명",
+   "price": "296,000",
+   "rate": 2.15,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "달바글로벌",
+   "stock": "483650",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260813",
+   "rcept_no": "20260813800135",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800135",
+   "flr": "달바글로벌",
+   "price": "239,500",
+   "rate": 8.59,
+   "chg_sign": "5"
+  },
   {
    "corp": "삼성화재해상보험",
    "stock": "000810",
@@ -12,9 +40,9 @@
    "rcept_no": "20260813800018",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800018",
    "flr": "삼성화재해상보험",
-   "price": "636,000",
-   "rate": 1.27,
-   "chg_sign": "2"
+   "rate": 2.55,
+   "price": "612,000",
+   "chg_sign": "5"
   },
   {
    "corp": "위메이드맥스",
@@ -27,10 +55,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900817",
    "flr": "위메이드맥스",
    "rate": 3.87,
-   "price": "4,560",
-   "chg_sign": "2",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "4,560",
+   "chg_sign": "2"
   },
   {
    "corp": "위메이드",
@@ -43,10 +71,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900664",
    "flr": "위메이드",
    "rate": -7.47,
-   "price": "17,590",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "17,590",
+   "chg_sign": "5"
   },
   {
    "corp": "JYP Ent.",
@@ -59,10 +87,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900607",
    "flr": "JYP Ent.",
    "rate": -1.18,
-   "price": "46,000",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "46,000",
+   "chg_sign": "5"
   },
   {
    "corp": "원익QnC",
@@ -75,10 +103,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900356",
    "flr": "원익QnC",
    "rate": 5.31,
-   "price": "31,750",
-   "chg_sign": "2",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "31,750",
+   "chg_sign": "2"
   },
   {
    "corp": "클래시스",
@@ -91,10 +119,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900270",
    "flr": "클래시스",
    "rate": -5.5,
-   "price": "43,800",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "43,800",
+   "chg_sign": "5"
   },
   {
    "corp": "클래시스",
@@ -107,10 +135,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900269",
    "flr": "클래시스",
    "rate": -5.5,
-   "price": "43,800",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "43,800",
+   "chg_sign": "5"
   },
   {
    "corp": "실리콘투",
@@ -123,10 +151,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900140",
    "flr": "실리콘투",
    "rate": 12.98,
-   "price": "45,250",
-   "chg_sign": "2",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "45,250",
+   "chg_sign": "2"
   },
   {
    "corp": "에스피지",
@@ -139,10 +167,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900128",
    "flr": "에스피지",
    "rate": -1.58,
-   "price": "112,200",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "112,200",
+   "chg_sign": "5"
   },
   {
    "corp": "컴투스",
@@ -155,10 +183,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900071",
    "flr": "컴투스",
    "rate": -2.5,
-   "price": "33,100",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "33,100",
+   "chg_sign": "5"
   },
   {
    "corp": "네오위즈",
@@ -171,10 +199,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900051",
    "flr": "네오위즈",
    "rate": -1.93,
-   "price": "19,260",
-   "chg_sign": "5",
    "rate_fixed": true,
-   "tick_state": "notime"
+   "tick_state": "notime",
+   "price": "19,260",
+   "chg_sign": "5"
   },
   {
    "corp": "동원산업",
@@ -187,14 +215,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800649",
    "flr": "동원산업",
    "rate": -2.16,
-   "price": "36,300",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -2.16,
    "post5": 1.93,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "36,300",
+   "chg_sign": "5"
   },
   {
    "corp": "동원산업",
@@ -207,14 +235,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800646",
    "flr": "동원산업",
    "rate": -2.16,
-   "price": "36,300",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -2.16,
    "post5": 1.93,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "36,300",
+   "chg_sign": "5"
   },
   {
    "corp": "한국전력공사",
@@ -227,14 +255,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800565",
    "flr": "한국전력공사",
    "rate": 0.71,
-   "price": "35,450",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": 0.71,
    "post5": -1.69,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "35,450",
+   "chg_sign": "2"
   },
   {
    "corp": "메리츠금융지주",
@@ -247,14 +275,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800531",
    "flr": "메리츠금융지주",
    "rate": -3.88,
-   "price": "119,000",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -3.88,
    "post5": 1.09,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "119,000",
+   "chg_sign": "5"
   },
   {
    "corp": "한화생명",
@@ -267,14 +295,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800529",
    "flr": "한화생명",
    "rate": -0.53,
-   "price": "4,700",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -0.53,
    "post5": 6.38,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "4,700",
+   "chg_sign": "5"
   },
   {
    "corp": "메리츠금융지주",
@@ -287,14 +315,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800524",
    "flr": "메리츠금융지주",
    "rate": -3.88,
-   "price": "119,000",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -3.88,
    "post5": 1.09,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "119,000",
+   "chg_sign": "5"
   },
   {
    "corp": "메리츠금융지주",
@@ -307,14 +335,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800518",
    "flr": "메리츠금융지주",
    "rate": -3.88,
-   "price": "119,000",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -3.88,
    "post5": 1.09,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "119,000",
+   "chg_sign": "5"
   },
   {
    "corp": "한화생명",
@@ -327,14 +355,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800515",
    "flr": "한화생명",
    "rate": -0.53,
-   "price": "4,700",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -0.53,
    "post5": 6.38,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "4,700",
+   "chg_sign": "5"
   },
   {
    "corp": "한국앤컴퍼니",
@@ -347,14 +375,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800307",
    "flr": "한국앤컴퍼니",
    "rate": 1.6,
-   "price": "25,400",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": 1.6,
    "post5": 2.36,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "25,400",
+   "chg_sign": "2"
   },
   {
    "corp": "케이티",
@@ -367,14 +395,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800090",
    "flr": "케이티",
    "rate": -0.19,
-   "price": "52,700",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -0.19,
    "post5": 0.57,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "52,700",
+   "chg_sign": "5"
   },
   {
    "corp": "케이티",
@@ -387,14 +415,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800089",
    "flr": "케이티",
    "rate": -0.19,
-   "price": "52,700",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": -0.19,
    "post5": 0.57,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "52,700",
+   "chg_sign": "5"
   },
   {
    "corp": "미래에셋증권",
@@ -407,14 +435,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800085",
    "flr": "미래에셋증권",
    "rate": 2.82,
-   "price": "36,500",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": 2.82,
    "post5": 1.64,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "36,500",
+   "chg_sign": "2"
   },
   {
    "corp": "한국콜마",
@@ -427,14 +455,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800082",
    "flr": "한국콜마",
    "rate": 22.8,
-   "price": "132,500",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": 22.8,
    "post5": 0.45,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "132,500",
+   "chg_sign": "2"
   },
   {
    "corp": "한국콜마",
@@ -447,14 +475,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800079",
    "flr": "한국콜마",
    "rate": 22.8,
-   "price": "132,500",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": 22.8,
    "post5": 0.45,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "132,500",
+   "chg_sign": "2"
   },
   {
    "corp": "더블유게임즈",
@@ -467,14 +495,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800023",
    "flr": "더블유게임즈",
    "rate": 0.32,
-   "price": "62,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": 0.32,
    "post5": 0.81,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "62,000",
+   "chg_sign": "2"
   },
   {
    "corp": "더블유게임즈",
@@ -487,14 +515,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800020",
    "flr": "더블유게임즈",
    "rate": 0.32,
-   "price": "62,000",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:35",
    "pre5": 0.32,
    "post5": 0.81,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "62,000",
+   "chg_sign": "2"
   },
   {
    "corp": "펄어비스",
