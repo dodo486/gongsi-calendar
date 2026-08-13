@@ -33,6 +33,7 @@ UNIVERSE_N = 800       # 수급 유니버스: 전체시장 거래대금 상위 N
 RELVOL_DAYS = 10       # 상대거래대금 분모: 최근 N영업일 평균(당일 제외)
 LEAD_MAX_RET = 5.0     # 선행/후행 경계(최근 등락률) — flow.py와 동일 관점
 MIN_N = 2              # 섹터 최소 종목수(집계 노이즈 컷)
+NOLIMIT_MAX = 30.5     # 가격제한폭(±30%) 초과 등락률 = 정리매매·신규상장 첫날 등 → 섹터 노이즈로 제외
 TREND_N = 80           # 순매수(외국인/기관) 부착 종목 수(거래대금 상위)
 
 
@@ -190,6 +191,9 @@ def build():
         code = d["code"]
         val, mc = d.get("value"), d.get("mktcap")
         if not val or not mc:
+            continue
+        rt = d.get("rate")
+        if rt is not None and abs(rt) > NOLIMIT_MAX:   # 정리매매·신규상장 등 제한폭 없는 종목 → 섹터 노이즈 제외
             continue
         s = stocks.get(code, {})
         avg = dayval.get(code)
