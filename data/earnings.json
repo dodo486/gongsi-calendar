@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-13 17:19:14",
+ "generated_at": "2026-08-13 18:41:12",
  "count": 268,
  "events": [
   {
@@ -12,8 +12,8 @@
    "rcept_no": "20260813800552",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800552",
    "flr": "LG",
-   "price": "113,700",
    "rate": 3.74,
+   "price": "113,700",
    "chg_sign": "2"
   },
   {
@@ -26,8 +26,8 @@
    "rcept_no": "20260813800490",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800490",
    "flr": "DB손해보험",
-   "price": "166,600",
    "rate": 4.78,
+   "price": "166,600",
    "chg_sign": "2"
   },
   {
@@ -40,8 +40,8 @@
    "rcept_no": "20260813800366",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800366",
    "flr": "이마트",
-   "price": "78,100",
    "rate": 2.25,
+   "price": "78,100",
    "chg_sign": "5"
   },
   {
@@ -54,8 +54,8 @@
    "rcept_no": "20260813800351",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800351",
    "flr": "이마트",
-   "price": "78,100",
    "rate": 2.25,
+   "price": "78,100",
    "chg_sign": "5"
   },
   {

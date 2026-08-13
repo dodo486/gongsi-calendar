@@ -6352,10 +6352,10 @@
   "corp": "현대엘리베이터",
   "market": "KOSPI",
   "rcept_dt": "20260813",
-  "per_share": "",
-  "record_date": "",
-  "pay_date": "",
-  "div_type": ""
+  "per_share": "1000",
+  "record_date": "2026-08-31",
+  "pay_date": "2026-09-18",
+  "div_type": "분기배당"
  },
  "20260813800931": {
   "kind": "record",
@@ -6364,8 +6364,8 @@
   "market": "KOSPI",
   "rcept_dt": "20260813",
   "per_share": "",
-  "record_date": "",
+  "record_date": "2026-08-31",
   "pay_date": "",
-  "div_type": ""
+  "div_type": "분기배당"
  }
 }

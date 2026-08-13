@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-08-13 17:02:49",
+ "generated_at": "2026-08-13 18:24:26",
  "range": {
   "bgn": "20260506",
   "end": "20260813"
  },
- "count": 339,
+ "count": 341,
  "events": [
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "[첨부정정]주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260813",
+   "rcept_no": "20260813001551",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813001551",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260813",
+   "rcept_no": "20260813001531",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813001531",
+   "flr": "성호전자"
+  },
   {
    "corp": "브이티",
    "stock": "018290",
