@@ -442,7 +442,8 @@ function currentFiltered(){
 function applyFilters(){
   const list = currentFiltered();
   calendar.removeAllEvents();
-  const base = MODE==="disc" ? discEvents(list).concat(haltEvents()) : divEvents(list).concat(estEvents()).concat(capEvents());
+  const base = MODE==="disc" ? discEvents(list).concat(haltEvents())
+                             : divEvents(list).concat(estEvents()).concat(capEvents()).concat(haltEvents());
   calendar.addEventSource(base);   // 만기일은 날짜 별표로 표시(이벤트 알약 아님)
 }
 
@@ -999,6 +1000,7 @@ async function loadData(){
     DIV = d.events||[];
     try{ const cp = await (await fetch("data/capital.json?_="+Date.now())).json(); CAP = cp.events||[]; }catch(_){ CAP = []; }
     try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
+    try{ const hh = await (await fetch("data/halts.json?_="+Date.now())).json(); HALT = hh.events||[]; }catch(_){ HALT = []; }
     await loadActions();    // 최상단 KRX 시장조치(사이드카·서킷 등)
     await loadLimits();     // 상단 상하한가 밴드
     await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
