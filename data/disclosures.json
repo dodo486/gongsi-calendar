@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-08-13 11:35:47",
+ "generated_at": "2026-08-13 17:02:49",
  "range": {
   "bgn": "20260506",
   "end": "20260813"
  },
- "count": 338,
+ "count": 339,
  "events": [
+  {
+   "corp": "브이티",
+   "stock": "018290",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식취득결정)",
+   "category": "자사주",
+   "date": "20260813",
+   "rcept_no": "20260813001171",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813001171",
+   "flr": "브이티"
+  },
   {
    "corp": "젬백스",
    "stock": "082270",

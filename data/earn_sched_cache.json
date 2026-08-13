@@ -1528,5 +1528,24 @@
   "time": "09:00",
   "purpose": "국내 NDR",
   "sponsor": "KB증권"
+ },
+ "20260813801008": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260813800830": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260813800423": {
+  "kind": "ir",
+  "expected_date": "2026-08-18",
+  "time": "",
+  "purpose": "해외 기관투자자 대상 거버넌스 NDR 실시",
+  "sponsor": "Nomura"
+ },
+ "20260813901156": {
+  "kind": "ir",
+  "expected_date": ""
  }
 }

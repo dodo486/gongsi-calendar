@@ -6345,5 +6345,27 @@
   "record_date": "2026-04-01",
   "pay_date": "",
   "div_type": ""
+ },
+ "20260813800947": {
+  "kind": "decision",
+  "stock": "017800",
+  "corp": "현대엘리베이터",
+  "market": "KOSPI",
+  "rcept_dt": "20260813",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260813800931": {
+  "kind": "record",
+  "stock": "017800",
+  "corp": "현대엘리베이터",
+  "market": "KOSPI",
+  "rcept_dt": "20260813",
+  "per_share": "",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": ""
  }
 }

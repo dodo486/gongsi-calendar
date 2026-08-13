@@ -1,7 +1,63 @@
 {
- "generated_at": "2026-08-13 11:59:26",
- "count": 264,
+ "generated_at": "2026-08-13 17:19:14",
+ "count": 268,
  "events": [
+  {
+   "corp": "LG",
+   "stock": "003550",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260813",
+   "rcept_no": "20260813800552",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800552",
+   "flr": "LG",
+   "price": "113,700",
+   "rate": 3.74,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "DB손해보험",
+   "stock": "005830",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260813",
+   "rcept_no": "20260813800490",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800490",
+   "flr": "DB손해보험",
+   "price": "166,600",
+   "rate": 4.78,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "이마트",
+   "stock": "139480",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260813",
+   "rcept_no": "20260813800366",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800366",
+   "flr": "이마트",
+   "price": "78,100",
+   "rate": 2.25,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "이마트",
+   "stock": "139480",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260813",
+   "rcept_no": "20260813800351",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800351",
+   "flr": "이마트",
+   "price": "78,100",
+   "rate": 2.25,
+   "chg_sign": "5"
+  },
   {
    "corp": "삼성생명",
    "stock": "032830",
@@ -12,8 +68,8 @@
    "rcept_no": "20260813800256",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800256",
    "flr": "삼성생명",
-   "price": "296,000",
-   "rate": 2.15,
+   "rate": 3.64,
+   "price": "291,500",
    "chg_sign": "5"
   },
   {
@@ -26,8 +82,8 @@
    "rcept_no": "20260813800135",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800135",
    "flr": "달바글로벌",
-   "price": "239,500",
-   "rate": 8.59,
+   "rate": 9.92,
+   "price": "236,000",
    "chg_sign": "5"
   },
   {
@@ -40,8 +96,8 @@
    "rcept_no": "20260813800018",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260813800018",
    "flr": "삼성화재해상보험",
-   "rate": 2.55,
-   "price": "612,000",
+   "rate": 2.71,
+   "price": "611,000",
    "chg_sign": "5"
   },
   {
