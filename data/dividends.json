@@ -1,21 +1,7 @@
 {
- "generated_at": "2026-08-12 20:40:44",
- "count": 59,
+ "generated_at": "2026-08-13 08:54:25",
+ "count": 58,
  "events": [
-  {
-   "corp": "현대엘리베이터",
-   "stock": "017800",
-   "market": "KOSPI",
-   "per_share": "1000",
-   "record_date": "2026-05-31",
-   "pay_date": "2026-06-19",
-   "rcept_no": "20260514801062",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260514801062",
-   "div_type": "분기배당",
-   "rcept_dt": "20260514",
-   "confirm_date": "2026-05-28",
-   "ex_date": "2026-05-29"
-  },
   {
    "corp": "삼성전자",
    "stock": "005930",

@@ -1,84 +1,7 @@
 {
- "generated_at": "2026-08-12 21:05:58",
- "count": 109,
+ "generated_at": "2026-08-13 09:11:09",
+ "count": 94,
  "events": [
-  {
-   "corp": "HK이노엔",
-   "stock": "195940",
-   "market": "KOSDAQ",
-   "rcept_no": "20260723900399",
-   "rcept_dt": "20260723",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723900399",
-   "src": "예고",
-   "expected_date": "2026-07-29",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "LG생활건강",
-   "stock": "051900",
-   "market": "KOSPI",
-   "rcept_no": "20260715800617",
-   "rcept_dt": "20260715",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260715800617",
-   "src": "예고",
-   "expected_date": "2026-07-29",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "삼성물산",
-   "stock": "028260",
-   "market": "KOSPI",
-   "rcept_no": "20260716801019",
-   "rcept_dt": "20260716",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260716801019",
-   "src": "예고",
-   "expected_date": "2026-07-29",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "안랩",
-   "stock": "053800",
-   "market": "KOSDAQ",
-   "rcept_no": "20260724900365",
-   "rcept_dt": "20260724",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724900365",
-   "src": "예고",
-   "expected_date": "2026-07-29",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "크래프톤",
-   "stock": "259960",
-   "market": "KOSPI",
-   "rcept_no": "20260708800509",
-   "rcept_dt": "20260708",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260708800509",
-   "src": "예고",
-   "expected_date": "2026-07-29",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "한국항공우주",
-   "stock": "047810",
-   "market": "KOSPI",
-   "rcept_no": "20260721801035",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721801035",
-   "src": "예고",
-   "expected_date": "2026-07-29",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "현대오토에버",
-   "stock": "307950",
-   "market": "KOSPI",
-   "rcept_no": "20260720800204",
-   "rcept_dt": "20260720",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260720800204",
-   "src": "예고",
-   "expected_date": "2026-07-29",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "DL이앤씨",
    "stock": "375500",
@@ -177,19 +100,6 @@
    "src": "예고",
    "expected_date": "2026-07-30",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "유한양행",
-   "stock": "000100",
-   "market": "KOSPI",
-   "rcept_no": "20260729800556",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800556",
-   "src": "IR",
-   "expected_date": "2026-07-30",
-   "time": "16:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
   },
   {
    "corp": "F&F",
@@ -525,45 +435,6 @@
    "sponsor": "자사"
   },
   {
-   "corp": "SK텔레콤",
-   "stock": "017670",
-   "market": "KOSPI",
-   "rcept_no": "20260729800427",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800427",
-   "src": "IR",
-   "expected_date": "2026-08-05",
-   "time": "16:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사"
-  },
-  {
-   "corp": "넷마블",
-   "stock": "251270",
-   "market": "KOSPI",
-   "rcept_no": "20260729800792",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800792",
-   "src": "IR",
-   "expected_date": "2026-08-05",
-   "time": "16:00",
-   "purpose": "2026년도 2분기 경영실적 발표",
-   "sponsor": "자사주관"
-  },
-  {
-   "corp": "현대백화점",
-   "stock": "069960",
-   "market": "KOSPI",
-   "rcept_no": "20260729800697",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800697",
-   "src": "IR",
-   "expected_date": "2026-08-05",
-   "time": "16:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사"
-  },
-  {
    "corp": "BGF리테일",
    "stock": "282330",
    "market": "KOSPI",
@@ -674,19 +545,6 @@
    "time": "09:00",
    "purpose": "2026년 2분기 경영실적 발표",
    "sponsor": "자사"
-  },
-  {
-   "corp": "LG유플러스",
-   "stock": "032640",
-   "market": "KOSPI",
-   "rcept_no": "20260729800986",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800986",
-   "src": "IR",
-   "expected_date": "2026-08-06",
-   "time": "14:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
   },
   {
    "corp": "GS리테일",
@@ -856,19 +714,6 @@
    "sponsor": "당사"
   },
   {
-   "corp": "SK바이오사이언스",
-   "stock": "302440",
-   "market": "KOSPI",
-   "rcept_no": "20260729800754",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800754",
-   "src": "IR",
-   "expected_date": "2026-08-10",
-   "time": "16:00",
-   "purpose": "2026년 2분기 실적발표 및 경영현황 설명",
-   "sponsor": "자사"
-  },
-  {
    "corp": "CJ대한통운",
    "stock": "000120",
    "market": "KOSPI",
@@ -946,19 +791,6 @@
    "time": "09:10",
    "purpose": "2026년 2분기 실적 및 경영현황 설명",
    "sponsor": "흥국증권"
-  },
-  {
-   "corp": "CJ대한통운",
-   "stock": "000120",
-   "market": "KOSPI",
-   "rcept_no": "20260729800197",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800197",
-   "src": "IR",
-   "expected_date": "2026-08-11",
-   "time": "10:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사"
   },
   {
    "corp": "GS",
@@ -1071,19 +903,6 @@
    "src": "예고",
    "expected_date": "2026-08-12",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "미래에셋증권",
-   "stock": "006800",
-   "market": "KOSPI",
-   "rcept_no": "20260729800434",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800434",
-   "src": "IR",
-   "expected_date": "2026-08-12",
-   "time": "10:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "자사주관"
   },
   {
    "corp": "더블유게임즈",
