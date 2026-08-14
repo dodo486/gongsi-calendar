@@ -17,5 +17,5 @@ Start-Sleep -Milliseconds 1000
 Ensure-Running "monitor.py" | Out-Null
 if ($serveStarted -and (Test-Path $chrome)) {
     Start-Sleep -Milliseconds 1500
-    Start-Process -FilePath $chrome -ArgumentList $url   # 대시보드를 크롬으로 오픈
+    Start-Process -FilePath $chrome -ArgumentList "--app=$url"   # 대시보드를 크롬 앱 창으로 오픈(바로가기와 동일)
 }
