@@ -161,58 +161,20 @@ def _chart_url(code):
     대시보드가 열려 있으면 항상 같은 탭 재사용(종목만 교체), 없으면 새 탭 폴백."""
     return f"http://127.0.0.1:8777/chart?code={code}" if code else ""
 
-TOAST_TTL_SEC = 300   # 토스트 수명 — 5분 내 미확인 시 화면·알림센터에서 자동 소멸
-TOAST_APP_ID = "공시캘린더"
-_toast_seq = 0
-_toast_patched = False
-
-def _patch_winotify_expire():
-    """winotify PowerShell TEMPLATE에 ExpirationTime(+5분) 주입 — Windows가 만료 시 알림센터에서 제거."""
-    global _toast_patched
-    if _toast_patched:
-        return
-    import winotify
-    if "ExpirationTime" not in winotify.TEMPLATE:
-        winotify.TEMPLATE = winotify.TEMPLATE.replace(
-            '$Toast.Group = "{group}"',
-            '$Toast.Group = "{group}"\n'
-            f'$Toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes({TOAST_TTL_SEC // 60})')
-    _toast_patched = True
-
-def _dismiss_toast(tag, group):
-    """5분 뒤 해당 태그 토스트를 화면·알림센터에서 강제 제거(reminder 잔류 방지)."""
-    ps = ("[Windows.UI.Notifications.ToastNotificationManager,Windows.UI.Notifications,"
-          "ContentType=WindowsRuntime]|Out-Null;"
-          f"[Windows.UI.Notifications.ToastNotificationManager]::History.Remove('{tag}','{group}','{TOAST_APP_ID}')")
-    try:
-        si = subprocess.STARTUPINFO(); si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        subprocess.Popen(["powershell.exe", "-ExecutionPolicy", "Bypass", "-Command", ps],
-                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, startupinfo=si)
-    except Exception:
-        pass
-
 def _toast(title, msg, launch, buttons):
-    """공용 OS 알림 — 윈도우(winotify, reminder 지속·5분 후 자동 소멸) / 맥 / 리눅스.
+    """공용 OS 알림 — 윈도우(winotify, reminder 지속: 직접 닫기 전까지 화면·알림센터에 유지) / 맥 / 리눅스.
     launch: 토스트 본문 클릭 시 열 URL. buttons: [(label, url), ...] (reminder 시나리오는 액션 1개+ 필요)."""
     try:
         system = platform.system()
         if system == "Windows":
-            global _toast_seq
-            _patch_winotify_expire()
             from winotify import Notification, audio
-            t = Notification(app_id=TOAST_APP_ID, title=title, msg=msg, launch=launch)
+            t = Notification(app_id="공시캘린더", title=title, msg=msg, launch=launch)
             t.set_audio(audio.Default, loop=False)
             for label, url in buttons:
                 if url:
                     t.add_actions(label=label, launch=url)
-            t.duration = 'long" scenario="reminder'   # 확인 전까지 화면 유지(단, 아래 5분 상한)
-            _toast_seq += 1
-            t.tag = f"gk{_toast_seq}"                  # 고유 태그(5분 후 제거 대상 식별)
+            t.duration = 'long" scenario="reminder'   # 직접 닫기 전까지 화면에 유지
             t.show()
-            tm = threading.Timer(TOAST_TTL_SEC, _dismiss_toast, args=(t.tag, t.group))
-            tm.daemon = True
-            tm.start()
         elif system == "Darwin":
             script = (f'display notification {json.dumps(msg, ensure_ascii=False)} '
                       f'with title {json.dumps(title, ensure_ascii=False)} sound name "Glass"')
