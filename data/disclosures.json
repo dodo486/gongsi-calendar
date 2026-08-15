@@ -1,11 +1,110 @@
 {
- "generated_at": "2026-08-13 20:32:24",
+ "generated_at": "2026-08-15 08:35:04",
  "range": {
   "bgn": "20260506",
-  "end": "20260813"
+  "end": "20260814"
  },
- "count": 341,
+ "count": 350,
  "events": [
+  {
+   "corp": "한국카본",
+   "stock": "017960",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260814",
+   "rcept_no": "20260814002868",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814002868",
+   "flr": "한국카본"
+  },
+  {
+   "corp": "한국카본",
+   "stock": "017960",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260814",
+   "rcept_no": "20260814002795",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814002795",
+   "flr": "한국카본"
+  },
+  {
+   "corp": "한국카본",
+   "stock": "017960",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260814",
+   "rcept_no": "20260814002685",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814002685",
+   "flr": "한국카본"
+  },
+  {
+   "corp": "한국카본",
+   "stock": "017960",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260814",
+   "rcept_no": "20260814002642",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814002642",
+   "flr": "한국카본"
+  },
+  {
+   "corp": "피엔티",
+   "stock": "137400",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(자기주식취득결정)",
+   "category": "자사주",
+   "date": "20260814",
+   "rcept_no": "20260814002504",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814002504",
+   "flr": "피엔티"
+  },
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260814",
+   "rcept_no": "20260814001990",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814001990",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "피엔티",
+   "stock": "137400",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식취득결정)",
+   "category": "자사주",
+   "date": "20260814",
+   "rcept_no": "20260814000792",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814000792",
+   "flr": "피엔티"
+  },
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "기타경영사항(자율공시)              (자기신주인수권부사채 재매각 결정)",
+   "category": "메자닌",
+   "date": "20260814",
+   "rcept_no": "20260814903854",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814903854",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "젬백스",
+   "stock": "082270",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260814",
+   "rcept_no": "20260814903633",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814903633",
+   "flr": "젬백스"
+  },
   {
    "corp": "성호전자",
    "stock": "043260",

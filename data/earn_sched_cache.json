@@ -1547,5 +1547,110 @@
  "20260813901156": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260814803567": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "09:00",
+  "purpose": "당사 이해도 증진",
+  "sponsor": "UBS증권"
+ },
+ "20260814803564": {
+  "kind": "ir",
+  "expected_date": "2026-08-21",
+  "time": "09:00",
+  "purpose": "당사 이해도 증진",
+  "sponsor": "삼성증권"
+ },
+ "20260814803216": {
+  "kind": "ir",
+  "expected_date": "2026-08-18",
+  "time": "",
+  "purpose": "2026년 2분기 경영실적 발표",
+  "sponsor": "NH투자증권"
+ },
+ "20260814800667": {
+  "kind": "ir",
+  "expected_date": "2026-08-18",
+  "time": "09:00",
+  "purpose": "국내 주요 기관 대상 NDR(Non-Deal Roadshow) 실시",
+  "sponsor": "유안타증권"
+ },
+ "20260814800571": {
+  "kind": "ir",
+  "expected_date": "2026-08-14",
+  "time": "",
+  "purpose": "2026년 2분기 실적 설명",
+  "sponsor": "하나증권"
+ },
+ "20260814800059": {
+  "kind": "ir",
+  "expected_date": "2026-08-20",
+  "time": "09:10",
+  "purpose": "NH투자증권 NDR 진행",
+  "sponsor": "NH투자증권"
+ },
+ "20260814902689": {
+  "kind": "ir",
+  "expected_date": "2026-08-14",
+  "time": "",
+  "purpose": "",
+  "sponsor": "DB금융투자,"
+ },
+ "20260814902552": {
+  "kind": "ir",
+  "expected_date": "2026-08-14",
+  "time": "",
+  "purpose": "",
+  "sponsor": "DB증권"
+ },
+ "20260814902052": {
+  "kind": "ir",
+  "expected_date": "2026-08-21",
+  "time": "",
+  "purpose": "",
+  "sponsor": "NH투자증권"
+ },
+ "20260814902027": {
+  "kind": "ir",
+  "expected_date": "2026-08-21",
+  "time": "",
+  "purpose": "",
+  "sponsor": "NH투자증권"
+ },
+ "20260814901365": {
+  "kind": "ir",
+  "expected_date": "2026-08-20",
+  "time": "",
+  "purpose": "",
+  "sponsor": "NH"
+ },
+ "20260814901389": {
+  "kind": "ir",
+  "expected_date": "2026-08-18",
+  "time": "",
+  "purpose": "",
+  "sponsor": "메리츠증권"
+ },
+ "20260814900245": {
+  "kind": "ir",
+  "expected_date": "2026-08-21",
+  "time": "",
+  "purpose": "",
+  "sponsor": "KB증권"
+ },
+ "20260814900174": {
+  "kind": "ir",
+  "expected_date": "2026-08-14",
+  "time": "",
+  "purpose": "",
+  "sponsor": "메리츠증권"
+ },
+ "20260814900170": {
+  "kind": "ir",
+  "expected_date": "2026-08-14",
+  "time": "",
+  "purpose": "",
+  "sponsor": "메리츠증권"
  }
 }

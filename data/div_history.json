@@ -6367,5 +6367,104 @@
   "record_date": "2026-08-31",
   "pay_date": "",
   "div_type": "분기배당"
+ },
+ "20260213802059": {
+  "kind": "decision",
+  "stock": "000810",
+  "corp": "삼성화재해상보험",
+  "market": "KOSPI",
+  "rcept_dt": "20260213",
+  "per_share": "19500",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260213802051": {
+  "kind": "record",
+  "stock": "000810",
+  "corp": "삼성화재해상보험",
+  "market": "KOSPI",
+  "rcept_dt": "20260213",
+  "per_share": "",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260213800840": {
+  "kind": "decision",
+  "stock": "079550",
+  "corp": "LIG디펜스앤에어로스페이스",
+  "market": "KOSPI",
+  "rcept_dt": "20260213",
+  "per_share": "2950",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260213800818": {
+  "kind": "record",
+  "stock": "079550",
+  "corp": "LIG디펜스앤에어로스페이스",
+  "market": "KOSPI",
+  "rcept_dt": "20260213",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260213800182": {
+  "kind": "decision",
+  "stock": "112610",
+  "corp": "씨에스윈드",
+  "market": "KOSPI",
+  "rcept_dt": "20260213",
+  "per_share": "1000",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260213800022": {
+  "kind": "decision",
+  "stock": "010950",
+  "corp": "S-Oil",
+  "market": "KOSPI",
+  "rcept_dt": "20260213",
+  "per_share": "330",
+  "record_date": "2026-04-06",
+  "pay_date": "2026-04-30",
+  "div_type": "결산배당"
+ },
+ "20260213800006": {
+  "kind": "record",
+  "stock": "010950",
+  "corp": "S-Oil",
+  "market": "KOSPI",
+  "rcept_dt": "20260213",
+  "per_share": "",
+  "record_date": "2026-04-06",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260213902138": {
+  "kind": "decision",
+  "stock": "084370",
+  "corp": "유진테크",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260213",
+  "per_share": "230",
+  "record_date": "2026-03-27",
+  "pay_date": "2026-04-15",
+  "div_type": "결산배당"
+ },
+ "20260213902110": {
+  "kind": "record",
+  "stock": "084370",
+  "corp": "유진테크",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260213",
+  "per_share": "",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": ""
  }
 }
