@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-15 16:07:46",
+ "generated_at": "2026-08-15 17:04:49",
  "count": 269,
  "events": [
   {
@@ -4157,8 +4157,8 @@
    "disc_time": "17:45",
    "pre5": -0.16,
    "post5": 1.94,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "우리금융지주",
@@ -4175,8 +4175,8 @@
    "disc_time": "17:45",
    "pre5": -0.16,
    "post5": 1.94,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "삼성중공업",
@@ -4193,8 +4193,8 @@
    "disc_time": "17:45",
    "pre5": -3.17,
    "post5": 0.87,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대위아",
@@ -4211,8 +4211,8 @@
    "disc_time": "17:45",
    "pre5": -5.67,
    "post5": 2.3,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "하나금융지주",
@@ -4229,8 +4229,8 @@
    "disc_time": "17:45",
    "pre5": 1.46,
    "post5": 0.08,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "하나금융지주",
@@ -4247,8 +4247,8 @@
    "disc_time": "17:45",
    "pre5": 1.46,
    "post5": 0.08,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "기아",
@@ -4265,8 +4265,8 @@
    "disc_time": "17:45",
    "pre5": -12.88,
    "post5": 1.99,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대로템",
@@ -4283,8 +4283,8 @@
    "disc_time": "17:45",
    "pre5": -4.86,
    "post5": -0.88,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "제일기획",
@@ -4301,8 +4301,8 @@
    "disc_time": "17:45",
    "pre5": 1.7,
    "post5": 0.21,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대모비스",
@@ -4319,8 +4319,8 @@
    "disc_time": "17:45",
    "pre5": -8.02,
    "post5": 1.76,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "JB금융지주",
@@ -4337,8 +4337,8 @@
    "disc_time": "17:30",
    "pre5": -3.95,
    "post5": 0.2,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "JB금융지주",
@@ -4355,8 +4355,8 @@
    "disc_time": "17:30",
    "pre5": -3.95,
    "post5": 0.2,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "NH투자증권",
@@ -4373,8 +4373,8 @@
    "disc_time": "17:30",
    "pre5": 3.27,
    "post5": -0.67,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "두산밥캣",
@@ -4391,8 +4391,8 @@
    "disc_time": "17:30",
    "pre5": 8.79,
    "post5": -4.91,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "KB금융",
@@ -4409,8 +4409,8 @@
    "disc_time": "17:30",
    "pre5": 0.69,
    "post5": -0.79,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "KB금융",
@@ -4427,8 +4427,8 @@
    "disc_time": "17:30",
    "pre5": 0.69,
    "post5": -0.79,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대글로비스",
@@ -4445,8 +4445,8 @@
    "disc_time": "17:30",
    "pre5": 4.98,
    "post5": -0.24,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "OCI홀딩스",
@@ -4463,8 +4463,8 @@
    "disc_time": "17:30",
    "pre5": 30.0,
    "post5": 4.66,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "현대자동차",
@@ -4481,8 +4481,8 @@
    "disc_time": "17:30",
    "pre5": 3.35,
    "post5": -3.12,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "신한지주",
@@ -4499,8 +4499,8 @@
    "disc_time": "17:30",
    "pre5": -0.67,
    "post5": -0.87,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "삼성E&A",
@@ -4517,8 +4517,8 @@
    "disc_time": "17:30",
    "pre5": 12.95,
    "post5": 0.21,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "신한지주",
@@ -4535,8 +4535,8 @@
    "disc_time": "17:30",
    "pre5": -0.67,
    "post5": -0.87,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "엘에스일렉트릭",
@@ -4553,8 +4553,8 @@
    "disc_time": "17:30",
    "pre5": 17.26,
    "post5": -2.24,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "삼성바이오로직스",
@@ -4571,8 +4571,8 @@
    "disc_time": "17:30",
    "pre5": 0.51,
    "post5": 0.07,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "OCI",
@@ -4589,8 +4589,8 @@
    "disc_time": "17:54",
    "pre5": -1.3,
    "post5": 2.04,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "LG디스플레이",
@@ -4607,8 +4607,8 @@
    "disc_time": "17:54",
    "pre5": 3.69,
    "post5": 0.1,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD한국조선해양",
@@ -4625,8 +4625,8 @@
    "disc_time": "17:30",
    "pre5": 5.67,
    "post5": 1.69,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD한국조선해양",
@@ -4643,8 +4643,8 @@
    "disc_time": "17:30",
    "pre5": 5.67,
    "post5": 1.69,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD현대중공업",
@@ -4661,8 +4661,8 @@
    "disc_time": "17:30",
    "pre5": 2.76,
    "post5": -1.34,
-   "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "tick_state": "ok",
+   "tick_kind": "close_gap"
   }
  ]
 }
