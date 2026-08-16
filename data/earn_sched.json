@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-16 20:50:06",
- "count": 67,
+ "generated_at": "2026-08-17 08:57:30",
+ "count": 66,
  "events": [
   {
    "corp": "DL",
@@ -108,17 +108,6 @@
    "rcept_no": "20260722900809",
    "rcept_dt": "20260722",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722900809",
-   "src": "예고",
-   "expected_date": "2026-08-05",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "카카오뱅크",
-   "stock": "323410",
-   "market": "KOSPI",
-   "rcept_no": "20260702800275",
-   "rcept_dt": "20260702",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260702800275",
    "src": "예고",
    "expected_date": "2026-08-05",
    "period_end": "2026-06-30"
