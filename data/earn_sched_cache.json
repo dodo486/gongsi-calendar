@@ -1673,5 +1673,16 @@
   "time": "09:00",
   "purpose": "국내 NDR",
   "sponsor": "신영증권"
+ },
+ "20260818800177": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260818800176": {
+  "kind": "ir",
+  "expected_date": "2026-08-19",
+  "time": "09:10",
+  "purpose": "NDR(Non-Deal Roadshow)",
+  "sponsor": "교보증권"
  }
 }
