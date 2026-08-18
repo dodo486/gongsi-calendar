@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-18 16:02:24",
+ "generated_at": "2026-08-18 16:51:34",
  "range": {
   "bgn": "20260506",
   "end": "20260818"
  },
- "count": 356,
+ "count": 357,
  "events": [
   {
    "corp": "한국카본",
@@ -60,6 +60,17 @@
    "rcept_no": "20260818000126",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818000126",
    "flr": "실리콘투"
+  },
+  {
+   "corp": "차바이오텍",
+   "stock": "085660",
+   "market": "KOSDAQ",
+   "title": "전환사채(해외전환사채포함)발행후만기전사채취득",
+   "category": "메자닌",
+   "date": "20260818",
+   "rcept_no": "20260818900497",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818900497",
+   "flr": "차바이오텍"
   },
   {
    "corp": "클로봇",
