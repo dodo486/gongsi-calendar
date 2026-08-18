@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-18 15:21:21",
- "count": 63,
+ "generated_at": "2026-08-18 16:32:48",
+ "count": 64,
  "events": [
   {
    "corp": "강원랜드",
@@ -718,6 +718,19 @@
    "time": "",
    "purpose": "2026년 2분기 경영실적 발표",
    "sponsor": "NH투자증권"
+  },
+  {
+   "corp": "삼양식품",
+   "stock": "003230",
+   "market": "KOSPI",
+   "rcept_no": "20260818800427",
+   "rcept_dt": "20260818",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818800427",
+   "src": "IR",
+   "expected_date": "2026-08-19",
+   "time": "09:00",
+   "purpose": "'26년 2분기 경영실적 코멘트 및 질의응답",
+   "sponsor": "하나증권"
   }
  ]
 }

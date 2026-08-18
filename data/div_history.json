@@ -6466,5 +6466,16 @@
   "record_date": "2026-03-27",
   "pay_date": "",
   "div_type": ""
+ },
+ "20260818800335": {
+  "kind": "record",
+  "stock": "006040",
+  "corp": "동원산업",
+  "market": "KOSPI",
+  "rcept_dt": "20260818",
+  "per_share": "",
+  "record_date": "2026-08-31",
+  "pay_date": "",
+  "div_type": "중간배당"
  }
 }

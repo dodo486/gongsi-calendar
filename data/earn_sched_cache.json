@@ -1709,5 +1709,26 @@
   "time": "",
   "purpose": "UBS Korea Summit",
   "sponsor": "UBS증권"
+ },
+ "20260818800427": {
+  "kind": "ir",
+  "expected_date": "2026-08-19",
+  "time": "09:00",
+  "purpose": "'26년 2분기 경영실적 코멘트 및 질의응답",
+  "sponsor": "하나증권"
+ },
+ "20260818800380": {
+  "kind": "ir",
+  "expected_date": "2026-08-19",
+  "time": "09:00",
+  "purpose": "NH투자증권 NDR",
+  "sponsor": "NH투자증권"
+ },
+ "20260818800359": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "09:00",
+  "purpose": "투자자 미팅을 통한 당사 이해증진",
+  "sponsor": "UBS"
  }
 }
