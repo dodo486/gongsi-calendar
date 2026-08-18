@@ -1702,5 +1702,12 @@
   "time": "",
   "purpose": "UBS Korea Summit 참석",
   "sponsor": "UBS"
+ },
+ "20260818800233": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "",
+  "purpose": "UBS Korea Summit",
+  "sponsor": "UBS증권"
  }
 }
