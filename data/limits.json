@@ -1,8 +1,62 @@
 {
  "date": "2026-08-18",
- "generated_at": "2026-08-18 14:24:53",
- "count": 12,
+ "generated_at": "2026-08-18 15:21:34",
+ "count": 15,
  "events": [
+  {
+   "time": "15:11",
+   "kind": "주식선물",
+   "name": "엔켐",
+   "code": "348370",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260818000326",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260818000326&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "15:16:31",
+   "rate": 11.85
+  },
+  {
+   "time": "15:06",
+   "kind": "주식선물",
+   "name": "리가켐바이오",
+   "code": "141080",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260818000321",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260818000321&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "15:11:28",
+   "rate": 8.08
+  },
+  {
+   "time": "14:29",
+   "kind": "주식선물",
+   "name": "실리콘투",
+   "code": "257720",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260818000269",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260818000269&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "14:34:36",
+   "rate": 3.85
+  },
   {
    "time": "10:14",
    "kind": "주식선물",
@@ -19,7 +73,7 @@
     "KRX300"
    ],
    "expand_time": "10:19:31",
-   "rate": 1.57
+   "rate": 0.9
   },
   {
    "time": "10:01",
@@ -36,7 +90,7 @@
     "KOSPI200"
    ],
    "expand_time": "10:06:52",
-   "rate": 4.37
+   "rate": 2.65
   },
   {
    "time": "09:34",
@@ -54,7 +108,7 @@
     "KRX300"
    ],
    "expand_time": "09:39:09",
-   "rate": 4.95
+   "rate": 2.35
   },
   {
    "time": "09:31",
@@ -72,7 +126,7 @@
     "KRX300"
    ],
    "expand_time": "09:36:13",
-   "rate": 9.62
+   "rate": 7.53
   },
   {
    "time": "09:26",
@@ -91,7 +145,7 @@
     "KRX300"
    ],
    "expand_time": "09:31:02",
-   "rate": 7.18
+   "rate": 6.19
   },
   {
    "time": "09:23",
@@ -109,7 +163,7 @@
     "KRX300"
    ],
    "expand_time": "09:28:26",
-   "rate": 6.34
+   "rate": 5.87
   },
   {
    "time": "09:16",
@@ -128,7 +182,7 @@
     "KRX300"
    ],
    "expand_time": "09:21:31",
-   "rate": 6.35
+   "rate": 6.24
   },
   {
    "time": "09:15",
@@ -146,7 +200,7 @@
     "KRX300"
    ],
    "expand_time": "09:20:18",
-   "rate": 8.49
+   "rate": 9.59
   },
   {
    "time": "09:12",
@@ -165,7 +219,7 @@
     "KRX300"
    ],
    "expand_time": "09:17:53",
-   "rate": 9.69
+   "rate": 10.34
   },
   {
    "time": "09:01",
@@ -182,7 +236,7 @@
     "KOSPI200"
    ],
    "expand_time": "09:06:41",
-   "rate": 5.97
+   "rate": 4.76
   },
   {
    "time": "09:00",
@@ -200,7 +254,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:20",
-   "rate": 0.0
+   "rate": 0.54
   },
   {
    "time": "09:00",
@@ -218,7 +272,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:19",
-   "rate": 5.77
+   "rate": 6.45
   }
  ]
 }

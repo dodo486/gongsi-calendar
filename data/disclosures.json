@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-18 14:09:03",
+ "generated_at": "2026-08-18 14:55:16",
  "range": {
   "bgn": "20260506",
   "end": "20260818"
  },
- "count": 354,
+ "count": 355,
  "events": [
   {
    "corp": "한국카본",
@@ -49,6 +49,17 @@
    "rcept_no": "20260818000018",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818000018",
    "flr": "한국카본"
+  },
+  {
+   "corp": "실리콘투",
+   "stock": "257720",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(유상증자결정)",
+   "category": "유상증자",
+   "date": "20260818",
+   "rcept_no": "20260818000126",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818000126",
+   "flr": "실리콘투"
   },
   {
    "corp": "한국카본",
