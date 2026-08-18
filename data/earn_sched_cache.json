@@ -1684,5 +1684,23 @@
   "time": "09:10",
   "purpose": "NDR(Non-Deal Roadshow)",
   "sponsor": "교보증권"
+ },
+ "20260818800232": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260818800198": {
+  "kind": "ir",
+  "expected_date": "2026-08-19",
+  "time": "09:10",
+  "purpose": "국내기관 IR (Non-Deal Roadshow) 실시",
+  "sponsor": "신한투자증권"
+ },
+ "20260818800199": {
+  "kind": "ir",
+  "expected_date": "2026-08-25",
+  "time": "",
+  "purpose": "UBS Korea Summit 참석",
+  "sponsor": "UBS"
  }
 }
