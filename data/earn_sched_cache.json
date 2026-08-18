@@ -1666,5 +1666,12 @@
   "time": "",
   "purpose": "",
   "sponsor": "UBS증권"
+ },
+ "20260818800100": {
+  "kind": "ir",
+  "expected_date": "2026-08-19",
+  "time": "09:00",
+  "purpose": "국내 NDR",
+  "sponsor": "신영증권"
  }
 }

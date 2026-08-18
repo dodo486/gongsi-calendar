@@ -1,11 +1,55 @@
 {
- "generated_at": "2026-08-18 09:09:53",
+ "generated_at": "2026-08-18 10:46:21",
  "range": {
   "bgn": "20260506",
-  "end": "20260814"
+  "end": "20260818"
  },
- "count": 350,
+ "count": 354,
  "events": [
+  {
+   "corp": "한국카본",
+   "stock": "017960",
+   "market": "KOSPI",
+   "title": "[첨부정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260818",
+   "rcept_no": "20260818000021",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818000021",
+   "flr": "한국카본"
+  },
+  {
+   "corp": "한국카본",
+   "stock": "017960",
+   "market": "KOSPI",
+   "title": "[첨부정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260818",
+   "rcept_no": "20260818000020",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818000020",
+   "flr": "한국카본"
+  },
+  {
+   "corp": "한국카본",
+   "stock": "017960",
+   "market": "KOSPI",
+   "title": "[첨부정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260818",
+   "rcept_no": "20260818000019",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818000019",
+   "flr": "한국카본"
+  },
+  {
+   "corp": "한국카본",
+   "stock": "017960",
+   "market": "KOSPI",
+   "title": "[첨부정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260818",
+   "rcept_no": "20260818000018",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818000018",
+   "flr": "한국카본"
+  },
   {
    "corp": "한국카본",
    "stock": "017960",
