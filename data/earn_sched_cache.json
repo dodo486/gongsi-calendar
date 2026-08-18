@@ -1652,5 +1652,19 @@
   "time": "",
   "purpose": "",
   "sponsor": "메리츠증권"
+ },
+ "20260818900084": {
+  "kind": "ir",
+  "expected_date": "2026-08-27",
+  "time": "",
+  "purpose": "",
+  "sponsor": "Citi증권"
+ },
+ "20260818900082": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "",
+  "purpose": "",
+  "sponsor": "UBS증권"
  }
 }
