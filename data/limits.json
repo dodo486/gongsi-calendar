@@ -1,6 +1,60 @@
 {
- "date": "2026-08-17",
- "generated_at": "2026-08-17 20:35:59",
- "count": 0,
- "events": []
+ "date": "2026-08-18",
+ "generated_at": "2026-08-18 09:04:00",
+ "count": 3,
+ "events": [
+  {
+   "time": "09:01",
+   "kind": "주식선물",
+   "name": "후성",
+   "code": "093370",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260818000063",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260818000063&docno=",
+   "markets": [
+    "KOSPI200"
+   ],
+   "expand_time": "09:06:41",
+   "rate": 9.92
+  },
+  {
+   "time": "09:00",
+   "kind": "주식선물",
+   "name": "로보티즈",
+   "code": "108490",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260818000060",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260818000060&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "09:05:20",
+   "rate": 8.75
+  },
+  {
+   "time": "09:00",
+   "kind": "주식선물",
+   "name": "DN오토모티브",
+   "code": "007340",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260818000059",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260818000059&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:05:19",
+   "rate": 11.21
+  }
+ ]
 }
