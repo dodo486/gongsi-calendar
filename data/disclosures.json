@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-08-19 14:52:55",
+ "generated_at": "2026-08-19 15:58:55",
  "range": {
   "bgn": "20260506",
-  "end": "20260818"
+  "end": "20260819"
  },
- "count": 357,
+ "count": 359,
  "events": [
+  {
+   "corp": "SK하이닉스",
+   "stock": "000660",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득결정)",
+   "category": "자사주",
+   "date": "20260819",
+   "rcept_no": "20260819000254",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260819000254",
+   "flr": "SK하이닉스"
+  },
+  {
+   "corp": "SK스퀘어",
+   "stock": "402340",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득결정)(자회사의 주요경영사항)",
+   "category": "자사주",
+   "date": "20260819",
+   "rcept_no": "20260819800334",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260819800334",
+   "flr": "SK스퀘어"
+  },
   {
    "corp": "한국카본",
    "stock": "017960",
