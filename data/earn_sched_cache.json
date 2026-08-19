@@ -1763,5 +1763,12 @@
  "20260819800197": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260819800243": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "10:00",
+  "purpose": "Korea Summit 2026",
+  "sponsor": "UBS증권"
  }
 }
