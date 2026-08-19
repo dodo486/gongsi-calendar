@@ -1,8 +1,27 @@
 {
  "date": "2026-08-19",
- "generated_at": "2026-08-19 09:06:04",
- "count": 4,
+ "generated_at": "2026-08-19 09:45:36",
+ "count": 5,
  "events": [
+  {
+   "time": "09:17",
+   "kind": "주식선물",
+   "name": "HD현대일렉트릭",
+   "code": "267260",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260819000091",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260819000091&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:22:09",
+   "rate": 6.5
+  },
   {
    "time": "09:03",
    "kind": "주식선물",
@@ -20,7 +39,7 @@
     "KTOP30"
    ],
    "expand_time": "09:08:47",
-   "rate": 10.47
+   "rate": 8.21
   },
   {
    "time": "09:00",
@@ -39,7 +58,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:44",
-   "rate": 7.05
+   "rate": 0.08
   },
   {
    "time": "09:00",
@@ -58,7 +77,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:39",
-   "rate": 11.63
+   "rate": 11.1
   },
   {
    "time": "09:00",
@@ -78,7 +97,7 @@
     "KTOP30"
    ],
    "expand_time": "09:05:01",
-   "rate": 6.81
+   "rate": 0.79
   }
  ]
 }

@@ -285,13 +285,16 @@ function todayStr(){ const d=new Date(); return `${d.getFullYear()}${String(d.ge
 const dm = {buy:true, ex:true};
 
 function todayISO(){ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
-let _divUp = [], _divSort = {key:"name", dir:1};
+let _divUp = [], _divSort = {key:"ex", dir:1};   // 기본: 배당락일 오름차순(가까운 날 먼저)
 function divRowsHtml(){                 // 정렬 상태(_divSort) 반영해 배당락 표 행 생성
   const arr = _divUp.slice(), k = _divSort.key, dir = _divSort.dir;
   arr.sort((a,b)=>{
     if(k==="amt"){
       const pa=(a.per_share!=null)?+a.per_share:-Infinity, pb=(b.per_share!=null)?+b.per_share:-Infinity;
       return dir*(pa-pb);
+    }
+    if(k==="ex"){
+      return dir*((a.ex_date||"").localeCompare(b.ex_date||""));   // ISO 날짜는 사전식=시간순
     }
     return dir*(a.corp||"").localeCompare(b.corp||"","ko");
   });
@@ -313,7 +316,7 @@ function renderDivUpTable(){
 }
 function sortDivUp(k){                  // 헤더 클릭 → 정렬 키/방향 토글
   if(_divSort.key===k) _divSort.dir*=-1;
-  else { _divSort.key=k; _divSort.dir = (k==="amt")?-1:1; }   // 배당금은 높은순 먼저, 이름은 가나다순
+  else { _divSort.key=k; _divSort.dir = (k==="amt")?-1:1; }   // 배당금은 높은순 먼저, 이름/배당락은 오름차순
   renderDivUpTable();
 }
 function renderDivToday(){
@@ -338,7 +341,7 @@ function renderDivToday(){
   else h += `<table class="dortab" id="divUpTab"><thead><tr>
       <th data-sk="name" onclick="sortDivUp('name')">종목명 <span class="ar">⇅</span></th>
       <th data-sk="amt" onclick="sortDivUp('amt')">배당금 <span class="ar">⇅</span></th>
-      <th>배당락</th></tr></thead><tbody id="divUpBody"></tbody></table>`;
+      <th data-sk="ex" onclick="sortDivUp('ex')">배당락 <span class="ar">⇅</span></th></tr></thead><tbody id="divUpBody"></tbody></table>`;
   h += `</div>`;
   box.innerHTML = h;
   box.querySelectorAll(".di").forEach(el=> el.addEventListener("click",()=>{

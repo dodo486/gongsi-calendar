@@ -1738,5 +1738,26 @@
  "20260818900681": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260819800096": {
+  "kind": "ir",
+  "expected_date": "2026-08-27",
+  "time": "",
+  "purpose": "Citi's 2026 Korea Investor Conference 참가",
+  "sponsor": "Citi증권"
+ },
+ "20260819800095": {
+  "kind": "ir",
+  "expected_date": "2026-08-25",
+  "time": "16:00",
+  "purpose": "주요 기관 투자가 대상 사업현황 설명",
+  "sponsor": "DS투자증권"
+ },
+ "20260819800093": {
+  "kind": "ir",
+  "expected_date": "2026-08-21",
+  "time": "09:00",
+  "purpose": "노무라 증권 'Tech Tour' 참가",
+  "sponsor": "노무라"
  }
 }
