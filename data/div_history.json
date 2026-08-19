@@ -6477,5 +6477,49 @@
   "record_date": "2026-08-31",
   "pay_date": "",
   "div_type": "중간배당"
+ },
+ "20260219800963": {
+  "kind": "decision",
+  "stock": "005850",
+  "corp": "에스엘",
+  "market": "KOSPI",
+  "rcept_dt": "20260219",
+  "per_share": "2770",
+  "record_date": "2026-03-20",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260219800955": {
+  "kind": "record",
+  "stock": "005850",
+  "corp": "에스엘",
+  "market": "KOSPI",
+  "rcept_dt": "20260219",
+  "per_share": "",
+  "record_date": "2026-03-20",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260219800731": {
+  "kind": "decision",
+  "stock": "029780",
+  "corp": "삼성카드",
+  "market": "KOSPI",
+  "rcept_dt": "20260219",
+  "per_share": "2800",
+  "record_date": "2026-03-26",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260219800706": {
+  "kind": "record",
+  "stock": "029780",
+  "corp": "삼성카드",
+  "market": "KOSPI",
+  "rcept_dt": "20260219",
+  "per_share": "",
+  "record_date": "2026-03-26",
+  "pay_date": "",
+  "div_type": "결산배당"
  }
 }

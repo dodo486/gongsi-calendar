@@ -1820,5 +1820,19 @@
  "20260819900650": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260820800042": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "10:00",
+  "purpose": "'26년 3분기 Conference 참석",
+  "sponsor": "UBS증권"
+ },
+ "20260820800033": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "",
+  "purpose": "UBS Korea Summit 2026 참가",
+  "sponsor": "UBS증권"
  }
 }

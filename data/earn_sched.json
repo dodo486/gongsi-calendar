@@ -1,73 +1,7 @@
 {
- "generated_at": "2026-08-19 19:24:52",
- "count": 58,
+ "generated_at": "2026-08-20 08:47:45",
+ "count": 50,
  "events": [
-  {
-   "corp": "넷마블",
-   "stock": "251270",
-   "market": "KOSPI",
-   "rcept_no": "20260729800786",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800786",
-   "src": "예고",
-   "expected_date": "2026-08-05",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "롯데칠성음료",
-   "stock": "005300",
-   "market": "KOSPI",
-   "rcept_no": "20260720800623",
-   "rcept_dt": "20260720",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260720800623",
-   "src": "예고",
-   "expected_date": "2026-08-05",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "에스엠",
-   "stock": "041510",
-   "market": "KOSDAQ",
-   "rcept_no": "20260723900227",
-   "rcept_dt": "20260723",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260723900227",
-   "src": "예고",
-   "expected_date": "2026-08-05",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "에이피알",
-   "stock": "278470",
-   "market": "KOSPI",
-   "rcept_no": "20260727800459",
-   "rcept_dt": "20260727",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260727800459",
-   "src": "예고",
-   "expected_date": "2026-08-05",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "카카오게임즈",
-   "stock": "293490",
-   "market": "KOSDAQ",
-   "rcept_no": "20260722900809",
-   "rcept_dt": "20260722",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722900809",
-   "src": "예고",
-   "expected_date": "2026-08-05",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "현대백화점",
-   "stock": "069960",
-   "market": "KOSPI",
-   "rcept_no": "20260729800689",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800689",
-   "src": "예고",
-   "expected_date": "2026-08-05",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "BGF리테일",
    "stock": "282330",
@@ -570,32 +504,6 @@
    "src": "예고",
    "expected_date": "2026-08-13",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "동원산업",
-   "stock": "006040",
-   "market": "KOSPI",
-   "rcept_no": "20260805800262",
-   "rcept_dt": "20260805",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800262",
-   "src": "IR",
-   "expected_date": "2026-08-13",
-   "time": "10:30",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "-"
-  },
-  {
-   "corp": "DB손해보험",
-   "stock": "005830",
-   "market": "KOSPI",
-   "rcept_no": "20260805800322",
-   "rcept_dt": "20260805",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800322",
-   "src": "IR",
-   "expected_date": "2026-08-13",
-   "time": "16:00",
-   "purpose": "2026년 상반기 경영실적 발표",
-   "sponsor": "자사주관"
   },
   {
    "corp": "DN오토모티브",
