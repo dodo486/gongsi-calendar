@@ -18,3 +18,4 @@ Desktop.ini
 
 # OMC 세션 상태 (운영 아티팩트)
 .omc/
+*.log
