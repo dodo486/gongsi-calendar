@@ -1,51 +1,7 @@
 {
- "generated_at": "2026-08-18 20:40:55",
- "count": 64,
+ "generated_at": "2026-08-19 09:05:57",
+ "count": 58,
  "events": [
-  {
-   "corp": "강원랜드",
-   "stock": "035250",
-   "market": "KOSPI",
-   "rcept_no": "20260721800805",
-   "rcept_dt": "20260721",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260721800805",
-   "src": "예고",
-   "expected_date": "2026-08-04",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "에코프로",
-   "stock": "086520",
-   "market": "KOSDAQ",
-   "rcept_no": "20260713900445",
-   "rcept_dt": "20260713",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260713900445",
-   "src": "예고",
-   "expected_date": "2026-08-04",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "에코프로머티",
-   "stock": "450080",
-   "market": "KOSPI",
-   "rcept_no": "20260713800589",
-   "rcept_dt": "20260713",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260713800589",
-   "src": "예고",
-   "expected_date": "2026-08-04",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "카카오페이",
-   "stock": "377300",
-   "market": "KOSPI",
-   "rcept_no": "20260720800471",
-   "rcept_dt": "20260720",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260720800471",
-   "src": "예고",
-   "expected_date": "2026-08-04",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "넷마블",
    "stock": "251270",
@@ -458,19 +414,6 @@
    "sponsor": "흥국증권"
   },
   {
-   "corp": "GS",
-   "stock": "078930",
-   "market": "KOSPI",
-   "rcept_no": "20260804800336",
-   "rcept_dt": "20260804",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800336",
-   "src": "IR",
-   "expected_date": "2026-08-11",
-   "time": "16:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "-"
-  },
-  {
    "corp": "JYP Ent.",
    "stock": "035900",
    "market": "KOSDAQ",
@@ -679,19 +622,6 @@
    "time": "",
    "purpose": "2026년 2분기 실적 NDR 진행",
    "sponsor": "NH투자증권"
-  },
-  {
-   "corp": "에스디바이오센서",
-   "stock": "137310",
-   "market": "KOSPI",
-   "rcept_no": "20260804800605",
-   "rcept_dt": "20260804",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800605",
-   "src": "IR",
-   "expected_date": "2026-08-14",
-   "time": "16:00",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "-"
   },
   {
    "corp": "미스토홀딩스",
