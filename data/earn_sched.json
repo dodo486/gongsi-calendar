@@ -1,106 +1,7 @@
 {
- "generated_at": "2026-08-20 20:28:01",
- "count": 50,
+ "generated_at": "2026-08-21 08:52:05",
+ "count": 40,
  "events": [
-  {
-   "corp": "BGF리테일",
-   "stock": "282330",
-   "market": "KOSPI",
-   "rcept_no": "20260730800587",
-   "rcept_dt": "20260730",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800587",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "CJ ENM",
-   "stock": "035760",
-   "market": "KOSDAQ",
-   "rcept_no": "20260710900237",
-   "rcept_dt": "20260710",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260710900237",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "LIG디펜스앤에어로스페이스",
-   "stock": "079550",
-   "market": "KOSPI",
-   "rcept_no": "20260729800273",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800273",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "스튜디오드래곤",
-   "stock": "253450",
-   "market": "KOSDAQ",
-   "rcept_no": "20260709900400",
-   "rcept_dt": "20260709",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260709900400",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "원익IPS",
-   "stock": "240810",
-   "market": "KOSDAQ",
-   "rcept_no": "20260730900506",
-   "rcept_dt": "20260730",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730900506",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "웹젠",
-   "stock": "069080",
-   "market": "KOSDAQ",
-   "rcept_no": "20260724900644",
-   "rcept_dt": "20260724",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724900644",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "카카오",
-   "stock": "035720",
-   "market": "KOSPI",
-   "rcept_no": "20260716800211",
-   "rcept_dt": "20260716",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260716800211",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "한국금융지주",
-   "stock": "071050",
-   "market": "KOSPI",
-   "rcept_no": "20260803800496",
-   "rcept_dt": "20260803",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260803800496",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "휴젤",
-   "stock": "145020",
-   "market": "KOSDAQ",
-   "rcept_no": "20260730900719",
-   "rcept_dt": "20260730",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730900719",
-   "src": "예고",
-   "expected_date": "2026-08-06",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "GS리테일",
    "stock": "007070",
@@ -254,19 +155,6 @@
    "src": "예고",
    "expected_date": "2026-08-10",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "지역난방공사",
-   "stock": "071320",
-   "market": "KOSPI",
-   "rcept_no": "20260806800187",
-   "rcept_dt": "20260806",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800187",
-   "src": "IR",
-   "expected_date": "2026-08-10",
-   "time": "15:00",
-   "purpose": "2026년 2분기 실적 관련 기업설명회",
-   "sponsor": "당사"
   },
   {
    "corp": "CJ대한통운",

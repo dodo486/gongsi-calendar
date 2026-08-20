@@ -6543,5 +6543,126 @@
   "record_date": "2026-09-03",
   "pay_date": "2026-09-18",
   "div_type": "중간배당"
+ },
+ "20260220801293": {
+  "kind": "decision",
+  "stock": "000240",
+  "corp": "한국앤컴퍼니",
+  "market": "KOSPI",
+  "rcept_dt": "20260220",
+  "per_share": "800",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220801291": {
+  "kind": "record",
+  "stock": "000240",
+  "corp": "한국앤컴퍼니",
+  "market": "KOSPI",
+  "rcept_dt": "20260220",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220800604": {
+  "kind": "record",
+  "stock": "272210",
+  "corp": "한화시스템",
+  "market": "KOSPI",
+  "rcept_dt": "20260220",
+  "per_share": "",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220800597": {
+  "kind": "decision",
+  "stock": "272210",
+  "corp": "한화시스템",
+  "market": "KOSPI",
+  "rcept_dt": "20260220",
+  "per_share": "500",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220800561": {
+  "kind": "decision",
+  "stock": "161390",
+  "corp": "한국타이어앤테크놀로지",
+  "market": "KOSPI",
+  "rcept_dt": "20260220",
+  "per_share": "1500",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220800555": {
+  "kind": "record",
+  "stock": "161390",
+  "corp": "한국타이어앤테크놀로지",
+  "market": "KOSPI",
+  "rcept_dt": "20260220",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220800449": {
+  "kind": "decision",
+  "stock": "007310",
+  "corp": "오뚜기",
+  "market": "KOSPI",
+  "rcept_dt": "20260220",
+  "per_share": "9000",
+  "record_date": "2026-03-27",
+  "pay_date": "2026-04-20",
+  "div_type": "결산배당"
+ },
+ "20260220800447": {
+  "kind": "record",
+  "stock": "007310",
+  "corp": "오뚜기",
+  "market": "KOSPI",
+  "rcept_dt": "20260220",
+  "per_share": "",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220901050": {
+  "kind": "decision",
+  "stock": "319660",
+  "corp": "피에스케이",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260220",
+  "per_share": "680",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220900640": {
+  "kind": "decision",
+  "stock": "241710",
+  "corp": "코스메카코리아",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260220",
+  "per_share": "370",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260220900502": {
+  "kind": "decision",
+  "stock": "031980",
+  "corp": "피에스케이홀딩스",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260220",
+  "per_share": "1080",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
  }
 }
