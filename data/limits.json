@@ -1,8 +1,149 @@
 {
  "date": "2026-08-20",
- "generated_at": "2026-08-20 09:14:01",
- "count": 5,
+ "generated_at": "2026-08-20 11:14:55",
+ "count": 13,
  "events": [
+  {
+   "time": "11:07",
+   "kind": "주식선물",
+   "name": "삼성생명",
+   "code": "032830",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000144",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000144&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300",
+    "KTOP30"
+   ],
+   "expand_time": "11:12:58",
+   "rate": 9.06
+  },
+  {
+   "time": "11:04",
+   "kind": "주식선물",
+   "name": "삼성전자",
+   "code": "005930",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000138",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000138&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300",
+    "KTOP30"
+   ],
+   "expand_time": "11:09:58",
+   "rate": 9.29
+  },
+  {
+   "time": "11:01",
+   "kind": "주식선물",
+   "name": "케이씨씨",
+   "code": "",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000134",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000134&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "11:06:24"
+  },
+  {
+   "time": "10:46",
+   "kind": "주식선물",
+   "name": "SK하이닉스",
+   "code": "000660",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000126",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000126&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300",
+    "KTOP30"
+   ],
+   "expand_time": "10:51:14",
+   "rate": 12.6
+  },
+  {
+   "time": "10:39",
+   "kind": "주식선물",
+   "name": "삼성증권",
+   "code": "016360",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000120",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000120&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "10:44:42",
+   "rate": 9.41
+  },
+  {
+   "time": "10:32",
+   "kind": "지수선물",
+   "name": "KRX 바이오 TOP 10 지수선물",
+   "code": "",
+   "market": "지수",
+   "stage": 2,
+   "direction": "상승",
+   "title": "KRX 바이오 TOP 10 지수선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000112",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000112&docno=",
+   "markets": [],
+   "expand_time": "10:37:11"
+  },
+  {
+   "time": "10:02",
+   "kind": "지수선물",
+   "name": "건설 섹터지수선물",
+   "code": "",
+   "market": "지수",
+   "stage": 2,
+   "direction": "상승",
+   "title": "건설 섹터지수선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000087",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000087&docno=",
+   "markets": [],
+   "expand_time": "10:07:39"
+  },
+  {
+   "time": "09:21",
+   "kind": "주식선물",
+   "name": "두산테스나",
+   "code": "131970",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000058",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000058&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "09:26:57",
+   "rate": 8.65
+  },
   {
    "time": "09:07",
    "kind": "주식선물",
@@ -19,7 +160,7 @@
     "KRX300"
    ],
    "expand_time": "09:12:53",
-   "rate": 9.0
+   "rate": 12.4
   },
   {
    "time": "09:03",
@@ -37,7 +178,7 @@
     "KRX300"
    ],
    "expand_time": "09:08:37",
-   "rate": 8.78
+   "rate": 11.46
   },
   {
    "time": "09:01",
@@ -55,7 +196,7 @@
     "KRX300"
    ],
    "expand_time": "09:06:02",
-   "rate": 9.58
+   "rate": 10.79
   },
   {
    "time": "09:00",
@@ -73,7 +214,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:10",
-   "rate": 9.23
+   "rate": 10.21
   },
   {
    "time": "09:00",
@@ -92,7 +233,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:02",
-   "rate": 10.17
+   "rate": 7.75
   }
  ]
 }
