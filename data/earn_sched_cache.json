@@ -1841,5 +1841,47 @@
   "time": "",
   "purpose": "",
   "sponsor": "UBS"
+ },
+ "20260820800325": {
+  "kind": "ir",
+  "expected_date": "2026-08-31",
+  "time": "09:00",
+  "purpose": "Goldman Sachs 증권 주관 'Goldman Sachs Asia Leaders Conference 2",
+  "sponsor": "Goldman"
+ },
+ "20260820800322": {
+  "kind": "ir",
+  "expected_date": "2026-08-28",
+  "time": "09:00",
+  "purpose": "citi증권 주관 'citi's 2026 Korea Investor Conference' 참가",
+  "sponsor": "citi"
+ },
+ "20260820800320": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "09:00",
+  "purpose": "UBS증권 주관 'UBS Korea Summit 2026' 참가",
+  "sponsor": "UBS"
+ },
+ "20260820800305": {
+  "kind": "ir",
+  "expected_date": "2026-08-25",
+  "time": "",
+  "purpose": "2026년 8월 기업설명회 참석",
+  "sponsor": "UBS"
+ },
+ "20260820800294": {
+  "kind": "ir",
+  "expected_date": "2026-08-25",
+  "time": "",
+  "purpose": "투자자 미팅을 통한 당사 이해증진",
+  "sponsor": "UBS증권"
+ },
+ "20260820800288": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "",
+  "purpose": "투자자 미팅을 통한 당사 이해증진",
+  "sponsor": "IBK투자증권"
  }
 }
