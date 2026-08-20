@@ -1,6 +1,98 @@
 {
  "date": "2026-08-20",
- "generated_at": "2026-08-20 08:47:45",
- "count": 0,
- "events": []
+ "generated_at": "2026-08-20 09:14:01",
+ "count": 5,
+ "events": [
+  {
+   "time": "09:07",
+   "kind": "주식선물",
+   "name": "고려아연",
+   "code": "010130",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000053",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000053&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:12:53",
+   "rate": 9.0
+  },
+  {
+   "time": "09:03",
+   "kind": "주식선물",
+   "name": "DN오토모티브",
+   "code": "007340",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260820000050",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000050&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:08:37",
+   "rate": 8.78
+  },
+  {
+   "time": "09:01",
+   "kind": "주식선물",
+   "name": "카카오페이",
+   "code": "377300",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000049",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000049&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:06:02",
+   "rate": 9.58
+  },
+  {
+   "time": "09:00",
+   "kind": "주식선물",
+   "name": "알테오젠",
+   "code": "196170",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000048",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000048&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "09:05:10",
+   "rate": 9.23
+  },
+  {
+   "time": "09:00",
+   "kind": "주식선물",
+   "name": "에스티팜",
+   "code": "237690",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260820000046",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260820000046&docno=",
+   "markets": [
+    "V100",
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "09:05:02",
+   "rate": 10.17
+  }
+ ]
 }
