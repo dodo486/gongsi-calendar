@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-08-20 16:01:11",
+ "generated_at": "2026-08-20 16:56:30",
  "range": {
   "bgn": "20260506",
   "end": "20260820"
  },
- "count": 360,
+ "count": 362,
  "events": [
+  {
+   "corp": "롯데지주",
+   "stock": "004990",
+   "market": "KOSPI",
+   "title": "[기재정정]유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260820",
+   "rcept_no": "20260820800502",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260820800502",
+   "flr": "롯데지주"
+  },
+  {
+   "corp": "젬백스",
+   "stock": "082270",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(유상증자결정)",
+   "category": "유상증자",
+   "date": "20260820",
+   "rcept_no": "20260820000369",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260820000369",
+   "flr": "젬백스"
+  },
   {
    "corp": "코미코",
    "stock": "183300",

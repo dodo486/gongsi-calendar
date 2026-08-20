@@ -1883,5 +1883,19 @@
   "time": "",
   "purpose": "투자자 미팅을 통한 당사 이해증진",
   "sponsor": "IBK투자증권"
+ },
+ "20260820800569": {
+  "kind": "ir",
+  "expected_date": "2026-08-27",
+  "time": "09:00",
+  "purpose": "Citi증권 Conference 참석",
+  "sponsor": "Citi증권"
+ },
+ "20260820900546": {
+  "kind": "ir",
+  "expected_date": "2026-08-25",
+  "time": "",
+  "purpose": "",
+  "sponsor": "IBK"
  }
 }
