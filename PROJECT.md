@@ -66,25 +66,58 @@ DART는 **푸시(웹소켓) 없음**. 실시간 = **짧은 주기 폴링(polling
 
 ## 4.5 실행 방법 (How to run)
 
-**가장 쉬운 방법: 바탕화면 `공시캘린더` 아이콘 더블클릭** (`launch.py` 실행 = 폴러+웹 한 번에, 이미 켜져있으면 브라우저만)
+### 자동 기동 — **현재 없음** (2026-08-21 전면 제거, 재정의 예정)
 
-**부팅 자동실행**: 시작프로그램 폴더에 바로가기 등록됨 → 로그인 시 자동 시작
-- 자동실행 끄기: `shell:startup` 폴더에서 `공시캘린더.lnk` 삭제
+자동기동 체계가 꼬여서 백지화했습니다. 아래 3개를 모두 제거했고 잔여 흔적 없음을 확인했습니다.
 
-개별 실행(개발용):
+| 제거한 것 | 정체 |
+|---|---|
+| 예약작업 `공시캘린더 아침기동` | 로그인+잠금해제+**5분 반복**으로 `start_gongsi.ps1` 실행하던 본체 |
+| `shell:startup\공시캘린더.lnk` | 7/28 구방식 잔재 (`pythonw launch.py`) |
+| `start_gongsi.ps1` | 삭제. 복구 필요 시 `git checkout HEAD -- start_gongsi.ps1` |
+
+- 레지스트리 `Run`/`RunOnce` 키에는 애초에 등록된 적 없음 (확인 완료).
+- **남긴 것**: 바탕화면 `공시캘린더` 아이콘 = `chrome --app=http://127.0.0.1:8777/` 바로가기.
+  **창만 엽니다.** 지금은 서버를 띄우는 주체가 없으므로 아래 개별 실행으로
+  `serve.py`·`monitor.py` 를 먼저 띄워야 대시보드가 나옵니다.
+
+### 재정의 시 참고 (구방식에서 얻은 교훈)
+
+- PS 스크립트는 **UTF-8 BOM 필수**. BOM 없으면 PS 5.1이 한글 경로를 CP949로 오독함.
+- 앱창 탐지는 `EnumWindows` + `ProcessName -eq 'chrome'` 로 해야 엣지·일반 탭이 안 걸림.
+- 예약작업 트리거 변경은 `schtasks /Create /TN <이름> /XML <파일> /F` 로.
+  PowerShell `Set-ScheduledTask`/CIM 은 권한거부(`0x80070005`) 났음.
+- 새 기동 경로를 만들면 **구방식 등록을 반드시 같이 제거**할 것.
+  이번에 시작프로그램 잔재가 남아 "껐는데 왜 계속 뜨지" 혼선을 만들었음.
+
+### 개별 실행 (개발용)
 ```
-python launch.py               # 폴러+웹 한 번에 (아이콘이 이걸 호출)
+python monitor.py              # 실시간 폴러 상주 (공시·상하한가·시장조치·거래정지 + 토스트)
+python serve.py                # 웹 대시보드 (http://127.0.0.1:8777)
 python get_watchlist.py        # 감시대상 갱신 (코스피200 네이버 + 코스닥150 스냅샷)
-python fetch.py 90             # 과거 N일 공시 백필 (증자·배당·자사주 등 9종)
-python monitor.py              # 실시간 폴러 상주 (1분마다, 새 공시 윈도우 알림)
-python dividends.py 90         # 배당 데이터 추출 (배당금+기준일 원문 파싱) → data/dividends.json
+python fetch.py 90             # 과거 N일 공시 백필 (증자·자사주 등 8종, 배당 제외)
+python dividends.py 90         # 배당 추출 (배당금+기준일 원문 파싱) → data/dividends.json
 python expiries.py             # 선물·옵션 만기일 생성(규칙 계산) → data/expiries.json
-python kind_limits.py          # 선물 상하한가(가격제한폭 도달) KIND 공시 수집 → data/limits.json
-python serve.py                # 웹 캘린더 열기 (http://localhost:8777, 1분 자동갱신)
+python kind_limits.py          # 선물 상하한가(가격제한폭 도달) KIND 공시 → data/limits.json
+python kind_halt.py            # 매매거래정지/재개 KIND 공시 → data/halts.json
+python krx_actions.py          # 시장조치(사이드카·서킷·투자경고)
+python sectors.py              # 섹터/테마 로테이션 집계
+python launch.py               # (구방식) 폴러+웹 동시 기동. 현재 자동기동 경로는 아님
 ```
-- 관심 공시 종류/키워드: `fetch.py`의 `CATEGORIES` 편집
-- 폴링 주기: `monitor.py`의 `POLL_SECONDS` (기본 60초)
-- 끄기: 폴러/서버 콘솔 창 닫기(작업표시줄에 최소화됨)
+
+### 폴링 주기 — 전부 `monitor.py` 상수
+
+| 상수 | 값 | 대상 |
+|---|---|---|
+| `LIMITS_POLL_SECONDS` | 5초 | 상하한가·시장조치 (전용 고속 스레드, collect 0.1초) |
+| `POLL_SECONDS` | 20초 | 공시·실적 (DART·네이버가 무거움) |
+| `SECTORS_POLL_SECONDS` | 240초 | 섹터/테마 (유니버스 800종목 전수) |
+| `HALT_POLL_SECONDS` | 1800초 | 거래정지/재개 (하루 단위로만 바뀜) |
+
+- 웹 화면 갱신은 **SSE(서버 푸시)**. `index.html` 의 30초 `setInterval` 은 SSE 실패 대비 폴백이고,
+  상하한가 깜빡이만 5초 주기로 별도 렌더.
+- 상하한가 토스트 최소 단계: `ALERT_MIN_STAGE` (현재 `1` = 전 단계 알림)
+- 관심 공시 종류/키워드: `fetch.py` 의 `CATEGORIES` 편집
 
 ## 5. 진행 로그 (Changelog)
 
@@ -140,6 +173,20 @@ python serve.py                # 웹 캘린더 열기 (http://localhost:8777, 1�
   → 수급(외국인/기관 5거래일 순매수, 주수×종가 근사) → 분기 추이+영업이익률 → IR·리포트·뉴스.
   데이터: 네이버 일별 시세·투자자별 매매동향 API 추가. 리서치 근거: 한국은 잠정공시일이 PEAD 정보 이벤트,
   "실적보다 가이던스, 가이던스보다 Q&A 톤", 상장사 75% IR 미개최 → 증권사 리포트가 가이던스 대체재
+
+- 2026-08-21: **§4.5 실행 방법 실측 기준으로 정정** — 문서가 7/28 구방식(`launch.py` + 시작프로그램)을
+  설명하고 있었으나 실제 기동 경로는 예약작업 `공시캘린더 아침기동` + `start_gongsi.ps1`(5분 반복).
+  특히 "끄는 법"이 틀려 있었음(시작프로그램만 지우면 예약작업이 5분마다 되살림).
+  폴링 주기도 실측 반영: `POLL_SECONDS` 60초 → **20초**, 상하한가 5초·섹터 240초·거래정지 1800초 추가,
+  웹은 1분 폴링이 아니라 **SSE + 30초 폴백**. 개별 실행 목록에 `kind_halt`·`krx_actions`·`sectors` 추가.
+  ⚠️ 8/4 이후 기능 추가분(거래정지·sectors 통합·차트 연동 등)은 Changelog 미반영 상태 — 별건.
+
+- 2026-08-21: **자동기동 전면 제거 (백지화)** — 기동 경로가 구방식(시작프로그램 `launch.py`)과
+  신방식(예약작업 `start_gongsi.ps1`)으로 이중화돼 꼬여 있어 전부 삭제.
+  제거: 예약작업 `공시캘린더 아침기동` / `shell:startup\공시캘린더.lnk` / `start_gongsi.ps1`(git 복구 가능).
+  실행 중이던 `serve.py`·`monitor.py` 종료, 크롬 대시보드 앱창 닫음, 포트 8777 해제 확인.
+  레지스트리 `Run` 키는 원래 없었음. **바탕화면 아이콘(`chrome --app`)은 존치.**
+  → 자동기동은 새로 정의 예정. 현재는 수동 실행만 가능.
 
 ## 6. 다음 할 일 (TODO)
 
