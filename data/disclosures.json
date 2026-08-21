@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-21 11:05:35",
+ "generated_at": "2026-08-21 12:17:28",
  "range": {
   "bgn": "20260506",
   "end": "20260821"
  },
- "count": 364,
+ "count": 365,
  "events": [
   {
    "corp": "카카오",
@@ -27,6 +27,17 @@
    "rcept_no": "20260821000047",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260821000047",
    "flr": "카카오"
+  },
+  {
+   "corp": "클로봇",
+   "stock": "466100",
+   "market": "KOSDAQ",
+   "title": "유상증자또는주식관련사채등의청약결과(자율공시)",
+   "category": "유상증자",
+   "date": "20260821",
+   "rcept_no": "20260821900199",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260821900199",
+   "flr": "클로봇"
   },
   {
    "corp": "롯데지주",
