@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-08-21 17:16:17",
+ "generated_at": "2026-08-21 18:05:53",
  "range": {
   "bgn": "20260506",
   "end": "20260821"
  },
- "count": 367,
+ "count": 369,
  "events": [
+  {
+   "corp": "삼성전자",
+   "stock": "005930",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득결정)",
+   "category": "자사주",
+   "date": "20260821",
+   "rcept_no": "20260821000616",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260821000616",
+   "flr": "삼성전자"
+  },
   {
    "corp": "카카오",
    "stock": "035720",
@@ -49,6 +60,17 @@
    "rcept_no": "20260821800388",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260821800388",
    "flr": "현대건설"
+  },
+  {
+   "corp": "서부T&D",
+   "stock": "006730",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260821",
+   "rcept_no": "20260821900850",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260821900850",
+   "flr": "서부T&D"
   },
   {
    "corp": "클로봇",
