@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-08-21 08:36:38",
+ "generated_at": "2026-08-21 11:05:35",
  "range": {
   "bgn": "20260506",
-  "end": "20260820"
+  "end": "20260821"
  },
- "count": 362,
+ "count": 364,
  "events": [
+  {
+   "corp": "카카오",
+   "stock": "035720",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260821",
+   "rcept_no": "20260821000052",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260821000052",
+   "flr": "카카오"
+  },
+  {
+   "corp": "카카오",
+   "stock": "035720",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사분할결정)",
+   "category": "합병/분할",
+   "date": "20260821",
+   "rcept_no": "20260821000047",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260821000047",
+   "flr": "카카오"
+  },
   {
    "corp": "롯데지주",
    "stock": "004990",

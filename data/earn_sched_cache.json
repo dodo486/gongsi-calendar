@@ -1911,5 +1911,30 @@
   "time": "",
   "purpose": "Citi Korea Investor Conference 참석",
   "sponsor": "Citi"
+ },
+ "20260821800190": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260821800125": {
+  "kind": "ir",
+  "expected_date": "2026-08-21",
+  "time": "11:30",
+  "purpose": "지배구조 개편을 통한 성장 가속화 및 주주가치 제고 설명회",
+  "sponsor": "자사주관"
+ },
+ "20260821800115": {
+  "kind": "ir",
+  "expected_date": "2026-08-27",
+  "time": "",
+  "purpose": "Citi증권 주관 'Citi's 2026 Korea Investor Conference' 참가",
+  "sponsor": "Citi증권"
+ },
+ "20260821900135": {
+  "kind": "ir",
+  "expected_date": "2026-08-25",
+  "time": "",
+  "purpose": "",
+  "sponsor": "UBS"
  }
 }
