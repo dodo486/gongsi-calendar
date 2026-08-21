@@ -1947,5 +1947,35 @@
  "20260821800436": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260821800599": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260821800588": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260821800586": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260821800534": {
+  "kind": "ir",
+  "expected_date": "2026-08-27",
+  "time": "10:00",
+  "purpose": "Citi's 2026 Korea Investor Conference 참여",
+  "sponsor": "Citi증권"
+ },
+ "20260821900645": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260821900470": {
+  "kind": "ir",
+  "expected_date": "2026-08-25",
+  "time": "",
+  "purpose": "",
+  "sponsor": "한국투자증권"
  }
 }
