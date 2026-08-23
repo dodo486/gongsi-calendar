@@ -6664,5 +6664,93 @@
   "record_date": "2025-12-31",
   "pay_date": "",
   "div_type": "결산배당"
+ },
+ "20260223801148": {
+  "kind": "decision",
+  "stock": "375500",
+  "corp": "DL이앤씨",
+  "market": "KOSPI",
+  "rcept_dt": "20260223",
+  "per_share": "890",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260223801027": {
+  "kind": "decision",
+  "stock": "012450",
+  "corp": "한화에어로스페이스",
+  "market": "KOSPI",
+  "rcept_dt": "20260223",
+  "per_share": "7000",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260223800879": {
+  "kind": "record",
+  "stock": "375500",
+  "corp": "DL이앤씨",
+  "market": "KOSPI",
+  "rcept_dt": "20260223",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260223800832": {
+  "kind": "decision",
+  "stock": "006650",
+  "corp": "대한유화",
+  "market": "KOSPI",
+  "rcept_dt": "20260223",
+  "per_share": "1300",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260223800735": {
+  "kind": "decision",
+  "stock": "000990",
+  "corp": "DB하이텍",
+  "market": "KOSPI",
+  "rcept_dt": "20260223",
+  "per_share": "810",
+  "record_date": "2026-03-10",
+  "pay_date": "2026-04-23",
+  "div_type": "결산배당"
+ },
+ "20260223800728": {
+  "kind": "record",
+  "stock": "000990",
+  "corp": "DB하이텍",
+  "market": "KOSPI",
+  "rcept_dt": "20260223",
+  "per_share": "",
+  "record_date": "2026-03-10",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260223901281": {
+  "kind": "decision",
+  "stock": "065350",
+  "corp": "신성델타테크",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260223",
+  "per_share": "120",
+  "record_date": "2025-12-31",
+  "pay_date": "2026-04-24",
+  "div_type": "결산배당"
+ },
+ "20260223900502": {
+  "kind": "decision",
+  "stock": "030520",
+  "corp": "한컴",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260223",
+  "per_share": "400",
+  "record_date": "2025-12-31",
+  "pay_date": "2026-04-24",
+  "div_type": "결산배당"
  }
 }
