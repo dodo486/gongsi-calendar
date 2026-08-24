@@ -2017,5 +2017,28 @@
   "time": "10:00",
   "purpose": "2026 Korea Investor Conference",
   "sponsor": "Citi증권"
+ },
+ "20260824800576": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260824800581": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260824800566": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260824800556": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260824900435": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "",
+  "purpose": "",
+  "sponsor": "NH투자증권"
  }
 }
