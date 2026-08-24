@@ -1988,5 +1988,23 @@
   "time": "",
   "purpose": "",
   "sponsor": "IBK투자증권"
+ },
+ "20260824800209": {
+  "kind": "ir",
+  "expected_date": "2026-08-28",
+  "time": "13:00",
+  "purpose": "Citi's 2026 Korea Investor Conference 참석",
+  "sponsor": "씨티증권"
+ },
+ "20260824900251": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260824900214": {
+  "kind": "ir",
+  "expected_date": "2026-09-04",
+  "time": "",
+  "purpose": "",
+  "sponsor": "Macquarie"
  }
 }
