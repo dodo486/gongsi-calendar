@@ -1,8 +1,101 @@
 {
  "date": "2026-08-24",
- "generated_at": "2026-08-24 11:04:26",
- "count": 13,
+ "generated_at": "2026-08-24 12:11:31",
+ "count": 18,
  "events": [
+  {
+   "time": "11:49",
+   "kind": "주식선물",
+   "name": "한미사이언스",
+   "code": "008930",
+   "market": "KOSPI200",
+   "stage": 3,
+   "direction": "상승",
+   "title": "주식선물 3단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000168",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000168&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "11:54:23",
+   "rate": 14.79
+  },
+  {
+   "time": "11:33",
+   "kind": "주식선물",
+   "name": "에코프로비엠",
+   "code": "247540",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000166",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000166&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "11:38:09",
+   "rate": 9.19
+  },
+  {
+   "time": "11:28",
+   "kind": "주식선물",
+   "name": "보로노이",
+   "code": "310210",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000164",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000164&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "11:33:36",
+   "rate": 8.15
+  },
+  {
+   "time": "11:27",
+   "kind": "주식선물",
+   "name": "한미사이언스",
+   "code": "008930",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000163",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000163&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "11:32:18",
+   "rate": 15.02
+  },
+  {
+   "time": "11:18",
+   "kind": "주식선물",
+   "name": "한미약품",
+   "code": "128940",
+   "market": "KOSPI200",
+   "stage": 3,
+   "direction": "상승",
+   "title": "주식선물 3단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000156",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000156&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "11:23:22",
+   "rate": 29.96
+  },
   {
    "time": "10:57",
    "kind": "주식선물",
@@ -20,7 +113,7 @@
     "KTOP30"
    ],
    "expand_time": "11:02:41",
-   "rate": 10.2
+   "rate": 11.11
   },
   {
    "time": "10:14",
@@ -38,7 +131,7 @@
     "KRX300"
    ],
    "expand_time": "10:19:45",
-   "rate": 12.38
+   "rate": 12.52
   },
   {
    "time": "10:10",
@@ -56,7 +149,7 @@
     "KRX300"
    ],
    "expand_time": "10:15:50",
-   "rate": 6.71
+   "rate": 5.88
   },
   {
    "time": "10:08",
@@ -74,7 +167,7 @@
     "KRX300"
    ],
    "expand_time": "10:13:07",
-   "rate": 6.72
+   "rate": 6.22
   },
   {
    "time": "09:51",
@@ -92,7 +185,7 @@
     "KRX300"
    ],
    "expand_time": "09:56:03",
-   "rate": 6.67
+   "rate": 5.81
   },
   {
    "time": "09:27",
@@ -110,7 +203,7 @@
     "KRX300"
    ],
    "expand_time": "09:32:00",
-   "rate": 6.71
+   "rate": 8.49
   },
   {
    "time": "09:24",
@@ -141,7 +234,7 @@
     "KOSPI200"
    ],
    "expand_time": "09:26:26",
-   "rate": 13.01
+   "rate": 11.82
   },
   {
    "time": "09:15",
@@ -159,7 +252,7 @@
     "KRX300"
    ],
    "expand_time": "09:20:19",
-   "rate": 15.02
+   "rate": 15.69
   },
   {
    "time": "09:14",
@@ -176,7 +269,7 @@
     "KOSPI200"
    ],
    "expand_time": "09:19:02",
-   "rate": 4.61
+   "rate": 4.69
   },
   {
    "time": "09:11",
@@ -194,7 +287,7 @@
     "KRX300"
    ],
    "expand_time": "09:16:10",
-   "rate": 9.49
+   "rate": 9.55
   },
   {
    "time": "09:00",
@@ -213,7 +306,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:36",
-   "rate": 9.15
+   "rate": 29.96
   },
   {
    "time": "09:00",
@@ -231,7 +324,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:25",
-   "rate": 15.12
+   "rate": 15.69
   }
  ]
 }
