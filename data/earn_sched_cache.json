@@ -1981,5 +1981,12 @@
  "20260821800764": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260824900130": {
+  "kind": "ir",
+  "expected_date": "2026-08-24",
+  "time": "",
+  "purpose": "",
+  "sponsor": "IBK투자증권"
  }
 }

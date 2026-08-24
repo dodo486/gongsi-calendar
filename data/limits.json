@@ -1,8 +1,99 @@
 {
  "date": "2026-08-24",
- "generated_at": "2026-08-24 09:29:27",
- "count": 8,
+ "generated_at": "2026-08-24 11:04:26",
+ "count": 13,
  "events": [
+  {
+   "time": "10:57",
+   "kind": "주식선물",
+   "name": "삼성생명",
+   "code": "032830",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260824000138",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000138&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300",
+    "KTOP30"
+   ],
+   "expand_time": "11:02:41",
+   "rate": 10.2
+  },
+  {
+   "time": "10:14",
+   "kind": "주식선물",
+   "name": "솔브레인홀딩스",
+   "code": "036830",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000103",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000103&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "10:19:45",
+   "rate": 12.38
+  },
+  {
+   "time": "10:10",
+   "kind": "주식선물",
+   "name": "카카오페이",
+   "code": "377300",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000099",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000099&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "10:15:50",
+   "rate": 6.71
+  },
+  {
+   "time": "10:08",
+   "kind": "주식선물",
+   "name": "심텍",
+   "code": "222800",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000097",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000097&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "10:13:07",
+   "rate": 6.72
+  },
+  {
+   "time": "09:51",
+   "kind": "주식선물",
+   "name": "팬오션",
+   "code": "028670",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260824000089",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260824000089&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:56:03",
+   "rate": 6.67
+  },
   {
    "time": "09:27",
    "kind": "주식선물",
@@ -19,7 +110,7 @@
     "KRX300"
    ],
    "expand_time": "09:32:00",
-   "rate": 8.89
+   "rate": 6.71
   },
   {
    "time": "09:24",
@@ -50,7 +141,7 @@
     "KOSPI200"
    ],
    "expand_time": "09:26:26",
-   "rate": 10.14
+   "rate": 13.01
   },
   {
    "time": "09:15",
@@ -68,7 +159,7 @@
     "KRX300"
    ],
    "expand_time": "09:20:19",
-   "rate": 15.5
+   "rate": 15.02
   },
   {
    "time": "09:14",
@@ -85,7 +176,7 @@
     "KOSPI200"
    ],
    "expand_time": "09:19:02",
-   "rate": 6.37
+   "rate": 4.61
   },
   {
    "time": "09:11",
@@ -103,7 +194,7 @@
     "KRX300"
    ],
    "expand_time": "09:16:10",
-   "rate": 9.17
+   "rate": 9.49
   },
   {
    "time": "09:00",
@@ -122,7 +213,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:36",
-   "rate": 7.22
+   "rate": 9.15
   },
   {
    "time": "09:00",
@@ -140,7 +231,7 @@
     "KRX300"
    ],
    "expand_time": "09:05:25",
-   "rate": 15.5
+   "rate": 15.12
   }
  ]
 }
