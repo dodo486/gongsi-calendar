@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-24 16:46:34",
+ "generated_at": "2026-08-24 17:34:45",
  "range": {
   "bgn": "20260506",
   "end": "20260824"
  },
- "count": 371,
+ "count": 372,
  "events": [
   {
    "corp": "카카오",
@@ -27,6 +27,17 @@
    "rcept_no": "20260824800483",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260824800483",
    "flr": "LG생활건강"
+  },
+  {
+   "corp": "서진시스템",
+   "stock": "178320",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260824",
+   "rcept_no": "20260824000269",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260824000269",
+   "flr": "서진시스템"
   },
   {
    "corp": "삼성전자",
