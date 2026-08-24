@@ -1,29 +1,7 @@
 {
- "generated_at": "2026-08-24 20:41:48",
- "count": 27,
+ "generated_at": "2026-08-25 08:48:39",
+ "count": 24,
  "events": [
-  {
-   "corp": "지역난방공사",
-   "stock": "071320",
-   "market": "KOSPI",
-   "rcept_no": "20260806800184",
-   "rcept_dt": "20260806",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800184",
-   "src": "예고",
-   "expected_date": "2026-08-10",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "코스메카코리아",
-   "stock": "241710",
-   "market": "KOSDAQ",
-   "rcept_no": "20260803900463",
-   "rcept_dt": "20260803",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260803900463",
-   "src": "예고",
-   "expected_date": "2026-08-10",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "CJ대한통운",
    "stock": "000120",
@@ -89,19 +67,6 @@
    "src": "예고",
    "expected_date": "2026-08-11",
    "period_end": "2026-06-30"
-  },
-  {
-   "corp": "SK바이오사이언스",
-   "stock": "302440",
-   "market": "KOSPI",
-   "rcept_no": "20260810800485",
-   "rcept_dt": "20260810",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260810800485",
-   "src": "IR",
-   "expected_date": "2026-08-11",
-   "time": "09:10",
-   "purpose": "2026년 2분기 실적 및 경영현황 설명",
-   "sponsor": "흥국증권"
   },
   {
    "corp": "JYP Ent.",

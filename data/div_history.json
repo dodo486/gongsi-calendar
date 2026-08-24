@@ -6752,5 +6752,148 @@
   "record_date": "2025-12-31",
   "pay_date": "2026-04-24",
   "div_type": "결산배당"
+ },
+ "20260224801242": {
+  "kind": "decision",
+  "stock": "017960",
+  "corp": "한국카본",
+  "market": "KOSPI",
+  "rcept_dt": "20260224",
+  "per_share": "320",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224801166": {
+  "kind": "decision",
+  "stock": "006800",
+  "corp": "미래에셋증권",
+  "market": "KOSPI",
+  "rcept_dt": "20260224",
+  "per_share": "300",
+  "record_date": "2026-03-17",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224801139": {
+  "kind": "record",
+  "stock": "006800",
+  "corp": "미래에셋증권",
+  "market": "KOSPI",
+  "rcept_dt": "20260224",
+  "per_share": "",
+  "record_date": "2026-03-17",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224800900": {
+  "kind": "decision",
+  "stock": "383220",
+  "corp": "F&F",
+  "market": "KOSPI",
+  "rcept_dt": "20260224",
+  "per_share": "2700",
+  "record_date": "2025-12-31",
+  "pay_date": "2026-04-20",
+  "div_type": "결산배당"
+ },
+ "20260224800968": {
+  "kind": "decision",
+  "stock": "021240",
+  "corp": "코웨이",
+  "market": "KOSPI",
+  "rcept_dt": "20260224",
+  "per_share": "1940",
+  "record_date": "2026-04-02",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224901335": {
+  "kind": "decision",
+  "stock": "086520",
+  "corp": "에코프로",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260224",
+  "per_share": "150",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224901331": {
+  "kind": "record",
+  "stock": "086520",
+  "corp": "에코프로",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260224",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260224900940": {
+  "kind": "decision",
+  "stock": "247540",
+  "corp": "에코프로비엠",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260224",
+  "per_share": "100",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224900909": {
+  "kind": "record",
+  "stock": "247540",
+  "corp": "에코프로비엠",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260224",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": ""
+ },
+ "20260224900662": {
+  "kind": "decision",
+  "stock": "222800",
+  "corp": "심텍",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260224",
+  "per_share": "100",
+  "record_date": "2025-12-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224900442": {
+  "kind": "decision",
+  "stock": "082920",
+  "corp": "비츠로셀",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260224",
+  "per_share": "260",
+  "record_date": "",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224900163": {
+  "kind": "decision",
+  "stock": "272290",
+  "corp": "이녹스첨단소재",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260224",
+  "per_share": "350",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260224900152": {
+  "kind": "record",
+  "stock": "272290",
+  "corp": "이녹스첨단소재",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260224",
+  "per_share": "",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": ""
  }
 }
