@@ -2006,5 +2006,16 @@
   "time": "",
   "purpose": "",
   "sponsor": "Macquarie"
+ },
+ "20260824800400": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260824800339": {
+  "kind": "ir",
+  "expected_date": "2026-08-27",
+  "time": "10:00",
+  "purpose": "2026 Korea Investor Conference",
+  "sponsor": "Citi증권"
  }
 }
