@@ -2084,5 +2084,19 @@
   "time": "09:00",
   "purpose": "KIS Korea Emerging Leaders Conference 2026",
   "sponsor": "한국투자증권"
+ },
+ "20260825800401": {
+  "kind": "ir",
+  "expected_date": "2026-08-28",
+  "time": "10:00",
+  "purpose": "2026년 2분기 실적 관련 기업설명회",
+  "sponsor": "당사"
+ },
+ "20260825900395": {
+  "kind": "ir",
+  "expected_date": "2026-08-31",
+  "time": "",
+  "purpose": "",
+  "sponsor": "키움증권"
  }
 }

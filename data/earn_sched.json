@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-25 15:23:23",
- "count": 24,
+ "generated_at": "2026-08-25 16:26:45",
+ "count": 25,
  "events": [
   {
    "corp": "CJ대한통운",
@@ -277,6 +277,19 @@
    "time": "09:00",
    "purpose": "'26년 2분기 경영실적 코멘트 및 질의응답",
    "sponsor": "하나증권"
+  },
+  {
+   "corp": "한전KPS",
+   "stock": "051600",
+   "market": "KOSPI",
+   "rcept_no": "20260825800401",
+   "rcept_dt": "20260825",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260825800401",
+   "src": "IR",
+   "expected_date": "2026-08-28",
+   "time": "10:00",
+   "purpose": "2026년 2분기 실적 관련 기업설명회",
+   "sponsor": "당사"
   }
  ]
 }
