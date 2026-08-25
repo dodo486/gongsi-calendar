@@ -2114,5 +2114,12 @@
  "20260825800659": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260825900617": {
+  "kind": "ir",
+  "expected_date": "2026-08-27",
+  "time": "14:00",
+  "purpose": "",
+  "sponsor": "-"
  }
 }

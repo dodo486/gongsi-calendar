@@ -1,11 +1,44 @@
 {
- "generated_at": "2026-08-25 17:10:04",
+ "generated_at": "2026-08-25 19:20:30",
  "range": {
   "bgn": "20260506",
   "end": "20260825"
  },
- "count": 376,
+ "count": 380,
  "events": [
+  {
+   "corp": "SK",
+   "stock": "034730",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260825",
+   "rcept_no": "20260825000473",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260825000473",
+   "flr": "SK"
+  },
+  {
+   "corp": "SK이노베이션",
+   "stock": "096770",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260825",
+   "rcept_no": "20260825000424",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260825000424",
+   "flr": "SK이노베이션"
+  },
+  {
+   "corp": "SK아이이테크놀로지",
+   "stock": "361610",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260825",
+   "rcept_no": "20260825000420",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260825000420",
+   "flr": "SK아이이테크놀로지"
+  },
   {
    "corp": "하이브",
    "stock": "352820",
@@ -16,6 +49,17 @@
    "rcept_no": "20260825000350",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260825000350",
    "flr": "하이브"
+  },
+  {
+   "corp": "SK",
+   "stock": "034730",
+   "market": "KOSPI",
+   "title": "주요사항보고서(회사합병결정)(자회사의 주요경영사항)",
+   "category": "합병/분할",
+   "date": "20260825",
+   "rcept_no": "20260825800615",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260825800615",
+   "flr": "SK"
   },
   {
    "corp": "카카오",
