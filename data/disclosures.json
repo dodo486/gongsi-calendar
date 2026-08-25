@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-08-25 16:09:14",
+ "generated_at": "2026-08-25 17:10:04",
  "range": {
   "bgn": "20260506",
-  "end": "20260824"
+  "end": "20260825"
  },
- "count": 375,
+ "count": 376,
  "events": [
+  {
+   "corp": "하이브",
+   "stock": "352820",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260825",
+   "rcept_no": "20260825000350",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260825000350",
+   "flr": "하이브"
+  },
   {
    "corp": "카카오",
    "stock": "035720",
