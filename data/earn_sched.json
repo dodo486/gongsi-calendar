@@ -1,73 +1,7 @@
 {
- "generated_at": "2026-08-25 20:32:37",
- "count": 25,
+ "generated_at": "2026-08-26 08:51:38",
+ "count": 17,
  "events": [
-  {
-   "corp": "CJ대한통운",
-   "stock": "000120",
-   "market": "KOSPI",
-   "rcept_no": "20260729800199",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800199",
-   "src": "예고",
-   "expected_date": "2026-08-11",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "CJ제일제당",
-   "stock": "097950",
-   "market": "KOSPI",
-   "rcept_no": "20260720800553",
-   "rcept_dt": "20260720",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260720800553",
-   "src": "예고",
-   "expected_date": "2026-08-11",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "GS",
-   "stock": "078930",
-   "market": "KOSPI",
-   "rcept_no": "20260804800330",
-   "rcept_dt": "20260804",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800330",
-   "src": "예고",
-   "expected_date": "2026-08-11",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "신세계",
-   "stock": "004170",
-   "market": "KOSPI",
-   "rcept_no": "20260804800455",
-   "rcept_dt": "20260804",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260804800455",
-   "src": "예고",
-   "expected_date": "2026-08-11",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "펄어비스",
-   "stock": "263750",
-   "market": "KOSDAQ",
-   "rcept_no": "20260716900703",
-   "rcept_dt": "20260716",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260716900703",
-   "src": "예고",
-   "expected_date": "2026-08-11",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "펌텍코리아",
-   "stock": "251970",
-   "market": "KOSDAQ",
-   "rcept_no": "20260806900384",
-   "rcept_dt": "20260806",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806900384",
-   "src": "예고",
-   "expected_date": "2026-08-11",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "JYP Ent.",
    "stock": "035900",
@@ -190,19 +124,6 @@
    "period_end": "2026-06-30"
   },
   {
-   "corp": "신세계",
-   "stock": "004170",
-   "market": "KOSPI",
-   "rcept_no": "20260811800640",
-   "rcept_dt": "20260811",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800640",
-   "src": "IR",
-   "expected_date": "2026-08-13",
-   "time": "",
-   "purpose": "ㅁ투자자 미팅을 통한 이해증진 및 투자유치 ㅁ경영실적 및 주요 관심사항 Q&amp;A 진행",
-   "sponsor": "대신증권"
-  },
-  {
    "corp": "이마트",
    "stock": "139480",
    "market": "KOSPI",
@@ -238,19 +159,6 @@
    "time": "",
    "purpose": "2026년 2분기 실적 NDR 진행",
    "sponsor": "NH투자증권"
-  },
-  {
-   "corp": "미스토홀딩스",
-   "stock": "081660",
-   "market": "KOSPI",
-   "rcept_no": "20260811800548",
-   "rcept_dt": "20260811",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260811800548",
-   "src": "IR",
-   "expected_date": "2026-08-14",
-   "time": "16:30",
-   "purpose": "2026년 2분기 실적발표",
-   "sponsor": "당사"
   },
   {
    "corp": "한일시멘트",
