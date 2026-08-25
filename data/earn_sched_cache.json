@@ -2073,5 +2073,16 @@
  "20260825800210": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260825800329": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260825800243": {
+  "kind": "ir",
+  "expected_date": "2026-08-26",
+  "time": "09:00",
+  "purpose": "KIS Korea Emerging Leaders Conference 2026",
+  "sponsor": "한국투자증권"
  }
 }
