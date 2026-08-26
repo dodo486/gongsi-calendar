@@ -1,8 +1,26 @@
 {
  "date": "2026-08-26",
- "generated_at": "2026-08-26 14:31:54",
- "count": 12,
+ "generated_at": "2026-08-26 15:03:56",
+ "count": 13,
  "events": [
+  {
+   "time": "14:46",
+   "kind": "주식선물",
+   "name": "현대오토에버",
+   "code": "307950",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260826000323",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260826000323&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "14:51:12",
+   "rate": 8.44
+  },
   {
    "time": "12:50",
    "kind": "주식선물",
@@ -18,7 +36,7 @@
     "KOSDAQ150"
    ],
    "expand_time": "12:55:05",
-   "rate": 7.04
+   "rate": 9.76
   },
   {
    "time": "11:40",
@@ -37,7 +55,7 @@
     "KTOP30"
    ],
    "expand_time": "11:45:53",
-   "rate": 9.3
+   "rate": 9.12
   },
   {
    "time": "11:06",
@@ -55,7 +73,7 @@
     "KRX300"
    ],
    "expand_time": "11:11:26",
-   "rate": 8.63
+   "rate": 8.51
   },
   {
    "time": "11:02",
@@ -91,7 +109,7 @@
     "KRX300"
    ],
    "expand_time": "10:33:17",
-   "rate": 7.0
+   "rate": 7.12
   },
   {
    "time": "09:42",
@@ -127,7 +145,7 @@
     "KRX300"
    ],
    "expand_time": "09:44:58",
-   "rate": 13.63
+   "rate": 12.98
   },
   {
    "time": "09:30",
@@ -146,7 +164,7 @@
     "KRX300"
    ],
    "expand_time": "09:35:20",
-   "rate": 13.63
+   "rate": 12.98
   },
   {
    "time": "09:26",
@@ -164,7 +182,7 @@
     "KRX300"
    ],
    "expand_time": "09:31:53",
-   "rate": 12.38
+   "rate": 12.07
   },
   {
    "time": "09:20",
@@ -183,7 +201,7 @@
     "KRX300"
    ],
    "expand_time": "09:25:57",
-   "rate": 4.59
+   "rate": 5.79
   },
   {
    "time": "09:14",
@@ -219,7 +237,7 @@
     "KTOP30"
    ],
    "expand_time": "09:05:26",
-   "rate": 11.2
+   "rate": 10.8
   }
  ]
 }
