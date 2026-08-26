@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-08-26 17:19:41",
+ "generated_at": "2026-08-26 18:09:11",
  "range": {
   "bgn": "20260506",
   "end": "20260826"
  },
- "count": 384,
+ "count": 387,
  "events": [
+  {
+   "corp": "SK아이이테크놀로지",
+   "stock": "361610",
+   "market": "KOSPI",
+   "title": "[첨부정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260826",
+   "rcept_no": "20260826000752",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260826000752",
+   "flr": "SK아이이테크놀로지"
+  },
   {
    "corp": "SK이노베이션",
    "stock": "096770",
@@ -38,6 +49,28 @@
    "rcept_no": "20260826000428",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260826000428",
    "flr": "에프에스티"
+  },
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "[기재정정]기타경영사항(자율공시)              (제14회차 신주인수권부사채 만기전 취득 후 재매각)",
+   "category": "메자닌",
+   "date": "20260826",
+   "rcept_no": "20260826900775",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260826900775",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "[기재정정]기타경영사항(자율공시)              (제14회차 신주인수권부사채 만기전 취득 후 재매각)",
+   "category": "메자닌",
+   "date": "20260826",
+   "rcept_no": "20260826900776",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260826900776",
+   "flr": "성호전자"
   },
   {
    "corp": "네이처셀",
