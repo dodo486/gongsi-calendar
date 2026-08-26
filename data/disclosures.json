@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-08-26 08:35:42",
+ "generated_at": "2026-08-26 11:58:26",
  "range": {
   "bgn": "20260506",
-  "end": "20260825"
+  "end": "20260826"
  },
- "count": 380,
+ "count": 381,
  "events": [
+  {
+   "corp": "네이처셀",
+   "stock": "007390",
+   "market": "KOSDAQ",
+   "title": "유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260826",
+   "rcept_no": "20260826900127",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260826900127",
+   "flr": "네이처셀"
+  },
   {
    "corp": "SK",
    "stock": "034730",

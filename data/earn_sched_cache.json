@@ -2121,5 +2121,19 @@
   "time": "14:00",
   "purpose": "",
   "sponsor": "-"
+ },
+ "20260826800162": {
+  "kind": "ir",
+  "expected_date": "2026-08-26",
+  "time": "14:00",
+  "purpose": "회사 주요 경영사항 발표 - 뇌전증 신약 후보물질(Opakalim) 도입",
+  "sponsor": "자사"
+ },
+ "20260826800074": {
+  "kind": "ir",
+  "expected_date": "2026-08-27",
+  "time": "09:00",
+  "purpose": "Citi's 2026 Korea Investor Conference 참석",
+  "sponsor": "Citi"
  }
 }
