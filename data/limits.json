@@ -1,8 +1,26 @@
 {
  "date": "2026-08-26",
- "generated_at": "2026-08-26 15:03:56",
- "count": 13,
+ "generated_at": "2026-08-26 15:44:19",
+ "count": 14,
  "events": [
+  {
+   "time": "15:25",
+   "kind": "주식선물",
+   "name": "신세계",
+   "code": "004170",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260826000394",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260826000394&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "15:30:05",
+   "rate": 7.34
+  },
   {
    "time": "14:46",
    "kind": "주식선물",
@@ -19,7 +37,7 @@
     "KRX300"
    ],
    "expand_time": "14:51:12",
-   "rate": 8.44
+   "rate": 9.1
   },
   {
    "time": "12:50",
@@ -36,7 +54,7 @@
     "KOSDAQ150"
    ],
    "expand_time": "12:55:05",
-   "rate": 9.76
+   "rate": 8.8
   },
   {
    "time": "11:40",
@@ -55,7 +73,7 @@
     "KTOP30"
    ],
    "expand_time": "11:45:53",
-   "rate": 9.12
+   "rate": 8.6
   },
   {
    "time": "11:06",
@@ -73,7 +91,7 @@
     "KRX300"
    ],
    "expand_time": "11:11:26",
-   "rate": 8.51
+   "rate": 8.4
   },
   {
    "time": "11:02",
@@ -109,7 +127,7 @@
     "KRX300"
    ],
    "expand_time": "10:33:17",
-   "rate": 7.12
+   "rate": 6.63
   },
   {
    "time": "09:42",
@@ -145,7 +163,7 @@
     "KRX300"
    ],
    "expand_time": "09:44:58",
-   "rate": 12.98
+   "rate": 13.63
   },
   {
    "time": "09:30",
@@ -164,7 +182,7 @@
     "KRX300"
    ],
    "expand_time": "09:35:20",
-   "rate": 12.98
+   "rate": 13.63
   },
   {
    "time": "09:26",
@@ -237,7 +255,7 @@
     "KTOP30"
    ],
    "expand_time": "09:05:26",
-   "rate": 10.8
+   "rate": 11.04
   }
  ]
 }

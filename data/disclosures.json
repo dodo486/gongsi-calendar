@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-08-26 14:45:39",
+ "generated_at": "2026-08-26 15:26:17",
  "range": {
   "bgn": "20260506",
   "end": "20260826"
  },
- "count": 381,
+ "count": 383,
  "events": [
+  {
+   "corp": "SK이노베이션",
+   "stock": "096770",
+   "market": "KOSPI",
+   "title": "[기재정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260826",
+   "rcept_no": "20260826000414",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260826000414",
+   "flr": "SK이노베이션"
+  },
+  {
+   "corp": "SK",
+   "stock": "034730",
+   "market": "KOSPI",
+   "title": "[기재정정]주요사항보고서(회사합병결정)(자회사의 주요경영사항)",
+   "category": "합병/분할",
+   "date": "20260826",
+   "rcept_no": "20260826800334",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260826800334",
+   "flr": "SK"
+  },
   {
    "corp": "네이처셀",
    "stock": "007390",
