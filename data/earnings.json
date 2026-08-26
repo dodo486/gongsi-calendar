@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-26 15:42:33",
+ "generated_at": "2026-08-26 16:47:03",
  "count": 240,
  "events": [
   {
@@ -12,8 +12,8 @@
    "rcept_no": "20260826800336",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260826800336",
    "flr": "지역난방공사",
-   "price": "74,600",
    "rate": 0.4,
+   "price": "74,600",
    "chg_sign": "2"
   },
   {
