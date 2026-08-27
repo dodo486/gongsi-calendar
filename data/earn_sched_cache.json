@@ -2171,5 +2171,26 @@
  "20260826900698": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260827800431": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "09:00",
+  "purpose": "국내/외 NDR, 컨퍼런스 및 Corporate Day 참가",
+  "sponsor": "Goldman"
+ },
+ "20260827800426": {
+  "kind": "ir",
+  "expected_date": "2026-08-28",
+  "time": "09:00",
+  "purpose": "Citi's 2026 Korea Investor Conference 참석",
+  "sponsor": "Citi"
+ },
+ "20260827800312": {
+  "kind": "ir",
+  "expected_date": "2026-08-28",
+  "time": "09:00",
+  "purpose": "Citi's 2026 Korea Investor Conference 참가",
+  "sponsor": "Citi증권"
  }
 }

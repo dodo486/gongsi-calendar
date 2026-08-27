@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-08-27 13:31:15",
- "count": 60,
+ "generated_at": "2026-08-28 00:32:25",
+ "count": 61,
  "events": [
   {
    "corp": "삼성전자",
@@ -813,6 +813,20 @@
    "rcept_dt": "20260820",
    "confirm_date": "2026-09-01",
    "ex_date": "2026-09-02"
+  },
+  {
+   "corp": "LG",
+   "stock": "003550",
+   "market": "KOSPI",
+   "per_share": "1000",
+   "record_date": "2026-09-11",
+   "pay_date": "2026-09-23",
+   "rcept_no": "20260827800295",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260827800295",
+   "div_type": "중간배당",
+   "rcept_dt": "20260827",
+   "confirm_date": "2026-09-09",
+   "ex_date": "2026-09-10"
   },
   {
    "corp": "현대백화점",

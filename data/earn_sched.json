@@ -1,40 +1,7 @@
 {
- "generated_at": "2026-08-27 13:45:02",
- "count": 7,
+ "generated_at": "2026-08-28 00:55:51",
+ "count": 4,
  "events": [
-  {
-   "corp": "LG",
-   "stock": "003550",
-   "market": "KOSPI",
-   "rcept_no": "20260724800729",
-   "rcept_dt": "20260724",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260724800729",
-   "src": "예고",
-   "expected_date": "2026-08-13",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "달바글로벌",
-   "stock": "483650",
-   "market": "KOSPI",
-   "rcept_no": "20260730800315",
-   "rcept_dt": "20260730",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800315",
-   "src": "예고",
-   "expected_date": "2026-08-13",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "이마트",
-   "stock": "139480",
-   "market": "KOSPI",
-   "rcept_no": "20260806800162",
-   "rcept_dt": "20260806",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260806800162",
-   "src": "예고",
-   "expected_date": "2026-08-13",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "DN오토모티브",
    "stock": "007340",

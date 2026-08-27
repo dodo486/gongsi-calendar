@@ -7456,5 +7456,115 @@
   "record_date": "2025-12-31",
   "pay_date": "",
   "div_type": "결산배당"
+ },
+ "20260827800295": {
+  "kind": "decision",
+  "stock": "003550",
+  "corp": "LG",
+  "market": "KOSPI",
+  "rcept_dt": "20260827",
+  "per_share": "1000",
+  "record_date": "2026-09-11",
+  "pay_date": "2026-09-23",
+  "div_type": "중간배당"
+ },
+ "20260827800293": {
+  "kind": "record",
+  "stock": "003550",
+  "corp": "LG",
+  "market": "KOSPI",
+  "rcept_dt": "20260827",
+  "per_share": "",
+  "record_date": "2026-09-11",
+  "pay_date": "",
+  "div_type": "중간배당"
+ },
+ "20260227801399": {
+  "kind": "decision",
+  "stock": "259960",
+  "corp": "크래프톤",
+  "market": "KOSPI",
+  "rcept_dt": "20260227",
+  "per_share": "2240",
+  "record_date": "2026-02-27",
+  "pay_date": "2026-04-22",
+  "div_type": "결산배당"
+ },
+ "20260227801268": {
+  "kind": "decision",
+  "stock": "267270",
+  "corp": "HD건설기계",
+  "market": "KOSPI",
+  "rcept_dt": "20260227",
+  "per_share": "550",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260227800721": {
+  "kind": "record",
+  "stock": "035250",
+  "corp": "강원랜드",
+  "market": "KOSPI",
+  "rcept_dt": "20260227",
+  "per_share": "",
+  "record_date": "2026-04-01",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260227800652": {
+  "kind": "decision",
+  "stock": "005830",
+  "corp": "DB손해보험",
+  "market": "KOSPI",
+  "rcept_dt": "20260227",
+  "per_share": "7600",
+  "record_date": "2026-03-27",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260227800626": {
+  "kind": "decision",
+  "stock": "035250",
+  "corp": "강원랜드",
+  "market": "KOSPI",
+  "rcept_dt": "20260227",
+  "per_share": "950",
+  "record_date": "2026-04-01",
+  "pay_date": "2026-04-24",
+  "div_type": "결산배당"
+ },
+ "20260227800371": {
+  "kind": "record",
+  "stock": "278470",
+  "corp": "에이피알",
+  "market": "KOSPI",
+  "rcept_dt": "20260227",
+  "per_share": "",
+  "record_date": "2026-03-31",
+  "pay_date": "",
+  "div_type": "결산배당"
+ },
+ "20260227800370": {
+  "kind": "decision",
+  "stock": "278470",
+  "corp": "에이피알",
+  "market": "KOSPI",
+  "rcept_dt": "20260227",
+  "per_share": "1500",
+  "record_date": "2026-03-31",
+  "pay_date": "2026-04-30",
+  "div_type": "결산배당"
+ },
+ "20260227800271": {
+  "kind": "decision",
+  "stock": "323410",
+  "corp": "카카오뱅크",
+  "market": "KOSPI",
+  "rcept_dt": "20260227",
+  "per_share": "460",
+  "record_date": "2026-02-27",
+  "pay_date": "",
+  "div_type": "결산배당"
  }
 }

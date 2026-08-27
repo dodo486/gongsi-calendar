@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-08-27 13:31:09",
+ "generated_at": "2026-08-28 00:32:09",
  "range": {
   "bgn": "20260506",
   "end": "20260827"
  },
- "count": 389,
+ "count": 390,
  "events": [
   {
    "corp": "SK텔레콤",
@@ -15,6 +15,17 @@
    "date": "20260827",
    "rcept_no": "20260827000390",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260827000390",
+   "flr": "SK텔레콤"
+  },
+  {
+   "corp": "SK텔레콤",
+   "stock": "017670",
+   "market": "KOSPI",
+   "title": "회사분할결정(종속회사의주요경영사항)",
+   "category": "합병/분할",
+   "date": "20260827",
+   "rcept_no": "20260827800679",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260827800679",
    "flr": "SK텔레콤"
   },
   {
