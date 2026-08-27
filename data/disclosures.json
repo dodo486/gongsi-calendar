@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-08-26 19:54:36",
+ "generated_at": "2026-08-27 13:31:09",
  "range": {
   "bgn": "20260506",
-  "end": "20260826"
+  "end": "20260827"
  },
- "count": 387,
+ "count": 389,
  "events": [
+  {
+   "corp": "SK텔레콤",
+   "stock": "017670",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260827",
+   "rcept_no": "20260827000390",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260827000390",
+   "flr": "SK텔레콤"
+  },
+  {
+   "corp": "SK",
+   "stock": "034730",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식처분결정)(자회사의 주요경영사항)",
+   "category": "자사주",
+   "date": "20260827",
+   "rcept_no": "20260827800149",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260827800149",
+   "flr": "SK"
+  },
   {
    "corp": "SK아이이테크놀로지",
    "stock": "361610",

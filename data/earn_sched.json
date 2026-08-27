@@ -1,106 +1,7 @@
 {
- "generated_at": "2026-08-26 20:20:39",
- "count": 17,
+ "generated_at": "2026-08-27 13:45:02",
+ "count": 7,
  "events": [
-  {
-   "corp": "JYP Ent.",
-   "stock": "035900",
-   "market": "KOSDAQ",
-   "rcept_no": "20260805900573",
-   "rcept_dt": "20260805",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805900573",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "네오위즈",
-   "stock": "095660",
-   "market": "KOSDAQ",
-   "rcept_no": "20260728900619",
-   "rcept_dt": "20260728",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260728900619",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "더블유게임즈",
-   "stock": "192080",
-   "market": "KOSPI",
-   "rcept_no": "20260731800863",
-   "rcept_dt": "20260731",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260731800863",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "동원산업",
-   "stock": "006040",
-   "market": "KOSPI",
-   "rcept_no": "20260805800261",
-   "rcept_dt": "20260805",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260805800261",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "미래에셋증권",
-   "stock": "006800",
-   "market": "KOSPI",
-   "rcept_no": "20260729800423",
-   "rcept_dt": "20260729",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260729800423",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "위메이드",
-   "stock": "112040",
-   "market": "KOSDAQ",
-   "rcept_no": "20260716900725",
-   "rcept_dt": "20260716",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260716900725",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "위메이드맥스",
-   "stock": "101730",
-   "market": "KOSDAQ",
-   "rcept_no": "20260716900781",
-   "rcept_dt": "20260716",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260716900781",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "컴투스",
-   "stock": "078340",
-   "market": "KOSDAQ",
-   "rcept_no": "20260722900260",
-   "rcept_dt": "20260722",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260722900260",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
-  {
-   "corp": "한국콜마",
-   "stock": "161890",
-   "market": "KOSPI",
-   "rcept_no": "20260730800124",
-   "rcept_dt": "20260730",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260730800124",
-   "src": "예고",
-   "expected_date": "2026-08-12",
-   "period_end": "2026-06-30"
-  },
   {
    "corp": "LG",
    "stock": "003550",
@@ -146,19 +47,6 @@
    "time": "",
    "purpose": "2026년 2분기 실적 설명",
    "sponsor": "하나증권"
-  },
-  {
-   "corp": "미래에셋증권",
-   "stock": "006800",
-   "market": "KOSPI",
-   "rcept_no": "20260812800143",
-   "rcept_dt": "20260812",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800143",
-   "src": "IR",
-   "expected_date": "2026-08-14",
-   "time": "",
-   "purpose": "2026년 2분기 실적 NDR 진행",
-   "sponsor": "NH투자증권"
   },
   {
    "corp": "한일시멘트",
