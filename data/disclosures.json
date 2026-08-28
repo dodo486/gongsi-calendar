@@ -1,11 +1,44 @@
 {
- "generated_at": "2026-08-28 00:32:09",
+ "generated_at": "2026-08-28 15:58:07",
  "range": {
   "bgn": "20260506",
-  "end": "20260827"
+  "end": "20260828"
  },
- "count": 390,
+ "count": 393,
  "events": [
+  {
+   "corp": "삼성바이오로직스",
+   "stock": "207940",
+   "market": "KOSPI",
+   "title": "주요사항보고서(유상증자결정)",
+   "category": "유상증자",
+   "date": "20260828",
+   "rcept_no": "20260828000001",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260828000001",
+   "flr": "삼성바이오로직스"
+  },
+  {
+   "corp": "이마트",
+   "stock": "139480",
+   "market": "KOSPI",
+   "title": "감자결정(종속회사의주요경영사항)",
+   "category": "감자",
+   "date": "20260828",
+   "rcept_no": "20260828800315",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260828800315",
+   "flr": "이마트"
+  },
+  {
+   "corp": "원익홀딩스",
+   "stock": "030530",
+   "market": "KOSDAQ",
+   "title": "유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260828",
+   "rcept_no": "20260828900360",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260828900360",
+   "flr": "원익홀딩스"
+  },
   {
    "corp": "SK텔레콤",
    "stock": "017670",

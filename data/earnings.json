@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-28 00:53:27",
+ "generated_at": "2026-08-28 16:23:18",
  "count": 218,
  "events": [
   {
@@ -17,8 +17,8 @@
    "disc_time": "15:55",
    "pre5": 0.0,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260828"
+   "tick_state": "wait:20260828",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD현대중공업",
@@ -35,8 +35,8 @@
    "disc_time": "15:55",
    "pre5": 1.18,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260828"
+   "tick_state": "wait:20260828",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "HD한국조선해양",
@@ -53,8 +53,8 @@
    "disc_time": "15:55",
    "pre5": 0.0,
    "post5": null,
-   "tick_kind": "close_gap",
-   "tick_state": "wait:20260828"
+   "tick_state": "wait:20260828",
+   "tick_kind": "close_gap"
   },
   {
    "corp": "지역난방공사",

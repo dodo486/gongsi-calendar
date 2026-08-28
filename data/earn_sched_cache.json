@@ -2192,5 +2192,58 @@
   "time": "09:00",
   "purpose": "Citi's 2026 Korea Investor Conference 참가",
   "sponsor": "Citi증권"
+ },
+ "20260828800535": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260828800372": {
+  "kind": "ir",
+  "expected_date": "2026-08-31",
+  "time": "09:30",
+  "purpose": "2026 Kiwoom Corporate Day 참가",
+  "sponsor": "키움증권"
+ },
+ "20260828800325": {
+  "kind": "ir",
+  "expected_date": "2026-09-03",
+  "time": "10:30",
+  "purpose": "유상증자 관련 주요 내용 설명 및 투자자 이해 제고",
+  "sponsor": "NH투자증권"
+ },
+ "20260828800249": {
+  "kind": "ir",
+  "expected_date": "2026-08-31",
+  "time": "09:00",
+  "purpose": "해외지역 방문 IR (Non-Deal Roadshow) 실시",
+  "sponsor": "Goldman"
+ },
+ "20260828800244": {
+  "kind": "ir",
+  "expected_date": "2026-08-31",
+  "time": "09:00",
+  "purpose": "컨퍼런스 참가를 통한 투자자 당사 이해도 제고",
+  "sponsor": "Goldman"
+ },
+ "20260828800227": {
+  "kind": "ir",
+  "expected_date": "2026-08-31",
+  "time": "",
+  "purpose": "당사 사업에 대한 투자자 이해도 제고",
+  "sponsor": "뱅크오브아메리카,"
+ },
+ "20260828800101": {
+  "kind": "ir",
+  "expected_date": "2026-08-31",
+  "time": "15:00",
+  "purpose": "Raymond James Asia Tech Tour 참가",
+  "sponsor": "CGSI증권"
+ },
+ "20260828800099": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "00:00",
+  "purpose": "Non-Deal Roadshow",
+  "sponsor": "KB증권"
  }
 }
