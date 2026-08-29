@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-08-28 15:58:07",
+ "generated_at": "2026-08-29 13:11:52",
  "range": {
   "bgn": "20260506",
   "end": "20260828"
  },
- "count": 393,
+ "count": 397,
  "events": [
+  {
+   "corp": "메리츠금융지주",
+   "stock": "138040",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약체결결정)",
+   "category": "자사주",
+   "date": "20260828",
+   "rcept_no": "20260828001650",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260828001650",
+   "flr": "메리츠금융지주"
+  },
+  {
+   "corp": "메리츠금융지주",
+   "stock": "138040",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260828",
+   "rcept_no": "20260828001496",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260828001496",
+   "flr": "메리츠금융지주"
+  },
   {
    "corp": "삼성바이오로직스",
    "stock": "207940",
@@ -18,6 +40,17 @@
    "flr": "삼성바이오로직스"
   },
   {
+   "corp": "삼성물산",
+   "stock": "028260",
+   "market": "KOSPI",
+   "title": "유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260828",
+   "rcept_no": "20260828800769",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260828800769",
+   "flr": "삼성물산"
+  },
+  {
    "corp": "이마트",
    "stock": "139480",
    "market": "KOSPI",
@@ -27,6 +60,17 @@
    "rcept_no": "20260828800315",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260828800315",
    "flr": "이마트"
+  },
+  {
+   "corp": "원익홀딩스",
+   "stock": "030530",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260828",
+   "rcept_no": "20260828900596",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260828900596",
+   "flr": "원익홀딩스"
   },
   {
    "corp": "원익홀딩스",

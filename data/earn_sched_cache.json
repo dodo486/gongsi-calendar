@@ -2245,5 +2245,26 @@
   "time": "00:00",
   "purpose": "Non-Deal Roadshow",
   "sponsor": "KB증권"
+ },
+ "20260828800867": {
+  "kind": "ir",
+  "expected_date": "2026-09-02",
+  "time": "09:00",
+  "purpose": "당사 경영현황에 대한 이해 증진",
+  "sponsor": "SK증권"
+ },
+ "20260828800695": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "",
+  "purpose": "Goldman Sachs Asia Leaders Conference 2026 참석",
+  "sponsor": "Goldman"
+ },
+ "20260828800671": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "",
+  "purpose": "Goldman Sachs Asia Leaders Conference 2026 참석",
+  "sponsor": "Goldman"
  }
 }

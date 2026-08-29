@@ -1,33 +1,7 @@
 {
- "generated_at": "2026-08-28 16:26:19",
- "count": 4,
+ "generated_at": "2026-08-29 13:48:23",
+ "count": 2,
  "events": [
-  {
-   "corp": "DN오토모티브",
-   "stock": "007340",
-   "market": "KOSPI",
-   "rcept_no": "20260814800571",
-   "rcept_dt": "20260814",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814800571",
-   "src": "IR",
-   "expected_date": "2026-08-14",
-   "time": "",
-   "purpose": "2026년 2분기 실적 설명",
-   "sponsor": "하나증권"
-  },
-  {
-   "corp": "한일시멘트",
-   "stock": "300720",
-   "market": "KOSPI",
-   "rcept_no": "20260814803216",
-   "rcept_dt": "20260814",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814803216",
-   "src": "IR",
-   "expected_date": "2026-08-18",
-   "time": "",
-   "purpose": "2026년 2분기 경영실적 발표",
-   "sponsor": "NH투자증권"
-  },
   {
    "corp": "삼양식품",
    "stock": "003230",
