@@ -2266,5 +2266,42 @@
   "time": "",
   "purpose": "Goldman Sachs Asia Leaders Conference 2026 참석",
   "sponsor": "Goldman"
+ },
+ "20260831800643": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260831800446": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260831800342": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "",
+  "purpose": "Goldman Sachs Asia Leaders Conference 2026 참석",
+  "sponsor": "Goldman"
+ },
+ "20260831800308": {
+  "kind": "ir",
+  "expected_date": "2026-09-07",
+  "time": "10:30",
+  "purpose": "유진투자증권 온라인 Corporate Day 참여",
+  "sponsor": "유진투자증권"
+ },
+ "20260831800286": {
+  "kind": "ir",
+  "expected_date": "2026-09-07",
+  "time": "",
+  "purpose": "해외지역 방문 IR (Non-Deal Roadshow) 실시",
+  "sponsor": "삼성증권"
+ },
+ "20260831900454": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260831900409": {
+  "kind": "ir",
+  "expected_date": ""
  }
 }

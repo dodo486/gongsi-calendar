@@ -1,11 +1,44 @@
 {
- "generated_at": "2026-08-31 10:21:24",
+ "generated_at": "2026-08-31 16:33:17",
  "range": {
   "bgn": "20260506",
-  "end": "20260828"
+  "end": "20260831"
  },
- "count": 397,
+ "count": 400,
  "events": [
+  {
+   "corp": "셀트리온",
+   "stock": "068270",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득결정)",
+   "category": "자사주",
+   "date": "20260831",
+   "rcept_no": "20260831000538",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260831000538",
+   "flr": "셀트리온"
+  },
+  {
+   "corp": "동진쎄미켐",
+   "stock": "005290",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260831",
+   "rcept_no": "20260831000339",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260831000339",
+   "flr": "동진쎄미켐"
+  },
+  {
+   "corp": "루닛",
+   "stock": "328130",
+   "market": "KOSDAQ",
+   "title": "전환사채(해외전환사채포함)발행후만기전사채취득",
+   "category": "메자닌",
+   "date": "20260831",
+   "rcept_no": "20260831900522",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260831900522",
+   "flr": "루닛"
+  },
   {
    "corp": "메리츠금융지주",
    "stock": "138040",
