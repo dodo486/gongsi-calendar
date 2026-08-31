@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-08-31 16:33:17",
+ "generated_at": "2026-09-01 00:24:46",
  "range": {
   "bgn": "20260506",
-  "end": "20260831"
+  "end": "20260901"
  },
- "count": 400,
+ "count": 403,
  "events": [
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260901",
+   "rcept_no": "20260831001545",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260831001545",
+   "flr": "성호전자"
+  },
   {
    "corp": "셀트리온",
    "stock": "068270",
@@ -18,6 +29,17 @@
    "flr": "셀트리온"
   },
   {
+   "corp": "HD건설기계",
+   "stock": "267270",
+   "market": "KOSPI",
+   "title": "유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260831",
+   "rcept_no": "20260831800675",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260831800675",
+   "flr": "HD건설기계"
+  },
+  {
    "corp": "동진쎄미켐",
    "stock": "005290",
    "market": "KOSDAQ",
@@ -27,6 +49,17 @@
    "rcept_no": "20260831000339",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260831000339",
    "flr": "동진쎄미켐"
+  },
+  {
+   "corp": "서진시스템",
+   "stock": "178320",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260831",
+   "rcept_no": "20260831900758",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260831900758",
+   "flr": "서진시스템"
   },
   {
    "corp": "루닛",

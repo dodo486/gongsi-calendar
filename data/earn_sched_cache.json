@@ -2303,5 +2303,33 @@
  "20260831900409": {
   "kind": "ir",
   "expected_date": ""
+ },
+ "20260831800835": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "09:00",
+  "purpose": "Goldman Sachs Asia Leaders Conference 2026 참가",
+  "sponsor": "Goldman"
+ },
+ "20260831800778": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "10:30",
+  "purpose": "2026 KB 코리아 컨퍼런스 참여",
+  "sponsor": "KB증권"
+ },
+ "20260831800777": {
+  "kind": "ir",
+  "expected_date": "2026-09-08",
+  "time": "10:15",
+  "purpose": "2026 모건스탠리 Korea Industrials &amp; Macro Forum 참여",
+  "sponsor": "모건"
+ },
+ "20260831800774": {
+  "kind": "ir",
+  "expected_date": "2026-09-07",
+  "time": "10:20",
+  "purpose": "2026 신한 콥데이 참여",
+  "sponsor": "신한투자증권"
  }
 }
