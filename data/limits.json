@@ -1,6 +1,25 @@
 {
- "date": "2026-08-30",
- "generated_at": "2026-08-30 22:02:53",
- "count": 0,
- "events": []
+ "date": "2026-08-31",
+ "generated_at": "2026-08-31 10:42:23",
+ "count": 1,
+ "events": [
+  {
+   "time": "09:02",
+   "kind": "주식선물",
+   "name": "한올바이오파마",
+   "code": "009420",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260831000072",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260831000072&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:07:34",
+   "rate": 11.3
+  }
+ ]
 }
