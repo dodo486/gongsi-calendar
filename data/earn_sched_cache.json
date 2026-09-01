@@ -2331,5 +2331,12 @@
   "time": "10:20",
   "purpose": "2026 신한 콥데이 참여",
   "sponsor": "신한투자증권"
+ },
+ "20260901800071": {
+  "kind": "ir",
+  "expected_date": "2026-09-02",
+  "time": "15:00",
+  "purpose": "BofA 글로벌 투자자 컨퍼런스 콜",
+  "sponsor": "BofA"
  }
 }
