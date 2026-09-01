@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-09-01 10:48:39",
+ "generated_at": "2026-09-01 15:56:05",
  "range": {
   "bgn": "20260506",
   "end": "20260901"
  },
- "count": 403,
+ "count": 404,
  "events": [
+  {
+   "corp": "서진시스템",
+   "stock": "178320",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260901",
+   "rcept_no": "20260901000180",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901000180",
+   "flr": "서진시스템"
+  },
   {
    "corp": "성호전자",
    "stock": "043260",

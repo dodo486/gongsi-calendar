@@ -1,8 +1,26 @@
 {
  "date": "2026-09-01",
- "generated_at": "2026-09-01 11:10:26",
- "count": 5,
+ "generated_at": "2026-09-01 16:38:23",
+ "count": 6,
  "events": [
+  {
+   "time": "13:36",
+   "kind": "주식선물",
+   "name": "펩트론",
+   "code": "087010",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260901000221",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260901000221&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "13:41:38",
+   "rate": 9.66
+  },
   {
    "time": "09:27",
    "kind": "주식선물",
@@ -19,7 +37,7 @@
     "KRX300"
    ],
    "expand_time": "09:32:20",
-   "rate": 15.32
+   "rate": 12.15
   },
   {
    "time": "09:14",
@@ -38,7 +56,7 @@
     "KTOP30"
    ],
    "expand_time": "09:19:46",
-   "rate": 7.73
+   "rate": 7.81
   },
   {
    "time": "09:12",
@@ -56,7 +74,7 @@
     "KRX300"
    ],
    "expand_time": "09:17:29",
-   "rate": 10.41
+   "rate": 5.31
   },
   {
    "time": "09:09",
@@ -74,7 +92,7 @@
     "KRX300"
    ],
    "expand_time": "09:14:35",
-   "rate": 5.49
+   "rate": 6.64
   },
   {
    "time": "09:05",
@@ -92,7 +110,7 @@
     "KRX300"
    ],
    "expand_time": "09:10:25",
-   "rate": 1.37
+   "rate": 0.84
   }
  ]
 }

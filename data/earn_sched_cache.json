@@ -2338,5 +2338,61 @@
   "time": "15:00",
   "purpose": "BofA 글로벌 투자자 컨퍼런스 콜",
   "sponsor": "BofA"
+ },
+ "20260901800449": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:00",
+  "purpose": "NDR(투자자 방문 미팅) 진행",
+  "sponsor": "Daiwa"
+ },
+ "20260901800443": {
+  "kind": "ir",
+  "expected_date": "2026-09-07",
+  "time": "09:00",
+  "purpose": "Daiwa London conference 참석",
+  "sponsor": "Daiwa"
+ },
+ "20260901800365": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "15:00",
+  "purpose": "2026 KB 코리아 컨퍼런스 참여",
+  "sponsor": "KB증권"
+ },
+ "20260901800215": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "",
+  "purpose": "9월 컨퍼런스 참석",
+  "sponsor": "KB증권,"
+ },
+ "20260901900478": {
+  "kind": "ir",
+  "expected_date": "2026-09-02",
+  "time": "17:00",
+  "purpose": "",
+  "sponsor": "한국투자증권"
+ },
+ "20260901900410": {
+  "kind": "ir",
+  "expected_date": "2026-08-11",
+  "time": "",
+  "purpose": "",
+  "sponsor": "신한투자증권,"
+ },
+ "20260901900346": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "",
+  "purpose": "",
+  "sponsor": "KB증권"
+ },
+ "20260901900185": {
+  "kind": "ir",
+  "expected_date": "2026-09-03",
+  "time": "",
+  "purpose": "",
+  "sponsor": "상상인증권"
  }
 }

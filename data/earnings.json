@@ -1,7 +1,35 @@
 {
- "generated_at": "2026-09-01 11:08:51",
- "count": 146,
+ "generated_at": "2026-09-01 16:35:10",
+ "count": 148,
  "events": [
+  {
+   "corp": "기아",
+   "stock": "000270",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260901",
+   "rcept_no": "20260901800418",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901800418",
+   "flr": "기아",
+   "price": "131,200",
+   "rate": 0.15,
+   "chg_sign": "2"
+  },
+  {
+   "corp": "현대자동차",
+   "stock": "005380",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260901",
+   "rcept_no": "20260901800400",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901800400",
+   "flr": "현대자동차",
+   "price": "400,500",
+   "rate": 0.74,
+   "chg_sign": "5"
+  },
   {
    "corp": "HD한국조선해양",
    "stock": "009540",
