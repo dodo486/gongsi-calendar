@@ -2415,5 +2415,26 @@
   "time": "",
   "purpose": "",
   "sponsor": "신한투자증권"
+ },
+ "20260902800231": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "",
+  "purpose": "KB Korea Conference 참석",
+  "sponsor": "KB증권"
+ },
+ "20260902800143": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "14:00",
+  "purpose": "'2026 KB 코리아 컨퍼런스' 참가",
+  "sponsor": "KB증권"
+ },
+ "20260902900204": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "",
+  "purpose": "",
+  "sponsor": "코스닥협회"
  }
 }

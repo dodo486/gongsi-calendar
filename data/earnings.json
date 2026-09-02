@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-02 10:39:12",
+ "generated_at": "2026-09-02 15:24:38",
  "count": 148,
  "events": [
   {
@@ -13,14 +13,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901800418",
    "flr": "기아",
    "rate": 0.15,
-   "price": "131,200",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "16:06",
    "pre5": 0.15,
    "post5": -2.21,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "131,200",
+   "chg_sign": "2"
   },
   {
    "corp": "현대자동차",
@@ -33,14 +33,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901800400",
    "flr": "현대자동차",
    "rate": -0.74,
-   "price": "400,500",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "16:06",
    "pre5": -0.74,
    "post5": -1.12,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "400,500",
+   "chg_sign": "5"
   },
   {
    "corp": "HD한국조선해양",

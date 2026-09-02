@@ -1,8 +1,61 @@
 {
  "date": "2026-09-02",
- "generated_at": "2026-09-02 10:42:10",
- "count": 2,
+ "generated_at": "2026-09-02 15:27:45",
+ "count": 5,
  "events": [
+  {
+   "time": "12:30",
+   "kind": "주식선물",
+   "name": "코스모화학",
+   "code": "005420",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260902000176",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260902000176&docno=",
+   "markets": [
+    "KOSPI200"
+   ],
+   "expand_time": "12:35:54",
+   "rate": 8.88
+  },
+  {
+   "time": "11:21",
+   "kind": "주식선물",
+   "name": "ISC",
+   "code": "095340",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260902000155",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260902000155&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "11:26:05",
+   "rate": 8.27
+  },
+  {
+   "time": "11:19",
+   "kind": "주식선물",
+   "name": "신세계",
+   "code": "004170",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260902000154",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260902000154&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "11:24:07",
+   "rate": 11.35
+  },
   {
    "time": "10:35",
    "kind": "주식선물",
@@ -19,7 +72,7 @@
     "KRX300"
    ],
    "expand_time": "10:40:12",
-   "rate": 8.67
+   "rate": 3.13
   },
   {
    "time": "09:12",
@@ -36,7 +89,7 @@
     "KOSDAQ150"
    ],
    "expand_time": "09:17:45",
-   "rate": 3.62
+   "rate": 1.01
   }
  ]
 }

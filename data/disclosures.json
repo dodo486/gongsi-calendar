@@ -1,11 +1,66 @@
 {
- "generated_at": "2026-09-02 10:03:09",
+ "generated_at": "2026-09-02 14:46:02",
  "range": {
   "bgn": "20260506",
-  "end": "20260901"
+  "end": "20260902"
  },
- "count": 408,
+ "count": 413,
  "events": [
+  {
+   "corp": "에코프로비엠",
+   "stock": "247540",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(유상증자결정)",
+   "category": "유상증자",
+   "date": "20260902",
+   "rcept_no": "20260902000156",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260902000156",
+   "flr": "에코프로비엠"
+  },
+  {
+   "corp": "엘앤씨바이오",
+   "stock": "290650",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(유무상증자결정)",
+   "category": "무상증자",
+   "date": "20260902",
+   "rcept_no": "20260902000129",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260902000129",
+   "flr": "엘앤씨바이오"
+  },
+  {
+   "corp": "에코프로",
+   "stock": "086520",
+   "market": "KOSDAQ",
+   "title": "[기재정정]유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260902",
+   "rcept_no": "20260902900264",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260902900264",
+   "flr": "에코프로"
+  },
+  {
+   "corp": "에코프로비엠",
+   "stock": "247540",
+   "market": "KOSDAQ",
+   "title": "유상증자1차발행가액결정",
+   "category": "유상증자",
+   "date": "20260902",
+   "rcept_no": "20260902900206",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260902900206",
+   "flr": "에코프로비엠"
+  },
+  {
+   "corp": "엘앤씨바이오",
+   "stock": "290650",
+   "market": "KOSDAQ",
+   "title": "유상증자1차발행가액결정",
+   "category": "유상증자",
+   "date": "20260902",
+   "rcept_no": "20260902900198",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260902900198",
+   "flr": "엘앤씨바이오"
+  },
   {
    "corp": "LG생활건강",
    "stock": "051900",
