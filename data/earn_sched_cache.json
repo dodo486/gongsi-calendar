@@ -2436,5 +2436,19 @@
   "time": "",
   "purpose": "",
   "sponsor": "코스닥협회"
+ },
+ "20260902800408": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "10:30",
+  "purpose": "유진투자증권 Corporate Day 참석",
+  "sponsor": "유진투자증권"
+ },
+ "20260902800378": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "14:00",
+  "purpose": "2026 KB Korea Conference 참석",
+  "sponsor": "KB"
  }
 }
