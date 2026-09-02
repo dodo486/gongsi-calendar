@@ -2394,5 +2394,26 @@
   "time": "",
   "purpose": "",
   "sponsor": "상상인증권"
+ },
+ "20260902800075": {
+  "kind": "ir",
+  "expected_date": "2026-09-04",
+  "time": "09:00",
+  "purpose": "'2026년 신한 Premier Corporate Day' 참가",
+  "sponsor": "신한투자증권"
+ },
+ "20260901900732": {
+  "kind": "ir",
+  "expected_date": "2026-09-01",
+  "time": "",
+  "purpose": "",
+  "sponsor": "키움증권,"
+ },
+ "20260901900621": {
+  "kind": "ir",
+  "expected_date": "",
+  "time": "",
+  "purpose": "",
+  "sponsor": "신한투자증권"
  }
 }

@@ -1,20 +1,7 @@
 {
- "generated_at": "2026-09-01 16:38:17",
- "count": 2,
+ "generated_at": "2026-09-02 10:42:05",
+ "count": 1,
  "events": [
-  {
-   "corp": "삼양식품",
-   "stock": "003230",
-   "market": "KOSPI",
-   "rcept_no": "20260818800427",
-   "rcept_dt": "20260818",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260818800427",
-   "src": "IR",
-   "expected_date": "2026-08-19",
-   "time": "09:00",
-   "purpose": "'26년 2분기 경영실적 코멘트 및 질의응답",
-   "sponsor": "하나증권"
-  },
   {
    "corp": "한전KPS",
    "stock": "051600",

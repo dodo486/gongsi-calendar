@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-09-01 15:56:05",
+ "generated_at": "2026-09-02 10:03:09",
  "range": {
   "bgn": "20260506",
   "end": "20260901"
  },
- "count": 404,
+ "count": 408,
  "events": [
+  {
+   "corp": "LG생활건강",
+   "stock": "051900",
+   "market": "KOSPI",
+   "title": "[기재정정]유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260901",
+   "rcept_no": "20260901800624",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901800624",
+   "flr": "LG생활건강"
+  },
+  {
+   "corp": "서진시스템",
+   "stock": "178320",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260901",
+   "rcept_no": "20260901000219",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901000219",
+   "flr": "서진시스템"
+  },
   {
    "corp": "서진시스템",
    "stock": "178320",
@@ -26,6 +48,28 @@
    "date": "20260901",
    "rcept_no": "20260831001545",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260831001545",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "기타경영사항(자율공시)              (제14회차 무기명식 이권부 무보증 신주인수권부사채 소각 결정의 건)",
+   "category": "메자닌",
+   "date": "20260901",
+   "rcept_no": "20260901900534",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901900534",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260901",
+   "rcept_no": "20260901900533",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260901900533",
    "flr": "성호전자"
   },
   {
