@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-09-03 14:57:31",
+ "generated_at": "2026-09-03 20:03:14",
  "range": {
   "bgn": "20260506",
   "end": "20260903"
  },
- "count": 417,
+ "count": 418,
  "events": [
   {
    "corp": "농심",
@@ -16,6 +16,17 @@
    "rcept_no": "20260903000038",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260903000038",
    "flr": "농심"
+  },
+  {
+   "corp": "가온칩스",
+   "stock": "399720",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식취득신탁계약체결결정)",
+   "category": "자사주",
+   "date": "20260903",
+   "rcept_no": "20260903000301",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260903000301",
+   "flr": "가온칩스"
   },
   {
    "corp": "에코프로비엠",

@@ -2492,5 +2492,19 @@
   "time": "",
   "purpose": "",
   "sponsor": "신한투자증권"
+ },
+ "20260903800525": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "",
+  "purpose": "투자자 미팅을 통한 이해증진 및 투자유치",
+  "sponsor": "Citi증권"
+ },
+ "20260903800385": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:30",
+  "purpose": "2026 KB Korea Conference 참가",
+  "sponsor": "KB증권"
  }
 }
