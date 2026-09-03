@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-09-03 10:05:42",
+ "generated_at": "2026-09-03 14:57:31",
  "range": {
   "bgn": "20260506",
-  "end": "20260902"
+  "end": "20260903"
  },
- "count": 416,
+ "count": 417,
  "events": [
+  {
+   "corp": "농심",
+   "stock": "004370",
+   "market": "KOSPI",
+   "title": "[기재정정]주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260903",
+   "rcept_no": "20260903000038",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260903000038",
+   "flr": "농심"
+  },
   {
    "corp": "에코프로비엠",
    "stock": "247540",

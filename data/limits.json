@@ -1,8 +1,62 @@
 {
  "date": "2026-09-03",
- "generated_at": "2026-09-03 10:26:05",
- "count": 8,
+ "generated_at": "2026-09-03 15:35:18",
+ "count": 11,
  "events": [
+  {
+   "time": "11:50",
+   "kind": "주식선물",
+   "name": "보로노이",
+   "code": "310210",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260903000171",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000171&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "11:55:34",
+   "rate": 13.16
+  },
+  {
+   "time": "11:22",
+   "kind": "주식선물",
+   "name": "삼성중공업",
+   "code": "010140",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000157",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000157&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "11:27:02",
+   "rate": 8.58
+  },
+  {
+   "time": "10:59",
+   "kind": "주식선물",
+   "name": "DL",
+   "code": "000210",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000141",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000141&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "11:04:07",
+   "rate": 7.42
+  },
   {
    "time": "10:16",
    "kind": "주식선물",
@@ -19,7 +73,7 @@
     "KRX300"
    ],
    "expand_time": "10:21:23",
-   "rate": 7.5
+   "rate": 6.46
   },
   {
    "time": "10:15",
@@ -36,7 +90,7 @@
     "KOSPI200"
    ],
    "expand_time": "10:20:41",
-   "rate": 12.5
+   "rate": 4.78
   },
   {
    "time": "10:05",
@@ -55,7 +109,7 @@
     "KTOP30"
    ],
    "expand_time": "10:10:11",
-   "rate": 8.18
+   "rate": 6.69
   },
   {
    "time": "09:53",
@@ -74,7 +128,7 @@
     "KRX300"
    ],
    "expand_time": "09:58:47",
-   "rate": 6.88
+   "rate": 4.64
   },
   {
    "time": "09:42",
@@ -93,7 +147,7 @@
     "KRX300"
    ],
    "expand_time": "09:47:40",
-   "rate": 4.85
+   "rate": 5.47
   },
   {
    "time": "09:36",
@@ -111,7 +165,7 @@
     "KRX300"
    ],
    "expand_time": "09:41:28",
-   "rate": 7.28
+   "rate": 5.89
   },
   {
    "time": "09:35",
@@ -130,7 +184,7 @@
     "KRX300"
    ],
    "expand_time": "09:40:32",
-   "rate": 8.16
+   "rate": 7.74
   },
   {
    "time": "09:33",
@@ -148,7 +202,7 @@
     "KRX300"
    ],
    "expand_time": "09:38:28",
-   "rate": 10.16
+   "rate": 7.8
   }
  ]
 }

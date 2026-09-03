@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-03 10:24:33",
+ "generated_at": "2026-09-03 15:32:18",
  "count": 142,
  "events": [
   {
@@ -13,14 +13,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260902800386",
    "flr": "파라다이스",
    "rate": -1.67,
-   "price": "10,040",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "16:17",
    "pre5": -1.67,
    "post5": 1.89,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "10,040",
+   "chg_sign": "5"
   },
   {
    "corp": "기아",

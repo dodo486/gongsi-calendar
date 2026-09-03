@@ -2457,5 +2457,40 @@
   "time": "10:30",
   "purpose": "유상증자 관련 주요 내용 설명 및 투자자 이해 제고",
   "sponsor": "NH투자증권"
+ },
+ "20260903800331": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "09:30",
+  "purpose": "2026년 9월 기업설명회 참석",
+  "sponsor": "KB증권,"
+ },
+ "20260903800273": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:00",
+  "purpose": "컨퍼런스 참가를 통한 투자자 당사 이해도 제고",
+  "sponsor": "KB증권"
+ },
+ "20260903800271": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:00",
+  "purpose": "컨퍼런스 참가를 통한 투자자 당사 이해도 제고",
+  "sponsor": "Citi"
+ },
+ "20260903900234": {
+  "kind": "ir",
+  "expected_date": "2026-09-03",
+  "time": "",
+  "purpose": "",
+  "sponsor": "NH투자증권"
+ },
+ "20260903900231": {
+  "kind": "ir",
+  "expected_date": "2026-09-03",
+  "time": "",
+  "purpose": "",
+  "sponsor": "신한투자증권"
  }
 }
