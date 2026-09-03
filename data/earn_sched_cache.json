@@ -2450,5 +2450,12 @@
   "time": "14:00",
   "purpose": "2026 KB Korea Conference 참석",
   "sponsor": "KB"
+ },
+ "20260903800071": {
+  "kind": "ir",
+  "expected_date": "2026-09-03",
+  "time": "10:30",
+  "purpose": "유상증자 관련 주요 내용 설명 및 투자자 이해 제고",
+  "sponsor": "NH투자증권"
  }
 }

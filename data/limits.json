@@ -1,6 +1,154 @@
 {
  "date": "2026-09-03",
- "generated_at": "2026-09-03 00:02:36",
- "count": 0,
- "events": []
+ "generated_at": "2026-09-03 10:26:05",
+ "count": 8,
+ "events": [
+  {
+   "time": "10:16",
+   "kind": "주식선물",
+   "name": "롯데케미칼",
+   "code": "011170",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000115",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000115&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "10:21:23",
+   "rate": 7.5
+  },
+  {
+   "time": "10:15",
+   "kind": "주식선물",
+   "name": "대한유화",
+   "code": "006650",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000114",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000114&docno=",
+   "markets": [
+    "KOSPI200"
+   ],
+   "expand_time": "10:20:41",
+   "rate": 12.5
+  },
+  {
+   "time": "10:05",
+   "kind": "주식선물",
+   "name": "LG화학",
+   "code": "051910",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000103",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000103&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300",
+    "KTOP30"
+   ],
+   "expand_time": "10:10:11",
+   "rate": 8.18
+  },
+  {
+   "time": "09:53",
+   "kind": "주식선물",
+   "name": "금호석유화학",
+   "code": "011780",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000090",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000090&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:58:47",
+   "rate": 6.88
+  },
+  {
+   "time": "09:42",
+   "kind": "주식선물",
+   "name": "메리츠금융지주",
+   "code": "138040",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000074",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000074&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:47:40",
+   "rate": 4.85
+  },
+  {
+   "time": "09:36",
+   "kind": "주식선물",
+   "name": "한화생명",
+   "code": "088350",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000067",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000067&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:41:28",
+   "rate": 7.28
+  },
+  {
+   "time": "09:35",
+   "kind": "주식선물",
+   "name": "한미사이언스",
+   "code": "008930",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000066",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000066&docno=",
+   "markets": [
+    "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:40:32",
+   "rate": 8.16
+  },
+  {
+   "time": "09:33",
+   "kind": "주식선물",
+   "name": "팬오션",
+   "code": "028670",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260903000065",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260903000065&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:38:28",
+   "rate": 10.16
+  }
+ ]
 }
