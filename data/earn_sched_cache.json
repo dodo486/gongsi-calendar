@@ -2520,5 +2520,33 @@
   "time": "",
   "purpose": "",
   "sponsor": "Macquarie"
+ },
+ "20260904800336": {
+  "kind": "ir",
+  "expected_date": "2026-09-07",
+  "time": "",
+  "purpose": "회사소개 및 사업현황 설명",
+  "sponsor": "삼성증권"
+ },
+ "20260904800311": {
+  "kind": "ir",
+  "expected_date": "2026-09-07",
+  "time": "09:00",
+  "purpose": "해외 기관투자자 IR 미팅 실시",
+  "sponsor": "다이와"
+ },
+ "20260904800176": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:00",
+  "purpose": "KB증권,Jefferies 증권 주관 '2026 KB금융그룹 코리아 컨퍼런스' 참가",
+  "sponsor": "KB증권,Jefferies"
+ },
+ "20260904900155": {
+  "kind": "ir",
+  "expected_date": "2026-09-07",
+  "time": "",
+  "purpose": "",
+  "sponsor": "HSBC증권"
  }
 }
