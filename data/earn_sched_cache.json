@@ -2506,5 +2506,19 @@
   "time": "09:30",
   "purpose": "2026 KB Korea Conference 참가",
   "sponsor": "KB증권"
+ },
+ "20260904800063": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "",
+  "purpose": "2026년 9월 기업설명회 참석",
+  "sponsor": "KB증권,"
+ },
+ "20260904900080": {
+  "kind": "ir",
+  "expected_date": "2026-09-04",
+  "time": "",
+  "purpose": "",
+  "sponsor": "Macquarie"
  }
 }
