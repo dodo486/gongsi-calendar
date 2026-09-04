@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-09-04 14:49:13",
+ "generated_at": "2026-09-04 19:05:23",
  "range": {
   "bgn": "20260506",
-  "end": "20260903"
+  "end": "20260904"
  },
- "count": 418,
+ "count": 420,
  "events": [
+  {
+   "corp": "LIG디펜스앤에어로스페이스",
+   "stock": "079550",
+   "market": "KOSPI",
+   "title": "[기재정정]주요사항보고서(유상증자결정)",
+   "category": "유상증자",
+   "date": "20260904",
+   "rcept_no": "20260904000208",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260904000208",
+   "flr": "LIG디펜스앤에어로스페이스"
+  },
+  {
+   "corp": "젬백스",
+   "stock": "082270",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(유상증자결정)",
+   "category": "유상증자",
+   "date": "20260904",
+   "rcept_no": "20260904000285",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260904000285",
+   "flr": "젬백스"
+  },
   {
    "corp": "농심",
    "stock": "004370",
