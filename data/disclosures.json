@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-09-07 14:57:12",
+ "generated_at": "2026-09-07 21:15:54",
  "range": {
   "bgn": "20260506",
-  "end": "20260904"
+  "end": "20260907"
  },
- "count": 420,
+ "count": 421,
  "events": [
+  {
+   "corp": "HPSP",
+   "stock": "403870",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260907",
+   "rcept_no": "20260907000328",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260907000328",
+   "flr": "HPSP"
+  },
   {
    "corp": "LIG디펜스앤에어로스페이스",
    "stock": "079550",
