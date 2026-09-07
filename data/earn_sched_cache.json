@@ -2625,5 +2625,26 @@
   "time": "09:00",
   "purpose": "KB Korea Conference 참여",
   "sponsor": "KB증권"
+ },
+ "20260907800201": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:00",
+  "purpose": "KB Korea Conference 2026",
+  "sponsor": "KB증권"
+ },
+ "20260907800143": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:10",
+  "purpose": "NDR(Non-Deal Roadshow)",
+  "sponsor": "DS투자증권"
+ },
+ "20260907900233": {
+  "kind": "ir",
+  "expected_date": "2026-09-08",
+  "time": "",
+  "purpose": "",
+  "sponsor": "LS증권"
  }
 }

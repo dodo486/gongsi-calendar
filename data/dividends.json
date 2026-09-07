@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-07 09:56:23",
- "count": 61,
+ "generated_at": "2026-09-07 14:57:19",
+ "count": 62,
  "events": [
   {
    "corp": "삼성전자",
@@ -779,10 +779,10 @@
    "per_share": "600",
    "record_date": "2026-08-31",
    "pay_date": "2025-09-11",
-   "rcept_no": "20260812800750",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812800750",
+   "rcept_no": "20260907800195",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260907800195",
    "div_type": "중간배당",
-   "rcept_dt": "20260818",
+   "rcept_dt": "20260907",
    "confirm_date": "2026-08-27",
    "ex_date": "2026-08-28"
   },
@@ -827,6 +827,20 @@
    "rcept_dt": "20260827",
    "confirm_date": "2026-09-09",
    "ex_date": "2026-09-10"
+  },
+  {
+   "corp": "에스피지",
+   "stock": "058610",
+   "market": "KOSDAQ",
+   "per_share": "100",
+   "record_date": "2026-09-22",
+   "pay_date": "2026-10-22",
+   "rcept_no": "20260907900152",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260907900152",
+   "div_type": "중간배당",
+   "rcept_dt": "20260907",
+   "confirm_date": "2026-09-18",
+   "ex_date": "2026-09-21"
   },
   {
    "corp": "현대백화점",

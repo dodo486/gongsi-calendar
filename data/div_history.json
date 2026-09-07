@@ -8754,5 +8754,38 @@
   "record_date": "2026-03-31",
   "pay_date": "",
   "div_type": ""
+ },
+ "20260907800195": {
+  "kind": "decision",
+  "stock": "006040",
+  "corp": "동원산업",
+  "market": "KOSPI",
+  "rcept_dt": "20260907",
+  "per_share": "600",
+  "record_date": "2026-08-31",
+  "pay_date": "2025-09-11",
+  "div_type": "중간배당"
+ },
+ "20260907900152": {
+  "kind": "decision",
+  "stock": "058610",
+  "corp": "에스피지",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260907",
+  "per_share": "100",
+  "record_date": "2026-09-22",
+  "pay_date": "2026-10-22",
+  "div_type": "중간배당"
+ },
+ "20260907900150": {
+  "kind": "record",
+  "stock": "058610",
+  "corp": "에스피지",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260907",
+  "per_share": "",
+  "record_date": "2026-09-22",
+  "pay_date": "",
+  "div_type": ""
  }
 }
