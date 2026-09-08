@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-09-08 10:07:53",
+ "generated_at": "2026-09-08 15:07:21",
  "range": {
   "bgn": "20260506",
-  "end": "20260907"
+  "end": "20260908"
  },
- "count": 421,
+ "count": 422,
  "events": [
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(전환사채권발행결정)",
+   "category": "메자닌",
+   "date": "20260908",
+   "rcept_no": "20260908000103",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260908000103",
+   "flr": "성호전자"
+  },
   {
    "corp": "HPSP",
    "stock": "403870",

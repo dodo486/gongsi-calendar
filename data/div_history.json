@@ -8787,5 +8787,16 @@
   "record_date": "2026-09-22",
   "pay_date": "",
   "div_type": ""
+ },
+ "20260908900248": {
+  "kind": "record",
+  "stock": "089970",
+  "corp": "브이엠",
+  "market": "KOSDAQ",
+  "rcept_dt": "20260908",
+  "per_share": "",
+  "record_date": "2026-09-30",
+  "pay_date": "",
+  "div_type": ""
  }
 }

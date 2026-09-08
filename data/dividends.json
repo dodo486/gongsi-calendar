@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-08 10:07:58",
- "count": 62,
+ "generated_at": "2026-09-08 15:07:34",
+ "count": 63,
  "events": [
   {
    "corp": "삼성전자",
@@ -867,6 +867,20 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260812900644",
    "div_type": "분기배당",
    "rcept_dt": "20260812",
+   "confirm_date": "2026-09-28",
+   "ex_date": "2026-09-29"
+  },
+  {
+   "corp": "브이엠",
+   "stock": "089970",
+   "market": "KOSDAQ",
+   "per_share": "",
+   "record_date": "2026-09-30",
+   "pay_date": "",
+   "rcept_no": "20260908900248",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260908900248",
+   "div_type": "",
+   "rcept_dt": "20260908",
    "confirm_date": "2026-09-28",
    "ex_date": "2026-09-29"
   }
