@@ -2695,5 +2695,26 @@
   "time": "",
   "purpose": "",
   "sponsor": "KB증권,"
+ },
+ "20260908800125": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:00",
+  "purpose": "2026 KB Financial Group Korea Conference 참석",
+  "sponsor": "KB증권"
+ },
+ "20260908900085": {
+  "kind": "ir",
+  "expected_date": "2026-09-16",
+  "time": "",
+  "purpose": "",
+  "sponsor": "한국투자증권"
+ },
+ "20260908900075": {
+  "kind": "ir",
+  "expected_date": "2026-09-14",
+  "time": "",
+  "purpose": "",
+  "sponsor": "한국투자증권"
  }
 }

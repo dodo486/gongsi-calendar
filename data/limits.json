@@ -1,47 +1,65 @@
 {
- "date": "2026-09-07",
- "generated_at": "2026-09-07 21:56:48",
- "count": 8,
+ "date": "2026-09-08",
+ "generated_at": "2026-09-08 10:30:03",
+ "count": 4,
  "events": [
   {
-   "time": "14:37",
+   "time": "10:25",
    "kind": "주식선물",
-   "name": "두산",
-   "code": "000150",
+   "name": "대우건설",
+   "code": "047040",
    "market": "KOSPI200",
    "stage": 2,
    "direction": "상승",
    "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260907000274",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260907000274&docno=",
+   "rcept_no": "20260908000129",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260908000129&docno=",
    "markets": [
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "14:42:39",
-   "rate": 11.3
+   "expand_time": "10:30:35",
+   "rate": 10.54
   },
   {
-   "time": "12:55",
+   "time": "10:08",
    "kind": "주식선물",
-   "name": "두산에너빌리티",
-   "code": "034020",
-   "market": "KOSPI200",
+   "name": "주성엔지니어링",
+   "code": "036930",
+   "market": "KOSDAQ150",
    "stage": 2,
    "direction": "상승",
-   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260907000181",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260907000181&docno=",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260908000121",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260908000121&docno=",
    "markets": [
-    "KOSPI200",
-    "KRX300",
-    "KTOP30"
+    "KOSDAQ150",
+    "KRX300"
    ],
-   "expand_time": "13:00:13",
-   "rate": 10.98
+   "expand_time": "10:13:04",
+   "rate": 6.52
   },
   {
-   "time": "09:51",
+   "time": "09:59",
+   "kind": "주식선물",
+   "name": "코미코",
+   "code": "183300",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260908000118",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260908000118&docno=",
+   "markets": [
+    "V100",
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "10:04:08",
+   "rate": 5.12
+  },
+  {
+   "time": "09:08",
    "kind": "주식선물",
    "name": "한전기술",
    "code": "052690",
@@ -49,106 +67,15 @@
    "stage": 2,
    "direction": "상승",
    "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260907000079",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260907000079&docno=",
+   "rcept_no": "20260908000078",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260908000078&docno=",
    "markets": [
     "V100",
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:56:51",
-   "rate": 13.66
-  },
-  {
-   "time": "09:31",
-   "kind": "주식선물",
-   "name": "로보티즈",
-   "code": "108490",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260907000069",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260907000069&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "09:36:25",
-   "rate": 0.99
-  },
-  {
-   "time": "09:23",
-   "kind": "주식선물",
-   "name": "신성델타테크",
-   "code": "065350",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "하락",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
-   "rcept_no": "20260907000067",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260907000067&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "09:28:08",
-   "rate": 0.16
-  },
-  {
-   "time": "09:08",
-   "kind": "주식선물",
-   "name": "LG전자",
-   "code": "066570",
-   "market": "KOSPI200",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260907000064",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260907000064&docno=",
-   "markets": [
-    "KOSPI200",
-    "KRX300",
-    "KTOP30"
-   ],
-   "expand_time": "09:13:04",
-   "rate": 6.2
-  },
-  {
-   "time": "09:00",
-   "kind": "주식선물",
-   "name": "두산테스나",
-   "code": "131970",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260907000059",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260907000059&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "09:05:24",
-   "rate": 11.31
-  },
-  {
-   "time": "09:00",
-   "kind": "주식선물",
-   "name": "실리콘투",
-   "code": "257720",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "하락",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
-   "rcept_no": "20260907000058",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260907000058&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "09:05:00",
-   "rate": 1.77
+   "expand_time": "09:13:16",
+   "rate": 11.61
   }
  ]
 }
