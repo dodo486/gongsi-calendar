@@ -2758,5 +2758,54 @@
   "time": "",
   "purpose": "",
   "sponsor": "그로쓰리서치"
+ },
+ "20260908800596": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:30",
+  "purpose": "KB Korea Conference 2026 참가",
+  "sponsor": "KB증권"
+ },
+ "20260908800447": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "",
+  "purpose": "증권사 주관 컨퍼런스 참석",
+  "sponsor": "KB증권"
+ },
+ "20260908800440": {
+  "kind": "ir",
+  "expected_date": "2026-09-16",
+  "time": "15:00",
+  "purpose": "한화투자증권 3Q26 Corporate day 참가",
+  "sponsor": "한화투자증권"
+ },
+ "20260908800423": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "10:30",
+  "purpose": "2026 신영증권 콥데이 참여",
+  "sponsor": "신영증권"
+ },
+ "20260908800422": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "09:30",
+  "purpose": "KB Korea Conference 2026 참가",
+  "sponsor": "KB증권"
+ },
+ "20260908900557": {
+  "kind": "ir",
+  "expected_date": "2026-09-14",
+  "time": "",
+  "purpose": "",
+  "sponsor": "신영증권"
+ },
+ "20260908900357": {
+  "kind": "ir",
+  "expected_date": "2026-09-09",
+  "time": "",
+  "purpose": "",
+  "sponsor": "KB"
  }
 }
