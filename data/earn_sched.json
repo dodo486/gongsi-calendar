@@ -1,19 +1,5 @@
 {
- "generated_at": "2026-09-08 20:34:11",
- "count": 1,
- "events": [
-  {
-   "corp": "한전KPS",
-   "stock": "051600",
-   "market": "KOSPI",
-   "rcept_no": "20260825800401",
-   "rcept_dt": "20260825",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260825800401",
-   "src": "IR",
-   "expected_date": "2026-08-28",
-   "time": "10:00",
-   "purpose": "2026년 2분기 실적 관련 기업설명회",
-   "sponsor": "당사"
-  }
- ]
+ "generated_at": "2026-09-09 10:33:08",
+ "count": 0,
+ "events": []
 }
