@@ -2807,5 +2807,40 @@
   "time": "",
   "purpose": "",
   "sponsor": "KB"
+ },
+ "20260909800381": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "13:00",
+  "purpose": "2026 KB Korea Conference 참가",
+  "sponsor": "KB증권"
+ },
+ "20260909800306": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "09:00",
+  "purpose": "CITIC CLSA Investors' Forum 참석",
+  "sponsor": "CLSA"
+ },
+ "20260909800230": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "14:30",
+  "purpose": "Daiwa K-Beauty Insight Tour 참가",
+  "sponsor": "다이와증권"
+ },
+ "20260909800210": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "CLSA증권 주관 '33rd Investors' Forum 2026' 참가",
+  "sponsor": "CLSA증권"
+ },
+ "20260909900395": {
+  "kind": "ir",
+  "expected_date": "2026-09-11",
+  "time": "",
+  "purpose": "",
+  "sponsor": "모간스탠리증권"
  }
 }
