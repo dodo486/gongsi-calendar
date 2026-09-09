@@ -2842,5 +2842,75 @@
   "time": "",
   "purpose": "",
   "sponsor": "모간스탠리증권"
+ },
+ "20260909800686": {
+  "kind": "ir",
+  "expected_date": "2026-09-14",
+  "time": "",
+  "purpose": "최근 경영실적 등 주요 관심사항 설명",
+  "sponsor": "한국투자증권"
+ },
+ "20260909800662": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "",
+  "purpose": "증권사 주관 컨퍼런스 참석",
+  "sponsor": "KB증권"
+ },
+ "20260909800537": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "10:00",
+  "purpose": "Daiwa K-Beauty Insight Tour 참가",
+  "sponsor": "Daiwa"
+ },
+ "20260909800536": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "17:00",
+  "purpose": "SK이노베이션(주) 과의 합병 결정에 대한 투자자 이해도 제고",
+  "sponsor": "한국투자증권"
+ },
+ "20260909800530": {
+  "kind": "ir",
+  "expected_date": "2026-09-14",
+  "time": "17:00",
+  "purpose": "SK이노베이션(주) 과의 합병 결정에 대한 투자자 이해도 제고",
+  "sponsor": "한국투자증권"
+ },
+ "20260909800523": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "15:00",
+  "purpose": "SK이노베이션과 SK아이이테크놀로지의 합병 결정에 대한 이해도 제고",
+  "sponsor": "자사"
+ },
+ "20260909800519": {
+  "kind": "ir",
+  "expected_date": "2026-09-14",
+  "time": "15:30",
+  "purpose": "SK이노베이션과 SK아이이테크놀로지의 합병 결정에 대한 이해도 제고",
+  "sponsor": "자사"
+ },
+ "20260909800462": {
+  "kind": "ir",
+  "expected_date": "2026-09-16",
+  "time": "16:00",
+  "purpose": "지배구조 개편 관련 주요 내용 설명 및 투자자 이해 제고",
+  "sponsor": "NH투자증권"
+ },
+ "20260909800444": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "",
+  "purpose": "KB증권 주관 \"2026 KB Korea Conference\" 참가",
+  "sponsor": "KB증권"
+ },
+ "20260909900692": {
+  "kind": "ir",
+  "expected_date": "2026-09-08",
+  "time": "",
+  "purpose": "",
+  "sponsor": "Morgan"
  }
 }

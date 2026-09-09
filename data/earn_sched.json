@@ -1,5 +1,19 @@
 {
- "generated_at": "2026-09-09 15:50:43",
- "count": 0,
- "events": []
+ "generated_at": "2026-09-09 20:51:41",
+ "count": 1,
+ "events": [
+  {
+   "corp": "iM금융지주",
+   "stock": "139130",
+   "market": "KOSPI",
+   "rcept_no": "20260909800686",
+   "rcept_dt": "20260909",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260909800686",
+   "src": "IR",
+   "expected_date": "2026-09-14",
+   "time": "",
+   "purpose": "최근 경영실적 등 주요 관심사항 설명",
+   "sponsor": "한국투자증권"
+  }
+ ]
 }

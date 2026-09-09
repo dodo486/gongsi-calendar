@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-09-09 15:08:27",
+ "generated_at": "2026-09-09 20:31:16",
  "range": {
   "bgn": "20260506",
   "end": "20260909"
  },
- "count": 425,
+ "count": 426,
  "events": [
+  {
+   "corp": "케이티",
+   "stock": "030200",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260909",
+   "rcept_no": "20260909000349",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260909000349",
+   "flr": "케이티"
+  },
   {
    "corp": "에이피알",
    "stock": "278470",
