@@ -2940,5 +2940,40 @@
   "time": "15:00",
   "purpose": "당사 경영 현황에 대한 이해증진 ('2026 KB Korea conference' 참가)",
   "sponsor": "KB증권"
+ },
+ "20260910800702": {
+  "kind": "ir",
+  "expected_date": "2026-09-11",
+  "time": "08:30",
+  "purpose": "회사 주요 경영사항 발표",
+  "sponsor": "자사"
+ },
+ "20260910800549": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "",
+  "purpose": "Hanwha Group Day 2026 참가",
+  "sponsor": "NH투자증권"
+ },
+ "20260910800458": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "",
+  "purpose": "Hanwha Group Day 2026 참가",
+  "sponsor": "NH투자증권"
+ },
+ "20260910800374": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "",
+  "purpose": "NHIS Hanwha Group Day 2026",
+  "sponsor": "NH투자증권"
+ },
+ "20260910800347": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "",
+  "purpose": "Hanwha Group Day 2026 참가",
+  "sponsor": "NH투자증권"
  }
 }

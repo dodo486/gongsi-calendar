@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-09-10 14:55:05",
+ "generated_at": "2026-09-10 20:08:43",
  "range": {
   "bgn": "20260506",
-  "end": "20260909"
+  "end": "20260910"
  },
- "count": 426,
+ "count": 428,
  "events": [
+  {
+   "corp": "젬백스",
+   "stock": "082270",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260910",
+   "rcept_no": "20260910000502",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260910000502",
+   "flr": "젬백스"
+  },
+  {
+   "corp": "제이앤티씨",
+   "stock": "204270",
+   "market": "KOSDAQ",
+   "title": "유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260910",
+   "rcept_no": "20260910900547",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260910900547",
+   "flr": "제이앤티씨"
+  },
   {
    "corp": "케이티",
    "stock": "030200",

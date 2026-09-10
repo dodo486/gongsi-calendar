@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-10 15:27:55",
+ "generated_at": "2026-09-10 20:47:05",
  "count": 62,
  "events": [
   {
@@ -12,8 +12,8 @@
    "rcept_no": "20260910800150",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260910800150",
    "flr": "이마트",
-   "price": "73,900",
    "rate": 1.47,
+   "price": "73,900",
    "chg_sign": "5"
   },
   {
@@ -26,9 +26,9 @@
    "rcept_no": "20260910800130",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260910800130",
    "flr": "오리온",
-   "price": "119,900",
    "rate": 0.08,
-   "chg_sign": "5"
+   "price": "120,100",
+   "chg_sign": "2"
   },
   {
    "corp": "신세계",
