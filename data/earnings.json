@@ -1,7 +1,35 @@
 {
- "generated_at": "2026-09-10 10:20:56",
- "count": 60,
+ "generated_at": "2026-09-10 15:27:55",
+ "count": 62,
  "events": [
+  {
+   "corp": "이마트",
+   "stock": "139480",
+   "market": "KOSPI",
+   "title": "영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260910",
+   "rcept_no": "20260910800150",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260910800150",
+   "flr": "이마트",
+   "price": "73,900",
+   "rate": 1.47,
+   "chg_sign": "5"
+  },
+  {
+   "corp": "오리온",
+   "stock": "271560",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업(잠정)실적(공정공시)",
+   "category": "실적",
+   "date": "20260910",
+   "rcept_no": "20260910800130",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260910800130",
+   "flr": "오리온",
+   "price": "119,900",
+   "rate": 0.08,
+   "chg_sign": "5"
+  },
   {
    "corp": "신세계",
    "stock": "004170",
@@ -13,14 +41,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260909800404",
    "flr": "신세계",
    "rate": -3.21,
-   "price": "391,500",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:02",
    "pre5": -3.21,
    "post5": 0.0,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "391,500",
+   "chg_sign": "5"
   },
   {
    "corp": "한국가스공사",
@@ -33,14 +61,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260909800206",
    "flr": "한국가스공사",
    "rate": 2.12,
-   "price": "36,150",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:02",
    "pre5": 2.12,
    "post5": 0.0,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "36,150",
+   "chg_sign": "2"
   },
   {
    "corp": "파라다이스",

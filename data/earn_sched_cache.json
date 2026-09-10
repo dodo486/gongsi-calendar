@@ -2919,5 +2919,26 @@
   "time": "14:20",
   "purpose": "신한 Premier Corporate Day 참석",
   "sponsor": "신한투자증권"
+ },
+ "20260910800303": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "09:00",
+  "purpose": "Hanwha Group Day 2026 참가",
+  "sponsor": "NH투자증권"
+ },
+ "20260910800279": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "09:00",
+  "purpose": "Hanwha Group Day 2026 참가",
+  "sponsor": "NH투자증권"
+ },
+ "20260910800086": {
+  "kind": "ir",
+  "expected_date": "2026-09-10",
+  "time": "15:00",
+  "purpose": "당사 경영 현황에 대한 이해증진 ('2026 KB Korea conference' 참가)",
+  "sponsor": "KB증권"
  }
 }
