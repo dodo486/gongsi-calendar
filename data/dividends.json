@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-09 20:31:23",
- "count": 63,
+ "generated_at": "2026-09-10 10:00:49",
+ "count": 62,
  "events": [
   {
    "corp": "삼성전자",
@@ -41,20 +41,6 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260701800267",
    "div_type": "분기배당",
    "rcept_dt": "20260701",
-   "confirm_date": "2026-06-26",
-   "ex_date": "2026-06-29"
-  },
-  {
-   "corp": "롯데쇼핑",
-   "stock": "023530",
-   "market": "KOSPI",
-   "per_share": "1300",
-   "record_date": "2026-06-30",
-   "pay_date": "2026-07-31",
-   "rcept_no": "20260611800834",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260611800834",
-   "div_type": "중간배당",
-   "rcept_dt": "20260611",
    "confirm_date": "2026-06-26",
    "ex_date": "2026-06-29"
   },

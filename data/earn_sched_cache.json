@@ -2912,5 +2912,12 @@
   "time": "",
   "purpose": "",
   "sponsor": "Morgan"
+ },
+ "20260910800060": {
+  "kind": "ir",
+  "expected_date": "2026-09-11",
+  "time": "14:20",
+  "purpose": "신한 Premier Corporate Day 참석",
+  "sponsor": "신한투자증권"
  }
 }
