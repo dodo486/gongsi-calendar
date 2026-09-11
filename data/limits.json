@@ -1,151 +1,25 @@
 {
- "date": "2026-09-10",
- "generated_at": "2026-09-10 20:50:19",
- "count": 8,
+ "date": "2026-09-11",
+ "generated_at": "2026-09-11 10:18:17",
+ "count": 1,
  "events": [
   {
-   "time": "15:21",
+   "time": "09:02",
    "kind": "주식선물",
-   "name": "한국앤컴퍼니",
-   "code": "000240",
-   "market": "KOSPI200",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260910000328",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260910000328&docno=",
-   "markets": [
-    "KOSPI200",
-    "KRX300"
-   ],
-   "expand_time": "15:26:06",
-   "rate": 3.92
-  },
-  {
-   "time": "15:02",
-   "kind": "주식선물",
-   "name": "동화기업",
-   "code": "025900",
+   "name": "넥스틴",
+   "code": "348210",
    "market": "KOSDAQ150",
    "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260910000289",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260910000289&docno=",
-   "markets": [
-    "KOSDAQ150"
-   ],
-   "expand_time": "15:07:17",
-   "rate": 6.49
-  },
-  {
-   "time": "14:41",
-   "kind": "주식선물",
-   "name": "금호타이어",
-   "code": "073240",
-   "market": "KOSPI200",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260910000248",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260910000248&docno=",
-   "markets": [
-    "KOSPI200",
-    "KRX300"
-   ],
-   "expand_time": "14:46:32",
-   "rate": 8.17
-  },
-  {
-   "time": "13:59",
-   "kind": "주식선물",
-   "name": "HD현대마린솔루션",
-   "code": "443060",
-   "market": "KOSPI200",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260910000213",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260910000213&docno=",
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260911000070",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260911000070&docno=",
    "markets": [
     "V100",
-    "KOSPI200",
-    "KRX300"
-   ],
-   "expand_time": "14:04:10",
-   "rate": 9.03
-  },
-  {
-   "time": "12:28",
-   "kind": "주식선물",
-   "name": "티씨케이",
-   "code": "064760",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260910000148",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260910000148&docno=",
-   "markets": [
-    "V100",
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "12:33:12",
-   "rate": 5.44
-  },
-  {
-   "time": "12:17",
-   "kind": "주식선물",
-   "name": "컴투스",
-   "code": "078340",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260910000147",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260910000147&docno=",
-   "markets": [
     "KOSDAQ150"
    ],
-   "expand_time": "12:22:39",
-   "rate": 11.7
-  },
-  {
-   "time": "12:10",
-   "kind": "주식선물",
-   "name": "주성엔지니어링",
-   "code": "036930",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260910000146",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260910000146&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "12:15:10",
-   "rate": 7.02
-  },
-  {
-   "time": "12:07",
-   "kind": "주식선물",
-   "name": "두산테스나",
-   "code": "131970",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260910000144",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260910000144&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "12:12:48",
-   "rate": 6.32
+   "expand_time": "09:07:24",
+   "rate": 7.11
   }
  ]
 }
