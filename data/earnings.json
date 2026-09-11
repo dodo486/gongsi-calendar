@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-11 15:27:54",
+ "generated_at": "2026-09-11 19:48:16",
  "count": 47,
  "events": [
   {
@@ -12,8 +12,8 @@
    "rcept_no": "20260911800223",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260911800223",
    "flr": "아모레퍼시픽",
-   "price": "140,500",
    "rate": 1.44,
+   "price": "140,500",
    "chg_sign": "2"
   },
   {
