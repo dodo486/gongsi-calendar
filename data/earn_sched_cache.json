@@ -2982,5 +2982,19 @@
   "time": "",
   "purpose": "투자자 미팅을 통한 당사 이해증진",
   "sponsor": "신영증권,"
+ },
+ "20260911800327": {
+  "kind": "ir",
+  "expected_date": "2026-09-18",
+  "time": "16:00",
+  "purpose": "- Capital Markets Day 개최를 통한 그룹 경영전략 및 주요 관심사항에 대한 시장의 이해도 제",
+  "sponsor": "자사"
+ },
+ "20260911900104": {
+  "kind": "ir",
+  "expected_date": "2026-09-11",
+  "time": "",
+  "purpose": "",
+  "sponsor": "NH투자증권"
  }
 }

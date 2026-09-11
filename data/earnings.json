@@ -1,7 +1,21 @@
 {
- "generated_at": "2026-09-11 10:16:57",
- "count": 46,
+ "generated_at": "2026-09-11 15:27:54",
+ "count": 47,
  "events": [
+  {
+   "corp": "아모레퍼시픽",
+   "stock": "090430",
+   "market": "KOSPI",
+   "title": "연결재무제표기준영업실적등에대한전망(공정공시)",
+   "category": "실적",
+   "date": "20260911",
+   "rcept_no": "20260911800223",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260911800223",
+   "flr": "아모레퍼시픽",
+   "price": "140,500",
+   "rate": 1.44,
+   "chg_sign": "2"
+  },
   {
    "corp": "이마트",
    "stock": "139480",
@@ -13,14 +27,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260910800150",
    "flr": "이마트",
    "rate": -1.47,
-   "price": "73,900",
-   "chg_sign": "5",
    "rate_fixed": true,
    "disc_time": "17:24",
    "pre5": -1.47,
    "post5": 0.0,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "73,900",
+   "chg_sign": "5"
   },
   {
    "corp": "오리온",
@@ -33,14 +47,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260910800130",
    "flr": "오리온",
    "rate": 0.08,
-   "price": "120,100",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "17:24",
    "pre5": 0.08,
    "post5": -0.92,
+   "tick_state": "ok",
    "tick_kind": "close_gap",
-   "tick_state": "ok"
+   "price": "120,100",
+   "chg_sign": "2"
   },
   {
    "corp": "신세계",
