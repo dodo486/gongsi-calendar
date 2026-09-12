@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-12 10:37:20",
+ "generated_at": "2026-09-12 19:20:57",
  "count": 21,
  "events": [
   {
@@ -13,14 +13,14 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260911800223",
    "flr": "아모레퍼시픽",
    "rate": 1.44,
-   "price": "140,500",
-   "chg_sign": "2",
    "rate_fixed": true,
    "disc_time": "16:47",
    "pre5": 1.44,
    "post5": null,
+   "tick_state": "wait:20260912",
    "tick_kind": "close_gap",
-   "tick_state": "wait:20260912"
+   "price": "140,500",
+   "chg_sign": "2"
   },
   {
    "corp": "이마트",
