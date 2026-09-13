@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-13 20:16:03",
- "count": 14,
+ "generated_at": "2026-09-14 00:03:33",
+ "count": 12,
  "events": [
   {
    "corp": "아모레퍼시픽",
@@ -17,7 +17,7 @@
    "disc_time": "16:47",
    "pre5": 1.44,
    "post5": null,
-   "tick_state": "wait:20260913",
+   "tick_state": "wait:20260914",
    "tick_kind": "close_gap",
    "price": "140,500",
    "chg_sign": "2"
@@ -231,42 +231,6 @@
    "tick_state": "notime",
    "price": "74,600",
    "chg_sign": "2"
-  },
-  {
-   "corp": "HL만도",
-   "stock": "204320",
-   "market": "KOSPI",
-   "title": "[기재정정]연결재무제표기준영업(잠정)실적(공정공시)",
-   "category": "실적",
-   "date": "20260814",
-   "rcept_no": "20260814803500",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814803500",
-   "flr": "HL만도",
-   "rate": 2.88,
-   "rate_fixed": true,
-   "disc_time": "17:40",
-   "pre5": 2.88,
-   "post5": 0.0,
-   "tick_state": "ok",
-   "tick_kind": "close_gap"
-  },
-  {
-   "corp": "현대해상",
-   "stock": "001450",
-   "market": "KOSPI",
-   "title": "영업(잠정)실적(공정공시)",
-   "category": "실적",
-   "date": "20260814",
-   "rcept_no": "20260814800088",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260814800088",
-   "flr": "현대해상",
-   "rate": 5.59,
-   "rate_fixed": true,
-   "disc_time": "17:40",
-   "pre5": 5.59,
-   "post5": -0.33,
-   "tick_state": "ok",
-   "tick_kind": "close_gap"
   }
  ]
 }
