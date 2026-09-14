@@ -3035,5 +3035,33 @@
   "time": "",
   "purpose": "",
   "sponsor": "대신증권"
+ },
+ "20260914800522": {
+  "kind": "ir",
+  "expected_date": "2026-09-16",
+  "time": "10:00",
+  "purpose": "미국 셰일가스 자산 인수 관련 사업설명회",
+  "sponsor": "당사"
+ },
+ "20260914800504": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "회사 소개, 사업현황 및 실적 설명",
+  "sponsor": "신한투자증권"
+ },
+ "20260914800414": {
+  "kind": "ir",
+  "expected_date": "2026-09-18",
+  "time": "15:00",
+  "purpose": "삼성증권 Corporate Day 행사 참석을 통한 기관투자자 이해 증진",
+  "sponsor": "삼성증권"
+ },
+ "20260914900496": {
+  "kind": "ir",
+  "expected_date": "2026-09-16",
+  "time": "",
+  "purpose": "",
+  "sponsor": "리딩투자증권"
  }
 }

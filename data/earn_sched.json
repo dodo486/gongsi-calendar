@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-14 15:47:04",
- "count": 1,
+ "generated_at": "2026-09-14 21:59:35",
+ "count": 2,
  "events": [
   {
    "corp": "iM금융지주",
@@ -14,6 +14,19 @@
    "time": "",
    "purpose": "최근 경영실적 등 주요 관심사항 설명",
    "sponsor": "한국투자증권"
+  },
+  {
+   "corp": "이수스페셜티케미컬",
+   "stock": "457190",
+   "market": "KOSPI",
+   "rcept_no": "20260914800504",
+   "rcept_dt": "20260914",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914800504",
+   "src": "IR",
+   "expected_date": "2026-09-21",
+   "time": "",
+   "purpose": "회사 소개, 사업현황 및 실적 설명",
+   "sponsor": "신한투자증권"
   }
  ]
 }

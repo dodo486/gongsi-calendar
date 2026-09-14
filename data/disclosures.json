@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-09-14 15:06:00",
+ "generated_at": "2026-09-14 21:39:20",
  "range": {
   "bgn": "20260506",
   "end": "20260914"
  },
- "count": 433,
+ "count": 435,
  "events": [
+  {
+   "corp": "포스코인터내셔널",
+   "stock": "047050",
+   "market": "KOSPI",
+   "title": "유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260914",
+   "rcept_no": "20260914800417",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914800417",
+   "flr": "포스코인터내셔널"
+  },
   {
    "corp": "코나아이",
    "stock": "052400",
@@ -16,6 +27,17 @@
    "rcept_no": "20260914000031",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914000031",
    "flr": "코나아이"
+  },
+  {
+   "corp": "서진시스템",
+   "stock": "178320",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260914",
+   "rcept_no": "20260914900338",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914900338",
+   "flr": "서진시스템"
   },
   {
    "corp": "코나아이",
