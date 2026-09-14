@@ -1,6 +1,61 @@
 {
  "date": "2026-09-14",
- "generated_at": "2026-09-14 00:04:42",
- "count": 0,
- "events": []
+ "generated_at": "2026-09-14 10:33:42",
+ "count": 3,
+ "events": [
+  {
+   "time": "09:35",
+   "kind": "주식선물",
+   "name": "올릭스",
+   "code": "226950",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260914000062",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260914000062&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "09:40:39",
+   "rate": 10.43
+  },
+  {
+   "time": "09:05",
+   "kind": "주식선물",
+   "name": "영풍",
+   "code": "000670",
+   "market": "KOSPI200",
+   "stage": 3,
+   "direction": "상승",
+   "title": "주식선물 3단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260914000058",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260914000058&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:10:24",
+   "rate": 27.44
+  },
+  {
+   "time": "09:00",
+   "kind": "주식선물",
+   "name": "영풍",
+   "code": "000670",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260914000057",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260914000057&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:05:03",
+   "rate": 27.44
+  }
+ ]
 }

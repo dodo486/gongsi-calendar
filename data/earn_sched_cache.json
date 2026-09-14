@@ -2996,5 +2996,19 @@
   "time": "",
   "purpose": "",
   "sponsor": "NH투자증권"
+ },
+ "20260914800081": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "Bank of America 증권 주관 '2026 Asia Pacific Conference' 참가",
+  "sponsor": "Bank"
+ },
+ "20260914800059": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "",
+  "purpose": "주요 기관투자가 대상 사업현황 설명",
+  "sponsor": "CLSA증권"
  }
 }
