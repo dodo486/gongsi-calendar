@@ -1,0 +1,8 @@
+# 공시캘린더 런타임 의존
+requests>=2.31
+
+# 시세는 jhts 시세수집팀에서 받는다(직접 수집 안 함).
+#   pip install "jhts-marketdata[postgres]"
+# 로컬 개발: pip install "/Users/hyeyoung/jhts[postgres]"
+# (postgres extra는 중앙 PG→로컬 미러 동기화 실행기에서만 필요. 읽기는 sqlite.)
+jhts-marketdata>=0.2.0
