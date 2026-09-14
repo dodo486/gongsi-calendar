@@ -3010,5 +3010,30 @@
   "time": "",
   "purpose": "주요 기관투자가 대상 사업현황 설명",
   "sponsor": "CLSA증권"
+ },
+ "20260914800202": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "CITIC CLSA Investors' Forum 참석",
+  "sponsor": "CITIC"
+ },
+ "20260914800122": {
+  "kind": "ir",
+  "expected_date": "2026-09-16",
+  "time": "10:30",
+  "purpose": "한화투자증권 Corporate Day 참석",
+  "sponsor": "한화투자증권"
+ },
+ "20260914900355": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260914900156": {
+  "kind": "ir",
+  "expected_date": "2026-09-14",
+  "time": "",
+  "purpose": "",
+  "sponsor": "대신증권"
  }
 }

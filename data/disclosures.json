@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-09-14 09:58:17",
+ "generated_at": "2026-09-14 15:06:00",
  "range": {
   "bgn": "20260506",
-  "end": "20260911"
+  "end": "20260914"
  },
- "count": 431,
+ "count": 433,
  "events": [
+  {
+   "corp": "코나아이",
+   "stock": "052400",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(무상증자결정)",
+   "category": "무상증자",
+   "date": "20260914",
+   "rcept_no": "20260914000031",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914000031",
+   "flr": "코나아이"
+  },
+  {
+   "corp": "코나아이",
+   "stock": "052400",
+   "market": "KOSDAQ",
+   "title": "주권매매거래정지              (무상증자)",
+   "category": "무상증자",
+   "date": "20260914",
+   "rcept_no": "20260914900091",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914900091",
+   "flr": "코스닥시장본부"
+  },
   {
    "corp": "LS",
    "stock": "006260",
