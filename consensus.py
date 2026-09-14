@@ -9,6 +9,7 @@ import html as _html
 import json, os, re, sys, time, urllib.request
 from fetch import DATA_DIR, save_json, build_ssl_context
 import dividends as dv
+import quotes  # 시세(일별 price·trend)는 jhts 시세수집팀 위임
 
 FACT_DIR = os.path.join(DATA_DIR, "facts")
 os.makedirs(FACT_DIR, exist_ok=True)
@@ -69,22 +70,21 @@ def naver_news(code, n=10):
     except Exception:
         return []
 
+def _ymd_dash(d):
+    d = (d or "").replace("-", "")
+    return f"{d[:4]}-{d[4:6]}-{d[6:8]}" if len(d) == 8 else d
+
+
 def naver_prices(code, n=30):
-    """일별 시세 (최신순) — 발표 전 선반영 체크용"""
-    try:
-        d = _get(f"https://m.stock.naver.com/api/stock/{code}/price?pageSize={n}&page=1")
-        return [{"date": x.get("localTradedAt", ""), "close": x.get("closePrice", "")} for x in d]
-    except Exception:
-        return []
+    """일별 시세 (최신순) — 발표 전 선반영 체크용. (jhts 시세수집팀 위임)"""
+    return [{"date": _ymd_dash(r["date"]), "close": int(r["close"] or 0)}
+            for r in quotes.daily_price(code, n)]
+
 
 def naver_trend(code, n=20):
-    """투자자별 매매동향 (최신순) — 외국인/기관 순매수 수량 + 종가(금액 환산용)"""
-    try:
-        d = _get(f"https://m.stock.naver.com/api/stock/{code}/trend?pageSize={n}&page=1")
-        return [{"date": x.get("bizdate", ""), "frgn": x.get("foreignerPureBuyQuant", ""),
-                 "org": x.get("organPureBuyQuant", ""), "close": x.get("closePrice", "")} for x in d]
-    except Exception:
-        return []
+    """투자자별 매매동향 (최신순) — 외국인/기관 순매수 수량 + 종가. (jhts 위임)"""
+    return [{"date": _ymd_dash(r["date"]), "frgn": r["frgn"], "org": r["org"], "close": r["close"]}
+            for r in quotes.investor_trend(code, n)]
 
 _UNIT = {"백만원": 0.01, "억원": 1.0, "천원": 1e-5, "원": 1e-8}
 

@@ -25,60 +25,19 @@ KIND_HDR = {
 
 _CTX = None
 
-def _naver_quote(url):
-    """네이버 실시간 시세 공통 파서 → {price, rate(부호포함 %), sign} / 실패 시 {}"""
-    global _CTX
-    if _CTX is None:
-        _CTX = build_ssl_context()
-    try:
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "Referer": "https://finance.naver.com/"})
-        with urllib.request.urlopen(req, timeout=8, context=_CTX) as r:
-            j = json.load(r)
-        d = (j.get("datas") or [{}])[0]
-        ratio = d.get("fluctuationsRatio")
-        if ratio is None:
-            return {}
-        sign = (d.get("compareToPreviousPrice") or {}).get("code", "3")  # 1상한2상승3보합4하락5하한
-        mag = float(str(ratio).replace(",", ""))
-        rate = mag if sign in ("1", "2") else (-mag if sign in ("4", "5") else 0.0)
-        return {"price": d.get("closePrice", ""), "rate": round(rate, 2), "sign": sign}
-    except Exception:
-        return {}
+import md_feed  # 시세는 jhts 시세수집팀 위임(예전 네이버 스크래핑 코드는 jhts로 이관)
 
 def naver_rate(code):
-    """개별종목 실시간 시세 → {price, rate(부호%), sign} / 실패 시 {}"""
-    return _naver_quote(f"https://polling.finance.naver.com/api/realtime/domestic/stock/{code}")
+    """개별종목 현재 등락률 → {price, rate(부호%), sign}. (jhts 위임)"""
+    return md_feed.stock_rate(code)
 
 def naver_index_rate(code):
-    """지수 실시간 시세 → {price, rate(부호%), sign}. code: KPI200(코스피200)/KQI150(코스닥150) 등."""
-    return _naver_quote(f"https://polling.finance.naver.com/api/realtime/domestic/index/{code}")
+    """지수 현재 등락률 → {price, rate(부호%), sign}. code: KPI200/KQI150. (jhts 위임)"""
+    return md_feed.index_rate(code)
 
 def naver_daily_map(code, days=40):
-    """일별 {YYYY-MM-DD: {rate(부호%), open, close}} — 과거 공시일 등락률·시가갭 계산용"""
-    global _CTX
-    if _CTX is None:
-        _CTX = build_ssl_context()
-    try:
-        url = f"https://m.stock.naver.com/api/stock/{code}/price?pageSize={days}&page=1"
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "Mozilla/5.0", "Referer": "https://m.stock.naver.com/"})
-        with urllib.request.urlopen(req, timeout=8, context=_CTX) as r:
-            rows = json.load(r)
-        out = {}
-        for x in rows:
-            try:
-                out[x["localTradedAt"]] = {
-                    "rate": float(str(x.get("fluctuationsRatio", "")).replace(",", "")),
-                    "open": int(str(x.get("openPrice", "0")).replace(",", "") or 0),
-                    "close": int(str(x.get("closePrice", "0")).replace(",", "") or 0),
-                }
-            except Exception:
-                pass
-        return out
-    except Exception:
-        return {}
+    """일별 {YYYY-MM-DD: {rate(부호%), open, close}} — 과거 공시일 등락률·시가갭용. (jhts 위임)"""
+    return md_feed.daily_rate_map(code, days)
 
 def _attach_quotes(events):
     """등락률 부착 — 과거 공시일은 '그 날짜'의 일별 변동률(확정, 재조회 안 함),
@@ -134,20 +93,8 @@ def kind_disc_time(corp, date_ymd, market):
     return ""
 
 def minute_closes(code, count=3000):
-    """네이버 분봉(fchart) → {YYYYMMDDHHMM: 종가}. 최근 약 6거래일만 제공됨"""
-    global _CTX
-    if _CTX is None:
-        _CTX = build_ssl_context()
-    try:
-        url = f"https://fchart.stock.naver.com/sise.nhn?symbol={code}&timeframe=minute&count={count}&requestType=0"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=15, context=_CTX) as r:
-            text = r.read().decode("utf-8", "replace")
-        # 분봉은 시/고/저가가 null로 옴: data="202607240900|null|null|null|266000|387084"
-        return {m.group(1): int(m.group(2))
-                for m in re.finditer(r'data="(\d{12})\|(?:\d+|null)\|(?:\d+|null)\|(?:\d+|null)\|(\d+)\|', text)}
-    except Exception:
-        return {}
+    """분봉 종가 {YYYYMMDDHHMM: 종가}. 최근 약 6거래일. (jhts 위임)"""
+    return md_feed.minute_closes(code, count)
 
 def _tick_rates(cmap, date_ymd, hhmm):
     """공시시각 기준 전5분/후5분 등락률(%) — 같은 날 15분 이내 분봉만 인정"""
