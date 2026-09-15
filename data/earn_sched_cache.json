@@ -3070,5 +3070,33 @@
   "time": "09:00",
   "purpose": "Daiwa Consumer and Healthcare Conference 2026 참석",
   "sponsor": "Daiwa"
+ },
+ "20260915800462": {
+  "kind": "ir",
+  "expected_date": "2026-09-17",
+  "time": "13:30",
+  "purpose": "(주)GS리테일 경영현황에 대한 투자자 이해 제고",
+  "sponsor": "신영증권"
+ },
+ "20260915800456": {
+  "kind": "ir",
+  "expected_date": "2026-09-23",
+  "time": "09:00",
+  "purpose": "BofA 증권 주관 '2026 BofA Asia Pacific Conference' 참가",
+  "sponsor": "BofA"
+ },
+ "20260915800452": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "09:00",
+  "purpose": "CLSA 증권 주관 'CLSA 33rd Investors' Forum 2026' 참가",
+  "sponsor": "CLSA"
+ },
+ "20260915800396": {
+  "kind": "ir",
+  "expected_date": "2026-09-16",
+  "time": "14:30",
+  "purpose": "2026 신영증권 Corporate Day 참석",
+  "sponsor": "신영증권"
  }
 }

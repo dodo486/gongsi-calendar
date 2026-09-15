@@ -1,11 +1,44 @@
 {
- "generated_at": "2026-09-15 10:22:06",
+ "generated_at": "2026-09-15 15:38:14",
  "range": {
   "bgn": "20260506",
-  "end": "20260914"
+  "end": "20260915"
  },
- "count": 435,
+ "count": 438,
  "events": [
+  {
+   "corp": "금호석유화학",
+   "stock": "011780",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약해지결정)",
+   "category": "자사주",
+   "date": "20260915",
+   "rcept_no": "20260915000068",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260915000068",
+   "flr": "금호석유화학"
+  },
+  {
+   "corp": "원익IPS",
+   "stock": "240810",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260915",
+   "rcept_no": "20260915000194",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260915000194",
+   "flr": "원익IPS"
+  },
+  {
+   "corp": "원익홀딩스",
+   "stock": "030530",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식처분결정)(자회사의 주요경영사항)",
+   "category": "자사주",
+   "date": "20260915",
+   "rcept_no": "20260915900400",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260915900400",
+   "flr": "원익홀딩스"
+  },
   {
    "corp": "포스코인터내셔널",
    "stock": "047050",

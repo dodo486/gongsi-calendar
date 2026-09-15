@@ -8798,5 +8798,16 @@
   "record_date": "2026-09-30",
   "pay_date": "",
   "div_type": ""
+ },
+ "20260915800241": {
+  "kind": "record",
+  "stock": "017960",
+  "corp": "한국카본",
+  "market": "KOSPI",
+  "rcept_dt": "20260915",
+  "per_share": "",
+  "record_date": "2026-09-30",
+  "pay_date": "",
+  "div_type": "분기배당"
  }
 }
