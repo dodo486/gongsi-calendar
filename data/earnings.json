@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-14 21:58:20",
+ "generated_at": "2026-09-15 10:41:45",
  "count": 15,
  "events": [
   {
@@ -12,9 +12,11 @@
    "rcept_no": "20260914800401",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914800401",
    "flr": "HD한국조선해양",
-   "price": "361,000",
    "rate": 1.23,
-   "chg_sign": "5"
+   "price": "361,000",
+   "chg_sign": "5",
+   "disc_time": "17:52",
+   "tick_state": "noday"
   },
   {
    "corp": "HD현대중공업",
@@ -26,9 +28,11 @@
    "rcept_no": "20260914800398",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914800398",
    "flr": "HD현대중공업",
-   "price": "470,000",
    "rate": 1.88,
-   "chg_sign": "5"
+   "price": "470,000",
+   "chg_sign": "5",
+   "disc_time": "17:52",
+   "tick_state": "noday"
   },
   {
    "corp": "HD한국조선해양",
@@ -40,9 +44,11 @@
    "rcept_no": "20260914800395",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914800395",
    "flr": "HD한국조선해양",
-   "price": "361,000",
    "rate": 1.23,
-   "chg_sign": "5"
+   "price": "361,000",
+   "chg_sign": "5",
+   "disc_time": "17:52",
+   "tick_state": "noday"
   },
   {
    "corp": "아모레퍼시픽",
@@ -59,7 +65,7 @@
    "disc_time": "16:47",
    "pre5": 1.44,
    "post5": null,
-   "tick_state": "wait:20260914",
+   "tick_state": "noday",
    "tick_kind": "close_gap",
    "price": "140,500",
    "chg_sign": "2"
