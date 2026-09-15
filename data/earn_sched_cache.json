@@ -3098,5 +3098,19 @@
   "time": "14:30",
   "purpose": "2026 신영증권 Corporate Day 참석",
   "sponsor": "신영증권"
+ },
+ "20260915800598": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "09:00",
+  "purpose": "Bank of America Securities 주관 '2026 Asia Pacific Conference'",
+  "sponsor": "Bank"
+ },
+ "20260915900686": {
+  "kind": "ir",
+  "expected_date": "2026-09-15",
+  "time": "",
+  "purpose": "",
+  "sponsor": "BofA,"
  }
 }
