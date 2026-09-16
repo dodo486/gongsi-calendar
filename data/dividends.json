@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-15 21:18:54",
- "count": 63,
+ "generated_at": "2026-09-16 10:17:58",
+ "count": 62,
  "events": [
   {
    "corp": "삼성전자",
@@ -195,20 +195,6 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260713800760",
    "div_type": "분기배당",
    "rcept_dt": "20260713",
-   "confirm_date": "2026-07-29",
-   "ex_date": "2026-07-30"
-  },
-  {
-   "corp": "포스코DX",
-   "stock": "022100",
-   "market": "KOSPI",
-   "per_share": "60",
-   "record_date": "2026-07-31",
-   "pay_date": "2026-08-31",
-   "rcept_no": "20260617800279",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260617800279",
-   "div_type": "중간배당",
-   "rcept_dt": "20260617",
    "confirm_date": "2026-07-29",
    "ex_date": "2026-07-30"
   },
