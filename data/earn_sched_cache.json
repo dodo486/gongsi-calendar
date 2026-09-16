@@ -3123,5 +3123,26 @@
   "time": "09:30",
   "purpose": "CLSA Investors' Forum 2026",
   "sponsor": "CLSA증권"
+ },
+ "20260916800589": {
+  "kind": "ir",
+  "expected_date": "2026-09-22",
+  "time": "09:00",
+  "purpose": "BofA Asia Pacific Conference 참석",
+  "sponsor": "BofA"
+ },
+ "20260916800555": {
+  "kind": "ir",
+  "expected_date": "2026-09-17",
+  "time": "14:00",
+  "purpose": "26년 2분기 경영실적 및 주요 경영현황 설명",
+  "sponsor": "노무라증권"
+ },
+ "20260916800520": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "BofA증권 주관 '2026 Asia Pacific Conference' 참가",
+  "sponsor": "BofA증권"
  }
 }

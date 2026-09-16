@@ -1,11 +1,33 @@
 {
- "generated_at": "2026-09-16 15:14:57",
+ "generated_at": "2026-09-16 20:43:39",
  "range": {
   "bgn": "20260506",
-  "end": "20260915"
+  "end": "20260916"
  },
- "count": 438,
+ "count": 440,
  "events": [
+  {
+   "corp": "에이피알",
+   "stock": "278470",
+   "market": "KOSPI",
+   "title": "[첨부정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260916",
+   "rcept_no": "20260916000451",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260916000451",
+   "flr": "에이피알"
+  },
+  {
+   "corp": "서부T&D",
+   "stock": "006730",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260916",
+   "rcept_no": "20260916900592",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260916900592",
+   "flr": "서부T&D"
+  },
   {
    "corp": "금호석유화학",
    "stock": "011780",
