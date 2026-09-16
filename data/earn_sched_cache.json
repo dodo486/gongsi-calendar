@@ -3112,5 +3112,16 @@
   "time": "",
   "purpose": "",
   "sponsor": "BofA,"
+ },
+ "20260916800379": {
+  "kind": "ir",
+  "expected_date": ""
+ },
+ "20260916800336": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "09:30",
+  "purpose": "CLSA Investors' Forum 2026",
+  "sponsor": "CLSA증권"
  }
 }
