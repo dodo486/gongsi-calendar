@@ -1,45 +1,45 @@
 {
- "date": "2026-09-16",
- "generated_at": "2026-09-16 21:03:17",
- "count": 5,
+ "date": "2026-09-17",
+ "generated_at": "2026-09-17 10:44:27",
+ "count": 6,
  "events": [
   {
-   "time": "14:49",
+   "time": "10:32",
    "kind": "주식선물",
-   "name": "원익IPS",
-   "code": "240810",
-   "market": "KOSDAQ150",
+   "name": "한화시스템",
+   "code": "272210",
+   "market": "KOSPI200",
    "stage": 2,
    "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260916000302",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260916000302&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "14:54:50"
-  },
-  {
-   "time": "14:48",
-   "kind": "주식선물",
-   "name": "피에스케이",
-   "code": "319660",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260916000299",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260916000299&docno=",
+   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260917000135",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000135&docno=",
    "markets": [
     "V100",
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "10:37:27"
+  },
+  {
+   "time": "09:52",
+   "kind": "주식선물",
+   "name": "성호전자",
+   "code": "043260",
+   "market": "KOSDAQ150",
+   "stage": 3,
+   "direction": "상승",
+   "title": "주식선물 3단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260917000088",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000088&docno=",
+   "markets": [
     "KOSDAQ150",
     "KRX300"
    ],
-   "expand_time": "14:53:18"
+   "expand_time": "09:57:31"
   },
   {
-   "time": "09:38",
+   "time": "09:18",
    "kind": "주식선물",
    "name": "성호전자",
    "code": "043260",
@@ -47,48 +47,64 @@
    "stage": 2,
    "direction": "상승",
    "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260916000085",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260916000085&docno=",
+   "rcept_no": "20260917000066",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000066&docno=",
    "markets": [
     "KOSDAQ150",
     "KRX300"
    ],
-   "expand_time": "09:43:55"
+   "expand_time": "09:23:40"
   },
   {
-   "time": "09:23",
+   "time": "09:05",
    "kind": "주식선물",
-   "name": "카카오페이",
-   "code": "377300",
+   "name": "한화엔진",
+   "code": "082740",
    "market": "KOSPI200",
    "stage": 2,
-   "direction": "하락",
-   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(하락)",
-   "rcept_no": "20260916000065",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260916000065&docno=",
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260917000058",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000058&docno=",
    "markets": [
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "09:28:36"
+   "expand_time": "09:10:52"
   },
   {
-   "time": "09:00",
+   "time": "09:04",
    "kind": "주식선물",
-   "name": "피에스케이홀딩스",
-   "code": "031980",
+   "name": "하나마이크론",
+   "code": "067310",
    "market": "KOSDAQ150",
    "stage": 2,
-   "direction": "하락",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
-   "rcept_no": "20260916000053",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260916000053&docno=",
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260917000056",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000056&docno=",
    "markets": [
-    "V100",
     "KOSDAQ150",
     "KRX300"
    ],
-   "expand_time": "09:05:08"
+   "expand_time": "09:09:39"
+  },
+  {
+   "time": "09:01",
+   "kind": "주식선물",
+   "name": "HD건설기계",
+   "code": "267270",
+   "market": "KOSPI200",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260917000053",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000053&docno=",
+   "markets": [
+    "KOSPI200",
+    "KRX300"
+   ],
+   "expand_time": "09:06:26"
   }
  ]
 }
