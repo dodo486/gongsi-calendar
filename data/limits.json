@@ -1,110 +1,75 @@
 {
- "date": "2026-09-17",
- "generated_at": "2026-09-17 21:33:38",
- "count": 6,
+ "date": "2026-09-18",
+ "generated_at": "2026-09-18 10:58:52",
+ "count": 4,
  "events": [
   {
-   "time": "10:32",
+   "time": "10:45",
    "kind": "주식선물",
-   "name": "한화시스템",
-   "code": "272210",
+   "name": "오름테라퓨틱",
+   "code": "475830",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "하락",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(하락)",
+   "rcept_no": "20260918000124",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260918000124&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "10:50:31"
+  },
+  {
+   "time": "10:11",
+   "kind": "주식선물",
+   "name": "두산테스나",
+   "code": "131970",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260918000095",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260918000095&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "10:16:29"
+  },
+  {
+   "time": "09:43",
+   "kind": "주식선물",
+   "name": "대한전선",
+   "code": "001440",
    "market": "KOSPI200",
    "stage": 2,
    "direction": "상승",
-   "title": "주식선물ㆍ주식옵션 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260917000135",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000135&docno=",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260918000079",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260918000079&docno=",
    "markets": [
-    "V100",
     "KOSPI200",
     "KRX300"
    ],
-   "expand_time": "10:37:27"
+   "expand_time": "09:48:00"
   },
   {
-   "time": "09:52",
+   "time": "09:13",
    "kind": "주식선물",
    "name": "성호전자",
    "code": "043260",
    "market": "KOSDAQ150",
-   "stage": 3,
+   "stage": 2,
    "direction": "상승",
-   "title": "주식선물 3단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260917000088",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000088&docno=",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260918000065",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260918000065&docno=",
    "markets": [
     "KOSDAQ150",
     "KRX300"
    ],
-   "expand_time": "09:57:31"
-  },
-  {
-   "time": "09:18",
-   "kind": "주식선물",
-   "name": "성호전자",
-   "code": "043260",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260917000066",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000066&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "09:23:40"
-  },
-  {
-   "time": "09:05",
-   "kind": "주식선물",
-   "name": "한화엔진",
-   "code": "082740",
-   "market": "KOSPI200",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260917000058",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000058&docno=",
-   "markets": [
-    "KOSPI200",
-    "KRX300"
-   ],
-   "expand_time": "09:10:52"
-  },
-  {
-   "time": "09:04",
-   "kind": "주식선물",
-   "name": "하나마이크론",
-   "code": "067310",
-   "market": "KOSDAQ150",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260917000056",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000056&docno=",
-   "markets": [
-    "KOSDAQ150",
-    "KRX300"
-   ],
-   "expand_time": "09:09:39"
-  },
-  {
-   "time": "09:01",
-   "kind": "주식선물",
-   "name": "HD건설기계",
-   "code": "267270",
-   "market": "KOSPI200",
-   "stage": 2,
-   "direction": "상승",
-   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
-   "rcept_no": "20260917000053",
-   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260917000053&docno=",
-   "markets": [
-    "KOSPI200",
-    "KRX300"
-   ],
-   "expand_time": "09:06:26"
+   "expand_time": "09:18:17"
   }
  ]
 }

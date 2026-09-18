@@ -3155,5 +3155,26 @@
   "time": "",
   "purpose": "CLSA증권 주관 \"33rd Investors' Forum 2026\" 참가",
   "sponsor": "CLSA"
+ },
+ "20260918800093": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "09:00",
+  "purpose": "회사 소개 및 사업 현황 설명",
+  "sponsor": "CLSA"
+ },
+ "20260918800064": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "2026 Asia Pacific Conference 참가",
+  "sponsor": "BofA"
+ },
+ "20260918800063": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "09:00",
+  "purpose": "컨퍼런스 참가를 통한 투자자 당사 이해도 제고",
+  "sponsor": "CLSA"
  }
 }
