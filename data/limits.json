@@ -1,8 +1,25 @@
 {
  "date": "2026-09-18",
- "generated_at": "2026-09-18 10:58:52",
- "count": 4,
+ "generated_at": "2026-09-18 20:26:31",
+ "count": 5,
  "events": [
+  {
+   "time": "12:23",
+   "kind": "주식선물",
+   "name": "성호전자",
+   "code": "043260",
+   "market": "KOSDAQ150",
+   "stage": 3,
+   "direction": "상승",
+   "title": "주식선물 3단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260918000173",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260918000173&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "12:28:47"
+  },
   {
    "time": "10:45",
    "kind": "주식선물",

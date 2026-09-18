@@ -1,11 +1,44 @@
 {
- "generated_at": "2026-09-18 10:16:59",
+ "generated_at": "2026-09-18 20:07:04",
  "range": {
   "bgn": "20260506",
-  "end": "20260916"
+  "end": "20260918"
  },
- "count": 440,
+ "count": 443,
  "events": [
+  {
+   "corp": "성호전자",
+   "stock": "043260",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(전환사채매수선택권행사자지정)",
+   "category": "메자닌",
+   "date": "20260918",
+   "rcept_no": "20260918000482",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260918000482",
+   "flr": "성호전자"
+  },
+  {
+   "corp": "코스메카코리아",
+   "stock": "241710",
+   "market": "KOSDAQ",
+   "title": "[기재정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260918",
+   "rcept_no": "20260918000288",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260918000288",
+   "flr": "코스메카코리아"
+  },
+  {
+   "corp": "나노신소재",
+   "stock": "121600",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260918",
+   "rcept_no": "20260918000322",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260918000322",
+   "flr": "나노신소재"
+  },
   {
    "corp": "에이피알",
    "stock": "278470",

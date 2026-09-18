@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-18 10:58:47",
- "count": 3,
+ "generated_at": "2026-09-18 20:26:29",
+ "count": 4,
  "events": [
   {
    "corp": "iM금융지주",
@@ -27,6 +27,19 @@
    "time": "14:00",
    "purpose": "26년 2분기 경영실적 및 주요 경영현황 설명",
    "sponsor": "노무라증권"
+  },
+  {
+   "corp": "신세계",
+   "stock": "004170",
+   "market": "KOSPI",
+   "rcept_no": "20260918800653",
+   "rcept_dt": "20260918",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260918800653",
+   "src": "IR",
+   "expected_date": "2026-09-21",
+   "time": "",
+   "purpose": "ㅁ경영실적 및 주요 관심사항 Q&amp;A 진행",
+   "sponsor": "Bofa"
   },
   {
    "corp": "이수스페셜티케미컬",

@@ -3176,5 +3176,33 @@
   "time": "09:00",
   "purpose": "컨퍼런스 참가를 통한 투자자 당사 이해도 제고",
   "sponsor": "CLSA"
+ },
+ "20260918800771": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "09:00",
+  "purpose": "컨퍼런스",
+  "sponsor": "BofA"
+ },
+ "20260918800688": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "증권사 주관 컨퍼런스 참석",
+  "sponsor": "CLSA증권"
+ },
+ "20260918800653": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "ㅁ경영실적 및 주요 관심사항 Q&amp;A 진행",
+  "sponsor": "Bofa"
+ },
+ "20260918800348": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "09:00",
+  "purpose": "CITIC CLSA Flagship Investors' Forum 참석",
+  "sponsor": "CLSA증권"
  }
 }
