@@ -3204,5 +3204,19 @@
   "time": "09:00",
   "purpose": "CITIC CLSA Flagship Investors' Forum 참석",
   "sponsor": "CLSA증권"
+ },
+ "20260921800056": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "Bank of America 증권 주관 '2026 Asia Pacific Conference' 참여",
+  "sponsor": "Bank"
+ },
+ "20260921900054": {
+  "kind": "ir",
+  "expected_date": "2026-09-21",
+  "time": "",
+  "purpose": "",
+  "sponsor": "CLSA"
  }
 }
