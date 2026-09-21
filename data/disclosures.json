@@ -1,11 +1,55 @@
 {
- "generated_at": "2026-09-21 15:15:12",
+ "generated_at": "2026-09-21 22:00:31",
  "range": {
   "bgn": "20260506",
   "end": "20260921"
  },
- "count": 444,
+ "count": 448,
  "events": [
+  {
+   "corp": "엔켐",
+   "stock": "348370",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260921",
+   "rcept_no": "20260921900526",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260921900526",
+   "flr": "엔켐"
+  },
+  {
+   "corp": "하나머티리얼즈",
+   "stock": "166090",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260921",
+   "rcept_no": "20260921900498",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260921900498",
+   "flr": "하나머티리얼즈"
+  },
+  {
+   "corp": "나노신소재",
+   "stock": "121600",
+   "market": "KOSDAQ",
+   "title": "신주인수권부사채(해외신주인수권부사채포함)발행후만기전사채취득",
+   "category": "메자닌",
+   "date": "20260921",
+   "rcept_no": "20260921900365",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260921900365",
+   "flr": "나노신소재"
+  },
+  {
+   "corp": "나노신소재",
+   "stock": "121600",
+   "market": "KOSDAQ",
+   "title": "전환사채(해외전환사채포함)발행후만기전사채취득",
+   "category": "메자닌",
+   "date": "20260921",
+   "rcept_no": "20260921900361",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260921900361",
+   "flr": "나노신소재"
+  },
   {
    "corp": "삼표시멘트",
    "stock": "038500",

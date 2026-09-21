@@ -3218,5 +3218,19 @@
   "time": "",
   "purpose": "",
   "sponsor": "CLSA"
+ },
+ "20260921800457": {
+  "kind": "ir",
+  "expected_date": "2026-09-22",
+  "time": "",
+  "purpose": "증권사 주관 컨퍼런스 참석",
+  "sponsor": "CLSA"
+ },
+ "20260921800368": {
+  "kind": "ir",
+  "expected_date": "2026-09-22",
+  "time": "14:00",
+  "purpose": "다올투자증권 Corporate Day 참가",
+  "sponsor": "다올투자증권"
  }
 }
