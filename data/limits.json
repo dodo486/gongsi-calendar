@@ -1,8 +1,25 @@
 {
  "date": "2026-09-21",
- "generated_at": "2026-09-21 10:44:36",
- "count": 8,
+ "generated_at": "2026-09-21 15:51:50",
+ "count": 9,
  "events": [
+  {
+   "time": "14:10",
+   "kind": "주식선물",
+   "name": "두산테스나",
+   "code": "131970",
+   "market": "KOSDAQ150",
+   "stage": 2,
+   "direction": "상승",
+   "title": "주식선물 2단계 가격제한폭 확대요건 도달(상승)",
+   "rcept_no": "20260921000230",
+   "url": "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo=20260921000230&docno=",
+   "markets": [
+    "KOSDAQ150",
+    "KRX300"
+   ],
+   "expand_time": "14:15:58"
+  },
   {
    "time": "10:39",
    "kind": "주식선물",

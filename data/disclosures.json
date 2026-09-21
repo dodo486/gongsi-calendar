@@ -1,11 +1,22 @@
 {
- "generated_at": "2026-09-21 10:04:35",
+ "generated_at": "2026-09-21 15:15:12",
  "range": {
   "bgn": "20260506",
-  "end": "20260918"
+  "end": "20260921"
  },
- "count": 443,
+ "count": 444,
  "events": [
+  {
+   "corp": "삼표시멘트",
+   "stock": "038500",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260921",
+   "rcept_no": "20260921900193",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260921900193",
+   "flr": "삼표시멘트"
+  },
   {
    "corp": "성호전자",
    "stock": "043260",
