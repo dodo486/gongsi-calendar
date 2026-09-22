@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-09-22 15:56:15",
+ "generated_at": "2026-09-22 21:37:01",
  "range": {
   "bgn": "20260506",
   "end": "20260922"
  },
- "count": 452,
+ "count": 453,
  "events": [
   {
    "corp": "케이티앤지",
@@ -16,6 +16,17 @@
    "rcept_no": "20260922000256",
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260922000256",
    "flr": "케이티앤지"
+  },
+  {
+   "corp": "고려아연",
+   "stock": "010130",
+   "market": "KOSPI",
+   "title": "[기재정정]유상증자결정(종속회사의주요경영사항)",
+   "category": "유상증자",
+   "date": "20260922",
+   "rcept_no": "20260922800521",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260922800521",
+   "flr": "고려아연"
   },
   {
    "corp": "이마트",
