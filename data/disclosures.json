@@ -1,11 +1,55 @@
 {
- "generated_at": "2026-09-22 10:35:21",
+ "generated_at": "2026-09-22 15:56:15",
  "range": {
   "bgn": "20260506",
-  "end": "20260921"
+  "end": "20260922"
  },
- "count": 448,
+ "count": 452,
  "events": [
+  {
+   "corp": "케이티앤지",
+   "stock": "033780",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득결정)",
+   "category": "자사주",
+   "date": "20260922",
+   "rcept_no": "20260922000256",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260922000256",
+   "flr": "케이티앤지"
+  },
+  {
+   "corp": "이마트",
+   "stock": "139480",
+   "market": "KOSPI",
+   "title": "[기재정정]감자결정(종속회사의주요경영사항)",
+   "category": "감자",
+   "date": "20260922",
+   "rcept_no": "20260922800334",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260922800334",
+   "flr": "이마트"
+  },
+  {
+   "corp": "엘에스일렉트릭",
+   "stock": "010120",
+   "market": "KOSPI",
+   "title": "유무상증자결정(종속회사의주요경영사항)",
+   "category": "무상증자",
+   "date": "20260922",
+   "rcept_no": "20260922800127",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260922800127",
+   "flr": "엘에스일렉트릭"
+  },
+  {
+   "corp": "서진시스템",
+   "stock": "178320",
+   "market": "KOSDAQ",
+   "title": "[기재정정]최대주주변경을수반하는주식담보제공계약체결",
+   "category": "최대주주변경",
+   "date": "20260922",
+   "rcept_no": "20260922900323",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260922900323",
+   "flr": "서진시스템"
+  },
   {
    "corp": "엔켐",
    "stock": "348370",
