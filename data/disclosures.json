@@ -1,11 +1,44 @@
 {
- "generated_at": "2026-09-23 15:35:20",
+ "generated_at": "2026-09-23 21:19:34",
  "range": {
   "bgn": "20260506",
-  "end": "20260922"
+  "end": "20260923"
  },
- "count": 453,
+ "count": 456,
  "events": [
+  {
+   "corp": "휴림로봇",
+   "stock": "090710",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(유상증자결정)",
+   "category": "유상증자",
+   "date": "20260923",
+   "rcept_no": "20260923000576",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260923000576",
+   "flr": "휴림로봇"
+  },
+  {
+   "corp": "휴림로봇",
+   "stock": "090710",
+   "market": "KOSDAQ",
+   "title": "유상증자최종발행가액확정              (일반공모증자-소액공모)",
+   "category": "유상증자",
+   "date": "20260923",
+   "rcept_no": "20260923900679",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260923900679",
+   "flr": "휴림로봇"
+  },
+  {
+   "corp": "루닛",
+   "stock": "328130",
+   "market": "KOSDAQ",
+   "title": "전환사채(해외전환사채포함)발행후만기전사채취득",
+   "category": "메자닌",
+   "date": "20260923",
+   "rcept_no": "20260923900544",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260923900544",
+   "flr": "루닛"
+  },
   {
    "corp": "케이티앤지",
    "stock": "033780",
