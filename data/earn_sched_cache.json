@@ -3260,5 +3260,12 @@
   "time": "09:00",
   "purpose": "2026 Asia Pacific Conference 참석",
   "sponsor": "Bank"
+ },
+ "20260923800045": {
+  "kind": "ir",
+  "expected_date": "2026-09-30",
+  "time": "14:30",
+  "purpose": "2026 미래에셋증권 Corporate Day 참가",
+  "sponsor": "미래에셋증권"
  }
 }
