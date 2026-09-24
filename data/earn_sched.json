@@ -1,20 +1,7 @@
 {
- "generated_at": "2026-09-23 21:39:10",
- "count": 4,
+ "generated_at": "2026-09-24 10:39:52",
+ "count": 3,
  "events": [
-  {
-   "corp": "iM금융지주",
-   "stock": "139130",
-   "market": "KOSPI",
-   "rcept_no": "20260909800686",
-   "rcept_dt": "20260909",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260909800686",
-   "src": "IR",
-   "expected_date": "2026-09-14",
-   "time": "",
-   "purpose": "최근 경영실적 등 주요 관심사항 설명",
-   "sponsor": "한국투자증권"
-  },
   {
    "corp": "현대로템",
    "stock": "064350",
