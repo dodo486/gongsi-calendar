@@ -1,6 +1,6 @@
 {
- "generated_at": "2026-09-28 17:21:30",
- "count": 3,
+ "generated_at": "2026-09-29 01:45:57",
+ "count": 2,
  "events": [
   {
    "corp": "현대로템",
@@ -27,19 +27,6 @@
    "time": "",
    "purpose": "ㅁ경영실적 및 주요 관심사항 Q&amp;A 진행",
    "sponsor": "Bofa"
-  },
-  {
-   "corp": "이수스페셜티케미컬",
-   "stock": "457190",
-   "market": "KOSPI",
-   "rcept_no": "20260914800504",
-   "rcept_dt": "20260914",
-   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260914800504",
-   "src": "IR",
-   "expected_date": "2026-09-21",
-   "time": "",
-   "purpose": "회사 소개, 사업현황 및 실적 설명",
-   "sponsor": "신한투자증권"
   }
  ]
 }
