@@ -3274,5 +3274,19 @@
   "time": "13:30",
   "purpose": "미래에셋 Korea Corporate Day 2026 참석",
   "sponsor": "미래에셋증권"
+ },
+ "20260928800469": {
+  "kind": "ir",
+  "expected_date": "2026-10-06",
+  "time": "09:00",
+  "purpose": "'ISU Specialty Chemical Analyst Day 2026' 개최",
+  "sponsor": "당사"
+ },
+ "20260928800343": {
+  "kind": "ir",
+  "expected_date": "2026-10-01",
+  "time": "09:30",
+  "purpose": "해외 기관투자자 미팅을 통한 당사에 대한 투자자의 이해도 제고",
+  "sponsor": "유안타증권"
  }
 }

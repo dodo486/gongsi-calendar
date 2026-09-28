@@ -1,11 +1,55 @@
 {
- "generated_at": "2026-09-28 10:32:47",
+ "generated_at": "2026-09-28 16:39:29",
  "range": {
   "bgn": "20260506",
-  "end": "20260923"
+  "end": "20260928"
  },
- "count": 456,
+ "count": 460,
  "events": [
+  {
+   "corp": "한화오션",
+   "stock": "042660",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득결정)",
+   "category": "자사주",
+   "date": "20260928",
+   "rcept_no": "20260928000252",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260928000252",
+   "flr": "한화오션"
+  },
+  {
+   "corp": "달바글로벌",
+   "stock": "483650",
+   "market": "KOSPI",
+   "title": "주요사항보고서(자기주식취득신탁계약체결결정)",
+   "category": "자사주",
+   "date": "20260928",
+   "rcept_no": "20260928000146",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260928000146",
+   "flr": "달바글로벌"
+  },
+  {
+   "corp": "코스메카코리아",
+   "stock": "241710",
+   "market": "KOSDAQ",
+   "title": "[첨부정정]주요사항보고서(회사합병결정)",
+   "category": "합병/분할",
+   "date": "20260928",
+   "rcept_no": "20260928000245",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260928000245",
+   "flr": "코스메카코리아"
+  },
+  {
+   "corp": "에프에스티",
+   "stock": "036810",
+   "market": "KOSDAQ",
+   "title": "주요사항보고서(자기주식처분결정)",
+   "category": "자사주",
+   "date": "20260928",
+   "rcept_no": "20260928000136",
+   "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260928000136",
+   "flr": "에프에스티"
+  },
   {
    "corp": "휴림로봇",
    "stock": "090710",
