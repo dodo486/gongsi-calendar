@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-29 01:43:51",
+ "generated_at": "2026-09-29 11:55:04",
  "count": 12,
  "events": [
   {
@@ -13,10 +13,10 @@
    "url": "https://dart.fss.or.kr/dsaf001/main.do?rcpNo=20260928800233",
    "flr": "지역난방공사",
    "rate": null,
-   "price": "",
-   "chg_sign": "",
    "disc_time": "16:23",
-   "tick_state": "noday"
+   "tick_state": "noday",
+   "price": "",
+   "chg_sign": ""
   },
   {
    "corp": "HD한국조선해양",
