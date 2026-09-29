@@ -4,7 +4,7 @@
   → 브라우저가 새로고침 없이 즉시 다시 로드 (배당·실적·상하한가 실시간 반영)
 + /api/earnfacts?code=XXXXXX[&rcept=접수번호]: 실적 상세(시총·컨센서스·분기 추이) JSON
 """
-import http.server, os, time, json, re, webbrowser, threading
+import http.server, os, sys, time, json, re, webbrowser, threading
 import urllib.parse
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -277,15 +277,20 @@ def _warm_quotes():
     except Exception:
         pass
 
-if __name__ == "__main__":
+def run(open_browser=True):
+    """웹서버 기동(블로킹). launch.py 는 monitor 와 한 프로세스로 돌리려고 스레드에서 호출(open_browser=False)."""
     os.chdir(BASE)
     url = f"http://localhost:{PORT}/index.html"
     print(f"공시캘린더 열림 → {url}\n(종료: Ctrl+C)")
     threading.Thread(target=_warm_quotes, daemon=True).start()   # 백그라운드 연결 워밍업
-    threading.Timer(0.8, lambda: webbrowser.open(url)).start()
+    if open_browser:   # launch.py 는 자기가 크롬 앱창을 여니까 끔 (중복 창 방지)
+        threading.Timer(0.8, lambda: webbrowser.open(url)).start()
     # 127.0.0.1 바인딩 — 같은 네트워크의 다른 기기에서 접속 못 하게 (개인 도구)
     with http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler) as httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
             print("\n종료")
+
+if __name__ == "__main__":
+    run(open_browser="--no-browser" not in sys.argv)

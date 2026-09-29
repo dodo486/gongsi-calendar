@@ -30,7 +30,7 @@ def build_history(days=430):
     """배당 관련 공시(배당결정+명부폐쇄)를 파싱해 rcept_no별 캐시로 누적. 신규분만 원문 요청"""
     hist = load_hist()
     today = datetime.date.today()
-    watch = load_watchlist() or {}
+    watch = dv.div_universe()   # 감시종목 + 지수배당포인트용 ETF PDF 구성종목
     # DART list.json은 corp_code 없이 최대 3개월 조회 제한 → 90일 단위로 나눠 요청
     rows, chunk_end = [], today
     remain = days

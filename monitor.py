@@ -14,6 +14,7 @@ from fetch import collect_events, DATA_DIR, TLS_MODE, load_watchlist, CAL_EXCLUD
 import dividends
 import expiries
 import research
+import divpoints
 import kind_limits
 import earnings
 import earn_sched
@@ -72,6 +73,7 @@ def refresh_dividends():
     """배당 데이터(dividends.json) 재생성 — 무겁고 느려서 별도 스레드/중복방지"""
     def work():
         print("  [배당] 데이터 갱신 시작..."); dividends.main(90); print("  [배당] 갱신 완료")
+        divpoints.refresh()   # 지수배당포인트 재계산 (PDF·지수종가는 하루 1회만 수집)
     _run_guarded(_div_lock, work, "배당", after=flush_pending_div)   # 재생성 뒤 대기분 반영
 
 def flush_pending_div():
@@ -83,6 +85,8 @@ def flush_pending_div():
     try:
         if dividends.upsert(batch):
             print(f"  [배당] 신규 {len(batch)}건 반영")
+            try: divpoints.build()   # 확정 배당 즉시 반영 (네트워크 없음)
+            except Exception as ex: print(f"  [배당포인트] 재계산 실패: {ex}")
             refresh_research()   # 새 배당 → 이력·선진화·예상배당 갱신 (캐시라 신규분만 파싱)
     except Exception as ex:
         print(f"  [배당] 증분 반영 실패({ex}) → 전체 갱신")
@@ -103,6 +107,7 @@ def refresh_research():
     """리서치(선진화 판별 + 예상배당) 갱신 — 이력은 rcept_no 캐시라 신규 문서만 파싱"""
     def work():
         print("  [리서치] 선진화·예상배당 갱신 시작..."); research.build(); print("  [리서치] 갱신 완료")
+        divpoints.refresh()   # 예상배당 바뀜 → 지수배당포인트 재계산
     _run_guarded(_res_lock, work, "리서치")
 
 _cap_lock = threading.Lock()

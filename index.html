@@ -70,6 +70,25 @@
   .dortab td.nm{font-weight:600}
   .dortab td.px{text-align:right;color:var(--muted);white-space:nowrap}
   .dortab td.dt{text-align:right;color:var(--muted);font-size:11px;white-space:nowrap}
+  /* 지수배당포인트 (배당 탭 사이드 상단) — 지수 카드(접기) > 포함 종목·배당금·배당락일 */
+  .dp{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .dp .lh{font-size:13px;font-weight:700;margin-bottom:8px}
+  .dpf{font-size:12px;line-height:1.55;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;background:var(--bg);margin-bottom:8px}
+  .dpf span{color:var(--muted);font-size:11px}
+  .dpc{border:1px solid var(--line);border-radius:8px;margin-bottom:7px;background:var(--bg)}
+  .dpc>summary{cursor:pointer;padding:9px 10px;list-style-position:inside;font-size:14px}
+  .dpc>summary .dpt{float:right;font-weight:800;color:var(--div)}
+  .dpc>summary .dps{display:block;font-size:11px;color:var(--muted);margin-top:2px;padding-left:14px}
+  .dpc[open]>summary{border-bottom:1px solid var(--line)}
+  .dpm{font-size:11px;color:var(--muted);padding:6px 10px}
+  .dperr{color:#f87171}
+  .dpi{font-size:12px;margin:0 0 4px}
+  .dpi td{padding:4px 8px}
+  .dpi th{cursor:default}
+  .st{font-size:10px;font-weight:600;padding:1px 5px;border-radius:5px;margin-left:3px}
+  .st.ok{background:rgba(34,197,94,.18);color:#86efac}
+  .st.half{background:rgba(59,130,246,.18);color:#93c5fd}
+  .st.est{background:rgba(234,179,8,.18);color:#fde047}
   .mkt.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
   .mkt.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
   .back{display:inline-block;margin-bottom:10px;color:var(--div);cursor:pointer;font-size:13px}
@@ -319,12 +338,52 @@ function sortDivUp(k){                  // 헤더 클릭 → 정렬 키/방향 �
   else { _divSort.key=k; _divSort.dir = (k==="amt")?-1:1; }   // 배당금은 높은순 먼저, 이름/배당락은 오름차순
   renderDivUpTable();
 }
+// ── 지수배당포인트 (data/divpoints.json — divpoints.py 산출) ──
+let DP = null;
+const _dpOpen = new Set();   // 펼친 카드 키 — 30초 자동갱신 재렌더에도 펼침 유지
+const DP_ST = {"확정":"ok", "금액예상":"half", "예상":"est"};
+function dpHtml(){
+  if(!DP || !DP.indices) return "";
+  const f2 = v => Number(v||0).toFixed(2), f3 = v => Number(v||0).toFixed(3);
+  let h = `<div class="dp"><div class="lh">📐 지수배당포인트 · 근월물 ${esc((DP.expiry||"").slice(5))} 만기까지</div>
+    <div class="dpf"><b>${esc(DP.formula)}</b><br>
+      <span>= 지수 × (배당 때문에 지수가 빠지는 비율) — 지수를 곱하는 건 비율을 포인트로 바꾸기 위함<br>
+      대상: ${esc(DP.rule)} · 확정=DART 배당결정, 금액예상=기준일만 공시, 예상=직전 배당 반복 가정</span></div>`;
+  DP.indices.forEach(c=>{
+    const k = "c:"+c.key;
+    const lvl = c.index_close ? Number(c.index_close).toLocaleString("ko-KR",{minimumFractionDigits:2}) : "-";
+    h += `<details class="dpc" data-k="${esc(k)}"${_dpOpen.has(k)?" open":""}>
+      <summary><b>${esc(c.name)}</b><span class="dpt">${f2(c.total)}pt</span>
+        <span class="dps">확정 ${f2(c.confirmed)} · 예상 ${f2(c.estimated)}</span></summary>
+      <div class="dpm">${esc(c.etf)} PDF ${esc(c.pdf_date)} · ${c.n_stocks}종목 · 지수 ${lvl} (${esc((c.index_date||"").slice(5))} 종가)${c.error?` · <span class="dperr">⚠ 오늘 수집 실패 — 직전본 사용</span>`:""}</div>`;
+    // 포함 종목 목록: 종목 · 배당금 · 배당락일 (배당락일 순) — 일자별 포인트는 표시하지 않음(사용자 요청)
+    const items = c.days.flatMap(d => d.items.map(x => ({...x, ex_date:d.ex_date})));
+    if(!items.length) h += `<div class="dpm">${c.n_stocks?"만기 전 배당락 없음":"PDF 없음 — 수집 대기"}</div>`;
+    else h += `<table class="dortab dpi"><thead><tr><th>종목 (${items.length})</th><th style="text-align:right">배당금</th><th style="text-align:right">배당락일</th></tr></thead><tbody>`
+      + items.map(x=>`<tr class="dor" data-url="${esc(x.url||"")}" title="${esc(`${x.div_type} · 기준일 ${x.record_date}${x.basis?"\n"+x.basis:""}`)}">
+          <td class="nm">${esc(x.corp)}<span class="st ${DP_ST[x.status]||"est"}">${esc(x.status)}</span></td>
+          <td class="px">${won(x.dps)}원</td><td class="dt">${esc(x.ex_date.slice(5))}</td></tr>`).join("")
+      + `</tbody></table>`;
+    if(c.undetermined.length)
+      h += `<div class="dpm">금액 미정(포인트 제외): ${c.undetermined.map(u=>`${esc(u.corp)}(${esc(u.ex_date.slice(5))})`).join(", ")}</div>`;
+    h += `</details>`;
+  });
+  return h + `</div>`;
+}
+function bindDp(box){
+  box.querySelectorAll(".dp details[data-k]").forEach(el=> el.addEventListener("toggle",()=>{
+    el.open ? _dpOpen.add(el.dataset.k) : _dpOpen.delete(el.dataset.k);
+  }));
+  box.querySelectorAll(".dpi tr.dor").forEach(el=> el.addEventListener("click",()=>{
+    if(el.dataset.url) window.open(el.dataset.url,"_blank","noopener");   // 확정 → DART 원문 (예상은 원문 없음)
+  }));
+}
 function renderDivToday(){
   divListMode = true;
   const box = document.getElementById("detail"); box.className = "";
   // 상단: 오늘 뜬 배당공시 (접수일=오늘)
   const list = DIV.filter(e => (e.rcept_dt||"") === todayStr());
-  let h = `<div class="divlist"><div class="lh">📢 오늘 뜬 배당공시 (${list.length})</div>`;
+  let h = dpHtml() + `<div class="divlist"><div class="lh">📢 오늘 뜬 배당공시 (${list.length})</div>`;
   if(!list.length) h += `<div class="empty">오늘 접수된 배당 공시가 없습니다.</div>`;
   list.forEach(e=>{
     h += `<div class="di" data-rc="${esc(e.rcept_no)}"><b>${esc(e.corp)}</b><span class="mkt ${esc(e.market)}">${esc(e.market)}</span><br>
@@ -344,6 +403,7 @@ function renderDivToday(){
       <th data-sk="ex" onclick="sortDivUp('ex')">배당락 <span class="ar">⇅</span></th></tr></thead><tbody id="divUpBody"></tbody></table>`;
   h += `</div>`;
   box.innerHTML = h;
+  bindDp(box);
   box.querySelectorAll(".di").forEach(el=> el.addEventListener("click",()=>{
     const e = DIV.find(x=>x.rcept_no===el.dataset.rc); if(e) showDetail({...e, kind:"div"});
   }));
@@ -1004,6 +1064,7 @@ async function loadData(){
     try{ const cp = await (await fetch("data/capital.json?_="+Date.now())).json(); CAP = cp.events||[]; }catch(_){ CAP = []; }
     try{ RES = await (await fetch("data/research.json?_="+Date.now())).json(); }catch(_){}
     try{ const hh = await (await fetch("data/halts.json?_="+Date.now())).json(); HALT = hh.events||[]; }catch(_){ HALT = []; }
+    try{ DP = await (await fetch("data/divpoints.json?_="+Date.now())).json(); }catch(_){ DP = null; }
     await loadActions();    // 최상단 KRX 시장조치(사이드카·서킷 등)
     await loadLimits();     // 상단 상하한가 밴드
     await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)

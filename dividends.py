@@ -18,17 +18,23 @@ _LOCK = threading.RLock()   # dividends.json 동시 쓰기 방지 (main 재생�
 _HOL_ARR = np.array(sorted(str(d) for d in holiday_dates(default_years())), dtype="datetime64[D]")
 
 def t_minus(record_iso, n):
-    """배당기준일 기준 n번째 직전 영업일. n=1 → 배당락일(기준일 직전 영업일),
-    n=2 → 배당매수일(배당부 마지막 매수일 = 잔고확정일).
-    기준일이 휴장일(주말·공휴일, 예: 12/31 연말폐장)이어도 그 하루가 카운트를
-    잡아먹지 않도록, '기준일 하루 전(달력)'부터 직전 영업일들을 센다."""
+    """배당기준일 기준 n번째 직전 영업일. n=1 → 배당락일, n=2 → 배당매수일(배당부 마지막 매수일).
+    T+2 결제라 '기준일까지 결제되는 마지막 영업일(L)'이 기준 — 기준일이 영업일이면 L=기준일,
+    휴장일(주말·공휴일·12/31 폐장)이면 L=그 직전 영업일. 배당락 = L-1, 매수일 = L-2 영업일.
+    예) 2024 기준일 12/31(휴장) → L=12/30, 배당락 12/27, 매수일 12/26 (실제 KRX 일정과 일치)."""
     if not record_iso:
         return ""
     try:
-        d = np.datetime64(record_iso, "D") - np.timedelta64(1, "D")  # 기준일 하루 전
-        return str(np.busday_offset(d, -(n - 1), roll="backward", holidays=_HOL_ARR))
+        last = np.busday_offset(np.datetime64(record_iso, "D"), 0, roll="backward", holidays=_HOL_ARR)  # L
+        return str(np.busday_offset(last, -n, holidays=_HOL_ARR))
     except Exception:
         return ""
+
+def div_universe():
+    """배당 수집 대상 = 감시종목(코스피200+코스닥150) ∪ 지수배당포인트용 ETF PDF 구성종목.
+    공시 탭·토스트 대상(watchlist)은 그대로 두고 배당만 넓힌다 (2026-09-29 결정)."""
+    import index_pdf
+    return set(load_watchlist() or {}) | index_pdf.codes()
 
 def t_minus_2(record_iso):
     return t_minus(record_iso, 2)
@@ -131,8 +137,8 @@ def main(days=90):
     today = datetime.date.today()
     bgn = (today - datetime.timedelta(days=days)).strftime("%Y%m%d")
     end = today.strftime("%Y%m%d")
-    watch = load_watchlist() or {}
-    print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 감시대상 {len(watch)}")
+    watch = div_universe()
+    print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 배당 수집대상 {len(watch)} (감시종목+ETF PDF)")
 
     cache = load_doc_cache()   # research 가 채운 파싱 캐시(=div_history.json)
     def _is_dec(nm): return "현금ㆍ현물배당결정" in nm
