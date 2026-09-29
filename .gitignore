@@ -2,6 +2,14 @@
 dart_key.txt
 kis_key.txt
 
+# 텔레그램(MTProto) — 세션 파일 = 계정 그 자체. 유출되면 계정 탈취됨.
+# 이 리포는 GitHub Public 이므로 절대 올라가면 안 됨.
+tg_key.txt
+*.session
+*.session-journal
+telegram_session*
+.telegram-mcp/
+
 # 실행 중 생성되는 데이터/캐시
 data/
 __pycache__/
