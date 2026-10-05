@@ -2,15 +2,18 @@
 """jhts 시세수집팀(jhts.marketdata) 어댑터 — 공시캘린더의 유일한 시세 창구.
 
 공시캘린더는 시세를 직접 스크래핑하지 않는다. 모든 시세(실시간 현재값·지수·
-전시장 스냅샷·일별 OHLC·수급·분봉·유동주식수)를 여기서 jhts로부터 받는다.
-네이버/wisereport 접속·파싱 코드는 전부 jhts로 옮겼다(source/naver.py).
+전시장 스냅샷·일별 OHLC·수급·분봉·유동주식수)를 여기서 jhts **공개 API(md.*)**로
+받는다 — jhts 소스 계층(kr/source/*)을 직접 import 하지 않는다. 일별 OHLC·수급은
+md.candles/md.flows, 현재가·지수·분봉은 KIS(키 필요), 전시장·유동주식수는 네이버.
 
 읽기 규칙:
-- 일별(OHLC·수급): **로컬 미러(SISE_DB_PATH) 우선** → 없으면 jhts의 네이버
-  라이브 소스로 폴백(둘 다 jhts 안). 미러는 sync_mirror.py가 중앙 PG에서 채운다.
+- 일별(OHLC·수급): **로컬 미러(SISE_DB_PATH)**에서 읽는다. 미러는 sync_mirror.py가
+  중앙 PG에서 채운다 — 비어 있으면 빈 값(옛 네이버 라이브 폴백은 제거됨).
 - 실시간/분봉/참조: jhts 창구가 그때그때 소스에서 받아온다(휘발성, 저장 안 함).
+  실시간 현재가·지수·분봉은 KIS 를 쓰므로 SISE_KIS_* 키가 필요하다.
 
 jhts.marketdata 미설치 시 AVAILABLE=False, 함수는 빈 값을 돌려준다(무크래시).
+KIS 키가 없으면(mock 모드) 실시간은 가짜값 대신 '없음'을 돌려준다(데이터 정직성).
 """
 import os
 
@@ -21,12 +24,15 @@ os.environ.setdefault(
 
 try:
     import jhts.marketdata as md
-    from jhts.marketdata.source import naver as _naver
+    from jhts.marketdata import config as _md_config
     AVAILABLE = True
+    # KIS 키 없으면 jhts 가 MockClient(가짜 시세)로 떨어진다 — 실시간을 가짜로
+    # 내보내지 않도록 mock 모드면 실시간 창구를 막는다(일별/수급은 DB 미러라 무관).
+    _REALTIME_OK = not _md_config.USE_MOCK
 except Exception:
     md = None
-    _naver = None
     AVAILABLE = False
+    _REALTIME_OK = False
 
 
 def _ymd(d):
@@ -35,8 +41,8 @@ def _ymd(d):
 
 # ── 실시간 현재값 / 지수 / 전시장 ─────────────────────────────
 def quote_batch(codes):
-    """{code: {name, price, rate(부호%), value, volume, mktcap}}."""
-    if not AVAILABLE:
+    """{code: {name, price, rate(부호%), value, volume, mktcap}}. KIS(키 필요)."""
+    if not (AVAILABLE and _REALTIME_OK):
         return {}
     try:
         return md.quote(list(codes))
@@ -45,8 +51,8 @@ def quote_batch(codes):
 
 
 def stock_rate(code):
-    """{price, rate(부호%), sign} / 실패 시 {}."""
-    if not AVAILABLE:
+    """{price, rate(부호%), sign} / 실패 시 {}. KIS(키 필요)."""
+    if not (AVAILABLE and _REALTIME_OK):
         return {}
     try:
         return md.stock_rate(code)
@@ -55,8 +61,8 @@ def stock_rate(code):
 
 
 def index_rate(code):
-    """지수 {price, rate(부호%), sign}. code: KPI200/KQI150."""
-    if not AVAILABLE:
+    """지수 {price, rate(부호%), sign}. code: KPI200/KQI150. KIS(키 필요)."""
+    if not (AVAILABLE and _REALTIME_OK):
         return {}
     try:
         return md.index_rate(code)
@@ -85,8 +91,8 @@ def top_universe(n=800):
 
 # ── 분봉 / 참조 ───────────────────────────────────────────────
 def minute_closes(code, count=3000):
-    """분봉 종가 {YYYYMMDDHHMM: 종가}."""
-    if not AVAILABLE:
+    """분봉 종가 {UTC ISO-8601 "…Z": 종가}. KIS(키 필요)."""
+    if not (AVAILABLE and _REALTIME_OK):
         return {}
     try:
         return md.minute_closes(code, count)
@@ -105,13 +111,29 @@ def float_shares(code):
 
 
 def daily_rate_map(code, days=40):
-    """일별 {YYYY-MM-DD: {rate(부호%), open, close}} — 과거 공시일 등락률·시가갭용."""
+    """일별 {YYYY-MM-DD: {rate(부호%), open, close}} — 과거 공시일 등락률·시가갭용.
+
+    옛 네이버 전용 창구를 공개 API(md.candles)로 대체. 등락률은 전일 종가 대비로
+    직접 계산한다(네이버가 주던 값과 동일 정의). 미러(DB)에서 읽으므로 KIS 키 불필요.
+    """
     if not AVAILABLE:
         return {}
     try:
-        return _naver.daily_rate_map(code, days)
+        rows = md.candles(code)  # 오름차순, 거래일만(OHLCV)
     except Exception:
         return {}
+    out = {}
+    prev = None
+    for c in rows:
+        d = c.date  # "YYYYMMDD"
+        key = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+        rate = round((c.close - prev) / prev * 100, 2) if prev else 0.0
+        out[key] = {"rate": rate, "open": int(c.open), "close": int(c.close)}
+        prev = c.close
+    # 최근 days 일만
+    if days and len(out) > days:
+        out = dict(list(out.items())[-days:])
+    return out
 
 
 # ── 일별 OHLC / 수급 (로컬 미러 우선 → jhts 네이버 라이브 폴백) ──
@@ -135,11 +157,7 @@ def daily_price(code, n=40):
                 "low": c.low, "close": c.close, "vol": c.volume} for c in rows]
         out.reverse()
         return out[:n]
-    # 미러에 없음 → jhts 네이버 라이브
-    try:
-        return _naver.daily_ohlc(code, n)
-    except Exception:
-        return []
+    return []  # 미러에 없으면 없음(옛 네이버 라이브 폴백 제거 — KIS→DB 미러만)
 
 
 def frgn_daily(code, pages=2):
@@ -164,11 +182,7 @@ def frgn_daily(code, pages=2):
             })
         out.reverse()
         return out[:pages * 21]
-    # 미러에 없음 → jhts 네이버 라이브
-    try:
-        return _naver.investor_daily(code, pages)
-    except Exception:
-        return []
+    return []  # 미러에 없으면 없음(옛 네이버 라이브 폴백 제거)
 
 
 def investor_trend(code, n=20):
@@ -193,8 +207,4 @@ def investor_trend(code, n=20):
             })
         out.reverse()
         return out[:n]
-    # 미러에 없음 → jhts 네이버 라이브
-    try:
-        return _naver.investor_trend(code, n)
-    except Exception:
-        return []
+    return []  # 미러에 없으면 없음(옛 네이버 라이브 폴백 제거)
