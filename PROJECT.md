@@ -232,6 +232,20 @@ python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바�
   또 서버 확인을 4초×2회로 늘리고, 워커가 이미 떠 있으면 새 워커는 즉시 종료(폴러 이중 기동=토스트 2번 방지).
   검증: 콜드 스타트(아이콘 클릭) → 워커 1개·8777 LISTENING·앱창 1개 / 서버 켜진 상태 클릭 → 앱창만 추가, 워커 그대로.
 
+- 2026-10-05: **md_feed 를 jhts 공개 API(md.*)로 이관** — jhts 시세수집팀이 시장별(kr/·us/)로
+  재편되고 한국 시세를 네이버 스크래핑 → **KIS(증권사 API)**로 바꾸면서, md_feed 가
+  `from jhts.marketdata.source import naver` 로 소스 계층을 직접 찌르던 코드를 제거.
+  (옛 `source/naver` 경로가 jhts 리팩터로 사라져 import 실패 → `AVAILABLE=False` 로 전 시세가
+  빈 값이던 **고장도 함께 복구**.) 세부:
+  · `daily_rate_map` → `md.candles` 로 재구현(등락률=전일종가 대비 계산, 미러 DB 에서 읽음).
+  · `daily_price·frgn_daily·investor_trend` 의 네이버 라이브 폴백 제거 → 미러(DB) 전용.
+  · **데이터 정직성 가드**: KIS 키 없으면(jhts mock 모드) 실시간(현재가·지수·분봉)을 가짜값 대신
+    빈 값으로 반환(`_REALTIME_OK`). 일별/수급은 DB 미러라 무관.
+  **운영 변화**: ① 실시간 시세는 이제 KIS → 이 환경에 `SISE_KIS_*` 키 필요(없으면 실시간 빈값).
+  ② 일별/수급은 미러 DB 전용이라 `sync_mirror` 동기화 필수(라이브 폴백 없음).
+  분봉 키는 업계표준 UTC(ISO-8601 "…Z")로 바뀜. 검증: md_feed 10개 함수 무크래시 스모크 통과
+  (실시간 KIS 실데이터·전시장 2637종목·유동주식수 OK). ※ launch.py 전체 검증은 DART 키 환경에서 별도.
+
 ## 6. 다음 할 일 (TODO)
 
 - [x] 결정 4개 확정 (섹션 4)
