@@ -5,8 +5,9 @@
 코드는 jhts 시세수집팀(realtime/snapshot)으로 옮겼고, 여기서는 md_feed로 받는다.
 공개 함수는 그대로다.
 
-fetch_all() → [{code,name,market,price,rate,value,volume,mktcap}] (거래대금 내림차순)
-top_universe(n) → 상위 N만
+fetch_all() → 원본 미러 [{code,name,market,kind,price,rate,value,volume,mktcap}]
+              (ETF/ETN/리츠 포함·무정렬 — jhts 데이터 계층이 미러로 바뀜)
+top_universe(n) → 보통주 거래대금 상위 N (뷰 — 섹터로테이션은 이걸 쓴다)
 """
 import sys
 
@@ -16,7 +17,8 @@ DEFAULT_N = 800
 
 
 def fetch_all():
-    """전 종목 현재값 스냅샷(거래대금 내림차순, ETF/ETN/리츠 제외)."""
+    """전 종목 현재값 스냅샷 — 원본 미러(ETF/ETN/리츠 포함, 무정렬).
+    보통주 거래대금순이 필요하면 top_universe 를 쓴다(판정은 소비자/뷰)."""
     return md_feed.market_snapshot()
 
 

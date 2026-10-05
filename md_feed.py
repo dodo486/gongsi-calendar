@@ -71,7 +71,9 @@ def index_rate(code):
 
 
 def market_snapshot():
-    """전 종목 스냅샷(거래대금 내림차순) [{code,name,market,price,rate,value,volume,mktcap}]."""
+    """전 종목 스냅샷 — 원본(미러, ETF/ETN/리츠 포함, 무정렬).
+    [{code,name,market,kind,price,rate,value,volume,mktcap}]. 보통주 거래대금순은
+    top_universe(뷰)를 쓴다 — jhts 데이터 계층이 미러로 바뀜(판정은 소비자)."""
     if not AVAILABLE:
         return []
     try:
