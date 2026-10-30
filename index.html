@@ -382,7 +382,7 @@ function renderDivToday(){
   divListMode = true;
   const box = document.getElementById("detail"); box.className = "";
   // 상단: 오늘 뜬 배당공시 (접수일=오늘)
-  const list = DIV.filter(e => (e.rcept_dt||"") === todayStr());
+  const list = DIV.filter(e => filters[e.market] && (e.rcept_dt||"") === todayStr());
   let h = dpHtml() + `<div class="divlist"><div class="lh">📢 오늘 뜬 배당공시 (${list.length})</div>`;
   if(!list.length) h += `<div class="empty">오늘 접수된 배당 공시가 없습니다.</div>`;
   list.forEach(e=>{
@@ -393,7 +393,7 @@ function renderDivToday(){
   // 하단: 다음 만기 전까지 배당락 리스트 (종목명·현재가, 클릭→DART)
   const ti = todayISO();
   const nextExp = (EXP.map(x=>x.date).filter(d=>d>ti).sort()[0]) || "";
-  _divUp = DIV.filter(e=> e.ex_date && e.ex_date>ti && (!nextExp || e.ex_date<=nextExp));
+  _divUp = DIV.filter(e=> filters[e.market] && e.ex_date && e.ex_date>ti && (!nextExp || e.ex_date<=nextExp));
   h += `<div class="divlist" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">
     <div class="lh">🗓️ 다음 만기${nextExp?`(${esc(nextExp.slice(5))})`:""} 전 배당락 (${_divUp.length}) <span style="font-weight:400;color:var(--muted);font-size:11px">· 헤더 클릭 정렬 · 행 클릭→DART</span></div>`;
   if(!_divUp.length) h += `<div class="empty">해당 없음</div>`;
@@ -1189,7 +1189,7 @@ document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
     c.classList.toggle("on",filters[mk]); applyFilters();
-    if(MODE==="board"){ renderEarnCal(); }
+    if(MODE==="board"){ renderEarnCal(); if(divListMode) renderDivToday(); }
   });
 });
 
