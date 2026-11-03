@@ -107,7 +107,6 @@ python expiries.py             # 선물·옵션 만기일 생성(규칙 계산) 
 python kind_limits.py          # 선물 상하한가(가격제한폭 도달) KIND 공시 → data/limits.json
 python kind_halt.py            # 매매거래정지/재개 KIND 공시 → data/halts.json
 python krx_actions.py          # 시장조치(사이드카·서킷·투자경고)
-python sectors.py              # 섹터/테마 로테이션 집계
 python index_pdf.py            # 지수배당포인트용 ETF PDF(KODEX200·KODEX코스닥150·TIGER KRX300)+지수종가 → data/index_pdf.json (하루 1회, --force)
 python divpoints.py            # 지수배당포인트(근월물) 계산 → data/divpoints.json
 python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바탕화면 '공시캘린더' 아이콘이 이걸 호출)
@@ -119,7 +118,6 @@ python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바�
 |---|---|---|
 | `LIMITS_POLL_SECONDS` | 5초 | 상하한가·시장조치 (전용 고속 스레드, collect 0.1초) |
 | `POLL_SECONDS` | 20초 | 공시·실적 (DART·네이버가 무거움) |
-| `SECTORS_POLL_SECONDS` | 240초 | 섹터/테마 (유니버스 800종목 전수) |
 | `HALT_POLL_SECONDS` | 1800초 | 거래정지/재개 (하루 단위로만 바뀜) |
 
 - 웹 화면 갱신은 **SSE(서버 푸시)**. `index.html` 의 30초 `setInterval` 은 SSE 실패 대비 폴백이고,
@@ -185,9 +183,9 @@ python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바�
 - 2026-08-21: **§4.5 실행 방법 실측 기준으로 정정** — 문서가 7/28 구방식(`launch.py` + 시작프로그램)을
   설명하고 있었으나 실제 기동 경로는 예약작업 `공시캘린더 아침기동` + `start_gongsi.ps1`(5분 반복).
   특히 "끄는 법"이 틀려 있었음(시작프로그램만 지우면 예약작업이 5분마다 되살림).
-  폴링 주기도 실측 반영: `POLL_SECONDS` 60초 → **20초**, 상하한가 5초·섹터 240초·거래정지 1800초 추가,
-  웹은 1분 폴링이 아니라 **SSE + 30초 폴백**. 개별 실행 목록에 `kind_halt`·`krx_actions`·`sectors` 추가.
-  ⚠️ 8/4 이후 기능 추가분(거래정지·sectors 통합·차트 연동 등)은 Changelog 미반영 상태 — 별건.
+  폴링 주기도 실측 반영: `POLL_SECONDS` 60초 → **20초**, 상하한가 5초·거래정지 1800초 추가,
+  웹은 1분 폴링이 아니라 **SSE + 30초 폴백**. 개별 실행 목록에 `kind_halt`·`krx_actions` 추가.
+  ⚠️ 8/4 이후 기능 추가분(거래정지·차트 연동 등)은 Changelog 미반영 상태 — 별건.
 
 - 2026-08-21: **자동기동 전면 제거 (백지화)** — 기동 경로가 구방식(시작프로그램 `launch.py`)과
   신방식(예약작업 `start_gongsi.ps1`)으로 이중화돼 꼬여 있어 전부 삭제.
@@ -238,7 +236,7 @@ python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바�
   (옛 `source/naver` 경로가 jhts 리팩터로 사라져 import 실패 → `AVAILABLE=False` 로 전 시세가
   빈 값이던 **고장도 함께 복구**.) 세부:
   · `daily_rate_map` → `md.candles` 로 재구현(등락률=전일종가 대비 계산, 미러 DB 에서 읽음).
-  · `daily_price·frgn_daily·investor_trend` 의 네이버 라이브 폴백 제거 → 미러(DB) 전용.
+  · `daily_price·investor_trend` 의 네이버 라이브 폴백 제거 → 미러(DB) 전용.
   · **데이터 정직성 가드**: KIS 키 없으면(jhts mock 모드) 실시간(현재가·지수·분봉)을 가짜값 대신
     빈 값으로 반환(`_REALTIME_OK`). 일별/수급은 DB 미러라 무관.
   **운영 변화**: ① 실시간 시세는 이제 KIS → 이 환경에 `SISE_KIS_*` 키 필요(없으면 실시간 빈값).

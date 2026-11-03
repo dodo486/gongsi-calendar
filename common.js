@@ -1,5 +1,4 @@
-// 공용 유틸 — 공시캘린더(index)·수급분석기(flow)·섹터로테이션(sectors) 3개 페이지가 공유.
-// 중복 로직은 여기 한 곳에만 두고 각 페이지는 <script src="common.js"> 로 불러 재사용한다.
+// 공용 유틸 — index.html 이 <script src="common.js"> 로 불러 쓴다.
 
 // HTML 이스케이프 (텍스트·속성 공용, 작은따옴표까지 처리)
 const esc = s => String(s ?? "").replace(/[&<>"']/g,

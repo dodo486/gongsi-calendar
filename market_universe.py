@@ -7,7 +7,7 @@
 
 fetch_all() → 원본 미러 [{code,name,market,kind,price,rate,value,volume,mktcap}]
               (ETF/ETN/리츠 포함·무정렬 — jhts 데이터 계층이 미러로 바뀜)
-top_universe(n) → 보통주 거래대금 상위 N (뷰 — 섹터로테이션은 이걸 쓴다)
+top_universe(n) → 보통주 거래대금 상위 N (뷰)
 """
 import sys
 

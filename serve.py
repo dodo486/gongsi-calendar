@@ -10,7 +10,7 @@ import urllib.parse
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
 INDEX_PATH = os.path.join(BASE, "index.html")
-HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", "sectors.html")]
+HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html",)]
 PORT = 8777
 
 # 토스트 클릭 → 차트 열기 브로드캐스트용
@@ -70,12 +70,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._serve_sse()
         if route == "/api/earnfacts":
             return self._serve_earnfacts()
-        if route == "/api/quotes":
-            return self._serve_quotes()
-        if route == "/api/frgn":
-            return self._serve_frgn()
-        if route == "/api/why":
-            return self._serve_why()
         if route == "/chart":
             return self._serve_chart()
         return super().do_GET()
@@ -105,85 +99,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         body = page.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def _serve_quotes(self):
-        """실시간 시세 배치 — codes=콤마구분 → {code:{rate,price}} (로스터 장중 등락률용)"""
-        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        raw = (qs.get("codes") or [""])[0]
-        codes = re.findall(r"[A-Za-z0-9]{6}", raw)[:900]   # 6자리 종목 + ETF코드(0207G0 등) 모두 허용
-        out = {}
-        try:
-            import quotes
-            q = quotes.quote_batch(codes)
-            out = {c: {"rate": v.get("rate"), "price": v.get("price")}
-                   for c, v in q.items()}
-        except Exception as ex:
-            out = {"error": str(ex)}
-        body = json.dumps(out, ensure_ascii=False).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def _serve_frgn(self):
-        """외국인 일별 순매수 상세(~40일) + 매물대(POC) — 섹터 종목 수급상세용."""
-        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        code = (qs.get("code") or [""])[0]
-        if not re.fullmatch(r"\d{6}", code):
-            self.send_error(400); return
-        out = {}
-        try:
-            import quotes, supply
-            px = quotes.daily_price(code, 40)
-            fr = quotes.frgn_daily(code, 2)
-            poc = supply._poc(px)
-            pxm = {p["date"]: p for p in px}
-            base = None
-            vols = [p["vol"] for p in px if p.get("vol")]
-            if vols:
-                base = sum(vols[:20]) / min(20, len(vols))
-            rows = []
-            for d in fr:
-                p = pxm.get(d["date"], {})
-                v = p.get("vol")
-                rows.append({"date": d["date"], "close": d["close"], "frgn": d["frgn"],
-                             "org": d["org"], "vol": v,
-                             "open": p.get("open"), "high": p.get("high"), "low": p.get("low"),
-                             "volx": round(v / base, 1) if (v and base) else None,
-                             "hold_qty": d.get("hold_qty"), "hold_pct": d.get("hold_pct")})
-            q = quotes.quote_batch([code]).get(code, {})
-            out = {"code": code, "name": q.get("name", ""), "quote": q,
-                   "poc": round(poc) if poc else None,
-                   "above": bool(poc and q.get("price") and q["price"] > poc),
-                   "min_strength": supply.MIN_STRENGTH,
-                   "float_shares": quotes.float_shares(code),   # 유동가능주식수(강도 분모)
-                   "rows": rows}
-        except Exception as ex:
-            out = {"error": str(ex)}
-        body = json.dumps(out, ensure_ascii=False).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def _serve_why(self):
-        """종목 리서치 요약 — 태그 테마 강세 + 수급 + 최근 뉴스 (섹터 종목 클릭 상단)."""
-        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-        code = (qs.get("code") or [""])[0]
-        if not re.fullmatch(r"\d{6}", code):
-            self.send_error(400); return
-        try:
-            import whyup
-            body = json.dumps(whyup.build(code), ensure_ascii=False).encode("utf-8")
-        except Exception as ex:
-            body = json.dumps({"error": str(ex)}).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -271,7 +186,6 @@ def _warm_quotes():
     """네이버 연결(keep-alive)을 미리 데워 첫 종목 클릭의 콜드 핸드셰이크(수 초) 제거."""
     try:
         import quotes
-        quotes.quote_batch(["005930"])       # polling.finance 핸드셰이크
         quotes.daily_price("005930", 1)      # m.stock 핸드셰이크
         quotes.investor_trend("005930", 1)
     except Exception:

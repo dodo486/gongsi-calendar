@@ -2,9 +2,9 @@
 """jhts 시세수집팀(jhts.marketdata) 어댑터 — 공시캘린더의 유일한 시세 창구.
 
 공시캘린더는 시세를 직접 스크래핑하지 않는다. 모든 시세(실시간 현재값·지수·
-전시장 스냅샷·일별 OHLC·수급·분봉·유동주식수)를 여기서 jhts **공개 API(md.*)**로
+전시장 스냅샷·일별 OHLC·수급·분봉)를 여기서 jhts **공개 API(md.*)**로
 받는다 — jhts 소스 계층(kr/source/*)을 직접 import 하지 않는다. 일별 OHLC·수급은
-md.candles/md.flows, 현재가·지수·분봉은 KIS(키 필요), 전시장·유동주식수는 네이버.
+md.candles/md.flows, 현재가·지수·분봉은 KIS(키 필요), 전시장은 네이버.
 
 읽기 규칙:
 - 일별(OHLC·수급): **로컬 미러(SISE_DB_PATH)**에서 읽는다. 미러는 sync_mirror.py가
@@ -40,16 +40,6 @@ def _ymd(d):
 
 
 # ── 실시간 현재값 / 지수 / 전시장 ─────────────────────────────
-def quote_batch(codes):
-    """{code: {name, price, rate(부호%), value, volume, mktcap}}. KIS(키 필요)."""
-    if not (AVAILABLE and _REALTIME_OK):
-        return {}
-    try:
-        return md.quote(list(codes))
-    except Exception:
-        return {}
-
-
 def stock_rate(code):
     """{price, rate(부호%), sign} / 실패 시 {}. KIS(키 필요)."""
     if not (AVAILABLE and _REALTIME_OK):
@@ -102,16 +92,6 @@ def minute_closes(code, count=3000):
         return {}
 
 
-def float_shares(code):
-    """유동가능주식수 / 실패 시 None."""
-    if not AVAILABLE:
-        return None
-    try:
-        return md.float_shares(code)
-    except Exception:
-        return None
-
-
 def daily_rate_map(code, days=40):
     """일별 {YYYY-MM-DD: {rate(부호%), open, close}} — 과거 공시일 등락률·시가갭용.
 
@@ -160,31 +140,6 @@ def daily_price(code, n=40):
         out.reverse()
         return out[:n]
     return []  # 미러에 없으면 없음(옛 네이버 라이브 폴백 제거 — KIS→DB 미러만)
-
-
-def frgn_daily(code, pages=2):
-    """일별 외국인·기관 순매매(주) 최신→과거 [{date, close, frgn, org, hold_qty, hold_pct}]."""
-    if not AVAILABLE:
-        return []
-    try:
-        flows = md.flows(code)  # 미러(오름차순)
-    except Exception:
-        flows = []
-    if flows:
-        closes = _close_map(code)
-        out = []
-        for f in flows:
-            d = _ymd(f.get("date"))
-            out.append({
-                "date": d, "close": int(closes.get(d) or 0),
-                "frgn": int(f.get("frgn_net_qty") or 0),
-                "org": int(f.get("org_net_qty") or 0),
-                "hold_qty": int(f.get("held_qty") or 0) if f.get("held_qty") is not None else 0,
-                "hold_pct": f.get("hold_ratio"),
-            })
-        out.reverse()
-        return out[:pages * 21]
-    return []  # 미러에 없으면 없음(옛 네이버 라이브 폴백 제거)
 
 
 def investor_trend(code, n=20):
