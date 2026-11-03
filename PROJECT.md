@@ -109,6 +109,7 @@ python kind_halt.py            # 매매거래정지/재개 KIND 공시 → data/
 python krx_actions.py          # 시장조치(사이드카·서킷·투자경고)
 python index_pdf.py            # 지수배당포인트용 ETF PDF(KODEX200·KODEX코스닥150·TIGER KRX300)+지수종가 → data/index_pdf.json (하루 1회, --force)
 python divpoints.py            # 지수배당포인트(근월물) 계산 → data/divpoints.json
+python industry.py [rebuild]   # 인더스트리 액션 → data/industry_action.json (rebuild = 굵은 묶음 강제 재구성)
 python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바탕화면 '공시캘린더' 아이콘이 이걸 호출)
 ```
 
@@ -119,6 +120,7 @@ python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바�
 | `LIMITS_POLL_SECONDS` | 5초 | 상하한가·시장조치 (전용 고속 스레드, collect 0.1초) |
 | `POLL_SECONDS` | 20초 | 공시·실적 (DART·네이버가 무거움) |
 | `HALT_POLL_SECONDS` | 1800초 | 거래정지/재개 (하루 단위로만 바뀜) |
+| `INDUSTRY_POLL_SECONDS` | 60초 | 인더스트리 액션 (전 종목 스냅샷 1회, 묶음 재구성 30일·일봉 증분 18시 이후 하루 1회) |
 
 - 웹 화면 갱신은 **SSE(서버 푸시)**. `index.html` 의 30초 `setInterval` 은 SSE 실패 대비 폴백이고,
   상하한가 깜빡이만 5초 주기로 별도 렌더.
@@ -243,6 +245,19 @@ python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바�
   ② 일별/수급은 미러 DB 전용이라 `sync_mirror` 동기화 필수(라이브 폴백 없음).
   분봉 키는 업계표준 UTC(ISO-8601 "…Z")로 바뀜. 검증: md_feed 10개 함수 무크래시 스모크 통과
   (실시간 KIS 실데이터·전시장 2637종목·유동주식수 OK). ※ launch.py 전체 검증은 DART 키 환경에서 별도.
+
+- 2026-11-03: **인더스트리 액션 탭 추가** (사용자 지시, `industry.py` → `data/industry_groups.json`·`data/industry_action.json`, 탭 🏭 인더스트리 액션).
+  목적: 비슷하게 움직이는 종목(테마)을 굵게 묶어 오늘 어느 묶음으로 돈이 몰리고 빠지는지 본다.
+  · 묶기: 네이버 테마(jhts `md.themes`) → 시장 베타를 뺀 수익률이 테마 나머지와 상관 0.25 미만인 종목 제거
+    → 테마 지수끼리 상관 0.6 이상이면 합침 → 종목마다 가장 잘 맞는 묶음 하나. 직전 250거래일 일봉, 30일마다 재구성.
+  · 판정 기준은 "같이 움직이나": 이름·소속 겹침이 아니라 실제 움직임. 2026-11 측정(앞 1년으로 묶고 뒤 1년):
+    묶음 안 잔차 상관 0.25 / 밖 0.00, 묶음 2종목+ +5% 날 덜 오른 멤버 다음 날 시장 대비 +0.08%(무작위 묶음 −0.04%).
+    가격만으로 묶기(동반 급등·잔차 상관 군집)는 무작위 수준이라 쓰지 않는다.
+  · 일봉 미러(`data/sise.db`, 전 종목 2년)는 18시 이후 하루 한 번 KIS 증분 수집. 네이버 소속표는 날마다
+    `data/theme_snapshots/YYYYMMDD.json` 로 남긴다(현재 소속표를 과거에 쓰면 사후 편입이 섞여 재검증용).
+  · 함께 고침: 서버 파이썬(시스템 Python 3.12)에 jhts-marketdata 가 없어 시세가 전부 빈 값이었음 → 설치.
+    실시간(KIS)은 실행 폴더 `.env` 의 KIS 키가 필요(`.gitignore` 추가).
+
 
 ## 6. 다음 할 일 (TODO)
 

@@ -81,6 +81,40 @@ def top_universe(n=800):
         return []
 
 
+def themes():
+    """테마 소속표 [{no, name, description, stocks: [{code, name, reason}]}] (하루 1회 캐시)."""
+    if not AVAILABLE:
+        return []
+    try:
+        return md.themes()
+    except Exception:
+        return []
+
+
+def closes_values(codes, start):
+    """start(YYYYMMDD) 이후 {code: [(date, close, close×volume)]} 오름차순 — 미러(DB)."""
+    if not AVAILABLE:
+        return {}
+    out = {}
+    for code in codes:
+        try:
+            out[code] = [(c.date, c.close, c.close * c.volume) for c in md.candles(code, start)]
+        except Exception:
+            pass
+    return out
+
+
+def refresh_candles(codes):
+    """일봉 미러를 종목별 MAX(date) 다음 날부터 오늘까지 KIS 로 증분 수집.
+    오늘 캔들까지 저장하므로 장 마감 뒤에만 부른다."""
+    if not (AVAILABLE and _REALTIME_OK):
+        return {}
+    try:
+        return md.collect(codes, ["candles"]).get("candles", {})
+    except Exception:
+        return {}
+
+
 # ── 분봉 / 참조 ───────────────────────────────────────────────
 def minute_closes(code, count=3000):
     """분봉 종가 {UTC ISO-8601 "…Z": 종가}. KIS(키 필요)."""

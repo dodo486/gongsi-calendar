@@ -20,6 +20,7 @@ import earnings
 import earn_sched
 import krx_actions
 import capital
+import industry
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
@@ -303,6 +304,18 @@ def poll_limits(lim_seen, alert=True):
             alerted += 1
     return alerted
 
+INDUSTRY_POLL_SECONDS = 60  # 인더스트리 액션 — 전 종목 스냅샷 1회(수 초), 묶음 재구성은 30일마다
+
+def industry_loop():
+    """인더스트리 액션 전용 루프(별도 스레드) → data/industry_action.json."""
+    while True:
+        try:
+            industry.daily_upkeep()
+            industry.build_action()
+        except Exception as ex:
+            print(f"  [인더스트리] 갱신 실패: {ex}")
+        time.sleep(INDUSTRY_POLL_SECONDS)
+
 HALT_POLL_SECONDS = 1800  # 거래정지/재개 — 하루 단위로만 바뀌어 30분이면 충분 (KIND+DART 무거움)
 
 def halt_loop():
@@ -426,6 +439,8 @@ def main():
     print(f"  [상하한가·시장조치] 전용 루프 시작 ({LIMITS_POLL_SECONDS}초 주기)")
     threading.Thread(target=halt_loop, daemon=True).start()   # 거래정지/재개 집계 스레드
     print(f"  [거래정지] 전용 루프 시작 ({HALT_POLL_SECONDS}초 주기)")
+    threading.Thread(target=industry_loop, daemon=True).start()
+    print(f"  [인더스트리] 전용 루프 시작 ({INDUSTRY_POLL_SECONDS}초 주기)")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)

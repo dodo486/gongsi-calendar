@@ -54,6 +54,28 @@
   .detail .row{font-size:13px;color:var(--muted);margin:4px 0}
   .btn{display:inline-block;margin-top:14px;background:var(--accent);color:#04240f;font-weight:700;padding:10px 14px;border-radius:8px;text-decoration:none;font-size:14px}
   .empty{color:var(--muted);font-size:13px}
+  #industryView{padding:14px 18px}
+  .ia-wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
+  .ia-sort{display:flex;gap:6px;margin-bottom:8px;font-size:12px;color:var(--muted);align-items:center}
+  .ia-sort .chip{cursor:pointer}
+  .ia-row{display:grid;grid-template-columns:minmax(0,1fr) 90px 70px 60px 150px;gap:8px;align-items:center;font-size:13px;padding:6px 8px;border-top:1px solid var(--line);cursor:pointer;position:relative}
+  .ia-row.head{cursor:default;color:var(--muted);font-size:12px;border-top:none}
+  .ia-row:not(.head):hover,.ia-row.sel{background:var(--panel)}
+  .ia-row .bar{position:absolute;left:0;top:0;bottom:0;background:var(--accent);opacity:.12;pointer-events:none}
+  .ia-row .num{text-align:right}
+  .ia-row .ld{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pos{color:#fca5a5}
+  .neg{color:#93c5fd}
+  .ia-detail{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:12px;position:sticky;top:10px}
+  .ia-detail h3{margin:0 0 4px;font-size:15px}
+  .ia-sub{color:var(--muted);font-size:12px;margin-bottom:8px}
+  .ia-themes{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .ia-themes span{border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg)}
+  .ia-m{display:grid;grid-template-columns:minmax(0,1fr) 70px 80px;gap:6px;font-size:13px;padding:4px 0;border-top:1px solid var(--line);cursor:pointer}
+  .ia-m:hover{background:var(--bg)}
+  .ia-m .num{text-align:right}
+  .ia-m .v{color:var(--muted)}
+  @media (max-width:900px){ .ia-wrap{grid-template-columns:1fr} .ia-row{grid-template-columns:minmax(0,1fr) 70px 64px 46px} .ia-row .ld{display:none} }
   .divlist .lh{font-size:13px;font-weight:700;margin-bottom:10px}
   .divlist .di{padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:7px;cursor:pointer;background:var(--bg)}
   .divlist .di:hover{border-color:var(--div)}
@@ -233,6 +255,7 @@
   <div class="tabs">
     <span class="tab" data-mode="disc">공시</span>
     <span class="tab on" data-mode="board">🚨 상하한가 · 💰 배당</span>
+    <span class="tab" data-mode="industry">🏭 인더스트리 액션</span>
   </div>
   <span class="meta" id="meta">불러오는 중…</span>
   <div class="controls">
@@ -242,6 +265,7 @@
   </div>
 </header>
 <div class="layout">
+  <div id="industryView" style="display:none"></div>
   <div id="limitsView" style="display:none"></div>
   <div id="earnView" style="display:none">
     <div class="earn-split">
@@ -1054,7 +1078,66 @@ function renderEarnCal(){   // 실적 캘린더 갱신 — 실제 공시(보라)
   earnCal.addEventSource(earnActEvents().concat(ernEvents()));
 }
 
+let IA = null, IA_SORT = "value", IA_SEL = null;   // data/industry_action.json
+async function loadIndustry(){
+  try{ IA = await (await fetch("data/industry_action.json?_="+Date.now())).json(); }catch(_){ IA = null; }
+  document.getElementById("meta").textContent = IA
+    ? `🏭 묶음 ${IA.groups.length}개 · 갱신 ${IA.generated_at} · 묶은 날 ${IA.groups_built_at.slice(0,10)} (일봉 ${IA.window[0]}~${IA.window[1]})`
+    : "인더스트리 데이터 없음";
+  renderIndustry();
+}
+const pct = r => r==null ? "-" : (r>0?"+":"")+r.toFixed(2)+"%";
+const sgn = r => r>0 ? "pos" : r<0 ? "neg" : "";
+function iaGroups(){
+  const q = (filters.q||"").trim();
+  let gs = IA.groups.filter(g=> !q || g.name.includes(q) || g.themes.some(t=>t.includes(q)) || g.members.some(m=>m.name.includes(q)));
+  const key = {value:g=>-g.value, up:g=>-g.rate, down:g=>g.rate}[IA_SORT];
+  return gs.slice().sort((a,b)=>key(a)-key(b));
+}
+function renderIndustry(){
+  const box = document.getElementById("industryView");
+  if(!IA){ box.innerHTML = `<div class="empty">인더스트리 데이터가 없습니다 — industry.py 실행 후 다시 여세요.</div>`; return; }
+  const gs = iaGroups();
+  if(!IA_SEL || !gs.some(g=>g.name===IA_SEL)) IA_SEL = gs.length ? gs[0].name : null;
+  const vmax = Math.max(1, ...IA.groups.map(g=>g.value));
+  const chip = (k,t)=>`<span class="chip${IA_SORT===k?" on":""}" data-sort="${k}">${t}</span>`;
+  const rows = gs.map(g=>`<div class="ia-row${g.name===IA_SEL?" sel":""}" data-g="${esc(g.name)}">
+      <span class="bar" style="width:${(g.value/vmax*100).toFixed(1)}%"></span>
+      <span title="${esc(g.themes.join(", "))}">${esc(g.name)}</span>
+      <span class="num">${won(Math.round(g.value/1e8))}억</span>
+      <span class="num ${sgn(g.rate)}">${pct(g.rate)}</span>
+      <span class="num">${g.up}/${g.n}</span>
+      <span class="ld">${esc(g.lead.name)} <span class="${sgn(g.lead.rate)}">${pct(g.lead.rate)}</span></span></div>`).join("");
+  box.innerHTML = `<div class="ia-wrap"><div>
+      <div class="ia-sort">정렬 ${chip("value","거래대금")}${chip("up","강한 순")}${chip("down","약한 순")}</div>
+      <div class="ia-row head"><span>묶음</span><span class="num">거래대금</span><span class="num">평균 등락</span><span class="num">상승</span><span class="ld">대장(거래대금 1위)</span></div>
+      ${rows || `<div class="empty">조건에 맞는 묶음이 없습니다.</div>`}</div>
+    <div class="ia-detail" id="iaDetail"></div></div>`;
+  renderIndustryDetail();
+}
+function renderIndustryDetail(){
+  const box = document.getElementById("iaDetail");
+  const g = IA && IA.groups.find(x=>x.name===IA_SEL);
+  if(!box) return;
+  if(!g){ box.innerHTML = `<div class="empty">묶음을 고르세요.</div>`; return; }
+  const ms = g.members.filter(m=>filters[m.market] !== false);
+  box.innerHTML = `<h3>${esc(g.name)}</h3>
+    <div class="ia-sub">${won(Math.round(g.value/1e8))}억 · 평균 ${pct(g.rate)} · 상승 ${g.up}/${g.n} · 합쳐진 테마 ${g.themes.length}개</div>
+    <div class="ia-themes">${g.subs.map(s=>`<span title="${s.n}종목 · 대장 ${esc(s.lead.name)}">${esc(s.name)} <b class="${sgn(s.rate)}">${pct(s.rate)}</b></span>`).join("")}</div>
+    ${ms.map(m=>`<div class="ia-m" data-code="${esc(m.code)}"><span>${esc(m.name)}</span>
+      <span class="num ${sgn(m.rate)}">${pct(m.rate)}</span><span class="num v">${won(Math.round((m.value||0)/1e8))}억</span></div>`).join("")}`;
+}
+document.getElementById("industryView").addEventListener("click", e=>{
+  const s = e.target.closest("[data-sort]");
+  if(s){ IA_SORT = s.dataset.sort; IA_SEL = null; renderIndustry(); return; }
+  const m = e.target.closest(".ia-m");
+  if(m){ openChart(m.dataset.code); return; }
+  const r = e.target.closest(".ia-row[data-g]");
+  if(r){ IA_SEL = r.dataset.g; document.querySelectorAll(".ia-row.sel").forEach(x=>x.classList.remove("sel")); r.classList.add("sel"); renderIndustryDetail(); }
+});
+
 async function loadData(){
+  if(MODE==="industry") return loadIndustry();
   if(MODE==="board"){
     const d = await (await fetch("data/dividends.json?_="+Date.now())).json();
     DIV = d.events||[];
@@ -1088,6 +1171,8 @@ function applyModeView(){   // 현재 MODE에 맞춰 탭/컨트롤/상단밴드 
   document.getElementById("sideTitle").textContent = isBoard ? "오늘의 배당공시" : "공시 상세";
   document.getElementById("calBar").style.display = isBoard ? "flex" : "none";   // 배당 체크박스 바(캘린더 위)
   document.getElementById("limitsView").style.display = isBoard ? "block" : "none";
+  document.querySelector(".cal-row").style.display = MODE==="industry" ? "none" : "";
+  document.getElementById("industryView").style.display = MODE==="industry" ? "block" : "none";
   document.getElementById("earnView").style.display = isBoard ? "block" : "none";   // 중간 실적 그리드  // 상단 상하한가 밴드
   if(isBoard && earnCal) setTimeout(()=>earnCal.updateSize(), 0);   // 숨김→표시 시 캘린더 크기 재계산
 }
@@ -1101,6 +1186,7 @@ function switchMode(mode){
     box.className="empty"; box.textContent="캘린더에서 항목을 클릭하면 여기에 내용이 표시됩니다.";
   }
   loadData().then(()=>{
+    if(MODE==="industry") return;
     calendar.updateSize();   // 상단 밴드로 캘린더 높이가 바뀌므로 재계산
     if(MODE==="board"){ calendar.today(); renderDivToday(); }
     else if(ALL.length){ calendar.gotoDate(toISO(ALL[0].date)); }
@@ -1181,12 +1267,14 @@ document.getElementById("q").addEventListener("input",e=>{
   filters.q=e.target.value;
   applyFilters();
   if(MODE==="board"){ renderLimits(); renderEarnCal(); }
+  if(MODE==="industry") renderIndustry();
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
     c.classList.toggle("on",filters[mk]); applyFilters();
     if(MODE==="board"){ renderEarnCal(); if(divListMode) renderDivToday(); }
+    if(MODE==="industry") renderIndustryDetail();
   });
 });
 
