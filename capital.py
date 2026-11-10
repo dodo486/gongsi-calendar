@@ -8,9 +8,10 @@
   python capital.py            # 최근 88일 유·무상증자 → data/capital.json
   python capital.py 30         # 최근 30일
 """
-import sys, os, re, json, datetime, threading
-from fetch import fetch_range, load_watchlist, DATA_DIR, TLS_MODE, save_json
-from dividends import doc_text, t_minus, norm_date
+import sys, os, re, json, math, datetime, threading
+from fetch import fetch_range, load_watchlist, DATA_DIR, TLS_MODE, save_json, parsed
+from dividends import t_minus, norm_date
+import quotes
 
 _LOCK = threading.RLock()
 CAP_PATH = os.path.join(DATA_DIR, "capital.json")
@@ -26,27 +27,36 @@ RE_RATIO = re.compile(r"1주당\s*신주배정\s*주식수\s*(?:보통주식)?\s
 RE_LIST = re.compile(r"신주의\s*상장\s*예정일\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
 # 신주인수권증서 상장(입고) 시작일 — 유상 주주배정 "신주인수권증서 상장(예정)기간 : YYYY.MM.DD ~ ..."
 RE_RIGHTS = re.compile(r"신주인수권증서\s*상장(?:예정)?기간\s*[:：]?\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
-
-_FIELD_KEYS = ("record_date", "ratio", "listing_date", "rights_date")
+RE_SECTIONS = re.compile(r"Ⅰ\.\s*유상증자\s*1\.(.*?)Ⅱ\.\s*무상증자\s*1\.(.*)")
+# 유상 신주 발행가 — 확정 우선, 없으면 예정. 정정공시는 정정표 뒤에 본문이 오므로 마지막 값을 쓴다.
+RE_ISSUE = re.compile(r"(확정|예정)발행가\s*보통주식\s*\(원\)\s*([\d,]+)")
 
 def _is_cap(nm):
     return any(k in (nm or "") for k in ("유상증자결정", "무상증자결정", "유무상증자결정"))
 
-def cap_type(nm):
-    if "유상증자결정" in nm: return "유상증자"
-    if "무상증자결정" in nm: return "무상증자"
-    if "유무상증자결정" in nm: return "유상증자"   # 유상 배정기준일을 주 권리로 표기
-    return "유상증자" if "유상" in nm else "무상증자"
-
-def parse_cap(t):
-    m = RE_REC.search(t)
-    r = RE_RATIO.search(t)
-    ml = RE_LIST.search(t)
-    mr = RE_RIGHTS.search(t)
-    return {"record_date": norm_date(m.group(1)) if m else "",
-            "ratio": r.group(1) if r else "",
-            "listing_date": norm_date(ml.group(1)) if ml else "",   # 신주 상장(입고)일
-            "rights_date": norm_date(mr.group(1)) if mr else ""}     # 신주인수권증서 상장(입고)일(유상)
+def parse_cap(t, nm):
+    """증자구분 → 필드. 유무상증자결정은 본문 Ⅰ(유상)·Ⅱ(무상)를 따로 파싱. 신주배정기준일 없는 구분은 뺀다."""
+    if "유무상증자결정" in nm:
+        m = RE_SECTIONS.search(t)
+        parts = {"유상증자": m.group(1), "무상증자": m.group(2)} if m else {}
+    else:
+        parts = {"유상증자" if "유상증자결정" in nm else "무상증자": t}
+    out = {}
+    for typ, s in parts.items():
+        m = RE_REC.search(s)
+        if not m:
+            continue
+        r = RE_RATIO.search(s)
+        ml = RE_LIST.search(s)
+        mr = RE_RIGHTS.search(s)
+        issue = dict(RE_ISSUE.findall(s)) if typ == "유상증자" else {}
+        out[typ] = {"record_date": norm_date(m.group(1)),
+                    "issue_price": int((issue.get("확정") or issue.get("예정") or "0").replace(",", "")),
+                    "ratio": r.group(1) if r else "",
+                    "listing_date": norm_date(ml.group(1)) if ml else "",   # 신주 상장(입고)일
+                    # 신주인수권증서 상장(입고)일 — 유상 주주배정에만 존재, 무상 오탐 방지
+                    "rights_date": norm_date(mr.group(1)) if mr and typ == "유상증자" else ""}
+    return out
 
 def load_cache():
     if os.path.exists(CACHE_PATH):
@@ -55,26 +65,6 @@ def load_cache():
         except Exception:
             return {}
     return {}
-
-def _fields(rno, cache):
-    """파싱 필드 반환 — 캐시에 있으면 재사용(다운로드 0), 없으면 원문 1회 다운로드+파싱 후 캐시.
-    신규 필드(listing_date 등)가 없는 구캐시는 재파싱해 최신 필드를 채운다."""
-    c = cache.get(rno)
-    if c is not None and "listing_date" in c:
-        return {k: c.get(k, "") for k in _FIELD_KEYS}
-    try:
-        d = parse_cap(doc_text(rno))
-    except Exception:
-        d = {k: "" for k in _FIELD_KEYS}
-    cache[rno] = d
-    return d
-
-def _base(r):
-    return {"corp": r["corp_name"], "stock": r["stock_code"],
-            "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ",
-            "type": cap_type(r["report_nm"]), "rcept_no": r["rcept_no"],
-            "rcept_dt": r.get("rcept_dt", ""),
-            "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={r['rcept_no']}"}
 
 def _finalize(e):
     e["buy_date"] = t_minus(e["record_date"], 2)   # 권리부매수일(T-2) — 이날까지 매수해야 신주배정
@@ -85,19 +75,20 @@ def build_events(rows, cache):
     """(종목, 증자구분) 병합 — 정정 대비 최신 rcept_dt 우선, 신주배정기준일 있는 건만."""
     merged = {}
     for r in rows:
-        d = _fields(r["rcept_no"], cache)
-        if not d["record_date"]:
+        try:
+            parts = parsed(r["rcept_no"], lambda t: parse_cap(t, r["report_nm"]), cache)
+        except Exception:
             continue
-        key = (r["stock_code"], cap_type(r["report_nm"]))
-        e = merged.get(key)
-        if e is None or r.get("rcept_dt", "") >= e.get("rcept_dt", ""):
-            row = _base(r)
-            row["record_date"] = d["record_date"]
-            row["ratio"] = d["ratio"]
-            row["listing_date"] = d.get("listing_date", "")
-            # 신주인수권증서는 유상 주주배정에만 존재 — 무상 오탐 방지
-            row["rights_date"] = d.get("rights_date", "") if row["type"] == "유상증자" else ""
-            merged[key] = row
+        for typ, d in parts.items():
+            key = (r["stock_code"], typ)
+            e = merged.get(key)
+            if e is None or r.get("rcept_dt", "") >= e.get("rcept_dt", ""):
+                merged[key] = {"corp": r["corp_name"], "stock": r["stock_code"],
+                               "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ",
+                               "type": typ, "rcept_no": r["rcept_no"],
+                               "rcept_dt": r.get("rcept_dt", ""),
+                               "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={r['rcept_no']}",
+                               **d}
     return [_finalize(e) for e in merged.values()]
 
 def _save(events):
@@ -120,6 +111,36 @@ def main(days=MAX_DAYS):
         rows += fetch_range(bgn, end, cls, "B")   # 증자결정 = 주요사항보고(B)
     rows = [r for r in rows if r.get("stock_code") in watch and _is_cap(r.get("report_nm", ""))]
     events = build_events(rows, cache)
+    today_s = today.isoformat()
+    bonus_done = [(e["stock"], e["ex_date"], float(e["ratio"] or 0))
+                  for e in events if e["type"] == "무상증자" and e["ex_date"] <= today_s]
+    for e in events:
+        daily = quotes.daily_price(e["stock"], 250)   # 수정주가
+        if not daily:
+            continue
+        price = quotes.stock_rate(e["stock"]).get("price") or daily[0]["close"]
+        r = float(e["ratio"] or 0)
+        e["price"] = price
+        # 발행가를 현재 주식 기준으로 — 이 건 권리락 뒤에 끝난 무상증자만큼 나눈다
+        issue = e["issue_price"] / math.prod(1 + q for s, ex, q in bonus_done if s == e["stock"] and ex > e["ex_date"])
+        if e["ex_date"] > today_s:   # 권리락 전: 지금 주가를 권리부 종가로 보고 예상 기준가
+            if e["type"] == "무상증자":
+                e["base_price"] = round(price / (1 + r))
+            elif issue:
+                e["base_price"] = round((price + issue * r) / (1 + r))
+        if issue:
+            e["issue_adj"] = round(issue)
+            e["rights_theo"] = max(round(price - issue), 0)   # 신주인수권증서 이론가 = 주가 − 발행가
+            e["issue_ret"] = round((price / issue - 1) * 100, 2)   # 청약 신주 발행가 대비
+        if e["ex_date"] <= today_s:   # 권리락 후: 수정주가의 권리부 마지막날(T-2) 종가 = 권리락 기준가 = 본전 주가
+            base = next((d["close"] for d in daily if d["date"] == e["buy_date"].replace("-", "")), None)
+            if base:
+                e["base_price"] = base
+                if e["type"] == "무상증자":
+                    e["ret"] = round((price / base - 1) * 100, 2)
+                elif issue:   # 보유 수익률 = (주가 + r × 증서 이론가) ÷ 권리부 매수가 − 1
+                    e["even_rights"] = round(base - issue)   # 본전 증서가 = 기준가 − 발행가
+                    e["ret"] = round(((price + r * e["rights_theo"]) / (base * (1 + r) - issue * r) - 1) * 100, 2)
     with _LOCK:
         save_json(CACHE_PATH, cache)   # 신규 파싱분 캐시 보존(다음 회차 재다운로드 방지)
     _save(events)
@@ -128,6 +149,10 @@ def main(days=MAX_DAYS):
         extra = ""
         if e.get("listing_date"): extra += f" · 신주상장 {e['listing_date']}"
         if e.get("rights_date"):  extra += f" · 신주인수권상장 {e['rights_date']}"
+        if "base_price" in e:     extra += f" · 기준가 {e['base_price']:,.0f} · 현재 {e['price']:,.0f}"
+        if "ret" in e:            extra += f" ({e['ret']:+.2f}%)"
+        if "rights_theo" in e:    extra += f" · 발행가 {e['issue_adj']:,} · 증서 이론가 {e['rights_theo']:,}"
+        if "even_rights" in e:    extra += f" (본전 {e['even_rights']:,})"
         print(f"  {e['type']} {e['corp']}({e['stock']}) 기준일 {e['record_date']} · 매수 {e['buy_date']} · 락 {e['ex_date']}{extra}")
 
 def upsert(cap_events):
@@ -142,25 +167,20 @@ def upsert(cap_events):
             if not _is_cap(nm):
                 continue
             try:
-                d = parse_cap(doc_text(r["rcept_no"]))
+                parts = parsed(r["rcept_no"], lambda t: parse_cap(t, nm), cache)
             except Exception:
                 continue
-            cache[r["rcept_no"]] = d
-            if not d["record_date"]:
-                continue   # 제3자배정 등 신주배정기준일 없음 → 캘린더 표시 대상 아님
-            typ = cap_type(nm)
-            key = (r["stock"], typ)
-            cur = idx.get(key)
-            if cur is None or r.get("date", "") >= cur.get("rcept_dt", ""):
-                e = {"corp": r["corp"], "stock": r["stock"], "market": r.get("market", ""),
-                     "type": typ, "ratio": d["ratio"], "record_date": d["record_date"],
-                     "listing_date": d.get("listing_date", ""),
-                     "rights_date": d.get("rights_date", "") if typ == "유상증자" else "",
-                     "rcept_no": r["rcept_no"], "rcept_dt": r.get("date", ""),
-                     "url": r.get("url", "")}
-                _finalize(e)
-                idx[key] = e
-                changed = True
+            for typ, d in parts.items():   # 제3자배정 등 신주배정기준일 없는 건은 parts 에 없음
+                key = (r["stock"], typ)
+                cur = idx.get(key)
+                if cur is None or r.get("date", "") >= cur.get("rcept_dt", ""):
+                    e = {"corp": r["corp"], "stock": r["stock"], "market": r.get("market", ""),
+                         "type": typ, **d,
+                         "rcept_no": r["rcept_no"], "rcept_dt": r.get("date", ""),
+                         "url": r.get("url", "")}
+                    _finalize(e)
+                    idx[key] = e
+                    changed = True
         if changed:
             payload["events"] = sorted(idx.values(), key=lambda x: x.get("buy_date") or x.get("record_date"))
             payload["count"] = len(payload["events"])

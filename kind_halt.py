@@ -15,8 +15,7 @@
 """
 import json, os, re, io, zipfile, datetime, http.cookiejar, urllib.request, urllib.parse
 import numpy as np
-from fetch import build_ssl_context, DATA_DIR, BASE, KEY, api, load_watchlist, save_json
-from dividends import doc_text
+from fetch import build_ssl_context, DATA_DIR, BASE, KEY, api, load_watchlist, save_json, doc_text
 from krx_cal import holiday_dates, default_years
 
 SCAN_DAYS = 50                       # 정지/해제 공시 스캔 기간(일)
@@ -101,6 +100,8 @@ def _parse_body(rcept, cache):
     if rcept in cache:
         return cache[rcept]
     t = _body_text(rcept)
+    if not t:   # 받기 실패는 캐시에 남기지 않음 — 다음 회차 재시도
+        return {"halt_date": "", "reason": "", "reason_full": "", "expire": ""}
     tc = t.replace(" ", "")
     hd = re.search(r"정지일시(\d{4}-\d{2}-\d{2})", tc)
     exp = re.search(r"만료일시([^0-9]*?(?:\d{4}-\d{2}-\d{2})?[가-힣]*)", tc)
@@ -165,8 +166,9 @@ def dart_resume(stock, halt_date, dcache):
             bgn = (datetime.date.today() - datetime.timedelta(days=150)).strftime("%Y%m%d")
             d = api({"crtfc_key": KEY, "corp_code": cc, "bgn_de": bgn, "end_de": end,
                      "page_no": 1, "page_count": 100})
-            rows = d.get("list", []) if d.get("status") == "000" else []
-            for r in rows:
+            if d.get("status") not in ("000", "013"):   # 013 = 조회 결과 없음(정상)
+                return ""
+            for r in d.get("list", []):
                 nm = r.get("report_nm", "")
                 if not any(k in nm for k in ("분할결정", "병합", "감자결정", "회사분할")):
                     continue
@@ -178,7 +180,7 @@ def dart_resume(stock, halt_date, dcache):
                     res = _nd(m.group(1))
                     break
         except Exception:
-            res = ""
+            return ""   # 받기 실패는 캐시에 남기지 않음 — 다음 회차 재시도
     dcache[key] = res
     return res
 

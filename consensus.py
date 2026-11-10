@@ -7,8 +7,7 @@
 """
 import html as _html
 import json, os, re, sys, time, urllib.request
-from fetch import DATA_DIR, save_json, build_ssl_context
-import dividends as dv
+from fetch import DATA_DIR, save_json, build_ssl_context, doc_text
 import quotes  # 시세(일별 price·trend)는 jhts 시세수집팀 위임
 
 FACT_DIR = os.path.join(DATA_DIR, "facts")
@@ -93,7 +92,7 @@ def parse_actual(rcept_no):
     원문 행 구조: <항목> 당해실적 당기 전기 전기대비% 흑전여부 전년동기 전년동기대비% 흑전여부
     """
     try:
-        t = dv.doc_text(rcept_no)
+        t = doc_text(rcept_no)
     except Exception:
         return {}
     um = re.search(r"단위\s*:\s*(백만원|억원|천원|원)", t)

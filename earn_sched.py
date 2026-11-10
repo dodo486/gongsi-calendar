@@ -8,8 +8,7 @@
   python earn_sched.py [일수=45]
 """
 import json, os, sys, re, datetime
-from fetch import DATA_DIR, load_watchlist, save_json, fetch_range, TLS_MODE
-import dividends as dv   # doc_text(원문 다운로드) 재사용
+from fetch import DATA_DIR, load_watchlist, save_json, fetch_range, TLS_MODE, parsed
 
 SCHED_PATH = os.path.join(DATA_DIR, "earn_sched.json")
 CACHE_PATH = os.path.join(DATA_DIR, "earn_sched_cache.json")   # rcept_no→파싱 결과 캐시
@@ -63,7 +62,7 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
         watch = load_watchlist() or {}
     today = datetime.date.today()
     end = today.strftime("%Y%m%d")
-    cache, changed = _load_cache(), False
+    cache = _load_cache()
 
     # ① 결산실적공시예고 [예고]
     bgn = (today - datetime.timedelta(days=days)).strftime("%Y%m%d")
@@ -75,11 +74,8 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
         if KW not in (r.get("report_nm") or "") or r.get("stock_code") not in watch:
             continue
         rno = r["rcept_no"]
-        d = cache.get(rno)
-        if d is None:                              # 새 문서만 원문 1회 다운로드+파싱
-            try: d = parse_sched(dv.doc_text(rno))
-            except Exception: d = {"expected_date": "", "period_end": ""}
-            cache[rno] = d; changed = True
+        try: d = parsed(rno, parse_sched, cache)
+        except Exception: continue
         if not d.get("expected_date"):
             continue
         key = (r["stock_code"], d["period_end"])
@@ -97,11 +93,8 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
         rno = r["rcept_no"]
         if r["rcept_dt"] < (today - datetime.timedelta(days=IR_DAYS)).strftime("%Y%m%d"):
             continue
-        d = cache.get(rno)
-        if d is None:
-            try: d = parse_ir(dv.doc_text(rno))
-            except Exception: d = {"kind": "ir", "expected_date": ""}
-            cache[rno] = d; changed = True
+        try: d = parsed(rno, parse_ir, cache)
+        except Exception: continue
         if not d.get("expected_date") or "실적" not in d.get("purpose", ""):
             continue
         key = (r["stock_code"], d["expected_date"])
@@ -110,8 +103,7 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
             ir_merged[key] = {**_base(r, rno), "src": "IR",
                               "expected_date": d["expected_date"], "time": d.get("time", ""),
                               "purpose": d.get("purpose", ""), "sponsor": d.get("sponsor", "")}
-    if changed:
-        _save_cache(cache)
+    _save_cache(cache)
     global _last_raw
     _last_raw = len(rows)
     keep_from = (today - datetime.timedelta(days=PAST_KEEP_DAYS)).strftime("%Y-%m-%d")

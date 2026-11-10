@@ -5,7 +5,7 @@ DART 공시 수집기 (v1)
 - 웹(index.html)이 이 JSON을 읽어 캘린더에 표시
 - TLS 검사 환경 대응: truststore -> certifi -> (최후) unverified 순으로 시도
 """
-import json, os, sys, time, datetime, urllib.request, urllib.error, ssl
+import io, json, os, re, sys, time, datetime, zipfile, urllib.request, urllib.error, ssl
 
 # 콘솔 UTF-8 출력 — fetch 를 import 하는 모든 모듈이 이 설정을 공유(각자 재선언 불필요)
 try:
@@ -132,6 +132,25 @@ def fetch_range(bgn, end, corp_cls, pblntf_ty=None):
         page += 1
         time.sleep(0.15)  # API 예의상 살짝 쉼
     return out
+
+def doc_text(rcept_no):
+    url = f"https://opendart.fss.or.kr/api/document.xml?crtfc_key={KEY}&rcept_no={rcept_no}"
+    with urllib.request.urlopen(url, timeout=30) as r:
+        raw = r.read()
+    zf = zipfile.ZipFile(io.BytesIO(raw))
+    name = max(zf.namelist(), key=lambda n: zf.getinfo(n).file_size)
+    data = zf.read(name)
+    for enc in ("utf-8", "euc-kr", "cp949"):
+        try: txt = data.decode(enc); break
+        except Exception: txt = data.decode("utf-8", "replace")
+    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", txt))
+
+def parsed(rcept_no, parse, cache):
+    """원문 파싱 결과를 rcept_no 로 캐시. 받기 실패(접수 직후 DART 미제공 등)는 예외로 올리고
+    캐시에 남기지 않는다 — 실패를 빈 값으로 굳히지 않고 다음 회차에 다시 받는다."""
+    if rcept_no not in cache:
+        cache[rcept_no] = parse(doc_text(rcept_no))
+    return cache[rcept_no]
 
 _wl_cache = {"mtime": None, "data": None}
 def load_watchlist():

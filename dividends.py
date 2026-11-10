@@ -7,9 +7,9 @@
 - 회사·배당구분별로 병합 → data/dividends.json
 - 웹은 기준일 날짜에 "회사명 (금액원)" 표시
 """
-import sys, io, os, re, json, zipfile, datetime, threading, urllib.request
+import sys, os, re, json, datetime, threading
 import numpy as np
-from fetch import fetch_range, load_watchlist, DATA_DIR, KEY, TLS_MODE, save_json
+from fetch import fetch_range, load_watchlist, DATA_DIR, TLS_MODE, save_json, doc_text
 from krx_cal import holiday_dates, default_years
 
 _LOCK = threading.RLock()   # dividends.json 동시 쓰기 방지 (main 재생성 vs upsert)
@@ -53,18 +53,6 @@ def norm_date(s):
     m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
     return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else ""
 
-def doc_text(rcept_no):
-    url = f"https://opendart.fss.or.kr/api/document.xml?crtfc_key={KEY}&rcept_no={rcept_no}"
-    with urllib.request.urlopen(url, timeout=30) as r:
-        raw = r.read()
-    zf = zipfile.ZipFile(io.BytesIO(raw))
-    name = max(zf.namelist(), key=lambda n: zf.getinfo(n).file_size)
-    data = zf.read(name)
-    for enc in ("utf-8", "euc-kr", "cp949"):
-        try: txt = data.decode(enc); break
-        except Exception: txt = data.decode("utf-8", "replace")
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", txt))
-
 def parse_decision(t):
     per = re.search(r"1주당\s*배당금\(원\)\s*보통주식\s*([\d,]+)", t)
     rec = re.search(r"배당기준일\s*" + DATE, t)
@@ -96,7 +84,6 @@ def _match_key(index, stock, div_type):
 # rcept_no 별 파싱 결과를 저장/재사용 → 같은 공시 문서를 두 번 다시 내려받지 않는다.
 # research.build_history 가 장기 이력을 채우고, dividends.main 이 그걸 그대로 재사용.
 HIST_PATH = os.path.join(DATA_DIR, "div_history.json")
-_HEALED = {}   # 자가치유로 재파싱한 캐시 항목(rcept→entry) — main()에서 디스크에 영구 반영
 
 def load_doc_cache():
     """div_history.json(파싱 캐시)을 dict 로 로드. 없거나 깨졌으면 빈 dict."""
@@ -110,28 +97,13 @@ def load_doc_cache():
 def doc_fields(rcept_no, kind, cache=None):
     """공시 원문의 배당 필드(per_share/record_date/pay_date/div_type)를 반환.
     캐시에 있으면 재사용(다운로드 0), 없으면 그때만 원문 1회 다운로드+파싱.
-    kind: 'decision' | 'record'.
-
-    자가치유: 최초 수집 때 원문이 아직 안 채워져(초기 스냅샷) 기준일이 빈 값으로 캐시된
-    경우, 최근(≤21일) 공시면 재파싱해 캐시를 채운다. 오래된 빈 항목(제3자배정·기준일 미정 등
-    실제로 없는 경우)은 무한 재다운로드를 막기 위해 그대로 둔다."""
+    kind: 'decision' | 'record'."""
     c = cache.get(rcept_no) if cache is not None else None
-    if c is not None and c.get("record_date"):
+    if c is not None:
         return {"per_share": c.get("per_share", ""), "record_date": c.get("record_date", ""),
                 "pay_date": c.get("pay_date", ""), "div_type": c.get("div_type", "")}
-    if c is not None:   # 캐시에 있으나 기준일이 빔 → 최근분만 재파싱(자가치유)
-        cutoff = (datetime.date.today() - datetime.timedelta(days=21)).strftime("%Y%m%d")
-        if (c.get("rcept_dt", "") or "0") < cutoff:
-            return {"per_share": c.get("per_share", ""), "record_date": "",
-                    "pay_date": c.get("pay_date", ""), "div_type": c.get("div_type", "")}
     t = doc_text(rcept_no)
-    d = parse_decision(t) if kind == "decision" else parse_record(t)
-    if c is not None and (d.get("record_date") or d.get("per_share")):   # 비었던 캐시 채움
-        for k in ("per_share", "record_date", "pay_date", "div_type"):
-            if d.get(k):
-                c[k] = d[k]
-        _HEALED[rcept_no] = c   # main()에서 디스크(div_history.json)에 영구 반영
-    return d
+    return parse_decision(t) if kind == "decision" else parse_record(t)
 
 def main(days=90):
     today = datetime.date.today()
@@ -222,18 +194,6 @@ def main(days=90):
     with _LOCK:
         save_json(out, payload)
     print(f"저장: {out} ({len(events)}건, 배당금有 {sum(1 for e in events if e['per_share'])}건)")
-    if _HEALED:   # 자가치유로 채운 캐시를 디스크에 영구 반영 (research는 재파싱 안 해 그대로 두면 고착)
-        with _LOCK:
-            disk = load_doc_cache()   # 최신 재로드 후 치유분만 병합(동시 추가분 클로버 방지)
-            for rno, c in _HEALED.items():
-                e = disk.get(rno)
-                if e:
-                    for k in ("per_share", "record_date", "pay_date", "div_type"):
-                        if c.get(k):
-                            e[k] = c[k]
-            save_json(HIST_PATH, disk)
-        print(f"  [자가치유] 배당 캐시 {len(_HEALED)}건 재파싱·복구 저장")
-        _HEALED.clear()
 
 def upsert(div_events):
     """새 배당 공시(collect_events 형식 dict 리스트)를 dividends.json에 즉시 증분 반영. 변경시 True"""
