@@ -20,7 +20,7 @@ companies[종목].history·pattern: 회차별 배당 이력과 '분기배당 Q1�
 사용: python research.py [이력일수=430]
 """
 import sys, os, json, time, datetime, threading
-from fetch import fetch_range, load_watchlist, DATA_DIR, save_json, parsed   # fetch import 시 콘솔 UTF-8 설정 공유
+from fetch import fetch_back, load_watchlist, DATA_DIR, save_json, parsed   # fetch import 시 콘솔 UTF-8 설정 공유
 import dividends as dv
 import earn_sched
 
@@ -43,20 +43,8 @@ def load_hist():
 def build_history(days=430):
     """배당 관련 공시(배당결정+명부폐쇄)를 파싱해 rcept_no별 캐시로 누적. 신규분만 원문 요청"""
     hist = load_hist()
-    today = datetime.date.today()
     watch = dv.div_universe()   # 감시종목 + 지수배당포인트용 ETF PDF 구성종목
-    # DART list.json은 corp_code 없이 최대 3개월 조회 제한 → 85일 단위로 나눠 요청
-    # (90일이면 1/31~5/1 처럼 2월을 낀 구간이 3개월을 넘어 0건으로 거부됨)
-    rows, chunk_end = [], today
-    remain = days
-    while remain > 0:
-        step = min(remain, 85)
-        chunk_bgn = chunk_end - datetime.timedelta(days=step)
-        for cls in ("Y", "K"):
-            rows += fetch_range(chunk_bgn.strftime("%Y%m%d"), chunk_end.strftime("%Y%m%d"), cls, "I")
-        chunk_end = chunk_bgn - datetime.timedelta(days=1)
-        remain -= step + 1
-    rows = [r for r in rows if r.get("stock_code") in watch and "자회사" not in (r.get("report_nm") or "")]
+    rows = [r for r in fetch_back(days, "I") if r.get("stock_code") in watch and "자회사" not in (r.get("report_nm") or "")]
     todo = []
     for r in rows:
         nm = r["report_nm"]

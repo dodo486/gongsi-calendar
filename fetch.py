@@ -133,6 +133,19 @@ def fetch_range(bgn, end, corp_cls, pblntf_ty=None):
         time.sleep(0.15)  # API 예의상 살짝 쉼
     return out
 
+def fetch_back(days, pblntf_ty=None):
+    """오늘부터 과거 days일, 코스피·코스닥 공시. DART list.json은 corp_code 없이 최대 3개월 조회 제한 → 85일 단위로 나눠 요청
+    (90일이면 1/31~5/1 처럼 2월을 낀 구간이 3개월을 넘어 0건으로 거부됨)"""
+    rows, chunk_end, remain = [], datetime.date.today(), days
+    while remain > 0:
+        step = min(remain, 85)
+        chunk_bgn = chunk_end - datetime.timedelta(days=step)
+        for cls in ("Y", "K"):
+            rows += fetch_range(chunk_bgn.strftime("%Y%m%d"), chunk_end.strftime("%Y%m%d"), cls, pblntf_ty)
+        chunk_end = chunk_bgn - datetime.timedelta(days=1)
+        remain -= step + 1
+    return rows
+
 def doc_text(rcept_no):
     url = f"https://opendart.fss.or.kr/api/document.xml?crtfc_key={KEY}&rcept_no={rcept_no}"
     with urllib.request.urlopen(url, timeout=30) as r:

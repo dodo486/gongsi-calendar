@@ -5,19 +5,18 @@
 - 제3자배정 등 신주배정기준일이 없는 건은 자동 제외(권리락 없음)
 - data/capital.json 저장 → 배당 캘린더에 무증(보라/연보라)·유증(파랑/하늘) 표시
 사용:
-  python capital.py            # 최근 88일 유·무상증자 → data/capital.json
+  python capital.py            # 최근 1년 유·무상증자 → data/capital.json
   python capital.py 30         # 최근 30일
 """
 import sys, os, re, json, math, datetime, threading
-from fetch import fetch_range, load_watchlist, DATA_DIR, TLS_MODE, save_json, parsed
+from fetch import fetch_back, load_watchlist, DATA_DIR, TLS_MODE, save_json, parsed
 from dividends import t_minus, norm_date
 import quotes
 
 _LOCK = threading.RLock()
 CAP_PATH = os.path.join(DATA_DIR, "capital.json")
 CACHE_PATH = os.path.join(DATA_DIR, "cap_cache.json")   # rcept_no -> 파싱결과(원문 재다운로드 방지)
-MAX_DAYS = 92   # DART: corp_code 없이 조회 가능한 최대 기간(3개월). 증자 공시는 기준일보다
-                # 앞서 나오므로, 과거 92일 공시를 훑으면 향후 3개월 내 신주배정기준일이 모두 포착됨
+SCAN_DAYS = 365   # 공시일 기준 과거 1년 — 지난 증자도 공시가 오래됐다는 이유로 캘린더에서 빠지지 않게
 
 RE_REC = re.compile(r"신주배정기준일\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
 # 무상: "1주당 신주배정 주식수 보통주식 (주) 0.5" / 유상: "1주당 신주배정주식수 (주) 0.24" 둘 다 대응
@@ -99,17 +98,12 @@ def _save(events):
         save_json(CAP_PATH, payload)
     return payload
 
-def main(days=MAX_DAYS):
-    days = min(days, MAX_DAYS)
+def main(days=SCAN_DAYS):
     today = datetime.date.today()
-    bgn = (today - datetime.timedelta(days=days)).strftime("%Y%m%d")
-    end = today.strftime("%Y%m%d")
     watch = load_watchlist() or {}
     cache = load_cache()
-    rows = []
-    for cls in ("Y", "K"):
-        rows += fetch_range(bgn, end, cls, "B")   # 증자결정 = 주요사항보고(B)
-    rows = [r for r in rows if r.get("stock_code") in watch and _is_cap(r.get("report_nm", ""))]
+    rows = [r for r in fetch_back(days, "B")   # 증자결정 = 주요사항보고(B)
+            if r.get("stock_code") in watch and _is_cap(r.get("report_nm", ""))]
     events = build_events(rows, cache)
     today_s = today.isoformat()
     bonus_done = [(e["stock"], e["ex_date"], float(e["ratio"] or 0))
@@ -144,7 +138,7 @@ def main(days=MAX_DAYS):
     with _LOCK:
         save_json(CACHE_PATH, cache)   # 신규 파싱분 캐시 보존(다음 회차 재다운로드 방지)
     _save(events)
-    print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 감시대상 {len(watch)} | 증자결정 {len(rows)}건 → {len(events)}건(기준일有) 저장")
+    print(f"TLS={TLS_MODE} | 과거 {days}일 | 감시대상 {len(watch)} | 증자결정 {len(rows)}건 → {len(events)}건(기준일有) 저장")
     for e in events:
         extra = ""
         if e.get("listing_date"): extra += f" · 신주상장 {e['listing_date']}"
@@ -190,5 +184,5 @@ def upsert(cap_events):
         return changed
 
 if __name__ == "__main__":
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else MAX_DAYS
+    n = int(sys.argv[1]) if len(sys.argv) > 1 else SCAN_DAYS
     main(n)
