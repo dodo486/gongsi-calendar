@@ -27,7 +27,7 @@
 | `get_watchlist.py` | 코스피200(네이버) + 코스닥150(스냅샷) → `watchlist.json` |
 | `monitor.py` | 실시간 폴러(1분), 새 공시 감지·알림·캘린더 반영 |
 | `serve.py` / `index.html` | 웹 캘린더 (FullCalendar, http://localhost:8777) |
-| `launch.py` | 원클릭 런처(폴러+웹, 중복실행 방지) |
+| `launch.py` | 원클릭 런처(폴러+웹, 중복실행 방지) — 기동·창 열기는 여기만 |
 
 ## 설치 & 실행
 
@@ -40,8 +40,6 @@
 python launch.py         # 폴러 + 웹 한 번에
 python fetch.py 90       # 과거 90일 공시 백필
 python dividends.py 90   # 배당 데이터 추출
-python monitor.py        # 실시간 폴러만
-python serve.py          # 웹 캘린더만 (localhost:8777)
 ```
 
 ## 환경 참고
