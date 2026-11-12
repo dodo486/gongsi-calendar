@@ -627,12 +627,23 @@ function currentFiltered(){
     return true;
   });
 }
+const GROUP_MAX = 4;   // 같은 날 같은 종류가 이보다 많으면 캘린더엔 요약 한 줄, 목록은 상세 패널 표로
+const GROUP_LABEL = {eb:"💡[예상 배당매수일]", ex:"💡[예상 배당락]", vb:"[배당매수일]", vx:"[배당권리락]"};
 function applyFilters(){
   const list = currentFiltered();
   calendar.removeAllEvents();
-  const base = MODE==="disc" ? discEvents(list).concat(haltEvents())
-                             : divEvents(list).concat(estEvents()).concat(capEvents()).concat(haltEvents());
-  calendar.addEventSource(base);   // 만기일은 날짜 별표로 표시(이벤트 알약 아님)
+  if(MODE==="disc"){ calendar.addEventSource(discEvents(list).concat(haltEvents())); return; }
+  const groups = {};
+  divEvents(list).concat(estEvents()).concat(capEvents()).concat(haltEvents())
+    .forEach(ev=> (groups[ev.start+"|"+ev.id.replace(/\d+$/,"")] ||= []).push(ev));
+  calendar.addEventSource(Object.values(groups).flatMap(g=>{
+    if(g.length <= GROUP_MAX) return g;
+    const items = g.map(ev=> ev.extendedProps), kind = g[0].id.replace(/\d+$/,"");
+    const label = GROUP_LABEL[kind] || g[0].title.split(" ")[0];
+    const n = m => items.filter(x=> x.market===m).length;
+    return [{id:"g"+kind+g[0].start, title:`${label} ${g.length}건 · 코스피 ${n("KOSPI")} / 코스닥 ${n("KOSDAQ")}`, start:g[0].start,
+             allDay:true, classNames:g[0].classNames, extendedProps:{kind:"group", label, date:g[0].start, items}}];
+  }));
 }
 
 function whyBlock(e){
@@ -703,13 +714,35 @@ function showErnDetail(e){   // 예상 실적발표 상세 → 실적 그리드 
   }
 }
 
+let _group = null;   // 마지막으로 연 묶음 — 종목 상세에서 목록으로 돌아가기
+const backLinks = e => `<span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>${_group && _group.items.includes(e) ? ` · <span class="back" onclick="showDetail(_group)">‹ ${esc(_group.label)} 목록</span>` : ""}`;
 function showDetail(e){
   const box = document.getElementById("detail");
+  if(e.kind==="group"){
+    divListMode = false; box.className = ""; _group = e;
+    const dp = {};
+    (DP?.indices||[]).forEach(c=> c.days.forEach(d=> d.items.forEach(x=> dp[x.stock+"|"+d.ex_date] = x)));
+    const rows = e.items.map(x=>({x, p:dp[x.stock+"|"+x.ex_date]}))
+      .sort((a,b)=> (b.x.verdict==="선진화") - (a.x.verdict==="선진화") || (+b.x.per_share||0) - (+a.x.per_share||0));
+    box.innerHTML = `<div class="detail">
+        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        <div class="corp">${esc(e.label)} <span style="font-size:13px;color:var(--muted)">${esc(e.date)} · ${e.items.length}건</span></div>
+        <div class="row" style="color:var(--muted)">선진화(기준일이 바뀔 수 있음) 먼저, 그다음 금액순 · 수익률·지수pt 는 근월물 만기까지 배당락만 · 행 클릭→상세</div>
+        <table class="dortab" id="grpTab"><thead><tr><th>종목</th><th style="text-align:right">금액</th><th>판별</th>
+          <th style="text-align:right">수익률</th><th style="text-align:right">지수pt</th></tr></thead><tbody>${
+        rows.map(({x,p})=>`<tr class="dor" data-i="${e.items.indexOf(x)}">
+          <td class="nm">${esc(x.corp)} <span class="mkt ${esc(x.market)}">${esc(x.market)}</span></td>
+          <td class="px">${x.per_share?won(x.per_share)+"원":"-"}</td>
+          <td${x.verdict==="선진화"?' style="color:var(--est);font-weight:700"':""}>${esc((x.verdict||x.div_type||x.type||"").replace("(깜깜이)",""))}</td>
+          <td class="px">${p?p.yield.toFixed(2)+"%":"-"}</td><td class="px">${p?p.points.toFixed(3):"-"}</td></tr>`).join("")}</tbody></table></div>`;
+    box.querySelectorAll("#grpTab tr.dor").forEach(el=> el.addEventListener("click",()=> showDetail(e.items[+el.dataset.i])));
+    return;
+  }
   if(e.kind==="est"){
     divListMode = false; box.className="";
     box.innerHTML = `
       <div class="detail">
-        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        ${backLinks(e)}
         <div class="corp">💡 ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
         <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--est)">예상 ${esc(e.div_type||"배당")}</b> (리서치 추정)</div>
         <div class="big" style="color:var(--est)">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주 (예상)</span></div>
@@ -743,7 +776,7 @@ function showDetail(e){
     const col = bonus ? "#a855f7" : "#3b82f6";
     box.innerHTML = `
       <div class="detail">
-        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        ${backLinks(e)}
         <div class="corp">${bonus?"🆓":"💰"} ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
         <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:${col}">${esc(e.type)}</b>${e.ratio?` · 배정비율 ${esc(e.ratio)}`:""}</div>
         <div class="row">🗓️ 권리부매수일(T-2) <b style="color:${col}">${esc(e.buy_date||"-")}</b> <span style="color:var(--muted)">— 이날까지 사야 신주배정 권리</span></div>
@@ -794,7 +827,7 @@ function showDetail(e){
     divListMode = false;
     box.innerHTML = `
       <div class="detail">
-        <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
+        ${backLinks(e)}
         <div class="corp">${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
         <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--div)">${esc(e.div_type||"배당")}</b></div>
         <div class="big">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주</span></div>
