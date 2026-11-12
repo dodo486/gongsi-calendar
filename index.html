@@ -88,6 +88,7 @@
   #guideView th,#guideView td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
   #guideView th{background:rgba(255,255,255,.04)}
   #guideView b.f{color:var(--text)}
+  #guideView td.todo{color:var(--text)}
   .ia-wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
   .ia-sort{display:flex;gap:6px;margin-bottom:8px;font-size:12px;color:var(--muted);align-items:center}
   .ia-sort .chip{cursor:pointer}
@@ -180,6 +181,8 @@
   /* 신주 상장(입고)일 — 무·유 공통 초록 / 유상 신주인수권증서 상장(입고)일 핑크 */
   .fc-event.cap-list{background:#10b981;border-color:#10b981;color:#022c22;font-weight:700}
   .fc-event.cap-warrant{background:#ec4899;border-color:#ec4899;color:#2a0716;font-weight:700}
+  /* 무상 매도 가능일(신주상장 T-2, 잔고 입고) — 주황 */
+  .fc-event.cap-sell{background:#f59e0b;border-color:#f59e0b;color:#2a1700;font-weight:700}
   /* 거래정지 — 정지 시작(진회색/빗금) / 거래재개 초록, 예정이면 점선 테두리 */
   .fc-event.halt-stop{background:#4b5563;border-color:#374151;color:#f3f4f6;font-weight:700}
   .fc-event.halt-resume{background:#10b981;border-color:#10b981;color:#022c22;font-weight:700}
@@ -303,48 +306,71 @@
   <div id="industryView" style="display:none"></div>
   <div id="closearbView" style="display:none"></div>
   <div id="guideView" style="display:none">
-    <h3>📘 무상증자 · 유상증자</h3>
-    <p>권리락 날 주가가 떨어진 만큼은 손해가 아니라, 다른 형태로 내 손에 들어온다.</p>
+    <h3>📘 기업 이벤트 — 지수(선물) vs 내 현물 바스켓, 날짜별로 뭘 하면 되나</h3>
+    <p>거래소 지수와 내 계좌는 같은 이벤트를 <b class="f">서로 다른 날</b> 반영한다. 그 차이 나는 기간이 지수차익(예: 코스닥150) 리스크 구간이다. 표의 <b class="f">캘린더</b> 칸은 캘린더에 실제로 뜨는 이름이고, 맨 오른쪽 <b class="f">👉 할 일</b>만 따라가면 된다. 할 일은 <b class="f">매수차익(현물 바스켓 롱 + 선물 숏)</b> 기준이고, 매도차익(현물 숏 + 선물 롱)은 방향이 반대이며 대차 상환 수량(신주·배당 반환)과 리콜까지 같이 챙긴다. 늘 보는 건 하나 — <b class="f">내 바스켓의 종목 비중이 지수 안 비중과 같은가</b>. 다르면 그 차이만큼이 헤지 안 된 노출이다.</p>
+    <p>거래소 규칙 한 줄 요약 — 무상증자·주식배당: 권리락일에 신주 수량만 지수에 더함(기준시가총액 그대로) · 주주배정 유상증자: 권리락일에 신주 수량을 더하고 기준시가총액을 신주 수 × 발행가만큼 늘림, 실권주는 신주 상장일에 뺌 · 현금배당: 조정 없음(배당락만큼 지수 하락) · 병합·분할: 변경상장일에 주가와 주식 수를 같이 바꿈(시가총액 그대로).</p>
+
+    <h3>🟣 무상증자</h3>
     <table>
-      <tr><th></th><th>무상증자</th><th>유상증자</th></tr>
-      <tr><th>떨어진 만큼 받는 것</th><td>무상신주 (공짜 주식)</td><td>신주인수권증서 = 티켓 (공짜로 받음)</td></tr>
-      <tr><th>따로 할 일</th><td>없음. 신주가 자동으로 입고됨</td><td>청약하거나 증서를 팔아야 함</td></tr>
-      <tr><th>파는 날</th><td>신주 상장(입고)일</td><td>증서: 증서 상장 기간 / 청약 신주: 신주 상장일</td></tr>
-      <tr><th>내 수익률</th><td>지금 주가 ÷ 기준가 − 1</td><td>(지금 주가 + 증서 판 돈 − 내가 산 금액) ÷ 내가 산 금액</td></tr>
+      <tr><th>캘린더</th><th>시점</th><th>지수 · 선물</th><th>내 현물 계좌</th><th>👉 할 일</th></tr>
+      <tr><td>[무상매수일]</td><td>신주배정기준일 T-2</td><td>변화 없음</td><td>평소대로</td><td class="todo">이날까지 들고 있어야 신주를 받는다. 바스켓 수량이 지수 비중과 맞는지 확인.</td></tr>
+      <tr><td>[무상권리락]</td><td>기준일 T-1 (장 시작 전 반영)</td><td>신주 수량을 지수 주식 수에 미리 더함 → 주가는 반토막(1:1)이어도 지수는 안 빠짐</td><td>주가는 기준가로 하락, 신주는 아직 없음 → 계좌 평가액이 확 줄어 보임</td><td class="todo">손실 아님(착시). 헤지 비율 계산에 아직 안 들어온 신주를 <b class="f">예정 수량</b>으로 넣는다. 시초가가 기준가와 크게 다르면 그만큼은 추적오차.</td></tr>
+      <tr><td>(표시 없음)</td><td>권리락 ~ 매도가능 전날</td><td>구주+신주 수량 기준으로 주가 등락만 반영</td><td>신주는 못 판다(동결). 구주만 매도 가능</td><td class="todo"><b class="f">조기 청산 보류.</b> 꼭 청산해야 하면 선물은 구주 판 만큼만 정리하고 신주분 선물 숏은 남긴다(안 그러면 신주가 헤지 없이 노출). 매도차익(현물 숏)이면 대차 리콜에 대비.</td></tr>
+      <tr><td>[무상매도가능]</td><td>신주 상장 T-2</td><td>변화 없음</td><td>신주 잔고가 들어와 팔 수 있다</td><td class="todo">청산 가능. <b class="f">⚠ 엠피스에는 잔고가 아직 안 잡혀 장부단가가 높다 — 이때 매도차익을 잡으면 그 손익이 빠질 수 있으니 장부단가부터 확인.</b></td></tr>
+      <tr><td>[무상신주상장·락금액 보정]</td><td>신주 상장일</td><td>조정 없음 (이미 권리락일에 반영)</td><td>신주 정식 상장, 수량 정상화</td><td class="todo"><b class="f">락금액 보정.</b> 장 초반 신주 매물로 베이시스가 출렁일 수 있어 그 시간 진입·청산은 피한다. 락 맞은 금액보다 입고 평가액이 적어도 그 차이는 선물 숏 이익으로 상쇄됐어야 정상 — 현물+선물 합산으로 확인.</td></tr>
     </table>
 
-    <h3>💰 유상증자 티켓으로 할 수 있는 것</h3>
+    <h3>🔵 유상증자 (주주배정)</h3>
     <table>
-      <tr><th>선택</th><th>하는 일</th><th>기준 주가 (파는 날)</th><th>이익</th><th>돈 내는 날</th><th>가격 위험</th></tr>
-      <tr><td>1. 티켓 사용(청약)</td><td>발행가를 내고 신주를 받음</td><td>신주 상장(입고)일 이후 파는 날의 주가</td><td>그날 주가 − 확정발행가</td><td>청약일에 발행가를 냄</td><td>청약일~상장일 2~3주 동안 주가 하락</td></tr>
-      <tr><td>2. 티켓 판매</td><td>증서를 시장에 팜</td><td>증서 상장 기간(보통 5영업일) 중 파는 날의 주가</td><td>그날 증서 가격 (≈ 그날 주가 − 발행가)</td><td>없음</td><td>판 순간 끝</td></tr>
-      <tr><td>3. 아무것도 안 함</td><td>그냥 둠</td><td>-</td><td>티켓이 휴지가 됨. 떨어진 만큼 그대로 손해</td><td>-</td><td>-</td></tr>
-    </table>
-    <p>이론상 1과 2는 결과가 같다. 1은 돈을 더 넣어 주식을 더 들고 가는 것, 2는 티켓을 현금으로 바꾸고 끝내는 것.</p>
-    <table>
-      <tr><th>본전 조건 (주식 + 티켓 같은 날 매도)</th><th>값 (예: 매수 10,000원, 발행가 7,500원, 1주당 0.2개)</th></tr>
-      <tr><td>주가</td><td><b class="f">기준가</b> = 9,583원</td></tr>
-      <tr><td>티켓(증서) 가격</td><td><b class="f">기준가 − 발행가</b> = 2,083원</td></tr>
-      <tr><td>확인</td><td>주식 9,583 + 티켓 0.2개 × 2,083 = 417 → 합계 10,000원, 본전</td></tr>
-    </table>
-    <p>실제 티켓은 보통 이론가보다 싸게 거래돼서, 주가가 기준가보다 조금 높아야 본전이다. 티켓만 팔고 주식을 들고 있으면 아직 탈출한 게 아니다.</p>
-    <table>
-      <tr><th>예: 엘앤씨바이오</th><th>일</th></tr>
-      <tr><td>9/3</td><td>권리락</td></tr>
-      <tr><td>9/23~</td><td>증서 상장 — 2번은 이때 팔고 끝 (이때는 1차 발행가만 나와 있음)</td></tr>
-      <tr><td>10/8</td><td>확정발행가 결정 (39,100원)</td></tr>
-      <tr><td>10/14~15</td><td>청약 — 1번은 이때 돈을 냄</td></tr>
-      <tr><td>11/4</td><td>신주 상장 — 1번은 이날부터 팔 수 있음</td></tr>
+      <tr><th>캘린더</th><th>시점</th><th>지수 · 선물</th><th>내 현물 계좌</th><th>👉 할 일</th></tr>
+      <tr><td>[유상매수일]</td><td>신주배정기준일 T-2</td><td>변화 없음</td><td>평소대로</td><td class="todo">청약할지 정하고 청약 대금(신주 수 × 발행가) 마련 계획을 세운다.</td></tr>
+      <tr><td>[유상권리락]</td><td>기준일 T-1 (장 시작 전 반영)</td><td>신주 수량을 지수 주식 수에 더하고 기준시가총액을 신주 수 × 발행가만큼 늘림 → 지수는 안 빠지고, 지수 안에서 이 종목 비중은 신주만큼 커짐</td><td>주가는 기준가로 하락. 손에 있는 건 구주 + 앞으로 받을 신주인수권증서뿐</td><td class="todo">지수는 이미 신주를 들고 있는 셈이라 내 바스켓은 <b class="f">청약 대금만큼 언더웨이트</b>. 청약하든, 증서 팔고 구주를 더 사든 결국 청약 대금만큼 돈이 더 들어가야 지수와 맞는다 — 그 현금을 따로 잡아둔다.</td></tr>
+      <tr><td>(상세 화면)</td><td>확정발행가 결정일</td><td>변화 없음</td><td>변화 없음</td><td class="todo">청약 대금 확정. 1차 발행가로 잡아둔 금액을 고친다.</td></tr>
+      <tr><td>[유상신주인수권]</td><td>증서 상장 기간 (보통 5영업일)</td><td>변화 없음</td><td>증서가 들어와 팔 수 있다</td><td class="todo">청약 안 할 거면 <b class="f">이 기간 안에 증서를 판다</b> (안 팔고 청약도 안 하면 휴지 → 떨어진 만큼 그대로 손해).</td></tr>
+      <tr><td>(상세 화면)</td><td>청약일 ~ 납입일</td><td>변화 없음</td><td>발행가만큼 현금이 빠져나감</td><td class="todo">청약하고 대금을 낸다. 북의 현금이 그만큼 줄어든 걸 반영.</td></tr>
+      <tr><td>(표시 없음)</td><td>청약 ~ 신주 상장 전날</td><td>구주+신주 기준으로 주가 등락 반영</td><td>돈은 냈는데 신주는 아직 없음 → 못 판다(동결)</td><td class="todo"><b class="f">조기 청산 보류.</b> 꼭 청산하면 신주분 선물 숏은 남긴다(무상과 같음).</td></tr>
+      <tr><td>[유상신주상장]</td><td>신주 상장일</td><td>실권주가 있으면 그 수량을 지수에서 뺌</td><td>청약한 신주 입고, 매도 가능</td><td class="todo">실권주 반영 후 비중으로 바스켓 수량 재확인. 장 초반 매물로 베이시스 출렁임 주의.</td></tr>
     </table>
 
-    <h3>📅 캘린더 칸에 붙는 숫자</h3>
+    <h3>🔴 현금배당</h3>
     <table>
-      <tr><th>칸</th><th>무상</th><th>유상</th></tr>
-      <tr><td>권리락</td><td>권리락 전: 예상 기준가<br>권리락 후: 본전(기준가) · 현재 주가 · 수익률</td><td>권리락 전: 예상 기준가<br>권리락 후: 본전(기준가) · 현재 주가 · 수익률(주식 + 티켓 이론가)</td></tr>
-      <tr><td>신주상장(입고)</td><td>본전(기준가) · 현재 주가 · 수익률</td><td>발행가 · 현재 주가 · 발행가 대비 % (청약한 신주를 지금 팔면)</td></tr>
-      <tr><td>신주인수권</td><td>-</td><td>본전 티켓가(기준가 − 발행가) · 티켓 이론가(지금 주가 − 발행가)</td></tr>
+      <tr><th>캘린더</th><th>시점</th><th>지수 · 선물</th><th>내 현물 계좌</th><th>👉 할 일</th></tr>
+      <tr><td>(공시)</td><td>배당 결정 공시</td><td>선물은 원래 예상 배당을 빼고 거래 중</td><td>변화 없음</td><td class="todo">공시 배당과 선물에 들어간 예상 배당을 비교 — <b class="f">그 차이가 곧 차익 손익</b>.</td></tr>
+      <tr><td>[배당매수일]</td><td>배당기준일 T-2</td><td>변화 없음</td><td>이날까지 들고 있어야 배당을 받는다</td><td class="todo">바스켓 보유 수량 확인.</td></tr>
+      <tr><td>[배당권리락]</td><td>기준일 T-1</td><td><b class="f">조정 없음</b> → 배당락만큼 지수도 같이 빠짐 (선물은 이미 반영돼 있었음)</td><td>주가가 배당만큼 하락, 받을 배당금(미수) 확정</td><td class="todo">계좌 하락은 손실 아님. 예상 배당과 실제 배당 차이만 손익으로 본다.</td></tr>
+      <tr><td>(표시 없음)</td><td>배당락 ~ 지급일 전날</td><td>주가 등락만 반영</td><td>배당금은 아직 안 들어옴</td><td class="todo">미수 배당금을 장부에 잡아둔다 (그만큼 현물 노출이 빈 상태 — 작은 추적오차).</td></tr>
+      <tr><td>(표시 없음)</td><td>배당금 지급일</td><td>조정 없음</td><td>세후 배당금 입금</td><td class="todo">입금액(세후)이 장부의 미수 배당과 맞는지 확인.</td></tr>
     </table>
-    <p>숫자는 모두 "지금 주가로 판다면" 기준이며 10분마다 갱신된다.</p>
+    <p>주식배당은 무상증자와 같다 — 배당락일에 신주 수량만 지수에 더하고, 계좌 입고는 신주 상장일.</p>
+
+    <h3>⚪ 주식병합 · 액면분할</h3>
+    <table>
+      <tr><th>캘린더</th><th>시점</th><th>지수 · 선물</th><th>내 현물 계좌</th><th>👉 할 일</th></tr>
+      <tr><td>(공시)</td><td>병합·분할 결정 공시</td><td>변화 없음</td><td>변화 없음</td><td class="todo">정지 일정 확인. 정지 전에 정리할 포지션이면 미리 정리.</td></tr>
+      <tr><td>[🚫 정지]</td><td>매매정지 시작</td><td>정지 직전 종가로 고정</td><td>전량 매매 불가(완전 동결)</td><td class="todo">이 종목 비중만큼은 청산 불가 — 조기 청산 보류.</td></tr>
+      <tr><td>(표시 없음)</td><td>정지 기간 (약 2~3주)</td><td>지수는 고정, 선물은 재개 후 주가를 미리 예측해 움직임</td><td>동결</td><td class="todo">베이시스가 이 종목 때문에 왜곡될 수 있다 — 그 왜곡을 보고 섣불리 진입·청산하지 않는다.</td></tr>
+      <tr><td>[✅ 재개]</td><td>변경상장일</td><td>장 시작 전 주가와 주식 수를 비율대로 같이 바꿈 (시가총액 그대로)</td><td>바뀐 수량·단가로 잔고 전환, 바로 매매 가능</td><td class="todo">잔고 수량·단가가 비율대로 바뀌었는지 확인. 시초가 갭 주의.</td></tr>
+    </table>
+
+    <h3>⚪ 인적분할</h3>
+    <table>
+      <tr><th>캘린더</th><th>시점</th><th>지수 · 선물</th><th>내 현물 계좌</th><th>👉 할 일</th></tr>
+      <tr><td>(공시)</td><td>분할 결정 · 신설법인 특례편입 여부 공시</td><td>변화 없음</td><td>변화 없음</td><td class="todo">신설법인이 지수에 남는지 빠지는지 확인.</td></tr>
+      <tr><td>[🚫 정지]</td><td>매매정지 시작</td><td>정지 직전 종가로 고정</td><td>전량 매매 불가</td><td class="todo">이 종목 비중만큼 리밸런싱·청산 불가.</td></tr>
+      <tr><td>(표시 없음)</td><td>정지 기간 (약 1개월)</td><td>고정</td><td>동결</td><td class="todo">장이 크게 움직여도 이 종목은 대응 불가 — 긴 동결을 감안해 포지션 규모를 잡는다.</td></tr>
+      <tr><td>[✅ 재개]</td><td>변경상장(존속) · 재상장(신설)일</td><td>존속·신설 기준가와 주식 수로 반영. 편출이면 신설법인이 지수에서 빠짐</td><td>존속 + 신설 주식이 분할 비율대로 각각 입고</td><td class="todo">신설법인이 편출이면 <b class="f">재상장 직후 신설법인을 팔고 지수 안 종목으로 교체 매수</b>해야 추적오차가 안 생긴다.</td></tr>
+    </table>
+
+    <h3>⚠ 동결 기간에 노출되는 것 (공통)</h3>
+    <p>만기(또는 신주 상장일 이후)까지 들고 가면 이론상 손익은 중립. 노출이 생기는 건 중도 청산이 필요하거나, 매도차익(현물 공매도)이거나, 증거금이 빠듯할 때다.</p>
+    <table>
+      <tr><th>리스크</th><th>내용</th></tr>
+      <tr><td>1. 조기 청산 기회비용</td><td>베이시스가 유리해져도 못 파는 물량 때문에 묶임</td></tr>
+      <tr><td>2. 강제 청산 시 네이키드 롱</td><td>선물은 다 정리하고 팔 수 있는 것만 팔면, 못 판 물량이 헤지 없이 노출</td></tr>
+      <tr><td>3. 매도차익 대차 리콜 · 스퀴즈</td><td>유통 물량이 마른 상태에서 리콜이 오면 비싸게 숏커버</td></tr>
+      <tr><td>4. 증거금 비효율</td><td>원장·PB가 미입고 신주를 담보로 100% 인정하지 않아 마진콜 압박</td></tr>
+    </table>
+    <p>현물+선물 합산으로도 구멍이 나면: 바스켓 비중 초과 · 중간에 선물만 먼저 청산 · 단주/청약 대금 정산 누락을 점검.</p>
   </div>
   <div id="limitsView" style="display:none"></div>
   <div id="earnView" style="display:none">
@@ -368,6 +394,7 @@
           <span class="lg"><i style="background:#dc2626"></i><i style="background:#fca5a5"></i> 배당</span>
           <span class="lg"><i style="background:#a855f7"></i><i style="background:#c4b5fd"></i> 무상</span>
           <span class="lg"><i style="background:#3b82f6"></i><i style="background:#7dd3fc"></i> 유상</span>
+          <span class="lg"><i style="background:#f59e0b"></i> 무상 매도가능(잔고 입고)</span>
           <span class="lg"><i style="background:#10b981"></i> 신주상장(입고)</span>
           <span class="lg"><i style="background:#ec4899"></i> 신주인수권(유상)</span>
           <span class="cal-legend-note">· 진한색=권리락(T-1), 연한색=매수일(T-2)</span>
@@ -494,7 +521,7 @@ function renderDivToday(){
   // 중간: 진행 중인 유·무상증자 (남은 일정이 있는 건) — 다음 일정순, 행 클릭→상세
   const ti = todayISO();
   const capNow = CAP.filter(e=> filters[e.market]).map(e=>({e,
-      next: [["매수일",e.buy_date],["권리락",e.ex_date],["증서상장",e.rights_date],["신주상장",e.listing_date]]
+      next: [["매수일",e.buy_date],["권리락",e.ex_date],["증서상장",e.rights_date],["매도가능",e.sell_date],["신주상장",e.listing_date]]
               .filter(([,d])=> d && d>=ti).sort((a,b)=>a[1].localeCompare(b[1]))[0]}))
     .filter(x=> x.next).sort((a,b)=> a.next[1].localeCompare(b.next[1]));
   h += `<div class="divlist" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">
@@ -584,9 +611,13 @@ function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준
       if(dm.ex && (e.ex_date||e.record_date))
         out.push({id:"cx"+i, title:`[${pre}권리락] ${e.corp}${even}`, start:e.ex_date||e.record_date, allDay:true,
                   classNames:[bonus?"cap-bonus-ex":"cap-rights-ex"], extendedProps:props});
+      // 무상 매도 가능일(신주상장 T-2) — 잔고가 들어와 팔 수 있는 날, 엠피스 장부단가 주의
+      if(e.sell_date)
+        out.push({id:"cs"+i, title:`[무상매도가능] ${e.corp} ⚠엠피스 장부단가${even}`, start:e.sell_date, allDay:true,
+                  classNames:["cap-sell"], extendedProps:props});
       // 신주 상장(입고)일 — 무·유 공통, 항상 표시(실제 신주가 계좌에 들어오는 날)
       if(e.listing_date)
-        out.push({id:"cl"+i, title:`[${pre}신주상장] ${e.corp}${bonus?even:(e.issue_ret!=null?` 발행가 ${won(e.issue_adj)}·현재 ${won(e.price)} ${pctTxt(e.issue_ret)}`:"")}`, start:e.listing_date, allDay:true,
+        out.push({id:"cl"+i, title:`[${pre}신주상장${bonus?"·락금액 보정":""}] ${e.corp}${bonus?even:(e.issue_ret!=null?` 발행가 ${won(e.issue_adj)}·현재 ${won(e.price)} ${pctTxt(e.issue_ret)}`:"")}`, start:e.listing_date, allDay:true,
                   classNames:["cap-list"], extendedProps:props});
       // 신주인수권증서 상장(입고)일 — 유상만(서버에서 유상만 채움)
       if(e.rights_date)
@@ -789,7 +820,27 @@ function showDetail(e){
           : e.base_price?`<div class="row">📈 예상 권리락 기준가(이론) <b>${won(e.base_price)}원</b> <span style="color:var(--muted)">— 현재가 ${won(e.price)}원을 권리부 종가로 본 값</span></div>`:""}
         ${e.rights_theo!=null?`<div class="row">🎟️ 발행가 ${won(e.issue_adj)}원 → 증서 이론가 <b style="color:#ec4899">${won(e.rights_theo)}원</b>${e.even_rights!=null?` (본전 ${won(e.even_rights)}원)`:""} · 1주당 ${esc(e.ratio)}개 · 청약 신주 <b style="color:${e.issue_ret>0?"#ef4444":e.issue_ret<0?"#3b82f6":"var(--text)"}">발행가 대비 ${pctTxt(e.issue_ret)}</b></div>`:""}
         ${e.rights_date?`<div class="row">🎟️ 신주인수권증서 상장(입고) <b style="color:#ec4899">${esc(e.rights_date)}</b> <span style="color:var(--muted)">— 이날부터 신주인수권 거래·입고</span></div>`:""}
-        ${e.listing_date?`<div class="row">📦 신주 상장(입고) <b style="color:#10b981">${esc(e.listing_date)}</b> <span style="color:var(--muted)">— 실제 신주가 계좌에 들어와 거래 시작</span></div>`:""}
+        ${e.sell_date?`<div class="row">🟧 매도 가능(잔고 입고) <b style="color:#f59e0b">${esc(e.sell_date)}</b> <span style="color:var(--muted)">— 신주상장 2영업일 전(T-2)부터 신주 잔고가 들어와 팔 수 있음</span></div>`:""}
+        ${e.listing_date?`<div class="row">📦 신주 상장(입고) <b style="color:#10b981">${esc(e.listing_date)}</b> <span style="color:var(--muted)">— ${bonus?"신주가 상장되는 날":"실제 신주가 계좌에 들어와 거래 시작"}</span></div>`:""}
+        ${bonus?`<div class="why"><div class="wh">✅ 할 일</div>
+          <div class="row">1. <b>매도 가능일(${esc(e.sell_date||"-")})</b> — 신주 잔고가 들어와 팔 수 있습니다.
+            <b style="color:#f59e0b">⚠ 엠피스에는 신주 잔고가 아직 반영되지 않아 장부단가가 높게 잡혀 있습니다. 이때 매도차익을 잡으면 그 손익이 빠질(잃어버릴) 수 있으니 확인하세요.</b></div>
+          <div class="row">2. <b>신주 상장일(${esc(e.listing_date||"-")})</b> — 락금액을 보정합니다.</div>
+          <div class="row">3. <b>지수차익 관점</b> — 권리락으로 주가가 빠졌어도 지수차익에서 그만큼 수익을 봤습니다. 락 맞은 금액이 조금 들어왔다고 손실로 생각하지 마세요.</div>
+          ${(()=>{   // 1주 보유 기준: 락 금액 vs 신주로 돌아온 금액, 그 차이는 지수선물 매도가 반대로 메움
+            const r = Number(e.ratio), base = e.base_price, p = e.sell_price ?? e.price;
+            if(!r || !base || !p || e.ret==null) return "";
+            const lock = Math.round(base*r), back = Math.round(p*r), gap = back - lock;
+            const est = e.sell_price==null ? " (매도 가능일 전 — 현재가로 계산)" : "";
+            const sg = n => (n>0?"+":"")+won(n);
+            return `<table class="dortab" style="margin-top:6px"><thead><tr><th colspan="2">1주 보유 기준 (신주 ${esc(e.ratio)}주)${est}</th></tr></thead><tbody>
+              <tr><td>락 맞은 금액 (기준가 ${won(base)} × ${esc(e.ratio)})</td><td class="px">−${won(lock)}</td></tr>
+              <tr><td>신주로 돌아온 금액 (${e.sell_price==null?"현재가":"매도 가능일 종가"} ${won(p)} × ${esc(e.ratio)})</td><td class="px">+${won(back)}</td></tr>
+              <tr><td>현물만 보면 (그 사이 주가 변동분)</td><td class="px" style="color:${gap>0?"#ef4444":gap<0?"#3b82f6":"inherit"}">${sg(gap)}</td></tr>
+              <tr><td>지수선물 매도 (같은 변동을 반대로)</td><td class="px" style="color:${-gap>0?"#ef4444":-gap<0?"#3b82f6":"inherit"}">${sg(-gap)}</td></tr>
+              <tr><td><b>지수차익 손익 (현물 + 선물)</b></td><td class="px"><b>0</b></td></tr></tbody></table>`;
+          })()}
+        </div>`:""}
         <div class="why"><div class="wh">📍 날짜 안내</div>
           <div class="row">📌 <b>신주배정기준일(${esc(e.record_date)})</b> — 이날 주주명부에 있어야 ${bonus?"무상":"유상"}신주를 배정받습니다.</div>
           <div class="row">🗓️ <b>권리부매수일(${esc(e.buy_date||"-")})</b> — 기준일 2영업일 전(T-2). T+2 결제라 이날까지 매수해야 권리를 받습니다.</div>

@@ -68,6 +68,8 @@ def load_cache():
 def _finalize(e):
     e["buy_date"] = t_minus(e["record_date"], 2)   # 권리부매수일(T-2) — 이날까지 매수해야 신주배정
     e["ex_date"] = t_minus(e["record_date"], 1)    # 권리락일(T-1)
+    if e["type"] == "무상증자":   # 신주상장일 T-2 부터 신주 잔고가 들어와 매도 가능
+        e["sell_date"] = t_minus(e.get("listing_date", ""), 2)
     return e
 
 def build_events(rows, cache):
@@ -132,6 +134,9 @@ def main(days=SCAN_DAYS):
                 e["base_price"] = base
                 if e["type"] == "무상증자":
                     e["ret"] = round((price / base - 1) * 100, 2)
+                    # 신주 잔고가 돌아온 날(매도 가능일) 종가 — 락 금액 대비 돌아온 금액 비교용
+                    if e["sell_date"] and e["sell_date"] <= today_s:
+                        e["sell_price"] = next((d["close"] for d in daily if d["date"] == e["sell_date"].replace("-", "")), None)
                 elif issue:   # 보유 수익률 = (주가 + r × 증서 이론가) ÷ 권리부 매수가 − 1
                     e["even_rights"] = round(base - issue)   # 본전 증서가 = 기준가 − 발행가
                     e["ret"] = round(((price + r * e["rights_theo"]) / (base * (1 + r) - issue * r) - 1) * 100, 2)
