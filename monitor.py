@@ -19,6 +19,7 @@ import kind_limits
 import earnings
 import earn_sched
 import krx_actions
+import closearb
 import capital
 import industry
 
@@ -441,6 +442,8 @@ def main():
     print(f"  [거래정지] 전용 루프 시작 ({HALT_POLL_SECONDS}초 주기)")
     threading.Thread(target=industry_loop, daemon=True).start()
     print(f"  [인더스트리] 전용 루프 시작 ({INDUSTRY_POLL_SECONDS}초 주기)")
+    threading.Thread(target=closearb.loop, daemon=True).start()
+    print("  [종가 차익] 전용 루프 시작 (거래일 08:00~20:00)")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)

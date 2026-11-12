@@ -50,6 +50,57 @@ def stock_rate(code):
         return {}
 
 
+def quote(codes):
+    """{code: {price, base_price, limit_up, limit_down, vi, market_warn, halted, …}} / 실패 시 {}. KIS."""
+    if not (AVAILABLE and _REALTIME_OK):
+        return {}
+    try:
+        return md.quote(codes)
+    except Exception:
+        return {}
+
+
+def orderbook(codes, venue="KRX"):
+    """{code: {price, ask, bid, total_ask_qty, total_bid_qty, expected_price, …}} / 실패 시 {}.
+    venue KRX/NXT. 예상체결은 동시호가 중에만 값이 있다. KIS."""
+    if not (AVAILABLE and _REALTIME_OK):
+        return {}
+    try:
+        return md.orderbook(codes, venue)
+    except Exception:
+        return {}
+
+
+def futures_quote(codes):
+    """주식선물 {code: {price, prev_close, theo, disparity, basis, …}} / 실패 시 {}. KIS."""
+    if not (AVAILABLE and _REALTIME_OK):
+        return {}
+    try:
+        return md.futures_quote(codes)
+    except Exception:
+        return {}
+
+
+def minute_bars_since(codes, since, futures=False):
+    """오늘 since(HHMM)부터 1분봉 {code: [{dt(UTC), close, vol, …}]} / 실패 시 {}. futures=True 면 주식선물 코드. KIS."""
+    if not (AVAILABLE and _REALTIME_OK):
+        return {}
+    try:
+        return (md.futures_minute_bars_since if futures else md.minute_bars_since)(codes, since)
+    except Exception:
+        return {}
+
+
+def stock_futures():
+    """상장 주식선물 [{code, underlying, month, multiplier, …}] / 실패 시 []. KIS 마스터 파일."""
+    if not AVAILABLE:
+        return []
+    try:
+        return md.stock_futures()
+    except Exception:
+        return []
+
+
 def index_rate(code):
     """지수 {price, rate(부호%), sign}. code: KPI200/KQI150. KIS(키 필요)."""
     if not (AVAILABLE and _REALTIME_OK):

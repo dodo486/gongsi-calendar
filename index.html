@@ -55,6 +55,32 @@
   .btn{display:inline-block;margin-top:14px;background:var(--accent);color:#04240f;font-weight:700;padding:10px 14px;border-radius:8px;text-decoration:none;font-size:14px}
   .empty{color:var(--muted);font-size:13px}
   #industryView{padding:14px 18px}
+  #closearbView{padding:14px 18px;overflow-x:auto}
+  .ca-tab{border-collapse:collapse;font-size:12px;width:100%}
+  .ca-tab th{color:var(--muted);font-size:11px;font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
+  .ca-tab th.grp{text-align:center;border-bottom:1px solid var(--line);color:var(--text)}
+  .ca-tab td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+  .ca-tab td.nm,.ca-tab th.nm{text-align:left}
+  .ca-tab td.nm{font-weight:600;cursor:pointer}
+  .ca-tab td.st{color:#fcd34d;text-align:left}
+  .ca-tab td.sep,.ca-tab th.sep{border-left:1px solid var(--line)}
+  .ca-tab tr.hot td{background:rgba(250,204,21,.08)}
+  .ca-tab td.dim{color:var(--muted)}
+  .ca-tab tr.calm td{opacity:.45}
+  .ca-hot-title{font-size:13px;font-weight:600;margin-bottom:8px}
+  .ca-cards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+  .ca-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:244px;cursor:pointer;font-size:12px}
+  .ca-card-top{display:flex;gap:6px;align-items:baseline}
+  .ca-card-top .dim{margin-left:auto;color:var(--muted)}
+  .ca-card-top .st,.ca-card-act .st{color:#fcd34d}
+  .ca-card-dev{font-size:22px;font-weight:700;margin:4px 0}
+  .ca-card-dev span{font-size:12px;font-weight:400;color:var(--muted)}
+  .ca-card-act{margin-bottom:4px}
+  .ca-card .dim{color:var(--muted)}
+  .ca-basket{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:364px;font-size:12px}
+  .ca-basket .dim{color:var(--muted)}
+  .ca-basket .ca-card-top .dim{margin-left:auto}
+  .ca-sort{margin-bottom:8px;font-size:12px;color:var(--muted)}
   #guideView{padding:14px 18px;max-width:1100px}
   #guideView h3{margin:22px 0 8px;font-size:16px}
   #guideView p{font-size:13px;color:var(--muted);margin:6px 0}
@@ -263,6 +289,7 @@
     <span class="tab" data-mode="disc">공시</span>
     <span class="tab on" data-mode="board">🚨 상하한가 · 💰 배당</span>
     <span class="tab" data-mode="industry">🏭 인더스트리 액션</span>
+    <span class="tab" data-mode="closearb">⚖️ 종가 차익</span>
     <span class="tab" data-mode="guide">📘 설명</span>
   </div>
   <span class="meta" id="meta">불러오는 중…</span>
@@ -274,6 +301,7 @@
 </header>
 <div class="layout">
   <div id="industryView" style="display:none"></div>
+  <div id="closearbView" style="display:none"></div>
   <div id="guideView" style="display:none">
     <h3>📘 무상증자 · 유상증자</h3>
     <p>권리락 날 주가가 떨어진 만큼은 손해가 아니라, 다른 형태로 내 손에 들어온다.</p>
@@ -1233,8 +1261,96 @@ document.getElementById("industryView").addEventListener("click", e=>{
   if(r){ IA_SEL = r.dataset.g; document.querySelectorAll(".ia-row.sel").forEach(x=>x.classList.remove("sel")); r.classList.add("sel"); renderIndustryDetail(); }
 });
 
+let CA = null, CA_SORT = "z";   // data/closearb.json
+async function loadClosearb(){
+  try{ CA = await (await fetch("data/closearb.json?_="+Date.now())).json(); }catch(_){ CA = null; }
+  document.getElementById("meta").textContent = CA
+    ? `⚖️ ${CA.phase} · 갱신 ${CA.generated_at} · 오늘 기록 ${CA.marks.join("·")||"없음"}`
+    : "종가 차익 데이터 없음";
+  renderClosearb();
+}
+const CA_KEYS = {
+  z: r=> r.z!=null ? 1000+Math.abs(r.z) : r.dev_pct!=null ? Math.abs(r.dev_pct) : -1,
+  dev: r=> r.dev_pct!=null ? Math.abs(r.dev_pct) : -1,
+  chg10: r=> r.chg10_pct!=null ? r.chg10_pct : -99,
+  won: r=> r.dev_won!=null ? Math.abs(r.dev_won) : -1,
+  jump: r=> r.jump_pct!=null ? Math.abs(r.jump_pct) : -1,
+  imb: r=> r.imb_eok!=null ? Math.abs(r.imb_eok) : -1,
+};
+function renderClosearb(){
+  const box = document.getElementById("closearbView");
+  if(!CA){ box.innerHTML = `<div class="empty">종가 차익 데이터가 없습니다 — 거래일 08:00~20:00 에 폴러가 채웁니다.</div>`; return; }
+  const q = (filters.q||"").trim();
+  const rows = CA.rows.filter(r=> filters[r.market] !== false && (!q || r.name.includes(q) || r.code.includes(q)))
+    .sort((a,b)=> CA_KEYS[CA_SORT](b) - CA_KEYS[CA_SORT](a));
+  const chip = (k,t)=>`<span class="chip${CA_SORT===k?" on":""}" data-casort="${k}">${t}</span>`;
+  const p2 = r => r==null ? "-" : (r>0?"+":"")+r.toFixed(2)+"%";
+  const n0 = v => v==null ? "-" : won(Math.round(v));
+  const td = (v, txt, extra="") => `<td class="${sgn(v)} ${extra}">${txt}</td>`;
+  const END = 390;   // 09:00 기준 분, 15:20=380
+  const nowMin = Math.min(END, (+CA.generated_at.slice(11,13) - 9) * 60 + +CA.generated_at.slice(14,16));
+  const spark = (r, W=150, H=26) => {
+    if(!r.trend?.length) return "-";
+    const ys = r.trend.map(p=>p[1]).concat(r.mean_pct, r.basis_pct==null ? [] : [r.basis_pct]);
+    const lo = Math.min(...ys), hi = Math.max(...ys), Y = v => (H-2 - (v-lo)/((hi-lo)||1)*(H-4)).toFixed(1), X = m => (m/END*W).toFixed(1);
+    const now = r.basis_pct==null ? "" : `<circle cx="${X(nowMin)}" cy="${Y(r.basis_pct)}" r="2.5" class="${sgn(r.dev_pct)}" fill="currentColor"/>`;
+    return `<svg width="${W}" height="${H}" style="vertical-align:middle"><title>${p2(lo)} ~ ${p2(hi)}</title>
+      <line x1="0" x2="${W}" y1="${Y(r.mean_pct)}" y2="${Y(r.mean_pct)}" stroke="var(--muted)" stroke-dasharray="2 2"/>
+      <polyline points="${r.trend.map(p=>X(p[0])+","+Y(p[1])).join(" ")}" fill="none" stroke="var(--text)" stroke-width="1"/>${now}</svg>`;
+  };
+  const basket = (mkt, title) => {
+    const b = CA.baskets?.[mkt];
+    if(!b || !b.trend.length || filters[mkt] === false) return "";
+    const W = 340, H = 110, pts = b.trend.concat(b.now ? [[nowMin, ...b.now]] : []);
+    const ys = pts.flatMap(p=>p.slice(1)).concat(0);
+    const lo = Math.min(...ys), hi = Math.max(...ys), Y = v => (H-4 - (v-lo)/((hi-lo)||1)*(H-8)).toFixed(1), X = m => (m/END*W).toFixed(1);
+    const area = pts.map(p=>X(p[0])+","+Y(p[3])).concat(pts.slice().reverse().map(p=>X(p[0])+","+Y(p[1]))).join(" ");
+    const last = b.now ? b.now[1] : null;
+    return `<div class="ca-basket"><div class="ca-card-top"><b>${title}</b> <span class="dim">${b.n}종목</span></div>
+      <div class="ca-card-dev ${sgn(last)}">${last==null ? "-" : (last>0?"+":"")+last.toFixed(2)+"%p"} <span>지금 중앙값 · 10분 <b class="pos">▲${b.up10}</b> <b class="neg">▼${b.down10}</b></span></div>
+      <svg width="${W}" height="${H}"><polygon points="${area}" fill="var(--muted)" fill-opacity=".25"/>
+        <line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)" stroke-dasharray="3 3"/>
+        <polyline points="${pts.map(p=>X(p[0])+","+Y(p[2])).join(" ")}" fill="none" stroke="var(--text)" stroke-width="1.5"/>
+        ${b.now ? `<circle cx="${X(nowMin)}" cy="${Y(b.now[1])}" r="3" class="${sgn(last)}" fill="currentColor"/>` : ""}</svg>
+      <div class="dim">각 종목 베이시스 − 그 종목 오늘 평균 · 선 중앙값 · 띠 가운데 50% · 점선 평소</div></div>`;
+  };
+  const absz = r => r.z==null ? 0 : Math.abs(r.z);
+  const hot = rows.filter(r=> absz(r) >= 3).sort((a,b)=> absz(b) - absz(a)).slice(0, 12);
+  const cards = hot.map(r=>`<div class="ca-card" data-code="${esc(r.code)}">
+      <div class="ca-card-top"><b>${esc(r.name)}</b> <span class="st">${esc(r.status)}</span><span class="dim">z ${r.z.toFixed(1)}</span></div>
+      <div class="ca-card-dev ${sgn(r.dev_pct)}">${p2(r.dev_pct)} <span>${n0(r.dev_won)}원/계약</span></div>
+      <div class="ca-card-act">${r.dev_pct<0 ? "현물 매도 · 선물 매수" : "현물 매수 · 선물 매도"}${r.fut_vol_after1520===0 ? ` <span class="st">선물 15:20 뒤 체결 없음</span>` : ""}</div>
+      ${spark(r, 220, 44)}
+      <div class="dim">평균 ${p2(r.mean_pct)} → 지금 ${p2(r.basis_pct)}</div></div>`).join("");
+  const body = rows.map(r=>`<tr class="${absz(r)>=3 ? "hot" : absz(r)<2 ? "calm" : ""}" data-code="${esc(r.code)}">
+      <td class="nm">${esc(r.name)}</td><td class="st">${esc(r.status)}</td>
+      <td>${spark(r)}</td><td class="dim">${r.mean_pct==null ? "-" : p2(r.mean_pct)+` (${r.n}분)`}</td>${td(r.basis_pct, p2(r.basis_pct))}
+      ${td(r.chg10_pct, p2(r.chg10_pct))}${td(r.dev_pct, p2(r.dev_pct))}${td(r.z, r.z==null ? "-" : r.z.toFixed(1))}${td(r.dev_won, n0(r.dev_won))}
+      <td class="sep">${n0(r.spot)} <span class="dim">${r.spot_kind}</span></td>${td(r.jump_pct, p2(r.jump_pct))}
+      ${td(r.imb_eok, r.imb_eok==null ? "-" : won(r.imb_eok))}
+      <td class="sep">${n0(r.fut)} <span class="dim">${r.fut_month.slice(4)}월</span></td>
+      <td>${r.fut_vol_after1520==null ? "-" : won(r.fut_vol_after1520)}</td></tr>`).join("");
+  box.innerHTML = `<div class="ca-cards">${basket("KOSPI","코스피200 바스켓")}${basket("KOSDAQ","코스닥150 바스켓")}</div>
+    <div class="ca-hot-title">튄 종목 — 오늘 장중 베이시스 대비 z 3 이상 (${CA.phase})</div>
+    <div class="ca-cards">${cards || `<div class="empty">지금 튄 종목 없음</div>`}</div>
+    <div class="ca-sort">정렬 ${chip("z","z")}${chip("chg10","10분 상승순")}${chip("dev","괴리")}${chip("won","원/계약")}${chip("jump","현물 튐")}${chip("imb","잔량 불균형")}</div>
+    <table class="ca-tab"><thead>
+      <tr><th class="nm" colspan="2"></th><th class="grp" colspan="7">베이시스 (선물−현물)/현물</th><th class="grp sep" colspan="3">KRX 현물</th><th class="grp sep" colspan="2">주식선물</th></tr>
+      <tr><th class="nm">종목</th><th class="nm">상태</th><th>오늘 추이 (점선 평균 · 점 지금)</th><th>장중 평균(표본)</th><th>지금</th><th>10분 전 대비</th><th>괴리</th><th>z</th><th>원/계약</th>
+        <th class="sep">기준가</th><th>15:20 대비</th><th>잔량 불균형(억)</th>
+        <th class="sep">현재가</th><th>15:20 뒤 체결</th></tr></thead>
+    <tbody>${body || `<tr><td colspan="14" class="empty">조건에 맞는 종목이 없습니다.</td></tr>`}</tbody></table>`;
+}
+document.getElementById("closearbView").addEventListener("click", e=>{
+  const s = e.target.closest("[data-casort]");
+  if(s){ CA_SORT = s.dataset.casort; renderClosearb(); return; }
+  const r = e.target.closest("[data-code]");
+  if(r) openChart(r.dataset.code);
+});
+
 async function loadData(){
   if(MODE==="industry") return loadIndustry();
+  if(MODE==="closearb") return loadClosearb();
   if(MODE==="guide") return;
   if(MODE==="board"){
     const d = await (await fetch("data/dividends.json?_="+Date.now())).json();
@@ -1269,8 +1385,9 @@ function applyModeView(){   // 현재 MODE에 맞춰 탭/컨트롤/상단밴드 
   document.getElementById("sideTitle").textContent = isBoard ? "오늘의 배당공시" : "공시 상세";
   document.getElementById("calBar").style.display = isBoard ? "flex" : "none";   // 배당 체크박스 바(캘린더 위)
   document.getElementById("limitsView").style.display = isBoard ? "block" : "none";
-  document.querySelector(".cal-row").style.display = MODE==="industry" || MODE==="guide" ? "none" : "";
+  document.querySelector(".cal-row").style.display = MODE==="industry" || MODE==="closearb" || MODE==="guide" ? "none" : "";
   document.getElementById("industryView").style.display = MODE==="industry" ? "block" : "none";
+  document.getElementById("closearbView").style.display = MODE==="closearb" ? "block" : "none";
   document.getElementById("guideView").style.display = MODE==="guide" ? "block" : "none";
   document.getElementById("earnView").style.display = isBoard ? "block" : "none";   // 중간 실적 그리드  // 상단 상하한가 밴드
   if(isBoard && earnCal) setTimeout(()=>earnCal.updateSize(), 0);   // 숨김→표시 시 캘린더 크기 재계산
@@ -1285,7 +1402,7 @@ function switchMode(mode){
     box.className="empty"; box.textContent="캘린더에서 항목을 클릭하면 여기에 내용이 표시됩니다.";
   }
   loadData().then(()=>{
-    if(MODE==="industry" || MODE==="guide") return;
+    if(MODE==="industry" || MODE==="closearb" || MODE==="guide") return;
     calendar.updateSize();   // 상단 밴드로 캘린더 높이가 바뀌므로 재계산
     if(MODE==="board"){ calendar.today(); renderDivToday(); }
     else if(ALL.length){ calendar.gotoDate(toISO(ALL[0].date)); }
@@ -1367,6 +1484,7 @@ document.getElementById("q").addEventListener("input",e=>{
   applyFilters();
   if(MODE==="board"){ renderLimits(); renderEarnCal(); }
   if(MODE==="industry") renderIndustry();
+  if(MODE==="closearb") renderClosearb();
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
@@ -1374,6 +1492,7 @@ document.querySelectorAll(".chip[data-market]").forEach(c=>{
     c.classList.toggle("on",filters[mk]); applyFilters();
     if(MODE==="board"){ renderEarnCal(); if(divListMode) renderDivToday(); }
     if(MODE==="industry") renderIndustryDetail();
+    if(MODE==="closearb") renderClosearb();
   });
 });
 
