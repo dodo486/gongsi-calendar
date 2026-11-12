@@ -32,21 +32,19 @@ def html_mtime():
             pass
     return latest
 
-def data_signature():
-    """data/*.json 의 (파일명→mtime) 최대값 — 하나라도 바뀌면 값이 커진다."""
-    latest = 0.0
+def data_mtimes():
+    """{data/*.json 파일명: mtime} — 바뀐 파일 이름을 화면에 알려 그 탭에 필요한 것만 다시 그리게 한다."""
+    out = {}
     try:
         for n in os.listdir(DATA_DIR):
             if n.endswith(".json"):
                 try:
-                    m = os.path.getmtime(os.path.join(DATA_DIR, n))
-                    if m > latest:
-                        latest = m
+                    out[n] = os.path.getmtime(os.path.join(DATA_DIR, n))
                 except OSError:
                     pass
     except OSError:
         pass
-    return latest
+    return out
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"   # SSE 스트리밍용 (keep-alive)
@@ -133,7 +131,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
         except Exception:
             return
-        last = data_signature()
+        last = data_mtimes()
         last_html = html_mtime()
         # 접속 즉시 한 번 트리거 — 최신 상태로 맞춤
         try:
@@ -164,10 +162,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                         self.wfile.write(f"event: openchart\ndata: {c}\n\n".encode("utf-8"))
                         self.wfile.flush()
                         beat = 0
-                    sig = data_signature()
-                    if sig > last:
-                        last = sig
-                        self.wfile.write(f"data: {sig}\n\n".encode("utf-8"))
+                    now = data_mtimes()
+                    changed = [n for n, m in now.items() if m > last.get(n, 0)]
+                    if changed:
+                        last = now
+                        self.wfile.write(f"data: {','.join(changed)}\n\n".encode("utf-8"))
                         self.wfile.flush()
                         beat = 0
                     else:

@@ -631,19 +631,22 @@ const GROUP_MAX = 4;   // 같은 날 같은 종류가 이보다 많으면 캘린
 const GROUP_LABEL = {eb:"💡[예상 배당매수일]", ex:"💡[예상 배당락]", vb:"[배당매수일]", vx:"[배당권리락]"};
 function applyFilters(){
   const list = currentFiltered();
-  calendar.removeAllEvents();
-  if(MODE==="disc"){ calendar.addEventSource(discEvents(list).concat(haltEvents())); return; }
   const groups = {};
-  divEvents(list).concat(estEvents()).concat(capEvents()).concat(haltEvents())
-    .forEach(ev=> (groups[ev.start+"|"+ev.id.replace(/\d+$/,"")] ||= []).push(ev));
-  calendar.addEventSource(Object.values(groups).flatMap(g=>{
+  if(MODE!=="disc")
+    divEvents(list).concat(estEvents()).concat(capEvents()).concat(haltEvents())
+      .forEach(ev=> (groups[ev.start+"|"+ev.id.replace(/\d+$/,"")] ||= []).push(ev));
+  const events = MODE==="disc" ? discEvents(list).concat(haltEvents()) : Object.values(groups).flatMap(g=>{
     if(g.length <= GROUP_MAX) return g;
     const items = g.map(ev=> ev.extendedProps), kind = g[0].id.replace(/\d+$/,"");
     const label = GROUP_LABEL[kind] || g[0].title.split(" ")[0];
     const n = m => items.filter(x=> x.market===m).length;
     return [{id:"g"+kind+g[0].start, title:`${label} ${g.length}건 · 코스피 ${n("KOSPI")} / 코스닥 ${n("KOSDAQ")}`, start:g[0].start,
              allDay:true, classNames:g[0].classNames, extendedProps:{kind:"group", label, date:g[0].start, items}}];
-  }));
+  });
+  calendar.batchRendering(()=>{
+    calendar.removeAllEvents();
+    calendar.addEventSource(events);
+  });
 }
 
 function whyBlock(e){
@@ -1232,8 +1235,10 @@ function ernEvents(){   // 예상 실적발표(예고공시+IR) — 실적 그�
 }
 function renderEarnCal(){   // 실적 캘린더 갱신 — 실제 공시(보라) + 예상 발표(청록), 검색·시장 필터 반영
   if(!earnCal) return;
-  earnCal.removeAllEvents();
-  earnCal.addEventSource(earnActEvents().concat(ernEvents()));
+  earnCal.batchRendering(()=>{
+    earnCal.removeAllEvents();
+    earnCal.addEventSource(earnActEvents().concat(ernEvents()));
+  });
 }
 
 let IA = null, IA_SORT = "value", IA_SEL = null;   // data/industry_action.json
@@ -1401,7 +1406,11 @@ async function loadData(){
       `🏛️ 시장조치 ${ACT.length} · 🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · 💰 배당 ${d.count}(💡예상 ${RES.count||0}) · ⏱ 상하한가 갱신 ${LIMGEN}`;
     indexCodes();
     applyFilters();
-    if(divListMode) renderDivToday();
+    if(divListMode){
+      const side = document.getElementById("side"), y = side.scrollTop;
+      renderDivToday();
+      side.scrollTop = y;
+    }
     return;
   }
   const d = await (await fetch("data/disclosures.json?_="+Date.now())).json();
@@ -1497,11 +1506,15 @@ function indexCodes(){   // 로드된 데이터에서 이름↔코드 맵 채우
 }
 const evCode = p => (p && (p.stock || p.code)) || NAME2CODE[p && p.corp] || "";   // 이벤트/행 → 종목코드
 let _es = null;
+const TAB_FILES = {closearb:["closearb.json"], industry:["industry_action.json"], guide:[]};
+const OTHER_TAB_FILES = Object.values(TAB_FILES).flat();
 function connectSSE(){
   try{
     if(_es) _es.close();
     _es = new EventSource("events");
-    _es.onmessage = ()=>{   // 데이터 변경 통지 → 즉시 다시 로드
+    _es.onmessage = ev=>{   // 바뀐 data 파일 이름들 → 지금 탭이 쓰는 파일이 바뀌었을 때만 다시 로드
+      const changed = ev.data.split(","), own = TAB_FILES[MODE];
+      if(ev.data !== "hello" && !changed.some(n=> own ? own.includes(n) : !OTHER_TAB_FILES.includes(n))) return;
       loadData().catch(console.error);
       if(MODE==="board") renderLimits();
     };
