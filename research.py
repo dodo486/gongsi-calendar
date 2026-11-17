@@ -52,13 +52,15 @@ def build_history(days=430):
             kind = "decision"
         elif "주주명부폐쇄" in nm and "배당" in nm:
             kind = "record"
+        elif "기타경영사항" in nm and "배당" in nm and "기준일" in nm:
+            kind = "notice"   # 결산배당 기준일 안내(자율공시) = 선진화 '예고'(5단계 ③). 배당결정 전에 "올해 비연말 기준일" 예고
         else:
             continue
         if r["rcept_no"] not in hist:
             todo.append((r, kind))
     print(f"  이력 캐시 {len(hist)}건 | 신규 파싱 {len(todo)}건")
     for i, (r, kind) in enumerate(todo):
-        parse = dv.parse_record if kind == "record" else dv.parse_decision
+        parse = dv.parse_decision if kind == "decision" else dv.parse_record   # record·notice 는 기준일 파싱
         try:
             parsed(r["rcept_no"], lambda t: {
                 "kind": kind, "stock": r["stock_code"], "corp": r["corp_name"],
@@ -228,12 +230,14 @@ def build(days=430):
     earn = {}
     for e in earn_all:
         earn.setdefault(e["stock"], []).append(e)
-    stocks, records = {}, {}
+    stocks, records, notices_pre = {}, {}, {}
     for e in hist.values():
         if e["kind"] == "decision" and e.get("record_date"):
             stocks.setdefault(e["stock"], []).append(e)
         elif e["kind"] == "record" and e.get("record_date"):
             records.setdefault(e["stock"], set()).add(_date(e["record_date"]))
+        elif e["kind"] == "notice":   # 결산배당 기준일 안내(자율공시) = 5단계 ③ 예고
+            notices_pre.setdefault(e["stock"], []).append(e)
     companies, events = {}, []
     for stock, es in stocks.items():
         es.sort(key=lambda x: x["rcept_dt"])
@@ -241,8 +245,11 @@ def build(days=430):
         verdict, ev, adv = judge(rounds)
         notices = records.get(stock, set()) - {r["record"] for r in rounds}   # 기준일만 공고, 배당결정 아직
         preds, missed = predict(rounds, notices, earn.get(stock, []), today)
+        pre = sorted(notices_pre.get(stock, []), key=lambda x: x["rcept_dt"])   # 결산배당 기준일 안내(③ 예고)
+        notice = ({"date": _date(pre[-1]["rcept_dt"]).isoformat(),            # 최신 1건만 (회사 단위 ③)
+                   "record_date": pre[-1].get("record_date") or ""} if pre else None)
         companies[stock] = {"corp": es[-1]["corp"], "verdict": verdict, "evidence": ev + missed,
-                            "pattern": pattern(quarter_owner(rounds)[1]),
+                            "notice": notice, "pattern": pattern(quarter_owner(rounds)[1]),
                             "history": [{"quarter": f"{r['fy']} Q{r['q']}", "div_type": r["type"],
                                          "announced": r["first_dec"].isoformat(), "record_date": r["record"].isoformat(),
                                          "per_share": r["dps"], "advanced": r["advanced"], "special": r["special"]}

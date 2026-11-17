@@ -697,13 +697,17 @@ function stageLadder(e){
   const c = (RES.companies||{})[e.stock];
   const confirmed = e.kind !== "est";
   const histAdv = !!(c && (c.history||[]).some(x=>x.advanced));
+  const notice = c && c.notice;            // ③ 예고 — 결산배당 기준일 안내 자율공시(실데이터)
+  const st3 = !!notice;
   const st4 = confirmed || e.stage === "확정";
   const row = (cls, cur, dot, num, name, desc)=>
     `<div class="st ${cls}${cur?' cur':''}"><span class="dot">${dot}</span><span><b>${num} ${name}</b> <span class="sub">${esc(desc)}</span></span></div>`;
   const ladder = `<div class="lad">
     ${row("none", false, "⏸", "①", "가능", "정관에 '이사회가 기준일 지정' 조항 — 미수집")}
     ${row("none", false, "⏸", "②", "의지", "사업보고서: 배당절차 개선·배당액 결정기관 — 미수집")}
-    ${row("none", false, "⏸", "③", "예고", "결산배당 기준일 안내 자율공시 — 미수집")}
+    ${row(st3?"":"none", false, st3?"✅":"○", "③", "예고",
+        st3 ? `결산배당 기준일 안내 자율공시 (${notice.date})${notice.record_date?` · 기준일 ${notice.record_date}`:" · 비연말 기준일 예고"}`
+            : "결산배당 기준일 안내 자율공시 없음")}
     ${row(st4?"":"none", !st4, st4?"✅":"⬜", "④", "확정", st4?"기준일 결정 공고 — 기준일 확정":"기준일 공고 아직 — 지금 여기(공고 뜨면 확정)")}
     ${row(histAdv?"":"none", false, histAdv?"✅":"—", "⑤", "이력", histAdv?"작년 동일 회차 선진화 (backstop)":"작년 선진화 이력 없음")}
   </div>`;
