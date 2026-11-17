@@ -203,8 +203,18 @@ def predict(rounds, notices, earn, today):
                      f"{format(int(amt), ',') + '원' if amt else '미상'}"
                      + (f" (직전 {tpl['fy']} Q{tpl['q']} {int(tpl['dps']):,}원은 특별배당 포함으로 보고 제외)"
                         if reg is not tpl else ""))
+            # 구조화된 근거 — 사이드바 5단계 패널용 (anchor=앵커종류, stage=도달단계, signals=쓰인 공시)
+            if near:                 anchor, stage = "기준일공고", "확정"
+            elif ann:                anchor, stage = "실적예고",   "예상-선진화"
+            elif tpl["advanced"]:    anchor, stage = "작년반복",   "예상-선진화"
+            else:                    anchor, stage = "분기말고정", "예상-전통"
+            signals = [{"label": f"직전 {tpl['fy']} Q{tpl['q']} 배당결정 공시", "date": tpl["first_dec"].isoformat()},
+                       {"label": f"직전 {tpl['fy']} Q{tpl['q']} 기준일",        "date": tpl["record"].isoformat()}]
+            if ann:  signals.append({"label": "실적발표 예정(선진화 앵커)", "date": ann.isoformat()})
+            if near: signals.append({"label": "기준일 결정 공고(4번)",      "date": rec.isoformat()})
             out.append({"div_type": t, "per_share": amt, "record_date": rec.isoformat(),
-                        "quarter": f"{fy} Q{q}", "advanced": tpl["advanced"], "basis": basis})
+                        "quarter": f"{fy} Q{q}", "advanced": tpl["advanced"], "basis": basis,
+                        "anchor": anchor, "stage": stage, "signals": signals})
     return out, missed
 
 def build(days=430):
@@ -242,6 +252,7 @@ def build(days=430):
                            "div_type": p["div_type"], "per_share": p["per_share"], "quarter": p["quarter"],
                            "record_date": p["record_date"], "confirm_date": dv.t_minus_2(p["record_date"]),
                            "ex_date": dv.t_minus(p["record_date"], 1), "basis": p["basis"],
+                           "anchor": p["anchor"], "stage": p["stage"], "signals": p["signals"],
                            "verdict": "선진화" if p["advanced"] else "전통(깜깜이)"})
     events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
