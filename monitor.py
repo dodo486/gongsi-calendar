@@ -25,10 +25,11 @@ import closearb
 import capital
 import industry
 import md_feed
+import dividend_check
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
-SELF_HEAL_SECONDS = 600    # 배당·실적 전체 재생성 주기 — upsert 유실분을 seen 무관하게 자동 복구
+SELF_HEAL_SECONDS = 600    # 배당·증자·실적 전체 재계산 주기 — 받기 실패로 빠진 원문 재시도(목록은 저장본이라 가벼움)
 RETENTION_DAYS = 365       # 공시 캘린더 이력 보관 기간 (오래된 이벤트 자동 정리)
 SEEN_KEEP_DAYS = 30        # 알림 중복방지 기록 보관 기간 (폴링 창은 2일이라 충분)
 DATA_PATH = os.path.join(DATA_DIR, "disclosures.json")
@@ -53,48 +54,43 @@ def save_seen(seen):
     cutoff = (datetime.date.today() - datetime.timedelta(days=SEEN_KEEP_DAYS)).strftime("%Y%m%d")
     save_json(SEEN_PATH, sorted(r for r in seen if r[:8] >= cutoff))
 
-_div_lock = threading.Lock()      # 배당 전체 재생성 중복 방지
-_pending_lock = threading.Lock()  # 대기 중 배당 upsert 큐 보호
-_pending_div = []                 # 전체 재생성 도중 도착한 배당 공시 (끝난 뒤 반영)
+_again = set()   # 갱신 중에 또 들어온 요청 — 끝난 뒤 한 번 더 돈다(요청 합침)
 
-def _run_guarded(lock, work, name, after=None):
-    """lock 이 비어 있을 때만 work() 를 데몬 스레드로 1회 실행(중복 방지).
-    끝나면 lock 해제 후 after() 호출 — refresh_* 들의 공통 뼈대."""
+def _run_guarded(lock, work, name):
+    """work() 를 데몬 스레드로 실행. 이미 도는 중이면 끝난 뒤 한 번 더 — 새 공시가 갱신 도중 와도 빠지지 않음.
+    refresh_* 들의 공통 뼈대."""
     if not lock.acquire(blocking=False):
-        return   # 이미 갱신 중
+        _again.add(name)
+        return
     def run():
-        try:
-            work()
-        except Exception as ex:
-            print(f"  [{name}] 갱신 실패: {ex}")
-        finally:
-            lock.release()
-        if after:
-            after()
+        while True:
+            _again.discard(name)
+            try:
+                work()
+            except Exception as ex:
+                print(f"  [{name}] 갱신 실패: {ex}")
+            if name not in _again:
+                break
+        lock.release()
+        if name in _again:   # 풀기 직전에 들어온 요청
+            _run_guarded(lock, work, name)
     threading.Thread(target=run, daemon=True).start()
 
+def check_dividends():
+    """배당 자가 점검 — 오류면 알림(토스트). 결과는 data/dividend_check.json"""
+    errors = dividend_check.main()
+    if errors:
+        notify({"category": "점검", "corp": "배당 데이터", "market": "",
+                "title": f"오류 {len(errors)}건 — {errors[0]}", "url": "http://127.0.0.1:8777/dividend/index.html"})
+
+_div_lock = threading.Lock()
 def refresh_dividends():
-    """배당 데이터(dividends.json) 재생성 — 무겁고 느려서 별도 스레드/중복방지"""
+    """배당 데이터(dividends.json) 재계산 — 목록은 저장본, 원문은 캐시라 새 공시분만 받음"""
     def work():
         print("  [배당] 데이터 갱신 시작..."); dividends.main(90); print("  [배당] 갱신 완료")
         divpoints.refresh()   # 지수배당포인트 재계산 (PDF·지수종가는 하루 1회만 수집)
-    _run_guarded(_div_lock, work, "배당", after=flush_pending_div)   # 재생성 뒤 대기분 반영
-
-def flush_pending_div():
-    """대기 중인 배당 upsert 처리 — 전체 재생성 중이면 미룸 (덮어쓰기로 유실되는 것 방지)"""
-    with _pending_lock:
-        if not _pending_div or _div_lock.locked():
-            return
-        batch, _pending_div[:] = list(_pending_div), []
-    try:
-        if dividends.upsert(batch):
-            print(f"  [배당] 신규 {len(batch)}건 반영")
-            try: divpoints.build()   # 확정 배당 즉시 반영 (네트워크 없음)
-            except Exception as ex: print(f"  [배당포인트] 재계산 실패: {ex}")
-            refresh_research()   # 새 배당 → 이력·선진화·예상배당 갱신 (캐시라 신규분만 파싱)
-    except Exception as ex:
-        print(f"  [배당] 증분 반영 실패({ex}) → 전체 갱신")
-        refresh_dividends()
+        check_dividends()
+    _run_guarded(_div_lock, work, "배당")
 
 _earn_lock = threading.Lock()
 def refresh_earnings(full=False):
@@ -110,8 +106,9 @@ _res_lock = threading.Lock()
 def refresh_research():
     """리서치(선진화 판별 + 예상배당) 갱신 — 이력은 rcept_no 캐시라 신규 문서만 파싱"""
     def work():
-        print("  [리서치] 선진화·예상배당 갱신 시작..."); research.build(); print("  [리서치] 갱신 완료")
+        print("  [리서치] 선진화·예상배당 갱신 시작..."); research.build(); research.verify(); print("  [리서치] 갱신 완료")
         divpoints.refresh()   # 예상배당 바뀜 → 지수배당포인트 재계산
+        check_dividends()
     _run_guarded(_res_lock, work, "리서치")
 
 _cap_lock = threading.Lock()
@@ -389,16 +386,10 @@ def poll_once(seen, alert=True):
         payload["events"] = [e for e in new_cal if e["rcept_no"] not in have] + payload["events"]
         save_payload(payload)
     if new_div:
-        with _pending_lock:
-            _pending_div.extend(new_div)
-    flush_pending_div()
+        refresh_dividends()                   # 신규 배당 → 확정 배당 재계산
+        refresh_research()                    # 이력·기준일 판정·예상배당 갱신
     if new_cap:
-        try:
-            if capital.upsert(new_cap):
-                print(f"  [증자] 신규 {len(new_cap)}건 반영")
-        except Exception as ex:
-            print(f"  [증자] 증분 반영 실패({ex}) → 전체 갱신")
-            refresh_capital()
+        refresh_capital()                     # 신규 증자 → 증자 재계산
     if new_earn:
         refresh_earnings(full=True)           # 신규 실적 → 재수집(등락률 포함)
     if new_sched:
@@ -455,14 +446,14 @@ def main():
         try:
             n = poll_once(seen)   # 상하한가는 별도 스레드(limits_loop)가 5초마다 전담
             refresh_earnings()    # 실적 등락률만 매 주기 갱신(가벼움; 신규 실적은 poll_once가 재수집 트리거)
-            # 자가치유: 주기적으로 배당·실적 전체 재생성 → upsert가 조용히 놓친 건도 자동 복구
+            # 주기적 전체 재계산 — 받기 실패로 빠진 원문을 다시 시도
             if time.time() - last_heal >= SELF_HEAL_SECONDS:
                 last_heal = time.time()
                 refresh_dividends()
                 refresh_capital()
                 refresh_earnings(full=True)
                 refresh_earn_sched()
-                print("  [자가치유] 배당·증자·실적·실적예고 전체 재생성 트리거")
+                print("  [주기 재계산] 배당·증자·실적·실적예고")
             ts = datetime.datetime.now().strftime("%H:%M:%S")
             print(f"[{ts}] 확인 완료 (공시 신규 {n} · seen {len(seen)})")
         except Exception as ex:

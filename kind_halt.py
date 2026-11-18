@@ -16,7 +16,7 @@
 import json, os, re, datetime
 from base import DATA_DIR, save_json
 from fetch import KEY, api, doc_text, corp_code
-from krx_cal import next_bday, norm_date
+from krx_cal import next_bday, norm_date, is_business_day
 import kind_client
 
 SCAN_DAYS = 50                       # 정지/해제 공시 스캔 기간(일)
@@ -67,7 +67,10 @@ def dart_resume(stock, halt_date, dcache):
     if key in dcache:
         return dcache[key]
     res = ""
-    cc = corp_code(stock)
+    try:
+        cc = corp_code(stock)
+    except Exception:
+        return ""   # 고유번호 표를 못 받음 — 캐시에 남기지 않고 다음 회차 재시도
     if cc:
         try:
             end = datetime.date.today().strftime("%Y%m%d")
@@ -116,17 +119,22 @@ def collect():
     recheck_from = (today - datetime.timedelta(days=FEED_RECHECK_DAYS - 1)).strftime("%Y-%m-%d")
     oldest = (today - datetime.timedelta(days=SCAN_DAYS)).strftime("%Y-%m-%d")
 
-    halts, releases, seen = {}, {}, set()   # code→halt / code→release(해제일)
+    halts, releases, seen = {}, {}, set()   # code→halt / code→[해제일]
     for dd in range(SCAN_DAYS + 1):
         d = (today - datetime.timedelta(days=dd)).strftime("%Y-%m-%d")
         for market in ("1", "2"):
             key = f"{d}|{market}"
-            if key not in fcache or d >= recheck_from:
+            rows = fcache.get(key)
+            if rows is None or d >= recheck_from:
                 try:
-                    fcache[key] = _halt_rows(kind_client.feed(d, market))
+                    html = kind_client.feed(d, market)
                 except Exception:
                     continue
-            for rcept, title, nm in fcache[key]:
+                rows = _halt_rows(html)
+                # 공시가 하나도 없는 영업일 목록은 오류 페이지일 수 있어 저장하지 않음(다음 회차 재조회)
+                if "openDisclsViewer" in html or not is_business_day(datetime.date.fromisoformat(d)):
+                    fcache[key] = rows
+            for rcept, title, nm in rows:
                 if nm not in name2:                       # watchlist 필터
                     continue
                 if rcept in seen:
@@ -145,8 +153,7 @@ def collect():
                         rdate = m.group(1) if m else d
                         if t:
                             bcache[rcept] = {"release": rdate}
-                    if code not in releases or rdate > releases[code]:
-                        releases[code] = rdate
+                    releases.setdefault(code, []).append(rdate)
                     continue
                 # 정지(또는 예고) 공시 — 종목별 최신 1건만
                 if code in halts:
@@ -165,8 +172,9 @@ def collect():
         exp = h.pop("expire", "")
         resume, confirmed = "", False
         # 1) KIND 해제공시가 이미 나옴 → 확정
-        if code in releases:
-            resume, confirmed = releases[code], True
+        rel = [x for x in releases.get(code, []) if not h["halt_date"] or x >= h["halt_date"]]   # 이번 정지 이후 해제만
+        if rel:
+            resume, confirmed = max(rel), True
         # 2) 만료가 구체 날짜
         elif re.search(r"\d{4}-\d{2}-\d{2}", exp):
             resume = re.search(r"(\d{4}-\d{2}-\d{2})", exp).group(1); confirmed = True

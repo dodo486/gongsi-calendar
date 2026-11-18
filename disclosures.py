@@ -37,7 +37,7 @@ def categorize(title):
 
 def live_rows(bgn, end):
     """monitor 실시간 폴링용 — 좁은 구간(어제~오늘)을 저장 없이 바로 조회"""
-    return [r for cls in ("Y", "K") for ty in PBLNTF_TYPES for r in fetch_range(bgn, end, cls, ty)]
+    return [r for cls in ("Y", "K") for ty in PBLNTF_TYPES for r in fetch_range(bgn, end, cls, ty, tries=1)]
 
 def stored_rows(days):
     """백필·실적 재수집용 — 공용 목록 저장본(받은 구간은 다시 안 받음)"""

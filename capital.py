@@ -75,23 +75,27 @@ def _finalize(e):
     return e
 
 def build_events(rows, cache):
-    """(종목, 증자구분) 병합 — 정정 대비 최신 rcept_dt 우선, 신주배정기준일 있는 건만."""
+    """같은 증자 = 같은 종목·증자구분이고 신주배정기준일이 120일 안 — 접수 순으로 돌아 정정 공시가 원본을 덮음.
+    신주배정기준일 있는 건만."""
     merged = {}
-    for r in rows:
+    for r in sorted(rows, key=lambda r: (r.get("rcept_dt", ""), r["rcept_no"])):
         try:
             parts = parsed(r["rcept_no"], lambda t: parse_cap(t, r["report_nm"]), cache)
         except Exception:
             continue
         for typ, d in parts.items():
-            key = (r["stock_code"], typ)
-            e = merged.get(key)
-            if e is None or r.get("rcept_dt", "") >= e.get("rcept_dt", ""):
-                merged[key] = {"corp": r["corp_name"], "stock": r["stock_code"],
-                               "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ",
-                               "type": typ, "rcept_no": r["rcept_no"],
-                               "rcept_dt": r.get("rcept_dt", ""),
-                               "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={r['rcept_no']}",
-                               **d}
+            if not d["record_date"]:
+                continue
+            rec = datetime.date.fromisoformat(d["record_date"])
+            key = next((k for k, e in merged.items() if k[:2] == (r["stock_code"], typ)
+                        and abs((datetime.date.fromisoformat(e["record_date"]) - rec).days) <= 120),
+                       (r["stock_code"], typ, r["rcept_no"]))
+            merged[key] = {"corp": r["corp_name"], "stock": r["stock_code"],
+                           "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ",
+                           "type": typ, "rcept_no": r["rcept_no"],
+                           "rcept_dt": r.get("rcept_dt", ""),
+                           "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={r['rcept_no']}",
+                           **d}
     return [_finalize(e) for e in merged.values()]
 
 def _save(events):
@@ -155,40 +159,6 @@ def main(days=SCAN_DAYS):
         if "rights_theo" in e:    extra += f" · 발행가 {e['issue_adj']:,} · 증서 이론가 {e['rights_theo']:,}"
         if "even_rights" in e:    extra += f" (본전 {e['even_rights']:,})"
         print(f"  {e['type']} {e['corp']}({e['stock']}) 기준일 {e['record_date']} · 매수 {e['buy_date']} · 락 {e['ex_date']}{extra}")
-
-def upsert(cap_events):
-    """collect_events 형식의 신규 증자 공시를 capital.json 에 즉시 증분 반영. 변경시 True."""
-    with _LOCK:
-        payload = json.load(open(CAP_PATH, encoding="utf-8")) if os.path.exists(CAP_PATH) else {"count": 0, "events": []}
-        cache = load_cache()
-        idx = {(e["stock"], e["type"]): e for e in payload["events"]}
-        changed = False
-        for r in cap_events:
-            nm = r.get("title", "")
-            if not _is_cap(nm):
-                continue
-            try:
-                parts = parsed(r["rcept_no"], lambda t: parse_cap(t, nm), cache)
-            except Exception:
-                continue
-            for typ, d in parts.items():   # 제3자배정 등 신주배정기준일 없는 건은 parts 에 없음
-                key = (r["stock"], typ)
-                cur = idx.get(key)
-                if cur is None or r.get("date", "") >= cur.get("rcept_dt", ""):
-                    e = {"corp": r["corp"], "stock": r["stock"], "market": r.get("market", ""),
-                         "type": typ, **d,
-                         "rcept_no": r["rcept_no"], "rcept_dt": r.get("date", ""),
-                         "url": r.get("url", "")}
-                    _finalize(e)
-                    idx[key] = e
-                    changed = True
-        if changed:
-            payload["events"] = sorted(idx.values(), key=lambda x: x.get("buy_date") or x.get("record_date"))
-            payload["count"] = len(payload["events"])
-            payload["generated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            save_json(CAP_PATH, payload)
-        save_json(CACHE_PATH, cache)
-        return changed
 
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else SCAN_DAYS

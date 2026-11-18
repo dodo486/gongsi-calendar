@@ -7,13 +7,13 @@
 - 회사·배당구분별로 병합 → data/dividends.json
 - 웹은 기준일 날짜에 "회사명 (금액원)" 표시
 """
-import sys, os, re, json, datetime, threading
+import sys, os, re, json, datetime, calendar, threading
 from fetch import listing, doc_text
 from base import load_watchlist, DATA_DIR, save_json
 from net import TLS_MODE
 from krx_cal import t_minus, norm_date
 
-_LOCK = threading.RLock()   # dividends.json 동시 쓰기 방지 (main 재생성 vs upsert)
+_LOCK = threading.RLock()   # dividends.json 동시 쓰기 방지
 
 def div_universe():
     """배당 수집 대상 = 감시종목(코스피200+코스닥150) ∪ 지수배당포인트용 ETF PDF 구성종목.
@@ -51,15 +51,30 @@ def parse_record(t):
     return {"record_date": norm_date(rec.group(1)) if rec else "",
             "div_type": norm_div_type(div.group(1) if div else "")}
 
-def _match_key(index, stock, div_type):
-    """(종목, 배당구분) 키 매칭 — 한쪽 문서의 배당구분 파싱이 비었을 때 같은 종목의 유일 엔트리에 병합"""
-    key = (stock, div_type)
-    if key in index:
-        return key
-    cands = [k for k in index if k[0] == stock]
-    if len(cands) == 1 and "" in (div_type, cands[0][1]):
-        return cands[0]
-    return key
+# ── 회차 — 배당 하나 = 종목 · 배당종류 · 사업연도 · 분기 (research 도 같은 규칙을 씀) ──
+TYPE_QUARTERS = {"분기배당": (1, 2, 3), "중간배당": (2,), "결산배당": (4,)}
+ACC_PATH = os.path.join(DATA_DIR, "acc_mt.json")   # 종목별 결산월 (research.acc_months 가 채움)
+
+def quarter_end(fy, q, acc):
+    m, y = acc - 3 * (4 - q), fy
+    if m <= 0:
+        m, y = m + 12, y - 1
+    return datetime.date(y, m, calendar.monthrange(y, m)[1])
+
+def round_of(t, record, decided, acc):
+    """회차가 몇 사업연도 몇 분기 몫인지 — 기준일이 그 종류의 분기말이면 그 분기, 아니면 결정(또는 기준일) 직전 분기말"""
+    ref = decided if decided and decided < record else record
+    cands = [(fy, q, quarter_end(fy, q, acc)) for fy in range(record.year - 1, record.year + 2) for q in TYPE_QUARTERS[t]]
+    same = [c for c in cands if c[2] == record]
+    return same[0] if same else max((c for c in cands if c[2] < ref), key=lambda c: c[2])
+
+def _round_key(stock, div_type, record, decided, acc):
+    """같은 회차면 같은 키 — 정정으로 기준일이 바뀌어도 같은 사업연도·분기면 한 건. 배당종류를 못 읽었으면 기준일로."""
+    if div_type not in TYPE_QUARTERS or not record:
+        return (stock, div_type, record)
+    d = lambda s: datetime.date.fromisoformat(s) if s else None
+    fy, q, _ = round_of(div_type, d(record), d(decided), acc)
+    return (stock, div_type, fy, q)
 
 # --- 배당 원문 파싱 캐시 (dividends·research 공용) ---
 # rcept_no 별 파싱 결과를 저장/재사용 → 같은 공시 문서를 두 번 다시 내려받지 않는다.
@@ -94,13 +109,25 @@ def main(days=90):
     print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 배당 수집대상 {len(watch)} (감시종목+ETF PDF)")
 
     cache = load_doc_cache()   # research 가 채운 파싱 캐시(=div_history.json) — 캐시에 없는 원문만 받음
-    rows = [r for r in listing("I", days) if r["stock_code"] in watch and "자회사" not in r["report_nm"]]
+    rows = sorted((r for r in listing("I", days) if r["stock_code"] in watch and "자회사" not in r["report_nm"]),
+                  key=lambda r: (r["rcept_dt"], r["rcept_no"]))   # 접수 순 — 같은 회차는 나중 공시(정정)가 이김
     decisions = [r for r in rows if "현금ㆍ현물배당결정" in r["report_nm"]]
     records = [r for r in rows if "주주명부폐쇄" in r["report_nm"] and "배당" in r["report_nm"]]
     print(f"  배당결정 {len(decisions)} / 명부폐쇄 {len(records)} "
           f"(원문 캐시 없는 {sum(r['rcept_no'] not in cache for r in decisions + records)}건만 다운로드)")
 
-    merged = {}  # (stock, div_type) -> entry
+    try:
+        acc = {s: int(m) for s, m in json.load(open(ACC_PATH, encoding="utf-8")).items() if str(m).isdigit()}
+    except (OSError, ValueError):
+        acc = {}
+    ymd = lambda s: f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+    merged = {}  # 회차 키 -> entry
+    def key_of(stock, div_type, record, decided):
+        if div_type not in TYPE_QUARTERS:   # 배당종류를 못 읽은 공시 → 같은 종목·같은 기준일 회차에 붙임
+            same = [k for k, e in merged.items() if e["stock"] == stock and e["record_date"] == record]
+            if len(same) == 1:
+                return same[0]
+        return _round_key(stock, div_type, record, decided, acc.get(stock, 12))
     def base(r):
         return {"corp": r["corp_name"], "stock": r["stock_code"],
                 "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ",
@@ -108,30 +135,28 @@ def main(days=90):
                 "rcept_no": r["rcept_no"],
                 "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={r['rcept_no']}"}
 
-    # 1) 배당결정 → 배당금(+기준일 fallback). 정정 대비 최신(rcept_dt) 우선
+    # 1) 배당결정 → 배당금·기준일·지급일. 접수 순으로 돌아 같은 회차의 정정 공시가 원본을 덮음
     for r in decisions:
         try: d = doc_fields(r["rcept_no"], "decision", cache)
         except Exception: continue
-        key = _match_key(merged, r["stock_code"], d["div_type"])
+        key = key_of(r["stock_code"], d["div_type"], d["record_date"], ymd(r["rcept_dt"]))
         e = merged.setdefault(key, base(r))
         e["div_type"] = d["div_type"] or e.get("div_type", "")
-        if r["rcept_dt"] >= e.get("_dec_dt", ""):
-            e["_dec_dt"] = r["rcept_dt"]
-            e["per_share"] = d["per_share"] or e["per_share"]
-            e["pay_date"] = d["pay_date"] or e["pay_date"]
-            e["rcept_no"] = r["rcept_no"]; e["url"] = base(r)["url"]
-            if d["record_date"]: e["record_date"] = d["record_date"]
+        e["_dec_dt"] = r["rcept_dt"]
+        e["per_share"] = d["per_share"] or e["per_share"]
+        e["pay_date"] = d["pay_date"] or e["pay_date"]
+        e["rcept_no"] = r["rcept_no"]; e["url"] = base(r)["url"]
+        if d["record_date"]: e["record_date"] = d["record_date"]
 
-    # 2) 명부폐쇄(기준일) → 기준일 (배당결정 기준일 없을 때 우선 채움/덮어씀)
+    # 2) 명부폐쇄(기준일) → 같은 회차의 기준일 (나중 공시가 이김)
     for r in records:
         try: d = doc_fields(r["rcept_no"], "record", cache)
         except Exception: continue
         if not d["record_date"]: continue
-        key = _match_key(merged, r["stock_code"], d["div_type"])
+        key = key_of(r["stock_code"], d["div_type"], d["record_date"], None)
         e = merged.setdefault(key, base(r))
         e["div_type"] = d["div_type"] or e.get("div_type", "")
-        if r["rcept_dt"] >= e.get("_rec_dt", ""):
-            e["_rec_dt"] = r["rcept_dt"]; e["record_date"] = d["record_date"]
+        e["_rec_dt"] = r["rcept_dt"]; e["record_date"] = d["record_date"]
 
     events = []
     for e in merged.values():
@@ -151,52 +176,6 @@ def main(days=90):
     with _LOCK:
         save_json(out, payload)
     print(f"저장: {out} ({len(events)}건, 배당금有 {sum(1 for e in events if e['per_share'])}건)")
-
-def upsert(div_events):
-    """새 배당 공시(collect_events 형식 dict 리스트)를 dividends.json에 즉시 증분 반영. 변경시 True"""
-    with _LOCK:
-        path = os.path.join(DATA_DIR, "dividends.json")
-        payload = json.load(open(path, encoding="utf-8")) if os.path.exists(path) else {"count": 0, "events": []}
-        idx = {(e["stock"], e.get("div_type", "")): e for e in payload["events"]}
-        changed = False
-        for r in div_events:
-            nm = r.get("title", "")
-            if "배당" not in nm or "자회사" in nm:
-                continue
-            is_record = "주주명부폐쇄" in nm
-            try:
-                t = doc_text(r["rcept_no"])
-            except Exception:
-                continue
-            d = parse_record(t) if is_record else parse_decision(t)
-            key = _match_key(idx, r["stock"], d.get("div_type", ""))
-            e = idx.get(key)
-            if e is None:
-                e = {"corp": r["corp"], "stock": r["stock"], "market": r.get("market", ""),
-                     "per_share": "", "record_date": "", "pay_date": "", "div_type": d.get("div_type", ""),
-                     "rcept_no": r["rcept_no"], "url": r.get("url", ""),
-                     "rcept_dt": r.get("date", ""), "confirm_date": ""}
-                payload["events"].append(e); idx[key] = e
-            else:
-                e["div_type"] = d.get("div_type", "") or e.get("div_type", "")
-            if is_record:
-                if d["record_date"]: e["record_date"] = d["record_date"]
-            else:
-                if d["per_share"]: e["per_share"] = d["per_share"]
-                if d["pay_date"]: e["pay_date"] = d["pay_date"]
-                if d["record_date"]: e["record_date"] = d["record_date"]
-                e["rcept_no"] = r["rcept_no"]; e["url"] = r.get("url", "")
-            e["rcept_dt"] = max(e.get("rcept_dt", ""), r.get("date", ""))
-            e["confirm_date"] = t_minus_2(e["record_date"])
-            e["ex_date"] = t_minus(e["record_date"], 1)
-            changed = True
-        if changed:
-            payload["events"] = [e for e in payload["events"] if e.get("record_date")]
-            payload["events"].sort(key=lambda x: x.get("confirm_date") or x.get("record_date"))
-            payload["count"] = len(payload["events"])
-            payload["generated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            save_json(path, payload)
-        return changed
 
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 90

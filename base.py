@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """공용 기반 — 경로·json 원자 저장·감시종목·콘솔 UTF-8. API 키·네트워크 없이 import 된다."""
-import json, os, sys, time
+import json, os, sys, time, threading
 
 # 콘솔 UTF-8 출력 — base 를 import 하는 모든 모듈이 공유(각자 재선언 불필요)
 try:
@@ -14,7 +14,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 def save_json(path, obj, indent=1):
     """원자적 저장 — 쓰다 만 파일을 웹이 읽는 사고 방지 (tmp에 쓰고 교체). 큰 캐시는 indent=None 으로 작게."""
-    tmp = path + ".tmp"
+    tmp = f"{path}.{os.getpid()}.{threading.get_ident()}.tmp"   # 스레드·프로세스마다 다른 임시파일 — 동시에 써도 안 섞임
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=indent)
     for wait in (0.2, 0.5, 1, 2, 4):   # 윈도우: 다른 프로세스(읽는 쪽·백신)가 잠깐 열고 있으면 교체가 막힘 → 잠깐 뒤 다시

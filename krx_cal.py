@@ -14,13 +14,16 @@ def holiday_dates(years):
     days = {d for d, name in _hol.SouthKorea(years=years).items() if "제헌절" not in name}
     for y in years:
         days.add(datetime.date(y, 5, 1))     # 근로자의날 (증시 휴장)
-        days.add(datetime.date(y, 12, 31))    # 연말 폐장일
+        last = datetime.date(y, 12, 31)       # 연말 휴장 = 그해 마지막 평일 (12/31 이 주말이면 그 전 금요일)
+        while last.weekday() >= 5 or last in days:
+            last -= datetime.timedelta(days=1)
+        days.add(last)
     return days
 
 def default_years():
-    """오늘 기준 전년~내년 — 배당락일/만기일 계산에 충분한 범위."""
+    """오늘 기준 3년 전~2년 뒤 — 과거 회차 검증(2년+)·내후년 기준일·만기일까지 휴장일이 빠지지 않게."""
     y = datetime.date.today().year
-    return [y - 1, y, y + 1]
+    return list(range(y - 3, y + 3))
 
 _HOL_ARR = np.array(sorted(str(d) for d in holiday_dates(default_years())), dtype="datetime64[D]")
 
@@ -42,6 +45,10 @@ def prev_business_day(d, hol):
     while d.weekday() >= 5 or d in hol:
         d -= datetime.timedelta(days=1)
     return d
+
+def is_business_day(d):
+    """d(date) 가 주말·휴장일이 아닌가"""
+    return bool(np.is_busday(np.datetime64(d), holidays=_HOL_ARR))
 
 def next_bday(iso):
     """iso 다음 영업일(주말·휴장일 제외) — 당일 거래정지의 재개일 등."""

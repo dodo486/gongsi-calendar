@@ -193,7 +193,7 @@ def main():
         print("  △", x)
     if len(warns) > 20:
         print(f"  … 경고 {len(warns) - 20}건 더 (data/dividend_check.json)")
-    return 1 if errors else 0
+    return errors
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(1 if main() else 0)

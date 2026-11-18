@@ -11,11 +11,12 @@
 
   python research.py [--verify]
 """
-import sys, os, re, json, datetime, calendar, statistics, threading
+import sys, os, re, json, datetime, statistics, threading
 from concurrent.futures import ThreadPoolExecutor
 from fetch import listing, doc_text, api, KEY, corp_code
 from base import DATA_DIR, save_json
 import dividends as dv
+from dividends import TYPE_QUARTERS, quarter_end, round_of
 from krx_cal import t_minus
 import earn_sched
 
@@ -39,9 +40,8 @@ APPROVAL_PAY_DAYS = 31
 NOTICE_LOOKBACK_DAYS = 45
 SEASON_DAYS = {"결산배당": 123, "중간배당": 92, "분기배당": 92}
 FLOAT_FROM = {"결산배당": 2023, "중간배당": 2025, "분기배당": 2025}
-TYPE_QUARTERS = {"분기배당": (1, 2, 3), "중간배당": (2,), "결산배당": (4,)}
 GROUP = {"결산배당": "결산", "중간배당": "분기중간", "분기배당": "분기중간"}
-PARSE_VERSION = {"notice": 4, "agm_call": 2, "agm_result": 2, "plan": 2}
+PARSE_VERSION = {"notice": 5, "agm_call": 2, "agm_result": 2, "plan": 2}
 
 
 def _d(s):
@@ -63,19 +63,6 @@ def _load(path, default):
         return json.load(open(path, encoding="utf-8"))
     except Exception:
         return default
-
-def quarter_end(fy, q, acc):
-    m, y = acc - 3 * (4 - q), fy
-    if m <= 0:
-        m, y = m + 12, y - 1
-    return D(y, m, calendar.monthrange(y, m)[1])
-
-def round_of(t, record, decided, acc):
-    """회차가 몇 사업연도 몇 분기 몫인지 — 기준일이 그 종류의 분기말이면 그 분기, 아니면 결정(또는 기준일) 직전 분기말"""
-    ref = decided if decided and decided < record else record
-    cands = [(fy, q, quarter_end(fy, q, acc)) for fy in range(record.year - 1, record.year + 2) for q in TYPE_QUARTERS[t]]
-    same = [c for c in cands if c[2] == record]
-    return same[0] if same else max((c for c in cands if c[2] < ref), key=lambda c: c[2])
 
 
 # ── 수집: 목록 ──
@@ -119,7 +106,7 @@ def parse_notice(t):
     fyq = re.search(r"(\d{4})\s*년\s*([1-3])\s*분기\s*배당", t)   # "2026년 2분기 배당여부 및 배당기준일을…" → 그 분기
     typ = ("분기배당" if fyq or re.search(r"분기\s*배당\s*기준일", t) else
            "중간배당" if re.search(r"중간\s*배당\s*기준일", t) else "결산배당")
-    subsidiary = bool(re.search(r"종속회사[^.]{0,80}배당", t)) and not re.search(r"당사[^.]{0,40}배당\s*기준일", t)   # 자회사 배당 계획 공시
+    subsidiary = bool(re.search(r"종속회사인?\s*(?:\(주\)|㈜)?\s*\S{1,30}?(?:은|는)\s[^.]{0,120}배당(?:안|\s*계획|금|을)", t))   # 자회사가 주어인 배당 계획 공시
     return {"is_div": bool(re.search(r"배당\s*기준일", t)) and not subsidiary, "div_type": typ, "months": months,
             "fyq": [int(fyq[1]), int(fyq[2])] if fyq else None}
 
@@ -376,7 +363,9 @@ def pattern(owner):
 
 # ── 판정 · 예측 ──
 def _notice(ctx, t, fy, q):
-    return next((n for n in reversed(ctx["notices"]) if n["div_type"] == t and (n["fy"], n["q"]) == (fy, q)), None)
+    """이번 회차의 기준일 안내 자율공시 — 'N분기 배당' 안내는 그 분기의 분기·중간배당 회차 모두에 해당"""
+    kinds = (t,) if t == "결산배당" else ("분기배당", "중간배당")
+    return next((n for n in reversed(ctx["notices"]) if n["div_type"] in kinds and (n["fy"], n["q"]) == (fy, q)), None)
 
 def judge(ctx, t, fy, q):
     """§4.2 — (방식, 근거, 바뀔 수 있음)"""
@@ -544,7 +533,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     reg = next((r for r in reversed(past) if not r["special"] and r["dps"]), None)
     return {"div_type": t, "fy": fy, "q": q, "quarter": f"{fy} Q{q}", "quarter_end": _iso(qe),
             "record_date": _iso(rec), "pay_date": _iso(pay), "method": "확정 기준일" if ann_rec else method,
-            "may_change": may_change, "why": why, "anchor": anchor, "reason": reason,
+            "may_change": may_change and not ann_rec, "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: _iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
             "per_share": reg["dps"] if reg else "",
