@@ -377,19 +377,19 @@ def judge(ctx, t, fy, q):
     """§4.2 — (방식, 근거, 바뀔 수 있음)"""
     notice = _notice(ctx, t, fy, q)
     if notice:
-        return "유동", f"③ 이번 회차 기준일 안내 자율공시 {notice['date']}", False
+        return "유동", f"이번 회차 '배당기준일 안내' 자율공시({notice['date']}) — 이사회가 기준일을 따로 정함", False
     past = [r for r in ctx["rounds"] if r["type"] == t]
     ch = ctx["charter"].get(GROUP[t])
     if past:
         last = past[-1]
         if not last["fixed"]:
-            return "유동", f"⑤ 직전 회차({last['fy']} Q{last['q']}) 기준일 {last['record']} ≠ 결산기말·분기말 {last['qe']}", False
+            return "유동", f"직전 회차({last['fy']} Q{last['q']}) 기준일 {last['record']}이 결산기말·분기말({last['qe']})이 아님 — 이사회가 따로 정함", False
         if ch and ch["v"] == "O":
-            return "고정", f"⑤ 직전 회차 기준일 {last['record']} = 결산기말·분기말 · 정관 O → 바뀔 수 있음", True
-        return "고정", f"⑤ 직전 회차 기준일 {last['record']} = 결산기말·분기말", False
+            return "고정", f"직전 회차 기준일 {last['record']} = 결산기말·분기말. 다만 정관상 이사회가 기준일을 따로 정할 수 있어 바뀔 수 있음", True
+        return "고정", f"직전 회차 기준일 {last['record']} = 결산기말·분기말", False
     if ch:
-        return ("유동 가능", f"① 정관 O ({ch['src']}) · 배당 이력 없음", False) if ch["v"] == "O" else \
-               ("고정", f"① 정관 X ({ch['src']}) · 배당 이력 없음", False)
+        return ("유동 가능", f"배당 이력 없음 · 정관상 이사회가 기준일을 따로 정할 수 있음 ({ch['src']})", False) if ch["v"] == "O" else \
+               ("고정", f"배당 이력 없음 · 정관상 기준일이 결산기말로 고정 ({ch['src']})", False)
     return "판별 불가", "정관 정보·배당 이력 없음", False
 
 def cond_signals(ctx, qe, today):
@@ -414,18 +414,19 @@ def ladder(ctx, t, fy, q, confirmed):
     last = past[-1] if past else None
     notice = _notice(ctx, t, fy, q)
     return [
-        {"n": "①", "name": "가능", "state": ("on" if ch["v"] == "O" else "off") if ch else "none",
-         "text": (f"정관 {ch['v']} — {ch['src']}" if ch else "정관 정보 없음")
+        {"n": "①", "name": "정관", "state": ("on" if ch["v"] == "O" else "off") if ch else "none",
+         "text": ((f"이사회가 기준일을 따로 정할 수 있음 — {ch['src']}" if ch["v"] == "O"
+                   else f"기준일이 결산기말로 고정 — {ch['src']}") if ch else "정관 정보 없음")
                  + (f" · 주총({pend['date']}) 정관 기준일 변경 안건 상정" if pend else "")},
-        {"n": "②", "name": "의지", "state": "on" if organ else "none",
+        {"n": "②", "name": "결정기관", "state": "on" if organ else "none",
          "text": f"배당액 결정기관 {organ or '미상'}" + (f" · {ctx['policy_report']}" if ctx["policy_report"] else "")},
-        {"n": "③", "name": "예고", "state": "on" if notice else "off",
+        {"n": "③", "name": "기준일 예고", "state": "on" if notice else "off",
          "text": (f"기준일 안내 자율공시 {notice['date']}" + (f" · {notice['hint']} 이후" if notice["hint"] else ""))
                  if notice else "이번 회차 기준일 안내 자율공시 없음"},
-        {"n": "④", "name": "확정", "state": "on" if confirmed else "off",
+        {"n": "④", "name": "기준일 공고", "state": "on" if confirmed else "off",
          "text": "기준일 공고 — 확정" if confirmed else "기준일 공고 아직 (공고 뜨면 확정)"},
-        {"n": "⑤", "name": "이력", "state": ("off" if last["fixed"] else "on") if last else "none",
-         "text": (f"직전 {last['fy']} Q{last['q']} 기준일 {last['record']} — {'고정(결산기말·분기말)' if last['fixed'] else '유동'}"
+        {"n": "⑤", "name": "직전 회차", "state": ("off" if last["fixed"] else "on") if last else "none",
+         "text": (f"{last['fy']} Q{last['q']} 기준일 {last['record']} — {'결산기말·분기말' if last['fixed'] else '이사회가 따로 정함'}"
                   if last else "직전 회차 없음")},
     ]
 
@@ -469,7 +470,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     if not ann_rec and today > qe + datetime.timedelta(days=SEASON_DAYS[t]):
         return None, f"⚠ {fy} Q{q} {t}: 시즌 창(결산기말·분기말 {qe} +{SEASON_DAYS[t]}일) 지나도 배당 공시 없음 → 미실시로 보고 예상 제외"
     if ann_rec:
-        rec, anchor = ann_rec["record"], f"④ 기준일 공고 {ann_rec['date']} (금액 미공시)"
+        rec, anchor = ann_rec["record"], f"기준일 공고 {ann_rec['date']} (금액은 아직 미공시)"
     elif method == "고정":
         rec, anchor = qe, "결산기말·분기말 고정"
     else:
@@ -478,20 +479,20 @@ def predict_round(ctx, t, fy, q, today, earn, med):
         if t == "결산배당" and organ == "주주총회" and agm:
             off = (prev["record"] - prev_agm["date"]).days if prev and prev_agm and not prev["fixed"] else med["agm"]
             alt["A2"], anchor_event = agm["date"] + datetime.timedelta(days=off), agm["date"]
-            a2_txt = f"A2 주총형: 정기주총 {agm['date']} + {off}일"
+            a2_txt = f"올해 정기주총({agm['date']}) + 작년 주총→기준일 간격 {off}일"
         else:
             ann = announce_date(earn, qe)
             if ann:
                 off = ((prev["record"] - prev["decided"]).days if prev and not prev["fixed"] and prev["amount_first"]
                        else med["dec"][t])
                 alt["A2"], anchor_event = ann + datetime.timedelta(days=off), ann
-                a2_txt = f"A2 이사회형: 실적발표 예정 {ann} + {off}일"
+                a2_txt = f"올해 실적발표 예정일({ann}) + 작년 배당결정→기준일 간격 {off}일"
         if "A2" in alt:
             rec, anchor = alt["A2"], a2_txt
         elif "A1" in alt:
-            rec, anchor = alt["A1"], f"A1 작년 같은 회차 반복: {same_q['record']} + 52주"
+            rec, anchor = alt["A1"], f"작년 같은 회차 기준일({same_q['record']}) + 52주"
         else:
-            rec, anchor = qe + datetime.timedelta(days=med["qe"][t]), f"직전 유동 이력 없음: 결산기말·분기말 + 실측 중앙값 {med['qe'][t]}일"
+            rec, anchor = qe + datetime.timedelta(days=med["qe"][t]), f"이 회사 이력 없음 — 결산기말·분기말 + 수집대상 전체 중앙값 {med['qe'][t]}일"
         if notice and notice["hint"]:
             floor = D(int(notice["hint"][:4]), int(notice["hint"][5:]), 1)
             if rec < floor:
@@ -500,7 +501,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
         if rec < floor:
             rec, anchor = floor, anchor + f" · 기준일 공고 전이라 {NOTICE_MIN_DAYS}일 뒤({floor}) 이후로 보정"
         if anchor_event and anchor_event < today - datetime.timedelta(days=MISS_GRACE_DAYS):
-            return None, f"⚠ {fy} Q{q} {t}: 앵커 {anchor_event} 지나도 배당 공시 없음 → 미실시로 보고 예상 제외"
+            return None, f"⚠ {fy} Q{q} {t}: 근거 날짜(주총·실적발표 {anchor_event})가 지나도 배당 공시 없음 → 미실시로 보고 예상 제외"
 
     if not (qe <= rec <= qe + datetime.timedelta(days=SEASON_DAYS[t])):
         warn.append(f"시즌 창 밖: 기준일 {rec} (결산기말·분기말 {qe} ~ +{SEASON_DAYS[t]}일)")

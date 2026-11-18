@@ -74,7 +74,7 @@
   .fc .fc-daygrid-day.sel{background:rgba(34,197,94,.10);box-shadow:inset 0 0 0 2px var(--accent)}
   .day-h{padding:8px 14px 6px;font-weight:700;font-size:14px;border-top:1px solid var(--line)}
   #dayList{padding:0 14px 14px}
-  /* 예상배당 급 — 1급(고정)이 가장 확실, 아래로 갈수록 날짜 근거가 약함 */
+  /* 예상배당 날짜 확실도 — 진할수록 확실, 점선으로 갈수록 날짜 근거가 약함 */
   .fc-event.est{font-weight:600}
   .fc-event.est-g0{background:#f59e0b;border-color:#f59e0b;color:#241a00}
   .fc-event.est-g1{background:var(--est);border-color:var(--est);color:#241a00}
@@ -125,10 +125,11 @@
       </span>
       <span class="cal-legend">
         <span class="lg"><i style="background:#dc2626"></i><i style="background:#fca5a5"></i> 확정 배당</span>
-        <span class="lg" title="예상배당 급 — 1급이 가장 확실"><i style="background:#f59e0b"></i>기준일 확정
-          <i style="background:var(--est)"></i>1급 <i style="background:#fde68a"></i>2급
-          <i style="border:1.5px solid var(--est)"></i>3급 <i style="border:1.5px dashed var(--est)"></i>4급
-          <i style="border:1.5px dotted #a3a3a3"></i>5급 예상</span>
+        <span class="lg" title="예상배당 — 기준일 날짜가 얼마나 확실한가">예상:
+          <i style="background:#f59e0b"></i>기준일 공고됨
+          <i style="background:var(--est)"></i>기말 유지 <i style="background:#fde68a"></i>기말·바뀔 수 있음
+          <i style="border:1.5px solid var(--est)"></i>이사회 지정·올해 근거 <i style="border:1.5px dashed var(--est)"></i>이사회 지정·작년 반복
+          <i style="border:1.5px dotted #a3a3a3"></i>근거 약함</span>
         <span class="lg"><i style="background:#a855f7"></i><i style="background:#c4b5fd"></i> 무상</span>
         <span class="lg"><i style="background:#3b82f6"></i><i style="background:#7dd3fc"></i> 유상</span>
         <span class="lg"><i style="background:#f59e0b"></i> 무상 매도가능(잔고 입고)</span>
@@ -167,22 +168,27 @@ const shown = e => filters[e.market] && matchQ(e);
 const show = {buy:true, ex:true};      // 매수일(T-2)·락일(T-1) 중 무엇을 볼지 — 배당·예상배당·증자 공통
 try{ Object.assign(show, JSON.parse(localStorage.getItem("div.show") || "{}")); }catch(_){}
 
-// 예상배당 급 — 기준일 날짜가 얼마나 확실한가(금액은 별도). research.py 의 판정·앵커로 급만 매김
+// 예상배당 날짜 확실도 — 기준일 날짜가 얼마나 확실한가(금액은 별도). research.py 의 판정·날짜 근거로 나눔
 const EST_GRADE = [
-  {g:0, t:"기준일 확정·금액 예상", d:"기준일 공고가 나왔고 금액만 예상"},
-  {g:1, t:"1급 고정", d:"결산기말·분기말 고정, 정관상 바뀔 근거 없음"},
-  {g:2, t:"2급 고정·바뀔 수 있음", d:"작년엔 결산기말·분기말이었지만 정관상 이사회가 따로 정할 수 있음"},
-  {g:3, t:"3급 유동·올해 근거", d:"이사회가 정하는 기준일 — 올해 주총일·실적발표 예정일에 작년 간격을 더함"},
-  {g:4, t:"4급 유동·작년 반복", d:"이사회가 정하는 기준일 — 올해 근거가 아직 없어 작년 같은 회차 + 52주"},
-  {g:5, t:"5급 근거 약함", d:"이력이 없거나 판별이 어려워 수집대상 전체 중앙값 등으로 추정"},
+  {g:0, t:"기준일 공고됨·금액만 예상", d:"회사가 기준일을 공고했고 금액만 아직 안 나옴"},
+  {g:1, t:"결산기말 기준일 유지", d:"작년에도 결산기말·분기말이었고, 정관상 바뀔 근거가 없음"},
+  {g:2, t:"결산기말이지만 바뀔 수 있음", d:"작년엔 결산기말·분기말이었지만, 정관상 이사회가 기준일을 따로 정할 수 있음"},
+  {g:3, t:"이사회 지정일·올해 주총/실적발표로 추정", d:"이사회가 정하는 기준일 — 올해 정기주총일·실적발표 예정일에 작년 간격을 더함"},
+  {g:4, t:"이사회 지정일·작년 날짜 반복", d:"이사회가 정하는 기준일 — 올해 근거가 아직 없어 작년 같은 회차 기준일 + 52주"},
+  {g:5, t:"근거 약함", d:"이 회사 이력이 없거나 판별이 어려워 수집대상 전체 중앙값 등으로 추정"},
 ];
 function estGrade(e){
-  if((e.anchor||"").startsWith("④")) return EST_GRADE[0];
+  if(e.method==="확정 기준일") return EST_GRADE[0];
   if(e.method==="고정") return EST_GRADE[e.may_change ? 2 : 1];
-  if(e.method==="유동" && (e.anchor||"").startsWith("A2")) return EST_GRADE[3];
-  if(e.method==="유동" && (e.anchor||"").startsWith("A1")) return EST_GRADE[4];
+  if(e.method==="유동" && e.alt && e.alt.A2) return EST_GRADE[3];
+  if(e.method==="유동" && e.alt && e.alt.A1) return EST_GRADE[4];
   return EST_GRADE[5];
 }
+const METHOD_TXT = {"고정":"결산기말·분기말 고정", "유동":"이사회가 따로 정함", "유동 가능":"이사회가 정할 수 있음(이력 없음)",
+                    "판별 불가":"판별 불가", "확정 기준일":"기준일 공고됨"};
+const ALT_TXT = {A1:"작년 날짜 반복", A2:"올해 주총·실적발표 기준"};
+const COND_TXT = {D13:"결산기말 전 한 달에 주총용 명부폐쇄만 있음", D14:"결산기말 전 한 달에 배당 기준일 공고 없음"};
+const CH_TXT = {O:"이사회가 기준일을 따로 정할 수 있음", X:"기준일이 결산기말로 고정"};
 
 let _divUp = [], _divSort = {key:"ex", dir:1};   // 기본: 배당락일 오름차순(가까운 날 먼저)
 function divRowsHtml(){                 // 정렬 상태(_divSort) 반영해 배당락 표 행 생성
@@ -438,10 +444,10 @@ function stageLadder(e){
       <span><b>${esc(s.n)} ${esc(s.name)}</b> <span class="sub">${esc(s.text)}</span></span></div>`).join("");
   let h = `<div class="wh" style="margin-top:8px">🪜 기준일 확정 단계 <span class="sub" style="font-weight:400;color:var(--muted)">— ④부터 확정</span></div><div class="lad">${rows}</div>`;
   if(e.kind==="est"){
-    const alt = Object.entries(e.alt||{}).map(([k,v])=>`${k} ${esc(v)}`).join(" · ");
-    h += `<div class="anc">🧭 <b>${esc(e.method)}${e.may_change?" · 바뀔 수 있음":""}</b> — ${esc(e.why)}<br>앵커: ${esc(e.anchor)}${alt?`<br>앵커별 값: ${alt}`:""}</div>`;
-    const cond = Object.entries(e.cond||{}).filter(([,v])=>v!==null).map(([k,v])=>`${k} ${v?"켜짐":"꺼짐"}`).join(" · ");
-    if(cond) h += `<div class="ev">조건부 신호(적중률 측정 중, 판정엔 안 씀): ${esc(cond)}</div>`;
+    const alt = Object.entries(e.alt||{}).map(([k,v])=>`${ALT_TXT[k]||k} ${esc(v)}`).join(" · ");
+    h += `<div class="anc">🧭 <b>${esc(METHOD_TXT[e.method]||e.method)}${e.may_change?" · 바뀔 수 있음":""}</b> — ${esc(e.why)}<br>날짜 근거: ${esc(e.anchor)}${alt?`<br>근거별 날짜: ${alt}`:""}</div>`;
+    const cond = Object.entries(e.cond||{}).filter(([,v])=>v!==null).map(([k,v])=>`${COND_TXT[k]||k}: ${v?"해당":"해당 없음"}`).join(" · ");
+    if(cond) h += `<div class="ev">참고 신호(적중률 측정 중, 판정엔 안 씀) — ${esc(cond)}</div>`;
     h += (e.warn||[]).map(w=>`<div class="ev">⚠ ${esc(w)}</div>`).join("");
   }
   return h;
@@ -449,11 +455,11 @@ function stageLadder(e){
 function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월·계획·근거 (research.json)
   const c = (RES.companies||{})[stock];
   if(!c) return "";
-  const ch = Object.entries(c.charter||{}).map(([g,x])=>`${g} ${x.v} <span class="sub">(${esc(x.src)})</span>`).join("<br>");
+  const ch = Object.entries(c.charter||{}).map(([g,x])=>`${g}배당: ${esc(CH_TXT[x.v]||x.v)} <span class="sub">(${esc(x.src)})</span>`).join("<br>");
   const og = Object.entries(c.organ||{}).map(([g,v])=>`${g} ${esc(v)}`).join(" · ");
-  const jd = Object.entries(c.judgments||{}).map(([t,j])=>`<div class="row">· ${esc(t)} ${esc(j.quarter)}: <b>${esc(j.method)}${j.may_change?" · 바뀔 수 있음":""}</b> <span class="sub">${esc(j.why)}</span></div>`).join("");
+  const jd = Object.entries(c.judgments||{}).map(([t,j])=>`<div class="row">· ${esc(t)} ${esc(j.quarter)}: <b>${esc(METHOD_TXT[j.method]||j.method)}${j.may_change?" · 바뀔 수 있음":""}</b> <span class="sub">${esc(j.why)}</span></div>`).join("");
   let h = `<div class="why"><div class="wh">🏷️ 이 회사의 기준일 판정</div>${jd}
-    <div class="row">정관(이사회 기준일 지정): ${ch||"정보 없음"}</div>
+    <div class="row">정관상 배당기준일: ${ch||"정보 없음"}</div>
     <div class="row">배당액 결정기관: ${og||"미상"} · 결산월 ${esc(String(c.acc_mt))}월${c.acc_known?"":" (조회 실패 — 12월 가정)"}</div>`;
   if(c.charter_pending && c.charter_pending.date) h += `<div class="row">주총(${esc(c.charter_pending.date)}) 정관 기준일 변경 안건 상정 — 결과 대기</div>`;
   (c.notices||[]).forEach(n=> h += `<div class="ev">📣 ${esc(n.date)} ${esc(n.title)} → ${esc(n.quarter)} ${esc(n.div_type)}${n.hint?` (${esc(n.hint)} 이후)`:""}</div>`);
@@ -479,7 +485,7 @@ function divHistBlock(stock){   // 이 회사가 원래 주는 배당 — 구성
     + c.rounds.map(x=>`<tr title="${esc(`결산기말·분기말 ${x.quarter_end} · 출처 ${x.src}`)}"><td>${esc(x.quarter)}</td><td>${esc((x.div_type||"배당").replace("배당",""))}</td>
         <td class="px">${x.per_share?won(x.per_share)+"원":"-"}${x.special?' <span title="이전 회차 중앙값의 2배 초과 — 특별배당 포함으로 보고 예상 금액에서 제외">특별</span>':""}</td>
         <td class="dt">${esc((x.decided||"-").slice(2))}→${esc(x.record_date.slice(2))}</td>
-        <td>${x.fixed?"고정":"<b>유동</b>"}${x.amount_first?' <span title="배당액 확정일이 기준일보다 먼저 — 금액을 알고 살 수 있음">금액먼저</span>':""}</td></tr>`).join("")
+        <td>${x.fixed?"결산기말·분기말":"<b>이사회 지정</b>"}${x.amount_first?' · <span title="배당액 확정일이 기준일보다 먼저 — 금액을 알고 살 수 있음">금액 먼저 공시</span>':""}</td></tr>`).join("")
     + `</tbody></table></div>`;
 }
 
@@ -497,8 +503,8 @@ function showDetail(e){
     box.innerHTML = `<div class="detail">
         <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
         <div class="corp">${esc(e.label)} <span style="font-size:13px;color:var(--muted)">${esc(e.date)} · ${e.items.length}건</span></div>
-        <div class="row" style="color:var(--muted)">근거 약한 급(날짜가 바뀔 수 있는 것) 먼저, 그다음 금액순 · 수익률·지수pt 는 차월물 만기까지 배당락만 · 행 클릭→상세</div>
-        <table class="dortab" id="grpTab"><thead><tr><th>종목</th><th style="text-align:right">금액</th><th>급</th>
+        <div class="row" style="color:var(--muted)">날짜 근거가 약한 것(바뀔 수 있는 것) 먼저, 그다음 금액순 · 수익률·지수pt 는 차월물 만기까지 배당락만 · 행 클릭→상세</div>
+        <table class="dortab" id="grpTab"><thead><tr><th>종목</th><th style="text-align:right">금액</th><th>날짜 확실도</th>
           <th style="text-align:right">수익률</th><th style="text-align:right">지수pt</th></tr></thead><tbody>${
         rows.map(({x,p})=>`<tr class="dor" data-i="${e.items.indexOf(x)}">
           <td class="nm">${esc(x.corp)} <span class="mkt ${esc(x.market)}">${esc(x.market)}</span></td>
