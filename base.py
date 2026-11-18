@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """공용 기반 — 경로·json 원자 저장·감시종목·콘솔 UTF-8. API 키·네트워크 없이 import 된다."""
-import json, os, sys
+import json, os, sys, time
 
 # 콘솔 UTF-8 출력 — base 를 import 하는 모든 모듈이 공유(각자 재선언 불필요)
 try:
@@ -17,6 +17,11 @@ def save_json(path, obj, indent=1):
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=indent)
+    for wait in (0.2, 0.5, 1, 2, 4):   # 윈도우: 다른 프로세스(읽는 쪽·백신)가 잠깐 열고 있으면 교체가 막힘 → 잠깐 뒤 다시
+        try:
+            return os.replace(tmp, path)
+        except PermissionError:
+            time.sleep(wait)
     os.replace(tmp, path)
 
 _wl_cache = {"mtime": None, "data": None}
