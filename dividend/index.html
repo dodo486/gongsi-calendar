@@ -6,7 +6,7 @@
 <title>💰 배당·증자 캘린더</title>
 <script src="../common/vendor/fullcalendar.min.js"></script>
 <script src="../common/common.js"></script>
-<script src="../common/vendor/xlsx.mini.min.js"></script>
+<script src="../common/vendor/xlsx.style.min.js"></script>
 <link rel="stylesheet" href="../common/common.css">
 <style>
   .dortab{width:100%;border-collapse:collapse;font-size:13px}
@@ -646,7 +646,28 @@ function exportXlsx(){
                    `${METHOD_TXT[e.method]||e.method} — ${e.why} / 날짜 근거: ${e.anchor}`, e.amount_basis || "")))
     .sort((a,b)=> a["배당락일(T-1)"].localeCompare(b["배당락일(T-1)"]) || a["종목명"].localeCompare(b["종목명"], "ko"));
   if(!rows.length){ alert(`${from} 이후 배당이 없습니다.`); return; }
+  // 서식 — 머리줄 남색, 구분은 화면 범례처럼 진함(확실)→회색(근거 약함)
+  const LINE = {style:"thin", color:{rgb:"BFBFBF"}};
+  const BOX = {top:LINE, bottom:LINE, left:LINE, right:LINE};
+  const HEAD = {font:{bold:true, color:{rgb:"FFFFFF"}}, fill:{fgColor:{rgb:"1F4E78"}}, alignment:{vertical:"center", wrapText:true}, border:BOX};
+  const SEC = {font:{bold:true, sz:12, color:{rgb:"1F4E78"}}, fill:{fgColor:{rgb:"DDEBF7"}}, border:BOX};
+  const TITLE = {font:{bold:true, sz:14, color:{rgb:"1F4E78"}}};
+  const NOTE = {font:{italic:true, color:{rgb:"595959"}}};
+  const CELL = {alignment:{vertical:"top"}, border:BOX};
+  const WRAP = {alignment:{vertical:"top", wrapText:true}, border:BOX};
+  const KIND_FILL = [["확정", "F8CBAD"], ["기준일 공고", "F4B084"], [EST_GRADE[1].t, "FFD966"], [EST_GRADE[2].t, "FFE699"],
+                     [EST_GRADE[3].t, "FFF2CC"], [EST_GRADE[4].t, "EDEDED"], [EST_GRADE[5].t, "D9D9D9"]];
+  const kindFill = v => { const k = KIND_FILL.find(([t])=> String(v).includes(t)); return k ? {fill:{fgColor:{rgb:k[1]}}} : {}; };
+  const paint = (ws, fn) => {
+    const r = XLSX.utils.decode_range(ws["!ref"]);
+    for(let R=r.s.r; R<=r.e.r; R++) for(let C=r.s.c; C<=r.e.c; C++){
+      const ref = XLSX.utils.encode_cell({r:R, c:C});
+      ws[ref] = ws[ref] || {t:"s", v:""};
+      ws[ref].s = fn(R, C, ws[ref].v);
+    }
+  };
   const ws = XLSX.utils.json_to_sheet(rows);
+  paint(ws, (R, C, v)=> R===0 ? HEAD : C===3 ? {...CELL, ...kindFill(v), font:{bold:true}} : CELL);
   ws["!cols"] = [9,16,5,34,9,11,11,13,13,11,13,10,70,30].map(w=> ({wch:w}));
   ws["!autofilter"] = {ref: ws["!ref"]};
   const wb = XLSX.utils.book_new();
@@ -671,6 +692,13 @@ function exportXlsx(){
     ["뽑은 범위", `${from} 이후 배당락 · 검색·시장 필터 반영 · ${new Date().toLocaleString("ko-KR")} 기준`],
   ];
   const gs = XLSX.utils.aoa_to_sheet(guide);
+  paint(gs, (R, C, v)=> {
+    const row = guide[R];
+    if(!row.length) return {};
+    if(row[0]==="구분" || row[0]==="칸") return HEAD;
+    if(row[0]==="뽑은 범위") return NOTE;
+    return C===0 ? {...WRAP, ...kindFill(row[0]), font:{bold:true}} : WRAP;
+  });
   gs["!cols"] = [{wch:44}, {wch:90}];
   XLSX.utils.book_append_sheet(wb, gs, "설명");
   const logic = [
@@ -717,6 +745,14 @@ function exportXlsx(){
     ["월물 컷오프", "2주 공고 의무 때문에, 만기 약 2주 전까지 기준일 공고가 없는 이사회 지정 회차는 그 월물에 배당락이 생길 수 없음"],
   ];
   const ls = XLSX.utils.aoa_to_sheet(logic);
+  paint(ls, (R, C, v)=> {
+    const row = logic[R];
+    if(R===0) return TITLE;
+    if(!row.length) return {};
+    if(/^\d\. /.test(row[0])) return SEC;
+    if(String(row[0]).startsWith("※")) return NOTE;
+    return WRAP;
+  });
   ls["!cols"] = [{wch:70}, {wch:100}];
   XLSX.utils.book_append_sheet(wb, ls, "산출로직");
   XLSX.writeFile(wb, `배당목록_${from}부터_${dISO(new Date())}.xlsx`);
