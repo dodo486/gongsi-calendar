@@ -18,8 +18,8 @@
   .dortab td.nm{font-weight:600}
   .dortab td.px{text-align:right;color:var(--muted);white-space:nowrap}
   .dortab td.dt{text-align:right;color:var(--muted);font-size:11px;white-space:nowrap}
-  .cal-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
-  .cal-bar-lbl{font-size:13px;font-weight:700;color:var(--muted)}
+  .cal-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .cal-bar-lbl{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap}
   .cal-legend{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
   .cal-legend .lg{display:inline-flex;align-items:center;gap:3px}
   .cal-legend .lg i{width:11px;height:11px;border-radius:3px;display:inline-block}
@@ -64,7 +64,18 @@
   /* 배당 — 권리락(T-1) 진빨강 / 매수일(T-2) 연빨강 */
   .fc-event.dv-ex{background:#dc2626;border-color:#dc2626;color:#fff;font-weight:600}
   .fc-event.dv-buy{background:#fca5a5;border-color:#fca5a5;color:#3a0a0a;font-weight:600}
-  .fc-event.est{background:var(--est);border-color:var(--est);color:#241a00;font-weight:600}
+  /* 예상배당 급 — 1급(고정)이 가장 확실, 아래로 갈수록 날짜 근거가 약함 */
+  .fc-event.est{font-weight:600}
+  .fc-event.est-g0{background:#f59e0b;border-color:#f59e0b;color:#241a00}
+  .fc-event.est-g1{background:var(--est);border-color:var(--est);color:#241a00}
+  .fc-event.est-g2{background:#fde68a;border-color:#fde68a;color:#241a00}
+  .fc-event.est-g3{background:rgba(234,179,8,.18);border:1.5px solid var(--est);color:#fde047}
+  .fc-event.est-g4{background:transparent;border:1.5px dashed var(--est);color:#fde047}
+  .fc-event.est-g5{background:transparent;border:1.5px dotted #a3a3a3;color:#d4d4d4}
+  .grade{font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;background:rgba(234,179,8,.18);color:#fde047;white-space:nowrap}
+  .show-pick{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--text)}
+  .show-pick label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;user-select:none;white-space:nowrap}
+  .show-pick input{margin:0;accent-color:var(--accent);cursor:pointer}
   /* 무상증자 — 권리락(T-1) 보라 / 권리부매수(T-2) 연보라 */
   .fc-event.cap-bonus-ex{background:#a855f7;border-color:#a855f7;font-weight:600}
   .fc-event.cap-bonus-buy{background:#c4b5fd;border-color:#c4b5fd;color:#1a1030;font-weight:600}
@@ -98,9 +109,16 @@
   <div class="cal-col">
     <div class="cal-bar">
       <span class="cal-bar-lbl">💰 배당·증자·거래정지 일정</span>
+      <span class="show-pick" title="배당·증자의 매수일(T-2) / 락일(T-1) 중 볼 것">
+        <label><input type="checkbox" id="showBuy" checked> 매수일(T-2)</label>
+        <label><input type="checkbox" id="showEx" checked> 락일(T-1)</label>
+      </span>
       <span class="cal-legend">
-        <span class="lg"><i style="background:#dc2626"></i><i style="background:#fca5a5"></i> 배당</span>
-        <span class="lg"><i style="background:var(--est)"></i> 예상배당</span>
+        <span class="lg"><i style="background:#dc2626"></i><i style="background:#fca5a5"></i> 확정 배당</span>
+        <span class="lg" title="예상배당 급 — 1급이 가장 확실"><i style="background:#f59e0b"></i>기준일 확정
+          <i style="background:var(--est)"></i>1급 <i style="background:#fde68a"></i>2급
+          <i style="border:1.5px solid var(--est)"></i>3급 <i style="border:1.5px dashed var(--est)"></i>4급
+          <i style="border:1.5px dotted #a3a3a3"></i>5급 예상</span>
         <span class="lg"><i style="background:#a855f7"></i><i style="background:#c4b5fd"></i> 무상</span>
         <span class="lg"><i style="background:#3b82f6"></i><i style="background:#7dd3fc"></i> 유상</span>
         <span class="lg"><i style="background:#f59e0b"></i> 무상 매도가능(잔고 입고)</span>
@@ -131,6 +149,25 @@ let divListMode = false;               // 사이드가 '오늘의 배당공시' 
 const todayISO = () => dISO(new Date());
 const matchQ = e => { const q = filters.q.trim().toLowerCase(); return !q || `${e.corp}`.toLowerCase().includes(q); };
 const shown = e => filters[e.market] && matchQ(e);
+const show = {buy:true, ex:true};      // 매수일(T-2)·락일(T-1) 중 무엇을 볼지 — 배당·예상배당·증자 공통
+try{ Object.assign(show, JSON.parse(localStorage.getItem("div.show") || "{}")); }catch(_){}
+
+// 예상배당 급 — 기준일 날짜가 얼마나 확실한가(금액은 별도). research.py 의 판정·앵커로 급만 매김
+const EST_GRADE = [
+  {g:0, t:"기준일 확정·금액 예상", d:"기준일 공고가 나왔고 금액만 예상"},
+  {g:1, t:"1급 고정", d:"결산기말·분기말 고정, 정관상 바뀔 근거 없음"},
+  {g:2, t:"2급 고정·바뀔 수 있음", d:"작년엔 결산기말·분기말이었지만 정관상 이사회가 따로 정할 수 있음"},
+  {g:3, t:"3급 유동·올해 근거", d:"이사회가 정하는 기준일 — 올해 주총일·실적발표 예정일에 작년 간격을 더함"},
+  {g:4, t:"4급 유동·작년 반복", d:"이사회가 정하는 기준일 — 올해 근거가 아직 없어 작년 같은 회차 + 52주"},
+  {g:5, t:"5급 근거 약함", d:"이력이 없거나 판별이 어려워 수집대상 전체 중앙값 등으로 추정"},
+];
+function estGrade(e){
+  if((e.anchor||"").startsWith("④")) return EST_GRADE[0];
+  if(e.method==="고정") return EST_GRADE[e.may_change ? 2 : 1];
+  if(e.method==="유동" && (e.anchor||"").startsWith("A2")) return EST_GRADE[3];
+  if(e.method==="유동" && (e.anchor||"").startsWith("A1")) return EST_GRADE[4];
+  return EST_GRADE[5];
+}
 
 let _divUp = [], _divSort = {key:"ex", dir:1};   // 기본: 배당락일 오름차순(가까운 날 먼저)
 function divRowsHtml(){                 // 정렬 상태(_divSort) 반영해 배당락 표 행 생성
@@ -277,12 +314,12 @@ function haltEvents(){   // 거래정지 → '🚫정지 시작' + '✅거래재
 function divEvents(){
   const out = [];
   DIV.filter(shown).forEach((e,i)=>{
-    const amt = e.per_share?` (${won(e.per_share)}원)`:"";
+    const amt = e.per_share?` (${won(e.per_share)}원)`:" (금액 미정)";
     const props = {...e, kind:"div"};
-    out.push({id:"vb"+i, title:`[배당매수일] ${e.corp}${amt}`, start:e.confirm_date||e.record_date,
-              allDay:true, classNames:["dv-buy"], extendedProps:props});
-    out.push({id:"vx"+i, title:`[배당권리락] ${e.corp}${amt}`, start:e.ex_date||e.record_date,
-              allDay:true, classNames:["dv-ex"], extendedProps:props});
+    if(show.buy) out.push({id:"vb"+i, title:`[배당매수일] ${e.corp}${amt}`, start:e.confirm_date||e.record_date,
+                           allDay:true, classNames:["dv-buy"], extendedProps:props});
+    if(show.ex)  out.push({id:"vx"+i, title:`[배당권리락] ${e.corp}${amt}`, start:e.ex_date||e.record_date,
+                           allDay:true, classNames:["dv-ex"], extendedProps:props});
   });
   return out;
 }
@@ -294,10 +331,10 @@ function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준
     const props = {...e, kind:"cap"};
     const even = e.ret!=null ? ` 본전 ${won(e.base_price)}·현재 ${won(e.price)} ${pctTxt(e.ret)}`
                : e.base_price ? ` 예상기준가 ${won(e.base_price)}` : "";
-    if(e.buy_date||e.record_date)
+    if(show.buy && (e.buy_date||e.record_date))
       out.push({id:"cb"+i, title:`[${pre}매수일] ${e.corp}`, start:e.buy_date||e.record_date, allDay:true,
                 classNames:[bonus?"cap-bonus-buy":"cap-rights-buy"], extendedProps:props});
-    if(e.ex_date||e.record_date)
+    if(show.ex && (e.ex_date||e.record_date))
       out.push({id:"cx"+i, title:`[${pre}권리락] ${e.corp}${even}`, start:e.ex_date||e.record_date, allDay:true,
                 classNames:[bonus?"cap-bonus-ex":"cap-rights-ex"], extendedProps:props});
     // 무상 매도 가능일(신주상장 T-2) — 잔고가 들어와 팔 수 있는 날, 엠피스 장부단가 주의
@@ -323,12 +360,14 @@ function estEvents(){   // 예상배당(리서치 추정) — 노란색. 실제 
   const superseded = e => e.record_date && (realRec[e.stock]||[]).some(rd => dday(rd, e.record_date) <= 30);
   const out = [];
   (RES.events||[]).filter(e=> shown(e) && !superseded(e)).forEach((e,i)=>{
-    const amt = `${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"})`;
-    const props = {...e, kind:"est"};
-    out.push({id:"eb"+i, title:`💡[예상 배당매수일] ${amt}`, start:e.confirm_date||e.record_date,
-              allDay:true, classNames:["est"], extendedProps:props});
-    out.push({id:"ex"+i, title:`💡[예상 배당락] ${amt}`, start:e.ex_date||e.record_date,
-              allDay:true, classNames:["est"], extendedProps:props});
+    const g = estGrade(e);
+    const amt = `${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"}) · ${g.t}`;
+    const props = {...e, kind:"est", grade:g};
+    const cls = ["est", "est-g"+g.g];
+    if(show.buy) out.push({id:"eb"+i, title:`💡[예상 배당매수일] ${amt}`, start:e.confirm_date||e.record_date,
+                           allDay:true, classNames:cls, extendedProps:props});
+    if(show.ex)  out.push({id:"ex"+i, title:`💡[예상 배당락] ${amt}`, start:e.ex_date||e.record_date,
+                           allDay:true, classNames:cls, extendedProps:props});
   });
   return out;
 }
@@ -418,17 +457,17 @@ function showDetail(e){
     const dp = {};
     (DP?.indices||[]).forEach(c=> (c.months||[]).forEach(m=> m.days.forEach(d=> d.items.forEach(x=> dp[x.stock+"|"+d.ex_date] = x))));
     const rows = e.items.map(x=>({x, p:dp[x.stock+"|"+x.ex_date]}))
-      .sort((a,b)=> (b.x.method==="유동") - (a.x.method==="유동") || (+b.x.per_share||0) - (+a.x.per_share||0));
+      .sort((a,b)=> (b.x.grade?.g ?? -1) - (a.x.grade?.g ?? -1) || (+b.x.per_share||0) - (+a.x.per_share||0));
     box.innerHTML = `<div class="detail">
         <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
         <div class="corp">${esc(e.label)} <span style="font-size:13px;color:var(--muted)">${esc(e.date)} · ${e.items.length}건</span></div>
-        <div class="row" style="color:var(--muted)">유동(기준일이 바뀔 수 있음) 먼저, 그다음 금액순 · 수익률·지수pt 는 차월물 만기까지 배당락만 · 행 클릭→상세</div>
-        <table class="dortab" id="grpTab"><thead><tr><th>종목</th><th style="text-align:right">금액</th><th>방식</th>
+        <div class="row" style="color:var(--muted)">근거 약한 급(날짜가 바뀔 수 있는 것) 먼저, 그다음 금액순 · 수익률·지수pt 는 차월물 만기까지 배당락만 · 행 클릭→상세</div>
+        <table class="dortab" id="grpTab"><thead><tr><th>종목</th><th style="text-align:right">금액</th><th>급</th>
           <th style="text-align:right">수익률</th><th style="text-align:right">지수pt</th></tr></thead><tbody>${
         rows.map(({x,p})=>`<tr class="dor" data-i="${e.items.indexOf(x)}">
           <td class="nm">${esc(x.corp)} <span class="mkt ${esc(x.market)}">${esc(x.market)}</span></td>
           <td class="px">${x.per_share?won(x.per_share)+"원":"-"}</td>
-          <td${x.method==="유동"?' style="color:var(--est);font-weight:700"':""}>${esc(x.method||x.div_type||x.type||"")}</td>
+          <td>${x.grade?`<span class="grade">${esc(x.grade.t)}</span>`:esc(x.div_type||x.type||"")}</td>
           <td class="px">${p?p.yield.toFixed(2)+"%":"-"}</td><td class="px">${p?p.points.toFixed(3):"-"}</td></tr>`).join("")}</tbody></table></div>`;
     box.querySelectorAll("#grpTab tr.dor").forEach(el=> el.addEventListener("click",()=> showDetail(e.items[+el.dataset.i])));
   } else if(e.kind==="est"){
@@ -437,6 +476,7 @@ function showDetail(e){
         ${backLinks(e)}
         <div class="corp">💡 ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
         <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--est)">예상 ${esc(e.div_type||"배당")}</b> (리서치 추정)</div>
+        <div class="row">📶 <span class="grade">${esc(estGrade(e).t)}</span> ${esc(estGrade(e).d)}</div>
         <div class="big" style="color:var(--est)">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주 (예상)</span></div>
         <div class="row">🗓️ 예상 배당매수일(T-2) <b style="color:var(--est)">${esc(e.confirm_date||"-")}</b></div>
         <div class="row">🚫 예상 배당락일(T-1) ${esc(e.ex_date||"-")}</div>
@@ -572,6 +612,15 @@ async function boot(){
 }
 
 document.getElementById("q").addEventListener("input",e=>{ filters.q=e.target.value; applyFilters(); });
+[["showBuy","buy"],["showEx","ex"]].forEach(([id,k])=>{
+  const el = document.getElementById(id);
+  el.checked = show[k];
+  el.addEventListener("change",()=>{
+    show[k] = el.checked;
+    try{ localStorage.setItem("div.show", JSON.stringify(show)); }catch(_){}
+    applyFilters();
+  });
+});
 document.querySelectorAll(".chip[data-market]").forEach(c=> c.addEventListener("click",()=>{
   const mk=c.dataset.market; filters[mk]=!filters[mk];
   c.classList.toggle("on",filters[mk]); applyFilters();
