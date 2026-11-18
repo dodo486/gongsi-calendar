@@ -41,7 +41,7 @@ SEASON_DAYS = {"결산배당": 123, "중간배당": 92, "분기배당": 92}
 FLOAT_FROM = {"결산배당": 2023, "중간배당": 2025, "분기배당": 2025}
 TYPE_QUARTERS = {"분기배당": (1, 2, 3), "중간배당": (2,), "결산배당": (4,)}
 GROUP = {"결산배당": "결산", "중간배당": "분기중간", "분기배당": "분기중간"}
-PARSE_VERSION = {"notice": 3, "agm_call": 2, "agm_result": 2, "plan": 2}
+PARSE_VERSION = {"notice": 4, "agm_call": 2, "agm_result": 2, "plan": 2}
 
 
 def _d(s):
@@ -119,7 +119,8 @@ def parse_notice(t):
     fyq = re.search(r"(\d{4})\s*년\s*([1-3])\s*분기\s*배당", t)   # "2026년 2분기 배당여부 및 배당기준일을…" → 그 분기
     typ = ("분기배당" if fyq or re.search(r"분기\s*배당\s*기준일", t) else
            "중간배당" if re.search(r"중간\s*배당\s*기준일", t) else "결산배당")
-    return {"is_div": bool(re.search(r"배당\s*기준일", t)), "div_type": typ, "months": months,
+    subsidiary = bool(re.search(r"종속회사[^.]{0,80}배당", t)) and not re.search(r"당사[^.]{0,40}배당\s*기준일", t)   # 자회사 배당 계획 공시
+    return {"is_div": bool(re.search(r"배당\s*기준일", t)) and not subsidiary, "div_type": typ, "months": months,
             "fyq": [int(fyq[1]), int(fyq[2])] if fyq else None}
 
 def parse_agm(t):
