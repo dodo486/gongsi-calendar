@@ -9,8 +9,7 @@ import urllib.parse
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
-INDEX_PATH = os.path.join(BASE, "index.html")
-HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html",)]
+HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", os.path.join("dividend", "index.html"))]
 PORT = 8777
 
 # 토스트 클릭 → 차트 열기 브로드캐스트용
