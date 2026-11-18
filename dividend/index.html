@@ -180,6 +180,8 @@ const EST_GRADE = [
   {g:4, t:"이사회 지정일·작년 날짜 반복", d:"이사회가 정하는 기준일 — 올해 근거가 아직 없어 작년 같은 회차 기준일 + 52주"},
   {g:5, t:"근거 약함", d:"이 회사 이력이 없거나 판별이 어려워 수집대상 전체 중앙값 등으로 추정"},
 ];
+const md = iso => iso ? `${+iso.slice(5,7)}/${+iso.slice(8,10)}` : "";
+const estLabel = e => `예상 기준일 ${md(e.record_date)} — ${e.reason || estGrade(e).t}`;   // 날짜 + 이유 한 줄 (research.py 가 회차마다 만든 이유)
 function estGrade(e){
   if(e.method==="확정 기준일") return EST_GRADE[0];
   if(e.method==="고정") return EST_GRADE[e.may_change ? 2 : 1];
@@ -388,7 +390,7 @@ function estEvents(){   // 예상배당 — 날짜 확실도별 노란색 계열
   const out = [];
   estList().forEach((e,i)=>{
     const g = estGrade(e);
-    const amt = `${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"}) · ${g.t}`;
+    const amt = `${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"}) · ${estLabel(e)}`;
     const props = {...e, kind:"est", grade:g};
     const cls = ["est", "est-g"+g.g];
     if(show.buy) out.push({id:"eb"+i, title:`💡[예상 배당매수일] ${amt}`, start:e.confirm_date||e.record_date,
@@ -524,7 +526,7 @@ function showDetail(e){
         ${backLinks(e)}
         <div class="corp">💡 ${esc(e.corp)}<span class="badge ${esc(e.market)}">${esc(e.market)}</span></div>
         <div class="row">종목코드 ${esc(e.stock||"-")} · <b style="color:var(--est)">예상 ${esc(e.div_type||"배당")}</b> (리서치 추정)</div>
-        <div class="row">📶 <span class="grade">${esc(estGrade(e).t)}</span> ${esc(estGrade(e).d)}</div>
+        <div class="row">📶 <b>${esc(estLabel(e))}</b> <span class="grade">${esc(estGrade(e).t)}</span></div>
         <div class="big" style="color:var(--est)">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주 (예상)</span></div>
         <div class="row">🗓️ 예상 배당매수일(T-2) <b style="color:var(--est)">${esc(e.confirm_date||"-")}</b></div>
         <div class="row">🚫 예상 배당락일(T-1) ${esc(e.ex_date||"-")}</div>
@@ -642,7 +644,7 @@ function exportXlsx(){
       .map(e=> row(e, e.per_share ? "확정 — 배당결정 공시(금액·기준일)" : "기준일 공고 — 금액 미정",
                    `DART 공시 ${e.rcept_dt ? e.rcept_dt.replace(/(\d{4})(\d{2})(\d{2})/,"$1-$2-$3") : ""} ${e.url||""}`.trim(), e.per_share ? "공시 금액" : ""))
     .concat(estList().filter(e=> e.ex_date && e.ex_date >= from)
-      .map(e=> row(e, `예상 — ${estGrade(e).t}`,
+      .map(e=> row(e, estLabel(e),
                    `${METHOD_TXT[e.method]||e.method} — ${e.why} / 날짜 근거: ${e.anchor}`, e.amount_basis || "")))
     .sort((a,b)=> a["배당락일(T-1)"].localeCompare(b["배당락일(T-1)"]) || a["종목명"].localeCompare(b["종목명"], "ko"));
   if(!rows.length){ alert(`${from} 이후 배당이 없습니다.`); return; }
@@ -674,7 +676,7 @@ function exportXlsx(){
   XLSX.utils.book_append_sheet(wb, ws, "배당");
   // 설명 탭 — 구분(단계)·칸 뜻. 화면과 같은 문구(EST_GRADE)를 그대로 씀
   const guide = [
-    ["구분", "뜻"],
+    ["구분 칸 색", "뜻 — 예상은 구분 칸에 '예상 기준일 날짜 — 그 날짜를 잡은 이유'가 종목마다 적혀 있고, 색은 날짜가 얼마나 확실한지"],
     ["확정 — 배당결정 공시(금액·기준일)", "회사가 현금배당결정 공시를 냄 — 금액·기준일 확정"],
     ["기준일 공고 — 금액 미정", "회사가 기준일(주주명부폐쇄) 공고만 냄 — 날짜 확정, 금액은 아직"],
     ...EST_GRADE.map(g=> [`예상 — ${g.t}`, g.d]),
@@ -695,7 +697,7 @@ function exportXlsx(){
   paint(gs, (R, C, v)=> {
     const row = guide[R];
     if(!row.length) return {};
-    if(row[0]==="구분" || row[0]==="칸") return HEAD;
+    if(row[0]==="구분 칸 색" || row[0]==="칸") return HEAD;
     if(row[0]==="뽑은 범위") return NOTE;
     return C===0 ? {...WRAP, ...kindFill(row[0]), font:{bold:true}} : WRAP;
   });

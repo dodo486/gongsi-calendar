@@ -41,7 +41,7 @@ SEASON_DAYS = {"결산배당": 123, "중간배당": 92, "분기배당": 92}
 FLOAT_FROM = {"결산배당": 2023, "중간배당": 2025, "분기배당": 2025}
 TYPE_QUARTERS = {"분기배당": (1, 2, 3), "중간배당": (2,), "결산배당": (4,)}
 GROUP = {"결산배당": "결산", "중간배당": "분기중간", "분기배당": "분기중간"}
-PARSE_VERSION = {"notice": 2, "agm_call": 2, "agm_result": 2, "plan": 2}
+PARSE_VERSION = {"notice": 3, "agm_call": 2, "agm_result": 2, "plan": 2}
 
 
 def _d(s):
@@ -116,9 +116,11 @@ def parse_charter(t):
 def parse_notice(t):
     i = t.find("기준일")
     months = [f"{m[1]}-{int(m[2]):02d}" for m in re.finditer(r"(\d{4})\s*년\s*(\d{1,2})\s*월", t[i:i + 800])] if i >= 0 else []
-    typ = ("분기배당" if re.search(r"분기\s*배당\s*기준일", t) else
+    fyq = re.search(r"(\d{4})\s*년\s*([1-3])\s*분기\s*배당", t)   # "2026년 2분기 배당여부 및 배당기준일을…" → 그 분기
+    typ = ("분기배당" if fyq or re.search(r"분기\s*배당\s*기준일", t) else
            "중간배당" if re.search(r"중간\s*배당\s*기준일", t) else "결산배당")
-    return {"is_div": bool(re.search(r"배당\s*기준일", t)), "div_type": typ, "months": months}
+    return {"is_div": bool(re.search(r"배당\s*기준일", t)), "div_type": typ, "months": months,
+            "fyq": [int(fyq[1]), int(fyq[2])] if fyq else None}
 
 def parse_agm(t):
     dt = re.search(r"주주총회일자\s*(\d{4}-\d{2}-\d{2})", t) or re.search(r"일시\s*(\d{4}-\d{2}-\d{2})", t)
@@ -279,8 +281,8 @@ def context(stock, entries, policy, acc, agm_records):
             rec_notices.append({"date": rd, "record": _d(e["record_date"]), "div_type": e.get("div_type", "")})
         elif k == "notice" and e.get("is_div"):
             t = e["div_type"]
-            fy, q, _ = min(((fy, q, quarter_end(fy, q, acc)) for fy in range(rd.year - 1, rd.year + 2) for q in TYPE_QUARTERS[t]
-                            if quarter_end(fy, q, acc) >= rd - datetime.timedelta(days=NOTICE_LOOKBACK_DAYS)), key=lambda c: c[2])
+            fy, q = e.get("fyq") or min(((fy, q, quarter_end(fy, q, acc)) for fy in range(rd.year - 1, rd.year + 2) for q in TYPE_QUARTERS[t]
+                                          if quarter_end(fy, q, acc) >= rd - datetime.timedelta(days=NOTICE_LOOKBACK_DAYS)), key=lambda c: c[2])[:2]
             hint = next((m for m in e.get("months", []) if m > rd.strftime("%Y-%m")), "")
             notices.append({"date": rd, "div_type": t, "fy": fy, "q": q, "hint": hint, "title": e.get("title", "")})
         elif k in ("agm_call", "agm_result") and e.get("agm_date"):
@@ -468,13 +470,23 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     ann_rec = next((n for n in reversed(ctx["rec_notices"]) if n["div_type"] in ("", t) and qe <= n["record"] <= qe + datetime.timedelta(days=SEASON_DAYS[t])), None)
     notice = _notice(ctx, t, fy, q)
     warn, alt, anchor_event = [], {}, None
+    md = lambda d: f"{d.month}/{d.day}"
+    last_word = "작년" if t == "결산배당" else "직전 회차"
+    end_word = "결산기말" if t == "결산배당" else "분기말"
 
     if not ann_rec and today > qe + datetime.timedelta(days=SEASON_DAYS[t]):
         return None, f"⚠ {fy} Q{q} {t}: 시즌 창(결산기말·분기말 {qe} +{SEASON_DAYS[t]}일) 지나도 배당 공시 없음 → 미실시로 보고 예상 제외"
     if ann_rec:
         rec, anchor = ann_rec["record"], f"기준일 공고 {ann_rec['date']} (금액은 아직 미공시)"
+        reason = f"회사가 기준일 공고({md(ann_rec['date'])}) · 금액은 아직"
     elif method == "고정":
         rec, anchor = qe, "결산기말·분기말 고정"
+        ch = (ctx["charter"].get(GROUP[t]) or {}).get("v")
+        if may_change:
+            reason = f"{last_word} {md(prev['record'])} · 정관상 이사회가 다른 날로 정할 수 있어 바뀔 수 있음"
+        else:
+            reason = (f"{last_word}도 {md(prev['record'])}" if prev else "배당 이력 없음") + \
+                     (f" · 정관상 기준일이 {end_word}로 고정" if ch == "X" else f" · {end_word}에서 바꾼 적 없음")
     else:
         if same_q and not same_q["fixed"]:
             alt["A1"] = same_q["record"] + datetime.timedelta(weeks=52 * (fy - same_q["fy"]))
@@ -482,6 +494,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
             off = (prev["record"] - prev_agm["date"]).days if prev and prev_agm and not prev["fixed"] else med["agm"]
             alt["A2"], anchor_event = agm["date"] + datetime.timedelta(days=off), agm["date"]
             a2_txt = f"올해 정기주총({agm['date']}) + 작년 주총→기준일 간격 {off}일"
+            a2_why = f"올해 정기주총 {md(agm['date'])} + 작년처럼 주총 {off}일 뒤"
         else:
             ann = announce_date(earn, qe)
             if ann:
@@ -489,19 +502,26 @@ def predict_round(ctx, t, fy, q, today, earn, med):
                        else med["dec"][t])
                 alt["A2"], anchor_event = ann + datetime.timedelta(days=off), ann
                 a2_txt = f"올해 실적발표 예정일({ann}) + 작년 배당결정→기준일 간격 {off}일"
+                a2_why = f"올해 실적발표 예정 {md(ann)} + 작년처럼 배당결정 {off}일 뒤"
         if "A2" in alt:
-            rec, anchor = alt["A2"], a2_txt
+            rec, anchor, reason = alt["A2"], a2_txt, a2_why
         elif "A1" in alt:
             rec, anchor = alt["A1"], f"작년 같은 회차 기준일({same_q['record']}) + 52주"
+            reason = f"작년 기준일 {md(same_q['record'])}(이사회가 따로 정한 날) → 올해도 같은 때(52주 뒤)"
         else:
             rec, anchor = qe + datetime.timedelta(days=med["qe"][t]), f"이 회사 이력 없음 — 결산기말·분기말 + 수집대상 전체 중앙값 {med['qe'][t]}일"
+            reason = (f"작년 같은 {'회차' if t == '결산배당' else '분기'}에 이사회가 정한 기준일 없음" if past else "이 회사 배당 이력 없음") +                      f" → 다른 회사들 중간값({end_word} + {med['qe'][t]}일)"
+        if notice:
+            reason = f"이번 회차 기준일 안내 자율공시({md(notice['date'])}) → 이사회가 따로 정함 · " + reason
         if notice and notice["hint"]:
             floor = D(int(notice["hint"][:4]), int(notice["hint"][5:]), 1)
             if rec < floor:
                 rec, anchor = floor, anchor + f" · 자율공시 '{notice['hint']}' 이후로 보정"
+                reason += f" · 자율공시상 {notice['hint']} 이후"
         floor = today + datetime.timedelta(days=NOTICE_MIN_DAYS)
         if rec < floor:
             rec, anchor = floor, anchor + f" · 기준일 공고 전이라 {NOTICE_MIN_DAYS}일 뒤({floor}) 이후로 보정"
+            reason += f" · 아직 공고 전이라 2주 뒤({md(floor)}) 이후"
         if anchor_event and anchor_event < today - datetime.timedelta(days=MISS_GRACE_DAYS):
             return None, f"⚠ {fy} Q{q} {t}: 근거 날짜(주총·실적발표 {anchor_event})가 지나도 배당 공시 없음 → 미실시로 보고 예상 제외"
 
@@ -523,7 +543,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     reg = next((r for r in reversed(past) if not r["special"] and r["dps"]), None)
     return {"div_type": t, "fy": fy, "q": q, "quarter": f"{fy} Q{q}", "quarter_end": _iso(qe),
             "record_date": _iso(rec), "pay_date": _iso(pay), "method": "확정 기준일" if ann_rec else method,
-            "may_change": may_change, "why": why, "anchor": anchor,
+            "may_change": may_change, "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: _iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
             "per_share": reg["dps"] if reg else "",
