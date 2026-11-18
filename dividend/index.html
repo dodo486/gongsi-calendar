@@ -629,25 +629,25 @@ function exportXlsx(){
   const afterExp = ex => exps.filter(d=> d < ex).pop() || "";      // 배당락 직전 동시만기
   const monthOf  = ex => exps.find(d=> d >= ex) || "";              // 배당락이 걸리는 월물(그 이후 첫 동시만기)
   const ym = d => d ? d.slice(0,7) : "";
-  const row = (e, kind, sure, why, amtWhy) => ({
-    "종목코드": e.stock, "종목명": e.corp, "시장": {KOSPI:"KP", KOSDAQ:"KQ"}[e.market] || e.market,
+  const row = (e, kind, why, amtWhy) => ({
+    "종목코드": "A" + e.stock, "종목명": e.corp, "시장": {KOSPI:"KP", KOSDAQ:"KQ"}[e.market] || e.market,
     "구분": kind, "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
     "기준일": e.record_date || "", "배당매수일(T-2)": e.confirm_date || "", "배당락일(T-1)": e.ex_date || "",
     "지급(예정)일": e.pay_date || "",
     "몇월 만기 후": afterExp(e.ex_date) ? `${ym(afterExp(e.ex_date))} 만기 후` : "",
     "배당락 월물": monthOf(e.ex_date) ? `${ym(monthOf(e.ex_date))}물` : "",
-    "날짜 확실도": sure, "근거": why, "금액 근거": amtWhy,
+    "근거": why, "금액 근거": amtWhy,
   });
   const rows = DIV.filter(e=> shown(e) && e.ex_date && e.ex_date >= from)
-      .map(e=> row(e, "확정", e.per_share ? "배당결정 공시" : "기준일 공고(금액 미정)",
+      .map(e=> row(e, e.per_share ? "확정 — 배당결정 공시(금액·기준일)" : "기준일 공고 — 금액 미정",
                    `DART 공시 ${e.rcept_dt ? e.rcept_dt.replace(/(\d{4})(\d{2})(\d{2})/,"$1-$2-$3") : ""} ${e.url||""}`.trim(), e.per_share ? "공시 금액" : ""))
     .concat(estList().filter(e=> e.ex_date && e.ex_date >= from)
-      .map(e=> row(e, "예상", estGrade(e).t,
+      .map(e=> row(e, `예상 — ${estGrade(e).t}`,
                    `${METHOD_TXT[e.method]||e.method} — ${e.why} / 날짜 근거: ${e.anchor}`, e.amount_basis || "")))
     .sort((a,b)=> a["배당락일(T-1)"].localeCompare(b["배당락일(T-1)"]) || a["종목명"].localeCompare(b["종목명"], "ko"));
   if(!rows.length){ alert(`${from} 이후 배당이 없습니다.`); return; }
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws["!cols"] = [8,16,5,6,9,11,11,13,13,11,13,10,26,70,30].map(w=> ({wch:w}));
+  ws["!cols"] = [9,16,5,34,9,11,11,13,13,11,13,10,70,30].map(w=> ({wch:w}));
   ws["!autofilter"] = {ref: ws["!ref"]};
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "배당");
