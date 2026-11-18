@@ -6,6 +6,7 @@
 <title>💰 배당·증자 캘린더</title>
 <script src="../common/vendor/fullcalendar.min.js"></script>
 <script src="../common/common.js"></script>
+<script src="../common/vendor/xlsx.mini.min.js"></script>
 <link rel="stylesheet" href="../common/common.css">
 <style>
   .dortab{width:100%;border-collapse:collapse;font-size:13px}
@@ -83,6 +84,7 @@
   .fc-event.est-g4{background:transparent;border:1.5px dashed var(--est);color:#fde047}
   .fc-event.est-g5{background:transparent;border:1.5px dotted #a3a3a3;color:#d4d4d4}
   .grade{font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;background:rgba(234,179,8,.18);color:#fde047;white-space:nowrap}
+  .chip.xlsx{color:#04240f;background:var(--accent);border-color:var(--accent);font-weight:700}
   .show-pick{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--text)}
   .show-pick label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;user-select:none;white-space:nowrap}
   .show-pick input{margin:0;accent-color:var(--accent);cursor:pointer}
@@ -113,6 +115,7 @@
     <input type="search" id="q" placeholder="회사명 검색">
     <span class="chip kospi on" data-market="KOSPI">KOSPI</span>
     <span class="chip kosdaq on" data-market="KOSDAQ">KOSDAQ</span>
+    <span class="chip xlsx" id="xlsxBtn" title="캘린더에 보고 있는 달 1일부터 그 이후 배당(확정·예상)을 엑셀로 — 검색·시장 필터 반영">📥 엑셀</span>
   </div>
 </header>
 <div class="cal-row">
@@ -373,14 +376,17 @@ function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준
   });
   return out;
 }
-function estEvents(){   // 예상배당(리서치 추정) — 노란색. 실제 배당공시 나온 시즌은 숨김.
+function estList(){   // 예상배당(리서치 추정) — 실제 배당공시가 나온 회차는 뺌, 검색·시장 필터 반영
   // 실제 배당(DIV)이 이미 나온 종목·기준일(±30일)의 예상배당은 중복 → 제거 (예: 삼양식품)
   const realRec = {};
   DIV.forEach(e=>{ if(e.stock && e.record_date) (realRec[e.stock]=realRec[e.stock]||[]).push(e.record_date); });
   const dday = (a,b)=> Math.abs((new Date(a)-new Date(b))/864e5);
   const superseded = e => e.record_date && (realRec[e.stock]||[]).some(rd => dday(rd, e.record_date) <= 30);
+  return (RES.events||[]).filter(e=> shown(e) && !superseded(e));
+}
+function estEvents(){   // 예상배당 — 날짜 확실도별 노란색 계열
   const out = [];
-  (RES.events||[]).filter(e=> shown(e) && !superseded(e)).forEach((e,i)=>{
+  estList().forEach((e,i)=>{
     const g = estGrade(e);
     const amt = `${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"}) · ${g.t}`;
     const props = {...e, kind:"est", grade:g};
@@ -616,6 +622,38 @@ function showDetail(e){
   }
 }
 
+// ── 엑셀: 보고 있는 달 1일부터 이후 배당 전부 (확정 + 예상, 검색·시장 필터 반영) ──
+function exportXlsx(){
+  const from = dISO(calendar.view.currentStart);
+  const exps = EXP.filter(x=> x.type==="선·옵 동시만기").map(x=> x.date).sort();
+  const afterExp = ex => exps.filter(d=> d < ex).pop() || "";      // 배당락 직전 동시만기
+  const monthOf  = ex => exps.find(d=> d >= ex) || "";              // 배당락이 걸리는 월물(그 이후 첫 동시만기)
+  const ym = d => d ? d.slice(0,7) : "";
+  const row = (e, kind, sure, why, amtWhy) => ({
+    "종목코드": e.stock, "종목명": e.corp, "시장": {KOSPI:"KP", KOSDAQ:"KQ"}[e.market] || e.market,
+    "구분": kind, "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
+    "기준일": e.record_date || "", "배당매수일(T-2)": e.confirm_date || "", "배당락일(T-1)": e.ex_date || "",
+    "지급(예정)일": e.pay_date || "",
+    "몇월 만기 후": afterExp(e.ex_date) ? `${ym(afterExp(e.ex_date))} 만기 후` : "",
+    "배당락 월물": monthOf(e.ex_date) ? `${ym(monthOf(e.ex_date))}물` : "",
+    "날짜 확실도": sure, "근거": why, "금액 근거": amtWhy,
+  });
+  const rows = DIV.filter(e=> shown(e) && e.ex_date && e.ex_date >= from)
+      .map(e=> row(e, "확정", e.per_share ? "배당결정 공시" : "기준일 공고(금액 미정)",
+                   `DART 공시 ${e.rcept_dt ? e.rcept_dt.replace(/(\d{4})(\d{2})(\d{2})/,"$1-$2-$3") : ""} ${e.url||""}`.trim(), e.per_share ? "공시 금액" : ""))
+    .concat(estList().filter(e=> e.ex_date && e.ex_date >= from)
+      .map(e=> row(e, "예상", estGrade(e).t,
+                   `${METHOD_TXT[e.method]||e.method} — ${e.why} / 날짜 근거: ${e.anchor}`, e.amount_basis || "")))
+    .sort((a,b)=> a["배당락일(T-1)"].localeCompare(b["배당락일(T-1)"]) || a["종목명"].localeCompare(b["종목명"], "ko"));
+  if(!rows.length){ alert(`${from} 이후 배당이 없습니다.`); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [8,16,5,6,9,11,11,13,13,11,13,10,26,70,30].map(w=> ({wch:w}));
+  ws["!autofilter"] = {ref: ws["!ref"]};
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "배당");
+  XLSX.writeFile(wb, `배당목록_${from}부터_${dISO(new Date())}.xlsx`);
+}
+
 async function getJSON(name){ return (await fetch(`${DATA}${name}?_=${Date.now()}`)).json(); }
 async function loadData(){
   const d = await getJSON("dividends.json");
@@ -665,6 +703,7 @@ async function boot(){
 }
 
 document.getElementById("q").addEventListener("input",e=>{ filters.q=e.target.value; applyFilters(); });
+document.getElementById("xlsxBtn").addEventListener("click", exportXlsx);
 [["showBuy","buy"],["showEx","ex"]].forEach(([id,k])=>{
   const el = document.getElementById(id);
   el.checked = show[k];
