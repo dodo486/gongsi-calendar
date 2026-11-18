@@ -10,47 +10,17 @@
   python kind_limits.py            # 오늘 선물 가격제한폭 도달 공시 → data/limits.json
   python kind_limits.py 2026-05-06 # 특정일자
 """
-import json, os, sys, re, datetime, http.cookiejar, urllib.request, urllib.parse
-# fetch 의 TLS 세팅(truststore→certifi)·경로·watchlist·SSL 컨텍스트 재사용
-from fetch import TLS_MODE, DATA_DIR, BASE, load_watchlist, save_json, build_ssl_context
+import json, os, sys, re, datetime
+from net import TLS_MODE
+from base import DATA_DIR, save_json
+import kind_client
+import md_feed
 
-KIND_URL = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
-VIEWER = "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={}&docno="
-HDR = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    "Referer": "https://kind.krx.co.kr/disclosure/todaydisclosure.do",
-    "X-Requested-With": "XMLHttpRequest",
-    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-}
 LIMIT_KW = "가격제한폭 확대요건 도달"   # 이 문구가 든 파생 공시만 대상
-
-def fetch_html(sel_date=None):
-    """KIND 파생상품시장 당일공시 목록 HTML (marketType=3)"""
-    today = datetime.date.today().strftime("%Y-%m-%d")
-    d = sel_date or today
-    data = {
-        "method": "searchTodayDisclosureSub", "currentPageSize": "300", "pageIndex": "1",
-        "orderMode": "0", "orderStat": "D", "forward": "todaydisclosure_sub", "chose": "all",
-        "todayFlag": "Y" if d == today else "N", "selDate": d,
-        "marketType": "3", "searchCorpName": "",
-    }
-    req = urllib.request.Request(KIND_URL, data=urllib.parse.urlencode(data).encode(), headers=HDR)
-    with urllib.request.urlopen(req, timeout=20) as r:
-        return r.read().decode("utf-8", "replace")
-
-def _name_to_code():
-    """watchlist(종목코드→정보)로 회사명→(코드,시장) 역인덱스 — 표시 보강용(필터엔 지수범례 사용)"""
-    wl = load_watchlist() or {}
-    m = {}
-    for code, info in wl.items():
-        nm = (info.get("name") or info.get("corp") or "").strip()
-        if nm:
-            m[nm] = (code, info.get("market", ""))
-    return m
 
 def parse(html, watch_only=True):
     """가격제한폭 도달 공시 파싱 → 이벤트 리스트 (시간 내림차순)"""
-    name2 = _name_to_code()
+    name2 = kind_client.name2code()   # 표시 보강용(필터엔 지수범례 사용)
     events = []
     for row in re.split(r"</tr>", html):
         if LIMIT_KW not in row:
@@ -85,7 +55,7 @@ def parse(html, watch_only=True):
             "time": m_time.group(1) if m_time else "",
             "kind": kind, "name": name, "code": code, "market": market,
             "stage": stage, "direction": direction, "title": title,
-            "rcept_no": m_acpt.group(1), "url": VIEWER.format(m_acpt.group(1)),
+            "rcept_no": m_acpt.group(1), "url": kind_client.VIEWER.format(m_acpt.group(1)),
             "markets": [x for x in markets if x in ("KOSPI200", "KOSDAQ150", "KRX300", "KTOP30", "V100")],
         })
     # 시간 내림차순(최신 먼저); 동시간이면 접수번호 큰 순
@@ -96,43 +66,10 @@ def parse(html, watch_only=True):
 EXP_CACHE_PATH = os.path.join(DATA_DIR, "limits_exp_cache.json")  # rcept_no→확대예정시각 캐시
 ENRICH_CAP = 40   # 한 번의 collect에서 새로 본문 조회할 최대 건수(나머지는 다음 주기에)
 
-def _make_cookie_opener():
-    cj = http.cookiejar.CookieJar()
-    return urllib.request.build_opener(urllib.request.HTTPSHandler(context=build_ssl_context()),
-                                       urllib.request.HTTPCookieProcessor(cj))
-_OPENER = None
-def _get(url, data=None, ref="https://kind.krx.co.kr/"):
-    global _OPENER
-    if _OPENER is None:
-        _OPENER = _make_cookie_opener()
-    hdr = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Referer": ref}
-    if data is not None:
-        hdr["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
-        data = urllib.parse.urlencode(data).encode()
-    b = _OPENER.open(urllib.request.Request(url, data=data, headers=hdr), timeout=15).read()
-    for enc in ("euc-kr", "utf-8"):
-        try:
-            return b.decode(enc)
-        except Exception:
-            continue
-    return b.decode("utf-8", "replace")
-
 def fetch_expand_time(rcept_no):
-    """공시 본문에서 '확대 예정시각'(HH:MM:SS) 추출.
-    KIND 3단계: searchInitInfo→#mainDoc의 docNo→searchContents의 setPath(.htm)→본문."""
+    """공시 본문에서 '확대 예정시각'(HH:MM:SS) 추출."""
     try:
-        ref = f"https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={rcept_no}"
-        init = _get(ref + "&docno=")
-        m = re.search(r"""value=['"](\d{10,}\|[^'"]*)['"]""", init)
-        if not m:
-            return ""
-        docno = m.group(1).split("|")[0]
-        sc = _get("https://kind.krx.co.kr/common/disclsviewer.do",
-                  {"method": "searchContents", "docNo": docno}, ref=ref)
-        u = re.search(r"setPath\('[^']*','(https?://[^']+\.htm)'", sc)
-        if not u:
-            return ""
-        clean = re.sub(r"<[^>]+>", " ", _get(u.group(1), ref=ref))
+        clean = kind_client.body_text(rcept_no)
         e = re.search(r"확대\s*예정시각\s*([0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?)", clean)
         return e.group(1) if e else ""
     except Exception:
@@ -162,20 +99,16 @@ def _index_code(name):
     return ""
 
 def _attach_rates(events, cap=RATE_CAP):
-    """가격제한폭 이벤트에 기초자산 현재 등락률(부호 %) 부착 — 네이버 실시간 재사용.
+    """가격제한폭 이벤트에 기초자산 현재 등락률(부호 %) 부착.
     주식선물 → 기초주식 등락률 / 지수선물 → 해당 지수(코스피200·코스닥150) 등락률."""
-    try:
-        from earnings import naver_rate, naver_index_rate
-    except Exception:
-        return
     n = 0
     for e in events:
         if n >= cap:
             break
         if e.get("kind") == "주식선물" and e.get("code"):
-            q = naver_rate(e["code"]); n += 1
+            q = md_feed.stock_rate(e["code"]); n += 1
         elif e.get("kind") == "지수선물" and _index_code(e.get("name", "")):
-            q = naver_index_rate(_index_code(e["name"])); n += 1
+            q = md_feed.index_rate(_index_code(e["name"])); n += 1
         else:
             continue   # KRX300선물 등 지원 지수 외 → 등락률 없음
         if q and q.get("rate") is not None:
@@ -183,7 +116,7 @@ def _attach_rates(events, cap=RATE_CAP):
 
 def collect(sel_date=None, watch_only=True, enrich=True, enrich_cap=ENRICH_CAP):
     """가격제한폭 도달 공시 수집 + 본문 '확대 예정시각' 보강(캐시, 신규분만 조회) + 기초주식 등락률."""
-    events = parse(fetch_html(sel_date), watch_only)
+    events = parse(kind_client.feed(sel_date or datetime.date.today().strftime("%Y-%m-%d"), "3"), watch_only)
     if enrich:
         cache = _load_exp_cache()
         fetched, changed = 0, False

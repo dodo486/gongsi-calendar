@@ -9,9 +9,11 @@
   python capital.py 30         # 최근 30일
 """
 import sys, os, re, json, math, datetime, threading
-from fetch import fetch_back, load_watchlist, DATA_DIR, TLS_MODE, save_json, parsed
+from fetch import fetch_back, parsed
+from base import load_watchlist, DATA_DIR, save_json
+from net import TLS_MODE
 from krx_cal import t_minus, norm_date
-import quotes
+import md_feed
 
 _LOCK = threading.RLock()
 CAP_PATH = os.path.join(DATA_DIR, "capital.json")
@@ -111,10 +113,10 @@ def main(days=SCAN_DAYS):
     bonus_done = [(e["stock"], e["ex_date"], float(e["ratio"] or 0))
                   for e in events if e["type"] == "무상증자" and e["ex_date"] <= today_s]
     for e in events:
-        daily = quotes.daily_price(e["stock"], 250)   # 수정주가
+        daily = md_feed.daily_price(e["stock"], 250)   # 수정주가
         if not daily:
             continue
-        price = quotes.stock_rate(e["stock"]).get("price") or daily[0]["close"]
+        price = md_feed.stock_rate(e["stock"]).get("price") or daily[0]["close"]
         r = float(e["ratio"] or 0)
         e["price"] = price
         # 발행가를 현재 주식 기준으로 — 이 건 권리락 뒤에 끝난 무상증자만큼 나눈다

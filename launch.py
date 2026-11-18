@@ -9,8 +9,7 @@
 - 끄기: 최소화된 콘솔 창 1개를 닫으면 웹서버·폴러가 함께 꺼진다
 """
 import os, sys, time, shutil, threading, subprocess, webbrowser, urllib.request
-
-BASE = os.path.dirname(os.path.abspath(__file__))
+from base import BASE
 PY = sys.executable.replace("pythonw.exe", "python.exe")  # 워커는 콘솔 있는 python.exe로
 PORT = 8777
 URL = f"http://127.0.0.1:{PORT}/"

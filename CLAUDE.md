@@ -43,7 +43,7 @@
 
 ```bash
 python -c "import fetch; print(len(fetch.KEY))"   # 40 이어야 함 (DART 키 정상)
-python fetch.py 3                                 # data/disclosures.json 갱신되는지
+python disclosures.py 3                           # data/disclosures.json 갱신되는지
 python launch.py                                  # 포트 8777 LISTENING + GET /index.html 200
 ```
 

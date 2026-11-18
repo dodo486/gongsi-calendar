@@ -13,7 +13,8 @@
 """
 import sys, os, re, json, datetime, calendar, statistics, threading
 from concurrent.futures import ThreadPoolExecutor
-from fetch import fetch_range, DATA_DIR, save_json, doc_text, api, KEY, corp_code
+from fetch import fetch_range, doc_text, api, KEY, corp_code
+from base import DATA_DIR, save_json
 import dividends as dv
 from krx_cal import t_minus
 import earn_sched

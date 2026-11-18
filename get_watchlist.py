@@ -5,21 +5,9 @@ watchlist.json 생성/갱신
 - KOSDAQ150: 임시 스냅샷(kosdaq150_snapshot.json) 사용
              ⚠️ TODO: KRX 자동화(실제 크롬 CDP) 또는 ETF 보유내역으로 교체 예정
 """
-import json, os, re, ssl, urllib.request
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-
-def opener():
-    try:
-        import truststore; truststore.inject_into_ssl(); return
-    except Exception: pass
-    try:
-        import certifi
-        ctx = ssl.create_default_context(cafile=certifi.where())
-        urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPSHandler(context=ctx)))
-    except Exception: pass
-
-opener()
+import json, os, re, urllib.request
+from base import BASE, save_json
+import net   # 사내망 TLS opener 세팅
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36"}
 
 def fetch(url):
@@ -60,7 +48,7 @@ def main():
         "stocks": stocks,
     }
     out = os.path.join(BASE, "watchlist.json")
-    json.dump(payload, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    save_json(out, payload)
     print(f"저장: {out} (총 {len(stocks)}종목)")
 
 if __name__ == "__main__":

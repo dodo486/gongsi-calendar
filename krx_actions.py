@@ -7,16 +7,12 @@
   python krx_actions.py            # 오늘 시장조치 → data/krx_actions.json
   python krx_actions.py 2026-08-04 # 특정일자
 """
-import json, os, sys, re, datetime, urllib.request, urllib.parse
-from fetch import DATA_DIR, save_json, build_ssl_context, TLS_MODE, load_watchlist
+import os, sys, re, datetime
+from base import DATA_DIR, save_json
+from net import TLS_MODE
+import kind_client
 
-KIND_URL = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
-HDR = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-       "Referer": KIND_URL, "X-Requested-With": "XMLHttpRequest",
-       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"}
-VIEWER = "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={}&docno="
 ACTIONS_PATH = os.path.join(DATA_DIR, "krx_actions.json")
-_CTX = None
 
 def _classify(t):
     low = (t or "").lower().replace(" ", "")   # "Side car"/"사이드카"/"Sidecar" 표기 변형 흡수
@@ -50,34 +46,16 @@ def _until(kind, action, tm):
     except Exception:
         return ""
 
-def _fetch(mt, sel_date):
-    global _CTX
-    if _CTX is None:
-        _CTX = build_ssl_context()
-    today = datetime.date.today().strftime("%Y-%m-%d")
-    data = {"method": "searchTodayDisclosureSub", "currentPageSize": "500", "pageIndex": "1",
-            "orderMode": "0", "orderStat": "D", "forward": "todaydisclosure_sub", "chose": "all",
-            "todayFlag": "Y" if sel_date == today else "N", "selDate": sel_date,
-            "marketType": mt, "searchCorpName": ""}
-    req = urllib.request.Request(KIND_URL, data=urllib.parse.urlencode(data).encode(), headers=HDR)
-    with urllib.request.urlopen(req, timeout=15, context=_CTX) as r:
-        return r.read().decode("utf-8", "replace")
-
-def _watch_names():
-    """감시대상(코스피200·코스닥150) 종목명 집합 — 공백 제거해 매칭 안정화."""
-    w = load_watchlist() or {}
-    return {re.sub(r"\s+", "", v.get("name", "")) for v in w.values() if v.get("name")}
-
 # 시장 전체 조치(특정 종목 아님) — 감시대상 필터와 무관하게 항상 알림
 _MARKET_WIDE = ("사이드카", "서킷브레이커")
 
 def collect(sel_date=None):
     d = sel_date or datetime.date.today().strftime("%Y-%m-%d")
-    names = _watch_names()
+    names = {re.sub(r"\s+", "", n) for n in kind_client.name2code()}   # 감시대상 종목명(공백 제거해 매칭 안정화)
     events = []
     for mt, market in (("1", "KOSPI"), ("2", "KOSDAQ")):
         try:
-            html = _fetch(mt, d)
+            html = kind_client.feed(d, mt)
         except Exception:
             continue
         for row in re.split(r"</tr>", html):
@@ -109,7 +87,7 @@ def collect(sel_date=None):
                 "corp": corp,
                 "title": (f"{corp} {title}" if corp else title), "submitter": submitter,
                 "rcept_no": rno,
-                "url": VIEWER.format(m_acpt.group(1)) if m_acpt else "https://kind.krx.co.kr",
+                "url": kind_client.VIEWER.format(m_acpt.group(1)) if m_acpt else "https://kind.krx.co.kr",
             })
     events.sort(key=lambda e: (e["time"], e["rcept_no"]), reverse=True)
     return events

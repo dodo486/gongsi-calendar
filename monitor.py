@@ -10,7 +10,9 @@
   python monitor.py --test-toast   # 알림만 테스트
 """
 import json, os, sys, time, datetime, platform, subprocess, threading
-from fetch import collect_events, DATA_DIR, TLS_MODE, load_watchlist, CAL_EXCLUDE, save_json   # fetch import 시 콘솔 UTF-8 설정 공유
+from disclosures import collect_events
+from base import DATA_DIR, load_watchlist, save_json
+from net import TLS_MODE
 import dividends
 import expiries
 import research
@@ -22,6 +24,7 @@ import krx_actions
 import closearb
 import capital
 import industry
+import md_feed
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
@@ -140,12 +143,11 @@ def save_payload(p):
     save_json(DATA_PATH, p)
 
 def _rate_str(code):
-    """종목코드 → ' (+3.3%)' 등락률 문자열(부호 포함). 미상/실패면 ''. (네이버 실시간 재사용)"""
+    """종목코드 → ' (+3.3%)' 등락률 문자열(부호 포함). 미상/실패면 ''."""
     if not code:
         return ""
     try:
-        from earnings import naver_rate
-        r = naver_rate(code).get("rate")
+        r = md_feed.stock_rate(code).get("rate")
         if isinstance(r, (int, float)):
             return f" ({'+' if r > 0 else ''}{r}%)"
     except Exception:

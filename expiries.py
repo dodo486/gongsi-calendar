@@ -6,25 +6,14 @@
 - 해당일이 휴장일(주말·공휴일)이면 직전 영업일로 조정
 → data/expiries.json
 """
-import sys
-try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-except Exception: pass
-import os, json, datetime
-from krx_cal import holiday_dates, default_years   # 휴장일 달력 공유(fetch 비의존 — API 키 없이 단독 실행 유지)
-
-BASE = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE, "data")
-os.makedirs(DATA_DIR, exist_ok=True)
+import os, datetime
+from base import DATA_DIR, save_json
+from krx_cal import holiday_dates, default_years, prev_business_day
 
 def second_thursday(year, month):
     d = datetime.date(year, month, 1)
     first_thu = d + datetime.timedelta(days=(3 - d.weekday()) % 7)  # 목=3
     return first_thu + datetime.timedelta(days=7)
-
-def prev_business_day(d, hol):
-    while d.weekday() >= 5 or d in hol:
-        d -= datetime.timedelta(days=1)
-    return d
 
 def build(years=None):
     if years is None:
@@ -45,11 +34,7 @@ def build(years=None):
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                "count": len(events), "events": events,
                "holidays": sorted(d.strftime("%Y-%m-%d") for d in hol)}   # 웹 캘린더 휴일(빨간 글자) 표시용
-    out = os.path.join(DATA_DIR, "expiries.json")
-    tmp = out + ".tmp"   # 원자적 저장 (fetch.py 미의존 — 이 파일은 API 키 없이도 단독 실행 가능)
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, out)
+    save_json(os.path.join(DATA_DIR, "expiries.json"), payload)
     return payload
 
 if __name__ == "__main__":

@@ -14,9 +14,9 @@
   python index_pdf.py          # 오늘분이 없을 때만 수집 (--force: 무조건 재수집)
 """
 import sys, os, re, json, datetime
-import fetch  # ssl 패치 + 콘솔 UTF-8
+import net  # 사내망 TLS opener 세팅
 import requests
-from fetch import DATA_DIR, save_json
+from base import DATA_DIR, save_json
 
 OUT = os.path.join(DATA_DIR, "index_pdf.json")
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128 Safari/537.36"}

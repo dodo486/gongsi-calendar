@@ -8,7 +8,9 @@
 - 웹은 기준일 날짜에 "회사명 (금액원)" 표시
 """
 import sys, os, re, json, datetime, threading
-from fetch import fetch_range, load_watchlist, DATA_DIR, TLS_MODE, save_json, doc_text
+from fetch import fetch_range, doc_text
+from base import load_watchlist, DATA_DIR, save_json
+from net import TLS_MODE
 from krx_cal import t_minus, norm_date
 
 _LOCK = threading.RLock()   # dividends.json 동시 쓰기 방지 (main 재생성 vs upsert)

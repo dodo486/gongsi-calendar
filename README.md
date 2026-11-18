@@ -20,13 +20,20 @@
 
 | 파일 | 역할 |
 |---|---|
-| `fetch.py` | DART 공시 목록 수집·분류 (증자=유형B, 거래소=유형I) |
+| `base.py` · `net.py` | 공용 기반 — 경로·json 저장·감시종목·콘솔 / 사내망 TLS |
+| `fetch.py` | DART 접속(공시 목록·원문·고유번호) — 공용 |
+| `kind_client.py` | KRX KIND 접속(당일공시 목록·본문·회사명→코드) — 공용 |
+| `krx_cal.py` | 휴장일·영업일(T-1·T-2)·날짜 정규화 — 공용 |
+| `md_feed.py` | 시세 창구(jhts 시세수집팀) — 공용 |
+| `disclosures.py` | 공시 탭 — 관심 종류 공시 수집·분류 (증자=유형B, 거래소=유형I) |
 | `dividends.py` | 배당금·기준일 원문 파싱, T-2 잔고확정일 계산, 증분 반영(upsert) |
 | `research.py` | 배당 이력 430일 캐시, **배당 선진화 판별** + **예상배당 추정**(캘린더 노란색) |
 | `expiries.py` | 선물·옵션 만기일 규칙 계산 |
 | `get_watchlist.py` | 코스피200(네이버) + 코스닥150(스냅샷) → `watchlist.json` |
 | `monitor.py` | 실시간 폴러(1분), 새 공시 감지·알림·캘린더 반영 |
 | `serve.py` / `index.html` | 웹 캘린더 (FullCalendar, http://localhost:8777) |
+| `dividend/` | 배당 화면(따로 배포 가능 — `dividend/` + `common/` + 배당 데이터) |
+| `common/` | 화면 공용(common.js·common.css·FullCalendar) |
 | `launch.py` | 원클릭 런처(폴러+웹, 중복실행 방지) — 기동·창 열기는 여기만 |
 
 ## 설치 & 실행
@@ -38,7 +45,7 @@
 
 ```
 python launch.py         # 폴러 + 웹 한 번에
-python fetch.py 90       # 과거 90일 공시 백필
+python disclosures.py 90 # 과거 90일 공시 백필
 python dividends.py 90   # 배당 데이터 추출
 ```
 

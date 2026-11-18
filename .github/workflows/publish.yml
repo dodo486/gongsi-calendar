@@ -38,7 +38,7 @@ jobs:
       - name: 데이터 갱신
         run: |
           python get_watchlist.py || echo "watchlist 갱신 실패 — 리포 커밋본 사용"
-          python fetch.py 90
+          python disclosures.py 90
           python dividends.py 90
           python expiries.py
           python research.py 430
@@ -49,7 +49,7 @@ jobs:
       - name: 사이트 구성
         run: |
           mkdir -p site
-          cp index.html site/
+          cp -r index.html common dividend site/
           cp -r data site/data
           touch site/.nojekyll
 

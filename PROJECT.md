@@ -101,7 +101,7 @@ DART는 **푸시(웹소켓) 없음**. 실시간 = **짧은 주기 폴링(polling
 python monitor.py --once       # 폴러 1회 확인 (상주·웹은 launch.py 로만 켬)
 python monitor.py --test-toast # 알림 테스트
 python get_watchlist.py        # 감시대상 갱신 (코스피200 네이버 + 코스닥150 스냅샷)
-python fetch.py 90             # 과거 N일 공시 백필 (증자·자사주 등 8종, 배당 제외)
+python disclosures.py 90       # 과거 N일 공시 백필 (증자·자사주 등 8종, 배당 제외)
 python dividends.py 90         # 배당 추출 (배당금+기준일 원문 파싱) → data/dividends.json
 python expiries.py             # 선물·옵션 만기일 생성(규칙 계산) → data/expiries.json
 python kind_limits.py          # 선물 상하한가(가격제한폭 도달) KIND 공시 → data/limits.json
@@ -125,7 +125,7 @@ python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바�
 - 웹 화면 갱신은 **SSE(서버 푸시)**. `index.html` 의 30초 `setInterval` 은 SSE 실패 대비 폴백이고,
   상하한가 깜빡이만 5초 주기로 별도 렌더.
 - 상하한가 토스트 최소 단계: `ALERT_MIN_STAGE` (현재 `1` = 전 단계 알림)
-- 관심 공시 종류/키워드: `fetch.py` 의 `CATEGORIES` 편집
+- 관심 공시 종류/키워드: `disclosures.py` 의 `CATEGORIES` 편집
 
 ## 5. 진행 로그 (Changelog)
 

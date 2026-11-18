@@ -8,37 +8,17 @@
   python earnings.py            # 최근 30일 실적 공시 + 등락률 → data/earnings.json
   python earnings.py 60         # 최근 N일
 """
-import bisect, json, os, re, sys, datetime, urllib.parse, urllib.request
-from fetch import collect_events, DATA_DIR, load_watchlist, save_json, TLS_MODE, build_ssl_context
+import bisect, json, os, re, sys, datetime
+from disclosures import collect_events
+from base import DATA_DIR, load_watchlist, save_json
+from net import TLS_MODE
+import kind_client
+import md_feed  # 시세는 jhts 시세수집팀 위임(예전 네이버 스크래핑 코드는 jhts로 이관)
 
 EARN_PATH = os.path.join(DATA_DIR, "earnings.json")
 RETAIN_DAYS = 30
 QUOTE_CAP = 80          # 등락률 조회 종목 상한(과도한 네이버 호출 방지)
 TICK_CAP = 30           # 1회 실행당 공시시각+분봉(전후5분) 신규 계산 상한
-KIND_URL = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
-KIND_HDR = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    "Referer": "https://kind.krx.co.kr/disclosure/todaydisclosure.do",
-    "X-Requested-With": "XMLHttpRequest",
-    "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-}
-
-_CTX = None
-
-import md_feed  # 시세는 jhts 시세수집팀 위임(예전 네이버 스크래핑 코드는 jhts로 이관)
-
-def naver_rate(code):
-    """개별종목 현재 등락률 → {price, rate(부호%), sign}. (jhts 위임)"""
-    return md_feed.stock_rate(code)
-
-def naver_index_rate(code):
-    """지수 현재 등락률 → {price, rate(부호%), sign}. code: KPI200/KQI150. (jhts 위임)"""
-    return md_feed.index_rate(code)
-
-def naver_daily_map(code, days=40):
-    """일별 {YYYY-MM-DD: {rate(부호%), open, close}} — 과거 공시일 등락률·시가갭용. (jhts 위임)"""
-    return md_feed.daily_rate_map(code, days)
-
 def _attach_quotes(events):
     """등락률 부착 — 과거 공시일은 '그 날짜'의 일별 변동률(확정, 재조회 안 함),
     오늘 공시는 실시간 등락률(폴러가 매 주기 갱신)"""
@@ -50,7 +30,7 @@ def _attach_quotes(events):
             continue
         if d == today:                      # 오늘 공시 → 실시간
             if c not in live:
-                live[c] = naver_rate(c) if n < QUOTE_CAP else {}
+                live[c] = md_feed.stock_rate(c) if n < QUOTE_CAP else {}
                 n += 1
             q = live[c]
             e["price"] = q.get("price", "")
@@ -60,7 +40,7 @@ def _attach_quotes(events):
             if e.get("rate_fixed"):
                 continue
             if c not in hist:
-                hist[c] = naver_daily_map(c) if n < QUOTE_CAP else {}
+                hist[c] = md_feed.daily_rate_map(c) if n < QUOTE_CAP else {}
                 n += 1
             r = hist[c].get(f"{d[:4]}-{d[4:6]}-{d[6:8]}")
             if r is not None:
@@ -70,19 +50,8 @@ def _attach_quotes(events):
 
 def kind_disc_time(corp, date_ymd, market):
     """KIND 당일공시 목록에서 해당 회사의 실적 공시 접수시각(HH:MM) 조회 (DART list엔 시각 없음)"""
-    global _CTX
-    if _CTX is None:
-        _CTX = build_ssl_context()
     try:
-        data = {
-            "method": "searchTodayDisclosureSub", "currentPageSize": "100", "pageIndex": "1",
-            "orderMode": "0", "orderStat": "D", "forward": "todaydisclosure_sub", "chose": "all",
-            "todayFlag": "N", "selDate": f"{date_ymd[:4]}-{date_ymd[4:6]}-{date_ymd[6:]}",
-            "marketType": "1" if market == "KOSPI" else "2", "searchCorpName": corp,
-        }
-        req = urllib.request.Request(KIND_URL, data=urllib.parse.urlencode(data).encode(), headers=KIND_HDR)
-        with urllib.request.urlopen(req, timeout=15, context=_CTX) as r:
-            page = r.read().decode("utf-8", "replace")
+        page = kind_client.feed(f"{date_ymd[:4]}-{date_ymd[4:6]}-{date_ymd[6:]}", "1" if market == "KOSPI" else "2", corp)
         for row in re.split(r"</tr>", page):
             mt = re.search(r'txc">\s*([0-9]{1,2}:[0-9]{2})', row)
             ti = re.search(r"openDisclsViewer\([^)]*\)\"\s*title='([^']+)'", row)
@@ -92,9 +61,6 @@ def kind_disc_time(corp, date_ymd, market):
         pass
     return ""
 
-def minute_closes(code, count=3000):
-    """분봉 종가 {YYYYMMDDHHMM: 종가}. 최근 약 6거래일. (jhts 위임)"""
-    return md_feed.minute_closes(code, count)
 
 def _tick_rates(cmap, date_ymd, hhmm):
     """공시시각 기준 전5분/후5분 등락률(%) — 같은 날 15분 이내 분봉만 인정"""
@@ -146,7 +112,7 @@ def _attach_ticks(events):
         e["disc_time"] = t
         hh, mm = (int(x) for x in t.split(":"))
         if code not in dmap_cache:
-            dmap_cache[code] = naver_daily_map(code)
+            dmap_cache[code] = md_feed.daily_rate_map(code)
         dmap = dmap_cache[code]
         dates = sorted(dmap)
         if iso not in dmap:
@@ -158,7 +124,7 @@ def _attach_ticks(events):
         gap = lambda a, b: round((a - b) / b * 100, 2) if (a and b) else None
         if 9 <= hh and (hh, mm) < (15, 30):
             if code not in cmap_cache:
-                cmap_cache[code] = minute_closes(code)
+                cmap_cache[code] = md_feed.minute_closes(code)
             if any(k.startswith(d) for k in cmap_cache[code]):
                 pre, post = _tick_rates(cmap_cache[code], d, t)
                 e["pre5"], e["post5"], e["tick_kind"] = pre, post, "min"

@@ -14,8 +14,7 @@
   python divpoints.py
 """
 import os, json, datetime
-from fetch import DATA_DIR, save_json
-import dividends as dv
+from base import DATA_DIR, save_json
 from krx_cal import t_minus
 import index_pdf
 

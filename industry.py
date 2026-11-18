@@ -23,8 +23,7 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
 import md_feed
-import market_universe as mu
-from fetch import DATA_DIR, save_json
+from base import DATA_DIR, save_json
 
 GROUPS_PATH = os.path.join(DATA_DIR, "industry_groups.json")
 ACTION_PATH = os.path.join(DATA_DIR, "industry_action.json")
@@ -55,7 +54,7 @@ def build_groups():
     themes = md_feed.themes()
     if not themes:
         return None
-    codes = [r["code"] for r in mu.fetch_all() if r.get("kind") == "stock" and r["code"].isdigit()]
+    codes = [r["code"] for r in md_feed.market_snapshot() if r.get("kind") == "stock" and r["code"].isdigit()]
     start = (datetime.date.today() - datetime.timedelta(days=int(LOOKBACK * 1.5))).strftime("%Y%m%d")
     rows = md_feed.closes_values(codes, start)
     close = pd.DataFrame({c: {d: px for d, px, _ in r} for c, r in rows.items() if r}).sort_index()
@@ -142,7 +141,7 @@ def build_action():
         g = build_groups() or g
     if not g:
         return None
-    snap = {r["code"]: r for r in mu.fetch_all()}
+    snap = {r["code"]: r for r in md_feed.market_snapshot()}
     out = []
     for grp in g["groups"]:
         a = _agg(grp["codes"], snap)
@@ -175,7 +174,7 @@ def daily_upkeep():
     snapshot_themes(md_feed.themes())
     now = datetime.datetime.now()
     if now.hour >= CANDLE_HOUR and now.weekday() < 5 and _candle_day != now.date():
-        codes = [r["code"] for r in mu.fetch_all() if r.get("kind") == "stock"]
+        codes = [r["code"] for r in md_feed.market_snapshot() if r.get("kind") == "stock"]
         md_feed.refresh_candles(codes)
         _candle_day = now.date()
 

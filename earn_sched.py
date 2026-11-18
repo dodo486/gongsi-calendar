@@ -8,7 +8,9 @@
   python earn_sched.py [일수=45]
 """
 import json, os, sys, re, datetime
-from fetch import DATA_DIR, load_watchlist, save_json, fetch_range, TLS_MODE, parsed
+from base import DATA_DIR, load_watchlist, save_json
+from fetch import fetch_range, parsed
+from net import TLS_MODE
 
 SCHED_PATH = os.path.join(DATA_DIR, "earn_sched.json")
 CACHE_PATH = os.path.join(DATA_DIR, "earn_sched_cache.json")   # rcept_no→파싱 결과 캐시

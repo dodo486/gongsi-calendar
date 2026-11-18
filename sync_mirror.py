@@ -3,7 +3,7 @@
 
 "로컬 미러 + 중앙 동기화" 구성의 동기화 절반. jhts가 중앙에서 수집해 원격
 PG에 쌓아두면, 이 스크립트가 그걸 공시캘린더의 로컬 SQLite로 당겨온다.
-읽기(md_feed/quotes)는 로컬 SQLite만 보므로 빠르고, 데이터 최신성은 이
+읽기(md_feed)는 로컬 SQLite만 보므로 빠르고, 데이터 최신성은 이
 스크립트 실행 주기로 정해진다.
 
 실행 위치: **원격 PG 크리덴셜이 있는 곳**(운영 러너/회사 데탑). 로컬 개발기엔
@@ -25,6 +25,7 @@ import sys
 from pathlib import Path
 
 from jhts.marketdata import config, db
+from base import DATA_DIR
 
 
 def _table_names(sqlite_path):
@@ -84,9 +85,7 @@ def main(argv=None):
     if not src_url:
         print("ERROR: SISE_DB_URL(중앙 PG)이 없습니다. 러너에서 크리덴셜과 함께 실행하세요.")
         return 2
-    dest = os.environ.get("SISE_DB_PATH") or str(
-        Path(__file__).resolve().parent / "data" / "sise.db"
-    )
+    dest = os.environ.get("SISE_DB_PATH") or os.path.join(DATA_DIR, "sise.db")
     Path(dest).parent.mkdir(parents=True, exist_ok=True)
 
     tables = args.tables or _table_names(dest)

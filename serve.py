@@ -7,8 +7,7 @@
 import http.server, os, time, json, re, threading
 import urllib.parse
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE, "data")
+from base import BASE, DATA_DIR
 HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", os.path.join("dividend", "index.html"))]
 PORT = 8777
 
@@ -183,9 +182,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 def _warm_quotes():
     """네이버 연결(keep-alive)을 미리 데워 첫 종목 클릭의 콜드 핸드셰이크(수 초) 제거."""
     try:
-        import quotes
-        quotes.daily_price("005930", 1)      # m.stock 핸드셰이크
-        quotes.investor_trend("005930", 1)
+        import md_feed
+        md_feed.daily_price("005930", 1)      # m.stock 핸드셰이크
+        md_feed.investor_trend("005930", 1)
     except Exception:
         pass
 

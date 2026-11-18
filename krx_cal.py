@@ -37,6 +37,16 @@ def t_minus(record_iso, n):
     except Exception:
         return ""
 
+def prev_business_day(d, hol):
+    """d(date)가 주말·휴장일(hol)이면 직전 영업일로 당김."""
+    while d.weekday() >= 5 or d in hol:
+        d -= datetime.timedelta(days=1)
+    return d
+
+def next_bday(iso):
+    """iso 다음 영업일(주말·휴장일 제외) — 당일 거래정지의 재개일 등."""
+    return str(np.busday_offset(np.datetime64(iso), 1, roll="forward", holidays=_HOL_ARR))
+
 def norm_date(s):
     m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
     return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else ""

@@ -13,75 +13,15 @@
 사용:
   python kind_halt.py            # 최근 정지/재개 → data/halts.json
 """
-import json, os, re, datetime, http.cookiejar, urllib.request, urllib.parse
-import numpy as np
-from fetch import build_ssl_context, DATA_DIR, BASE, KEY, api, load_watchlist, save_json, doc_text, corp_code
-from krx_cal import holiday_dates, default_years
+import json, os, re, datetime
+from base import DATA_DIR, save_json
+from fetch import KEY, api, doc_text, corp_code
+from krx_cal import next_bday, norm_date
+import kind_client
 
 SCAN_DAYS = 50                       # 정지/해제 공시 스캔 기간(일)
-KIND_FEED = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
-VIEWER = "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={}&docno="
 BODY_PATH = os.path.join(DATA_DIR, "halt_body_cache.json")  # rcept→{halt_date,reason,expire} 캐시
 DART_PATH = os.path.join(DATA_DIR, "halt_dart_cache.json")  # stock→{resume,halt} DART 보강 캐시
-
-_HOL = np.array(sorted(str(d) for d in holiday_dates(default_years())), dtype="datetime64[D]")
-def next_bday(iso):
-    """iso 다음 영업일(주말·휴장일 제외) — 당일정지 재개일 계산용"""
-    return str(np.busday_offset(np.datetime64(iso), 1, roll="forward", holidays=_HOL))
-
-# ── KIND opener (쿠키+TLS, kind_limits 와 동일 방식) ──
-_OPENER = None
-def _get(url, data=None, ref="https://kind.krx.co.kr/"):
-    global _OPENER
-    if _OPENER is None:
-        cj = http.cookiejar.CookieJar()
-        _OPENER = urllib.request.build_opener(
-            urllib.request.HTTPSHandler(context=build_ssl_context()),
-            urllib.request.HTTPCookieProcessor(cj))
-    hdr = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Referer": ref}
-    if data is not None:
-        hdr["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
-        data = urllib.parse.urlencode(data).encode()
-    b = _OPENER.open(urllib.request.Request(url, data=data, headers=hdr), timeout=20).read()
-    for enc in ("utf-8", "euc-kr"):
-        try:
-            return b.decode(enc)
-        except Exception:
-            continue
-    return b.decode("utf-8", "replace")
-
-def _feed(sel_date, market):
-    today = datetime.date.today().strftime("%Y-%m-%d")
-    data = {"method": "searchTodayDisclosureSub", "currentPageSize": "300", "pageIndex": "1",
-            "orderMode": "0", "orderStat": "D", "forward": "todaydisclosure_sub", "chose": "all",
-            "todayFlag": "Y" if sel_date == today else "N", "selDate": sel_date,
-            "marketType": market, "searchCorpName": ""}
-    return _get(KIND_FEED, data, ref=KIND_FEED)
-
-def _name2code():
-    wl = load_watchlist() or {}
-    m = {}
-    for code, info in wl.items():
-        nm = (info.get("name") or info.get("corp") or "").strip()
-        if nm:
-            m[nm] = (code, info.get("market", ""))
-    return m
-
-# ── KIND 본문(정지일·사유·만료) ──
-def _body_text(rcept):
-    """KIND 3단계 문서 로더 → 본문 평문(공백정규화)."""
-    ref = f"https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={rcept}"
-    init = _get(ref + "&docno=")
-    m = re.search(r"""value=['"](\d{10,}\|[^'"]*)['"]""", init)
-    if not m:
-        return ""
-    docno = m.group(1).split("|")[0]
-    sc = _get("https://kind.krx.co.kr/common/disclsviewer.do",
-              {"method": "searchContents", "docNo": docno}, ref=ref)
-    u = re.search(r"setPath\('[^']*','(https?://[^']+\.htm)'", sc)
-    if not u:
-        return ""
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", _get(u.group(1), ref=ref)))
 
 def _short_reason(reason, extra):
     """정지사유(+기타사유) → 짧은 라벨."""
@@ -98,7 +38,7 @@ def _parse_body(rcept, cache):
     """정지 공시 본문 파싱(캐시). return {halt_date, reason, reason_full, expire}."""
     if rcept in cache:
         return cache[rcept]
-    t = _body_text(rcept)
+    t = kind_client.body_text(rcept)
     if not t:   # 받기 실패는 캐시에 남기지 않음 — 다음 회차 재시도
         return {"halt_date": "", "reason": "", "reason_full": "", "expire": ""}
     tc = t.replace(" ", "")
@@ -118,9 +58,6 @@ def _parse_body(rcept, cache):
 
 # ── DART 보강 (결정공시 상장예정일) ──
 _DATE = r"(\d{4}\D+\d{1,2}\D+\d{1,2})"
-def _nd(s):
-    m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
-    return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else ""
 
 def dart_resume(stock, halt_date, dcache):
     """분할/병합/감자/회사분할 결정공시에서 '상장예정일'(=재개 예정일) 당겨오기. 캐시."""
@@ -146,7 +83,7 @@ def dart_resume(stock, halt_date, dcache):
                 t = doc_text(r["rcept_no"]).replace(" ", "")
                 m = re.search(r"상장예정일" + _DATE, t)
                 if m:
-                    res = _nd(m.group(1))
+                    res = norm_date(m.group(1))
                     break
         except Exception:
             return ""   # 받기 실패는 캐시에 남기지 않음 — 다음 회차 재시도
@@ -156,7 +93,7 @@ def dart_resume(stock, halt_date, dcache):
 # ── 수집 ──
 HALT_KW = "매매거래정지"
 def collect():
-    name2 = _name2code()
+    name2 = kind_client.name2code()
     bcache = json.load(open(BODY_PATH, encoding="utf-8")) if os.path.exists(BODY_PATH) else {}
     dcache = json.load(open(DART_PATH, encoding="utf-8")) if os.path.exists(DART_PATH) else {}
 
@@ -165,7 +102,7 @@ def collect():
         d = (datetime.date.today() - datetime.timedelta(days=dd)).strftime("%Y-%m-%d")
         for market in ("1", "2"):
             try:
-                html = _feed(d, market)
+                html = kind_client.feed(d, market)
             except Exception:
                 continue
             for row in re.split(r"</tr>", html):
@@ -188,7 +125,7 @@ def collect():
                              (("해제" in title) and ("정지" not in title.replace("정지해제", "")))
                 if is_release:
                     # 해제 공시 본문의 해제일시(없으면 접수일) — 재개 확정일
-                    t = _body_text(rcept).replace(" ", "")
+                    t = kind_client.body_text(rcept).replace(" ", "")
                     m = re.search(r"해제일시(\d{4}-\d{2}-\d{2})", t)
                     rdate = m.group(1) if m else d
                     if code not in releases or rdate > releases[code]:
@@ -202,11 +139,10 @@ def collect():
                     "corp": nm, "code": code, "market": mk,
                     "reason": b["reason"], "reason_full": b["reason_full"],
                     "halt_date": b["halt_date"], "expire": b["expire"],
-                    "rcept_no": rcept, "url": VIEWER.format(rcept),
+                    "rcept_no": rcept, "url": kind_client.VIEWER.format(rcept),
                     "pre": "예고" in title,
                 }
 
-    today = datetime.date.today().strftime("%Y-%m-%d")
     out = []
     for code, h in halts.items():
         exp = h.pop("expire", "")
