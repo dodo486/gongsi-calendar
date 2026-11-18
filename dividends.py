@@ -82,7 +82,7 @@ def _match_key(index, stock, div_type):
 
 # --- 배당 원문 파싱 캐시 (dividends·research 공용) ---
 # rcept_no 별 파싱 결과를 저장/재사용 → 같은 공시 문서를 두 번 다시 내려받지 않는다.
-# research.build_history 가 장기 이력을 채우고, dividends.main 이 그걸 그대로 재사용.
+# research.collect 가 장기 이력을 채우고, dividends.main 이 그걸 그대로 재사용.
 HIST_PATH = os.path.join(DATA_DIR, "div_history.json")
 
 def load_doc_cache():

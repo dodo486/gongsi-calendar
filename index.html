@@ -145,6 +145,7 @@
   .st.ok{background:rgba(34,197,94,.18);color:#86efac}
   .st.half{background:rgba(59,130,246,.18);color:#93c5fd}
   .st.est{background:rgba(234,179,8,.18);color:#fde047}
+  .st.und{background:rgba(239,68,68,.16);color:#fca5a5}
   .mkt.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
   .mkt.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
   .back{display:inline-block;margin-bottom:10px;color:var(--div);cursor:pointer;font-size:13px}
@@ -483,28 +484,33 @@ const _dpOpen = new Set();   // 펼친 카드 키 — 30초 자동갱신 재렌�
 const DP_ST = {"확정":"ok", "금액예상":"half", "예상":"est"};
 function dpHtml(){
   if(!DP || !DP.indices) return "";
-  const f2 = v => Number(v||0).toFixed(2), f3 = v => Number(v||0).toFixed(3);
-  let h = `<div class="dp"><div class="lh">📐 지수배당포인트 · 근월물 ${esc((DP.expiry||"").slice(5))} 만기까지</div>
+  const f2 = v => Number(v||0).toFixed(2);
+  const md = d => esc((d||"").slice(5));
+  let h = `<div class="dp"><div class="lh">📐 지수배당포인트 · 근월물 ${md(DP.expiries?.[0])} / 차월물 ${md(DP.expiries?.[1])} 만기</div>
     <div class="dpf"><b>${esc(DP.formula)}</b><br>
       <span>= 지수 × (배당 때문에 지수가 빠지는 비율) — 지수를 곱하는 건 비율을 포인트로 바꾸기 위함<br>
-      대상: ${esc(DP.rule)} · 확정=DART 배당결정, 금액예상=기준일만 공시, 예상=직전 배당 반복 가정</span></div>`;
+      대상: ${esc(DP.rule)} · 확정=DART 배당결정, 금액예상=기준일만 공시, 예상=리서치 추정,
+      <b>월물미정</b>=기준일 공고 전이라 오늘+14일(${md(DP.earliest_ex)} 배당락)부터 근월물에 들어올 수 있음</span></div>`;
   DP.indices.forEach(c=>{
     const k = "c:"+c.key;
     const lvl = c.index_close ? Number(c.index_close).toLocaleString("ko-KR",{minimumFractionDigits:2}) : "-";
+    const ms = c.months || [];
     h += `<details class="dpc" data-k="${esc(k)}"${_dpOpen.has(k)?" open":""}>
-      <summary><b>${esc(c.name)}</b><span class="dpt">${f2(c.total)}pt</span>
-        <span class="dps">확정 ${f2(c.confirmed)} · 예상 ${f2(c.estimated)}</span></summary>
+      <summary><b>${esc(c.name)}</b><span class="dpt">${ms.map(m=>f2(m.total)).join(" / ")}pt</span>
+        <span class="dps">${ms.map(m=>`${esc(m.label)} 확정 ${f2(m.confirmed)} · 예상 ${f2(m.estimated)} · 월물미정 ${f2(m.undecided)}`).join("<br>")}</span></summary>
       <div class="dpm">${esc(c.etf)} PDF ${esc(c.pdf_date)} · ${c.n_stocks}종목 · 지수 ${lvl} (${esc((c.index_date||"").slice(5))} 종가)${c.error?` · <span class="dperr">⚠ 오늘 수집 실패 — 직전본 사용</span>`:""}</div>`;
-    // 포함 종목 목록: 종목 · 배당금 · 배당락일 (배당락일 순) — 일자별 포인트는 표시하지 않음(사용자 요청)
-    const items = c.days.flatMap(d => d.items.map(x => ({...x, ex_date:d.ex_date})));
-    if(!items.length) h += `<div class="dpm">${c.n_stocks?"만기 전 배당락 없음":"PDF 없음 — 수집 대기"}</div>`;
-    else h += `<table class="dortab dpi"><thead><tr><th>종목 (${items.length})</th><th style="text-align:right">배당금</th><th style="text-align:right">배당락일</th></tr></thead><tbody>`
-      + items.map(x=>`<tr class="dor" data-url="${esc(x.url||"")}" title="${esc(`${x.div_type} · 기준일 ${x.record_date}${x.basis?"\n"+x.basis:""}`)}">
-          <td class="nm">${esc(x.corp)}<span class="st ${DP_ST[x.status]||"est"}">${esc(x.status)}</span></td>
-          <td class="px">${won(x.dps)}원</td><td class="dt">${esc(x.ex_date.slice(5))}</td></tr>`).join("")
-      + `</tbody></table>`;
-    if(c.undetermined.length)
-      h += `<div class="dpm">금액 미정(포인트 제외): ${c.undetermined.map(u=>`${esc(u.corp)}(${esc(u.ex_date.slice(5))})`).join(", ")}</div>`;
+    ms.forEach(m=>{
+      const items = m.days.flatMap(d => d.items.map(x => ({...x, ex_date:d.ex_date})));
+      h += `<div class="dpm"><b>${esc(m.label)}</b> ${md(m.expiry)} 만기 — ${f2(m.total)}pt</div>`;
+      if(!items.length) h += `<div class="dpm">${c.n_stocks?"이 월물 배당락 없음":"PDF 없음 — 수집 대기"}</div>`;
+      else h += `<table class="dortab dpi"><thead><tr><th>종목 (${items.length})</th><th style="text-align:right">배당금</th><th style="text-align:right">배당락일</th></tr></thead><tbody>`
+        + items.map(x=>`<tr class="dor" data-url="${esc(x.url||"")}" title="${esc(`${x.div_type} · 기준일 ${x.record_date}${x.basis?"\n"+x.basis:""}`)}">
+            <td class="nm">${esc(x.corp)}<span class="st ${DP_ST[x.status]||"est"}">${esc(x.status)}</span>${x.undecided?`<span class="st und">월물미정</span>`:""}</td>
+            <td class="px">${won(x.dps)}원</td><td class="dt">${esc(x.ex_date.slice(5))}</td></tr>`).join("")
+        + `</tbody></table>`;
+      if(m.undetermined.length)
+        h += `<div class="dpm">금액 미정(포인트 제외): ${m.undetermined.map(u=>`${esc(u.corp)}(${esc(u.ex_date.slice(5))})`).join(", ")}</div>`;
+    });
     h += `</details>`;
   });
   return h + `</div>`;
@@ -692,66 +698,57 @@ function applyFilters(){
 }
 
 function stageLadder(e){
-  // 선진화 "확정까지 5단계" 사다리 + 앵커 + 쓰인 공시 — 확정배당(whyBlock)·예상배당(est) 공용.
-  // ①가능 ②의지 ③예고 는 아직 수집 안 한 공시 → 정직하게 '미수집'. ④확정·⑤이력만 실제 데이터.
-  const c = (RES.companies||{})[e.stock];
-  const confirmed = e.kind !== "est";
-  const histAdv = !!(c && (c.history||[]).some(x=>x.advanced));
-  const notice = c && c.notice;            // ③ 예고 — 결산배당 기준일 안내 자율공시(실데이터)
-  const st3 = !!notice;
-  const st4 = confirmed || e.stage === "확정";
-  const row = (cls, cur, dot, num, name, desc)=>
-    `<div class="st ${cls}${cur?' cur':''}"><span class="dot">${dot}</span><span><b>${num} ${name}</b> <span class="sub">${esc(desc)}</span></span></div>`;
-  const ladder = `<div class="lad">
-    ${row("none", false, "⏸", "①", "가능", "정관에 '이사회가 기준일 지정' 조항 — 미수집")}
-    ${row("none", false, "⏸", "②", "의지", "사업보고서: 배당절차 개선·배당액 결정기관 — 미수집")}
-    ${row(st3?"":"none", false, st3?"✅":"○", "③", "예고",
-        st3 ? `결산배당 기준일 안내 자율공시 (${notice.date})${notice.record_date?` · 기준일 ${notice.record_date}`:" · 비연말 기준일 예고"}`
-            : "결산배당 기준일 안내 자율공시 없음")}
-    ${row(st4?"":"none", !st4, st4?"✅":"⬜", "④", "확정", st4?"기준일 결정 공고 — 기준일 확정":"기준일 공고 아직 — 지금 여기(공고 뜨면 확정)")}
-    ${row(histAdv?"":"none", false, histAdv?"✅":"—", "⑤", "이력", histAdv?"작년 동일 회차 선진화 (backstop)":"작년 선진화 이력 없음")}
-  </div>`;
-  const ancMap = {"작년반복":"작년 같은 회차 기준일을 올해로 평행이동 (A1·가장 강한 앵커)",
-    "실적예고":"선진화 — 실적발표 예정일 + 작년 (공시→기준일) 간격",
-    "분기말고정":"전통 — 분기말/정관 지정일 고정 (공고 예외)",
-    "기준일공고":"기준일 공고값 (확정)"};
-  const ancTxt = confirmed ? "기준일 공고값 (확정)" : (ancMap[e.anchor] || e.anchor || "");
-  const anc = ancTxt ? `<div class="anc">🧭 앵커: <b>${esc(ancTxt)}</b></div>` : "";
-  const sigs = confirmed
-    ? [ e.rcept_dt ? {label:"배당결정/기준일 공시", date:toISO(e.rcept_dt)} : null,
-        e.record_date ? {label:"배당기준일(공고값)", date:e.record_date} : null ].filter(Boolean)
-    : (e.signals || []);
-  const sigBlock = sigs.length
-    ? `<div class="wh" style="margin-top:8px">📄 쓰인 공시</div>`
-      + sigs.map(s=>`<div class="sig"><span class="sd">${esc(s.date||"-")}</span><span>${esc(s.label)}</span></div>`).join("")
-    : "";
-  return `<div class="wh" style="margin-top:8px">🪜 선진화 확정 단계 <span class="sub" style="font-weight:400;color:var(--muted)">— ④부터 확정</span></div>`
-    + ladder + anc + sigBlock;
+  // 5단계 사다리·앵커·경고 — research.py 가 계산한 값을 그대로 그림 (예상=e.ladder, 확정=회차별 ladders)
+  const c = (RES.companies||{})[e.stock] || {};
+  const lad = e.kind==="est" ? e.ladder : (c.ladders||{})[`${e.div_type}|${e.record_date}`];
+  if(!lad) return "";
+  const dot = {on:"✅", off:"○", none:"—"};
+  const rows = lad.map(s=>`<div class="st ${s.state==="on"?"":"none"}${s.n==="④"&&s.state!=="on"?" cur":""}"><span class="dot">${dot[s.state]}</span>
+      <span><b>${esc(s.n)} ${esc(s.name)}</b> <span class="sub">${esc(s.text)}</span></span></div>`).join("");
+  let h = `<div class="wh" style="margin-top:8px">🪜 기준일 확정 단계 <span class="sub" style="font-weight:400;color:var(--muted)">— ④부터 확정</span></div><div class="lad">${rows}</div>`;
+  if(e.kind==="est"){
+    const alt = Object.entries(e.alt||{}).map(([k,v])=>`${k} ${esc(v)}`).join(" · ");
+    h += `<div class="anc">🧭 <b>${esc(e.method)}${e.may_change?" · 바뀔 수 있음":""}</b> — ${esc(e.why)}<br>앵커: ${esc(e.anchor)}${alt?`<br>앵커별 값: ${alt}`:""}</div>`;
+    const cond = Object.entries(e.cond||{}).filter(([,v])=>v!==null).map(([k,v])=>`${k} ${v?"켜짐":"꺼짐"}`).join(" · ");
+    if(cond) h += `<div class="ev">조건부 신호(적중률 측정 중, 판정엔 안 씀): ${esc(cond)}</div>`;
+    h += (e.warn||[]).map(w=>`<div class="ev">⚠ ${esc(w)}</div>`).join("");
+  }
+  return h;
+}
+function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월·계획·근거 (research.json)
+  const c = (RES.companies||{})[stock];
+  if(!c) return "";
+  const ch = Object.entries(c.charter||{}).map(([g,x])=>`${g} ${x.v} <span class="sub">(${esc(x.src)})</span>`).join("<br>");
+  const og = Object.entries(c.organ||{}).map(([g,v])=>`${g} ${esc(v)}`).join(" · ");
+  const jd = Object.entries(c.judgments||{}).map(([t,j])=>`<div class="row">· ${esc(t)} ${esc(j.quarter)}: <b>${esc(j.method)}${j.may_change?" · 바뀔 수 있음":""}</b> <span class="sub">${esc(j.why)}</span></div>`).join("");
+  let h = `<div class="why"><div class="wh">🏷️ 이 회사의 기준일 판정</div>${jd}
+    <div class="row">정관(이사회 기준일 지정): ${ch||"정보 없음"}</div>
+    <div class="row">배당액 결정기관: ${og||"미상"} · 결산월 ${esc(String(c.acc_mt))}월${c.acc_known?"":" (조회 실패 — 12월 가정)"}</div>`;
+  if(c.charter_pending && c.charter_pending.date) h += `<div class="row">주총(${esc(c.charter_pending.date)}) 정관 기준일 변경 안건 상정 — 결과 대기</div>`;
+  (c.notices||[]).forEach(n=> h += `<div class="ev">📣 ${esc(n.date)} ${esc(n.title)} → ${esc(n.quarter)} ${esc(n.div_type)}${n.hint?` (${esc(n.hint)} 이후)`:""}</div>`);
+  (c.plans||[]).forEach(p=> h += `<div class="ev">📑 ${esc(p.date)} ${esc(p.title)}: ${p.lines.map(esc).join(" … ")}</div>`);
+  h += (c.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("");
+  return h + `</div>`;
 }
 function whyBlock(e){
-  // "왜 이 날짜인가" — 파생 날짜 설명 + 5단계 사다리 + 선진화 판별 + 배당 이력
-  const c = (RES.companies||{})[e.stock];
+  // "왜 이 날짜인가" — 파생 날짜 설명 + 5단계 사다리 + 회사 판정 + 배당 이력
   let h = `<div class="why"><div class="wh">📍 날짜 산출 근거</div>
     <div class="row">📌 <b>기준일(${esc(e.record_date)})</b> — 이날 주주명부에 올라 있어야 배당. 배당락·매수일은 여기서 자동 계산됩니다.</div>
     <div class="row">🗓️ <b>배당매수일(${esc(e.confirm_date||"-")})</b> — 기준일 T-2(국내 T+2 결제). <b>이날까지 매수</b>.</div>
     <div class="row">🚫 <b>배당락일(${esc(e.ex_date||"-")})</b> — 기준일 T-1. 이날부터 배당 없음. 현금배당은 거래소 가격조정 없이 시장에서 통상 배당액만큼 하락.</div>
     <div class="row" style="margin-top:3px;color:var(--muted)">※ 영업일: 주말·한국 공휴일·근로자의날·연말폐장 제외.</div>`;
   h += stageLadder(e);
-  if(c){
-    h += `<div class="row" style="margin-top:8px">🏷️ 이 기업의 배당 선진화 판별: <b style="color:var(--est)">${esc(c.verdict)}</b></div>`;
-    h += (c.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("");
-  }
-  return h + `</div>` + divHistBlock(e.stock);
+  return h + `</div>` + companyBlock(e.stock) + divHistBlock(e.stock);
 }
 function divHistBlock(stock){   // 이 회사가 원래 주는 배당 — 구성(분기·결산 등) + 회차별 이력 (research.json)
   const c = (RES.companies||{})[stock];
-  if(!c || !(c.history||[]).length) return "";
+  if(!c || !(c.rounds||[]).length) return "";
   return `<div class="why"><div class="wh">📚 이 회사의 배당 구성: <span style="color:var(--est)">${esc(c.pattern||"")}</span></div>
-    <table class="dortab"><thead><tr><th>회차</th><th>구분</th><th style="text-align:right">금액</th><th style="text-align:right">공시→기준일</th><th>방식</th></tr></thead><tbody>`
-    + c.history.map(x=>`<tr><td>${esc(x.quarter)}</td><td>${esc((x.div_type||"배당").replace("배당",""))}</td>
+    <table class="dortab"><thead><tr><th>회차</th><th>구분</th><th style="text-align:right">금액</th><th style="text-align:right">확정→기준일</th><th>기준일</th></tr></thead><tbody>`
+    + c.rounds.map(x=>`<tr title="${esc(`결산기말·분기말 ${x.quarter_end} · 출처 ${x.src}`)}"><td>${esc(x.quarter)}</td><td>${esc((x.div_type||"배당").replace("배당",""))}</td>
         <td class="px">${x.per_share?won(x.per_share)+"원":"-"}${x.special?' <span title="이전 회차 중앙값의 2배 초과 — 특별배당 포함으로 보고 예상 금액에서 제외">특별</span>':""}</td>
-        <td class="dt">${esc(x.announced.slice(5))}→${esc(x.record_date.slice(2))}</td>
-        <td>${x.advanced?"선진화":"전통"}</td></tr>`).join("")
+        <td class="dt">${esc((x.decided||"-").slice(2))}→${esc(x.record_date.slice(2))}</td>
+        <td>${x.fixed?"고정":"<b>유동</b>"}${x.amount_first?' <span title="배당액 확정일이 기준일보다 먼저 — 금액을 알고 살 수 있음">금액먼저</span>':""}</td></tr>`).join("")
     + `</tbody></table></div>`;
 }
 
@@ -799,19 +796,19 @@ function showDetail(e){
   if(e.kind==="group"){
     divListMode = false; box.className = ""; _group = e;
     const dp = {};
-    (DP?.indices||[]).forEach(c=> c.days.forEach(d=> d.items.forEach(x=> dp[x.stock+"|"+d.ex_date] = x)));
+    (DP?.indices||[]).forEach(c=> (c.months||[]).forEach(m=> m.days.forEach(d=> d.items.forEach(x=> dp[x.stock+"|"+d.ex_date] = x))));
     const rows = e.items.map(x=>({x, p:dp[x.stock+"|"+x.ex_date]}))
-      .sort((a,b)=> (b.x.verdict==="선진화") - (a.x.verdict==="선진화") || (+b.x.per_share||0) - (+a.x.per_share||0));
+      .sort((a,b)=> (b.x.method==="유동") - (a.x.method==="유동") || (+b.x.per_share||0) - (+a.x.per_share||0));
     box.innerHTML = `<div class="detail">
         <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
         <div class="corp">${esc(e.label)} <span style="font-size:13px;color:var(--muted)">${esc(e.date)} · ${e.items.length}건</span></div>
-        <div class="row" style="color:var(--muted)">선진화(기준일이 바뀔 수 있음) 먼저, 그다음 금액순 · 수익률·지수pt 는 근월물 만기까지 배당락만 · 행 클릭→상세</div>
-        <table class="dortab" id="grpTab"><thead><tr><th>종목</th><th style="text-align:right">금액</th><th>판별</th>
+        <div class="row" style="color:var(--muted)">유동(기준일이 바뀔 수 있음) 먼저, 그다음 금액순 · 수익률·지수pt 는 차월물 만기까지 배당락만 · 행 클릭→상세</div>
+        <table class="dortab" id="grpTab"><thead><tr><th>종목</th><th style="text-align:right">금액</th><th>방식</th>
           <th style="text-align:right">수익률</th><th style="text-align:right">지수pt</th></tr></thead><tbody>${
         rows.map(({x,p})=>`<tr class="dor" data-i="${e.items.indexOf(x)}">
           <td class="nm">${esc(x.corp)} <span class="mkt ${esc(x.market)}">${esc(x.market)}</span></td>
           <td class="px">${x.per_share?won(x.per_share)+"원":"-"}</td>
-          <td${x.verdict==="선진화"?' style="color:var(--est);font-weight:700"':""}>${esc((x.verdict||x.div_type||x.type||"").replace("(깜깜이)",""))}</td>
+          <td${x.method==="유동"?' style="color:var(--est);font-weight:700"':""}>${esc(x.method||x.div_type||x.type||"")}</td>
           <td class="px">${p?p.yield.toFixed(2)+"%":"-"}</td><td class="px">${p?p.points.toFixed(3):"-"}</td></tr>`).join("")}</tbody></table></div>`;
     box.querySelectorAll("#grpTab tr.dor").forEach(el=> el.addEventListener("click",()=> showDetail(e.items[+el.dataset.i])));
     return;
@@ -826,14 +823,14 @@ function showDetail(e){
         <div class="big" style="color:var(--est)">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주 (예상)</span></div>
         <div class="row">🗓️ 예상 배당매수일(T-2) <b style="color:var(--est)">${esc(e.confirm_date||"-")}</b></div>
         <div class="row">🚫 예상 배당락일(T-1) ${esc(e.ex_date||"-")}</div>
-        <div class="row">📌 예상 배당기준일 ${esc(e.record_date)}</div>
+        <div class="row">📌 예상 배당기준일 ${esc(e.record_date)} <span style="color:var(--muted)">(${esc(e.quarter)} · 결산기말·분기말 ${esc(e.quarter_end)})</span></div>
+        <div class="row">💸 예상 지급일 ${esc(e.pay_date||"-")}</div>
         <div class="why"><div class="wh">🧠 예상 배당 — 추정 근거</div>
           ${stageLadder(e)}
-          <div class="row" style="margin-top:8px">🏷️ 배당 선진화 판별: <b style="color:var(--est)">${esc(e.verdict||"판단불가")}</b></div>
-          ${((RES.companies||{})[e.stock]?.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("")}
-          <div class="ev" style="margin-top:8px">🧮 ${esc(e.basis||"")}</div>
-          <div class="ev" style="margin-top:4px">※ 과거 공시 이력 기반 자동 추정. 실제 공시(4번)가 나오면 보라색(확정) 이벤트로 대체됩니다.</div>
+          <div class="ev" style="margin-top:8px">🧮 금액: ${esc(e.amount_basis||"")}</div>
+          <div class="ev" style="margin-top:4px">※ 공시 기반 자동 추정 (설계: docs/배당예측-워크플로우.md). 실제 공시(④)가 나오면 보라색(확정) 이벤트로 대체됩니다.</div>
         </div>
+        ${companyBlock(e.stock)}
         ${divHistBlock(e.stock)}
       </div>`;
     return;

@@ -13,15 +13,14 @@
 사용:
   python kind_halt.py            # 최근 정지/재개 → data/halts.json
 """
-import json, os, re, io, zipfile, datetime, http.cookiejar, urllib.request, urllib.parse
+import json, os, re, datetime, http.cookiejar, urllib.request, urllib.parse
 import numpy as np
-from fetch import build_ssl_context, DATA_DIR, BASE, KEY, api, load_watchlist, save_json, doc_text
+from fetch import build_ssl_context, DATA_DIR, BASE, KEY, api, load_watchlist, save_json, doc_text, corp_code
 from krx_cal import holiday_dates, default_years
 
 SCAN_DAYS = 50                       # 정지/해제 공시 스캔 기간(일)
 KIND_FEED = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
 VIEWER = "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={}&docno="
-CORP_PATH = os.path.join(DATA_DIR, "corp_codes.json")     # stock_code→corp_code 캐시
 BODY_PATH = os.path.join(DATA_DIR, "halt_body_cache.json")  # rcept→{halt_date,reason,expire} 캐시
 DART_PATH = os.path.join(DATA_DIR, "halt_dart_cache.json")  # stock→{resume,halt} DART 보강 캐시
 
@@ -117,37 +116,7 @@ def _parse_body(rcept, cache):
     cache[rcept] = out
     return out
 
-# ── DART 보강 (corp_code 캐시 + 결정공시 상장예정일) ──
-def _load_corp_codes():
-    if os.path.exists(CORP_PATH):
-        try:
-            j = json.load(open(CORP_PATH, encoding="utf-8"))
-            if j.get("_ts", "") >= (datetime.date.today() - datetime.timedelta(days=7)).strftime("%Y%m%d"):
-                return j
-        except Exception:
-            pass
-    # CORPCODE.xml 재다운로드
-    url = f"https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key={KEY}"
-    raw = urllib.request.urlopen(url, timeout=60).read()
-    zf = zipfile.ZipFile(io.BytesIO(raw))
-    xml = zf.read(zf.namelist()[0]).decode("utf-8")
-    mp = {"_ts": datetime.date.today().strftime("%Y%m%d")}
-    for m in re.finditer(r"<list>(.*?)</list>", xml, re.S):
-        b = m.group(1)
-        sc = re.search(r"<stock_code>\s*(\S+?)\s*</stock_code>", b)
-        cc = re.search(r"<corp_code>\s*(\d+)\s*</corp_code>", b)
-        if sc and cc and re.fullmatch(r"\d{6}", sc.group(1)):
-            mp[sc.group(1)] = cc.group(1)
-    save_json(CORP_PATH, mp)
-    return mp
-
-_CORP = None
-def _corp_code(stock):
-    global _CORP
-    if _CORP is None:
-        _CORP = _load_corp_codes()
-    return _CORP.get(stock, "")
-
+# ── DART 보강 (결정공시 상장예정일) ──
 _DATE = r"(\d{4}\D+\d{1,2}\D+\d{1,2})"
 def _nd(s):
     m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
@@ -159,7 +128,7 @@ def dart_resume(stock, halt_date, dcache):
     if key in dcache:
         return dcache[key]
     res = ""
-    cc = _corp_code(stock)
+    cc = corp_code(stock)
     if cc:
         try:
             end = datetime.date.today().strftime("%Y%m%d")
