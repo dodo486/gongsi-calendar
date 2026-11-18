@@ -78,7 +78,7 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
             continue
         key = (r["stock_code"], d["period_end"])
         cur = merged.get(key)
-        if cur is None or r["rcept_dt"] >= cur["rcept_dt"]:
+        if cur is None or (r["rcept_dt"], rno) >= (cur["rcept_dt"], cur["rcept_no"]):
             merged[key] = {**_base(r, rno), "src": "예고",
                            "expected_date": d["expected_date"], "period_end": d["period_end"]}
 
@@ -97,7 +97,7 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
             continue
         key = (r["stock_code"], d["expected_date"])
         cur = ir_merged.get(key)
-        if cur is None or r["rcept_dt"] >= cur["rcept_dt"]:
+        if cur is None or (r["rcept_dt"], rno) >= (cur["rcept_dt"], cur["rcept_no"]):
             ir_merged[key] = {**_base(r, rno), "src": "IR",
                               "expected_date": d["expected_date"], "time": d.get("time", ""),
                               "purpose": d.get("purpose", ""), "sponsor": d.get("sponsor", "")}

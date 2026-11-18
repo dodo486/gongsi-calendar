@@ -378,12 +378,11 @@ function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준
   });
   return out;
 }
-function estList(){   // 예상배당(리서치 추정) — 실제 배당공시가 나온 회차는 뺌, 검색·시장 필터 반영
-  // 실제 배당(DIV)이 이미 나온 종목·기준일(±30일)의 예상배당은 중복 → 제거 (예: 삼양식품)
-  const realRec = {};
-  DIV.forEach(e=>{ if(e.stock && e.record_date) (realRec[e.stock]=realRec[e.stock]||[]).push(e.record_date); });
+const SAME_ROUND_DAYS = 45;   // divpoints.py 와 같은 규칙 — 화면·엑셀·지수배당포인트의 예상 목록이 같게
+function estList(){   // 예상배당(리서치 추정) — 확정 공시가 나온 회차(같은 종목·같은 배당종류·기준일 ±45일)는 뺌, 검색·시장 필터 반영
   const dday = (a,b)=> Math.abs((new Date(a)-new Date(b))/864e5);
-  const superseded = e => e.record_date && (realRec[e.stock]||[]).some(rd => dday(rd, e.record_date) <= 30);
+  const superseded = e => DIV.some(c=> c.stock===e.stock && c.record_date && ["", e.div_type].includes(c.div_type||"")
+                                      && dday(c.record_date, e.record_date) <= SAME_ROUND_DAYS);
   return (RES.events||[]).filter(e=> shown(e) && !superseded(e));
 }
 function estEvents(){   // 예상배당 — 날짜 확실도별 노란색 계열
@@ -631,7 +630,7 @@ function exportXlsx(){
   const afterExp = ex => exps.filter(d=> d < ex).pop() || "";      // 배당락 직전 동시만기
   const monthOf  = ex => exps.find(d=> d >= ex) || "";              // 배당락이 걸리는 월물(그 이후 첫 동시만기)
   const ym = d => d ? d.slice(0,7) : "";
-  const row = (e, kind, why, amtWhy) => ({
+  const row = (e, kind, why, amtWhy, fill) => ({ _fill: fill,
     "종목코드": "A" + e.stock, "종목명": e.corp, "시장": {KOSPI:"KP", KOSDAQ:"KQ"}[e.market] || e.market,
     "구분": kind, "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
     "기준일": e.record_date || "", "배당매수일(T-2)": e.confirm_date || "", "배당락일(T-1)": e.ex_date || "",
@@ -642,10 +641,11 @@ function exportXlsx(){
   });
   const rows = DIV.filter(e=> shown(e) && e.ex_date && e.ex_date >= from)
       .map(e=> row(e, e.per_share ? "확정 — 배당결정 공시(금액·기준일)" : "기준일 공고 — 금액 미정",
-                   `DART 공시 ${e.rcept_dt ? e.rcept_dt.replace(/(\d{4})(\d{2})(\d{2})/,"$1-$2-$3") : ""} ${e.url||""}`.trim(), e.per_share ? "공시 금액" : ""))
+                   `DART 공시 ${e.rcept_dt ? e.rcept_dt.replace(/(\d{4})(\d{2})(\d{2})/,"$1-$2-$3") : ""} ${e.url||""}`.trim(), e.per_share ? "공시 금액" : "",
+                   e.per_share ? "확정" : "공고"))
     .concat(estList().filter(e=> e.ex_date && e.ex_date >= from)
       .map(e=> row(e, estLabel(e),
-                   `${METHOD_TXT[e.method]||e.method} — ${e.why} / 날짜 근거: ${e.anchor}`, e.amount_basis || "")))
+                   `${METHOD_TXT[e.method]||e.method} — ${e.why} / 날짜 근거: ${e.anchor}`, e.amount_basis || "", estGrade(e).g)))
     .sort((a,b)=> a["배당락일(T-1)"].localeCompare(b["배당락일(T-1)"]) || a["종목명"].localeCompare(b["종목명"], "ko"));
   if(!rows.length){ alert(`${from} 이후 배당이 없습니다.`); return; }
   // 서식 — 머리줄 남색, 구분은 화면 범례처럼 진함(확실)→회색(근거 약함)
@@ -657,9 +657,9 @@ function exportXlsx(){
   const NOTE = {font:{italic:true, color:{rgb:"595959"}}};
   const CELL = {alignment:{vertical:"top"}, border:BOX};
   const WRAP = {alignment:{vertical:"top", wrapText:true}, border:BOX};
-  const KIND_FILL = [["확정", "F8CBAD"], ["기준일 공고", "F4B084"], [EST_GRADE[1].t, "FFD966"], [EST_GRADE[2].t, "FFE699"],
-                     [EST_GRADE[3].t, "FFF2CC"], [EST_GRADE[4].t, "EDEDED"], [EST_GRADE[5].t, "D9D9D9"]];
-  const kindFill = v => { const k = KIND_FILL.find(([t])=> String(v).includes(t)); return k ? {fill:{fgColor:{rgb:k[1]}}} : {}; };
+  // 구분 칸 색 — 확정·공고·예상 날짜 확실도 단계(EST_GRADE.g) 별. 화면 범례와 같은 순서
+  const FILL = {확정:"F8CBAD", 공고:"F4B084", 0:"F4B084", 1:"FFD966", 2:"FFE699", 3:"FFF2CC", 4:"EDEDED", 5:"D9D9D9"};
+  const fillOf = k => FILL[k] ? {fill:{fgColor:{rgb:FILL[k]}}} : {};
   const paint = (ws, fn) => {
     const r = XLSX.utils.decode_range(ws["!ref"]);
     for(let R=r.s.r; R<=r.e.r; R++) for(let C=r.s.c; C<=r.e.c; C++){
@@ -668,8 +668,10 @@ function exportXlsx(){
       ws[ref].s = fn(R, C, ws[ref].v);
     }
   };
+  const fills = rows.map(r=> r._fill);
+  rows.forEach(r=> delete r._fill);
   const ws = XLSX.utils.json_to_sheet(rows);
-  paint(ws, (R, C, v)=> R===0 ? HEAD : C===3 ? {...CELL, ...kindFill(v), font:{bold:true}} : CELL);
+  paint(ws, (R, C)=> R===0 ? HEAD : C===3 ? {...CELL, ...fillOf(fills[R-1]), font:{bold:true}} : CELL);
   ws["!cols"] = [9,16,5,34,9,11,11,13,13,11,13,10,70,30].map(w=> ({wch:w}));
   ws["!autofilter"] = {ref: ws["!ref"]};
   const wb = XLSX.utils.book_new();
@@ -677,9 +679,9 @@ function exportXlsx(){
   // 설명 탭 — 구분(단계)·칸 뜻. 화면과 같은 문구(EST_GRADE)를 그대로 씀
   const guide = [
     ["구분 칸 색", "뜻 — 예상은 구분 칸에 '예상 기준일 날짜 — 그 날짜를 잡은 이유'가 종목마다 적혀 있고, 색은 날짜가 얼마나 확실한지"],
-    ["확정 — 배당결정 공시(금액·기준일)", "회사가 현금배당결정 공시를 냄 — 금액·기준일 확정"],
-    ["기준일 공고 — 금액 미정", "회사가 기준일(주주명부폐쇄) 공고만 냄 — 날짜 확정, 금액은 아직"],
-    ...EST_GRADE.map(g=> [`예상 — ${g.t}`, g.d]),
+    ["확정 — 배당결정 공시(금액·기준일)", "회사가 현금배당결정 공시를 냄 — 금액·기준일 확정", "확정"],
+    ["기준일 공고 — 금액 미정", "회사가 기준일(주주명부폐쇄) 공고만 냄 — 날짜 확정, 금액은 아직", "공고"],
+    ...EST_GRADE.map(g=> [`예상 — ${g.t}`, g.d, g.g]),
     [],
     ["칸", "뜻"],
     ["종목코드", "A + 6자리 종목코드"],
@@ -693,13 +695,13 @@ function exportXlsx(){
     [],
     ["뽑은 범위", `${from} 이후 배당락 · 검색·시장 필터 반영 · ${new Date().toLocaleString("ko-KR")} 기준`],
   ];
-  const gs = XLSX.utils.aoa_to_sheet(guide);
+  const gs = XLSX.utils.aoa_to_sheet(guide.map(r=> r.slice(0, 2)));   // 3번째 값은 색 단계(표에는 안 씀)
   paint(gs, (R, C, v)=> {
     const row = guide[R];
     if(!row.length) return {};
     if(row[0]==="구분 칸 색" || row[0]==="칸") return HEAD;
     if(row[0]==="뽑은 범위") return NOTE;
-    return C===0 ? {...WRAP, ...kindFill(row[0]), font:{bold:true}} : WRAP;
+    return C===0 ? {...WRAP, ...fillOf(row[2]), font:{bold:true}} : WRAP;
   });
   gs["!cols"] = [{wch:44}, {wch:90}];
   XLSX.utils.book_append_sheet(wb, gs, "설명");
@@ -773,7 +775,7 @@ async function loadData(){
   applyFilters();
   if(divListMode) renderDivToday();
 }
-const refresh = () => keepScroll(loadData);   // 다시 그려도 보던 스크롤 위치 유지
+function refresh(){ return keepScroll(loadData); }   // 다시 그려도 보던 스크롤 위치 유지 (공시캘린더 탭이 열릴 때 바깥에서도 부름)
 
 async function boot(){
   // 만기일·휴장일 먼저 로드 — 캘린더 render 전에 HOL 을 채워야 휴일 빨간색이 첫 렌더부터 적용됨
@@ -805,7 +807,7 @@ async function boot(){
   dayCal.render();
   await loadData();
   renderDivToday();
-  setInterval(refresh, 30000);   // 30초마다 데이터 다시 읽기
+  setInterval(()=>{ if(!window.frameElement || window.frameElement.offsetParent) refresh(); }, 30000);   // 30초마다 — 공시캘린더에 끼워져 숨겨져 있으면 쉼
 }
 
 document.getElementById("q").addEventListener("input",e=>{ filters.q=e.target.value; applyFilters(); });
