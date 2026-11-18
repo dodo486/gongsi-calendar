@@ -50,6 +50,18 @@ def is_business_day(d):
     """d(date) 가 주말·휴장일이 아닌가"""
     return bool(np.is_busday(np.datetime64(d), holidays=_HOL_ARR))
 
+# 수능일 — KRX 개장·마감 1시간 늦춤(10:00~16:30). 교육부가 매년 발표하면 추가
+EXAM_DAYS = {datetime.date(2025, 11, 13), datetime.date(2026, 11, 19)}
+
+def session_delay(d):
+    """그날 KRX 개장·마감이 몇 분 늦는가 (개장, 마감) — 수능일 (60, 60), 연초 첫 거래일 (60, 0), 평소 (0, 0)"""
+    if d in EXAM_DAYS:
+        return (60, 60)
+    first = datetime.date(d.year, 1, 2)
+    while not is_business_day(first):
+        first += datetime.timedelta(days=1)
+    return (60, 0) if d == first else (0, 0)
+
 def next_bday(iso):
     """iso 다음 영업일(주말·휴장일 제외) — 당일 거래정지의 재개일 등."""
     return str(np.busday_offset(np.datetime64(iso), 1, roll="forward", holidays=_HOL_ARR))

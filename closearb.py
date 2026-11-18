@@ -28,7 +28,7 @@ from concurrent.futures import ThreadPoolExecutor
 import md_feed
 from base import DATA_DIR, save_json, load_watchlist
 from expiries import second_thursday
-from krx_cal import holiday_dates, prev_business_day
+from krx_cal import holiday_dates, prev_business_day, session_delay
 
 LIVE_PATH = os.path.join(DATA_DIR, "closearb.json")
 LOG_DIR = os.path.join(DATA_DIR, "closearb")
@@ -173,6 +173,7 @@ class Monitor:
         self.day = None
         self.krx, self.nxt, self.fut, self.status = {}, {}, {}, {}
         self.status_at = self.nxt_at = 0.0
+        self.special_day = None
 
     def new_day(self, today):
         self.day = today
@@ -210,6 +211,18 @@ class Monitor:
         """한 번 받고 기록·화면 파일을 갱신한다. 다음 호출까지 쉴 초를 돌려준다."""
         phase = phase_of(now)
         if phase is None:
+            return IDLE_SECONDS
+        open_late, close_late = session_delay(now.date())
+        if open_late or close_late:   # 장 시간이 다른 날 — 시간대 표(PHASES)가 평소 기준이라 기록하면 틀림 → 기록 안 하고 화면에 알림
+            if self.special_day != now.date():
+                try:
+                    live = json.load(open(LIVE_PATH, encoding="utf-8"))
+                except (OSError, ValueError):
+                    live = {"rows": [], "marks": []}
+                live.update(phase=f"특별 장 시간(개장 {open_late}분·마감 {close_late}분 늦음) — 오늘은 기록 안 함",
+                            generated_at=now.strftime("%Y-%m-%d %H:%M:%S"))
+                save_json(LIVE_PATH, live)
+                self.special_day = now.date()
             return IDLE_SECONDS
         if self.day != now.date():
             self.new_day(now.date())
