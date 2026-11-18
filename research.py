@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """배당 날짜 유추 — 설계 정본 docs/배당예측-워크플로우.md (§4 워크플로우, §5 검증)
 
-수집  DART 목록(증분 캐시 div_listing.json) → 원문 파싱(rcept_no 캐시)
+수집  DART 목록(공용 저장본 fetch.listing) → 원문 파싱(rcept_no 캐시)
       거래소공시(I): 배당결정 · 배당 기준일 공고 · 기준일 안내 자율공시 · 주총 소집결의/결과 · 주총용 명부폐쇄 · 밸류업 · 지배구조보고서
       정기공시(A): 사업·반기·분기보고서 「배당관련 예측가능성」 표 (div_policy.json)
       회사정보: 결산월 acc_mt (acc_mt.json)
@@ -13,17 +13,15 @@
 """
 import sys, os, re, json, datetime, calendar, statistics, threading
 from concurrent.futures import ThreadPoolExecutor
-from fetch import fetch_range, doc_text, api, KEY, corp_code
+from fetch import listing, doc_text, api, KEY, corp_code
 from base import DATA_DIR, save_json
 import dividends as dv
 from krx_cal import t_minus
 import earn_sched
 
 D = datetime.date
-DAY = datetime.timedelta(days=1)
 OUT_PATH = os.path.join(DATA_DIR, "research.json")
 VERIFY_PATH = os.path.join(DATA_DIR, "research_verify.json")
-LIST_PATH = os.path.join(DATA_DIR, "div_listing.json")
 POLICY_PATH = os.path.join(DATA_DIR, "div_policy.json")
 ACC_PATH = os.path.join(DATA_DIR, "acc_mt.json")
 EXP_PATH = os.path.join(DATA_DIR, "expiries.json")
@@ -101,48 +99,6 @@ def _kind(nm):
 
 def _periodic(nm):
     return any(k in (nm or "") for k in ("사업보고서", "반기보고서", "분기보고서"))
-
-def listing(ty, days, keep):
-    """DART 목록(유형 ty) 오늘부터 days일치 — 훑은 구간은 저장본, 새 구간만 조회(끝 3일은 늦은 접수 대비 다시)"""
-    store = _load(LIST_PATH, {})
-    s = store.setdefault(ty, {"from": "", "to": "", "rows": {}})
-    today = D.today()
-    want = today - datetime.timedelta(days=days)
-    ymd = lambda d: d.strftime("%Y%m%d")
-
-    def grab(a, b):
-        for cls in ("Y", "K"):
-            for r in fetch_range(ymd(a), ymd(b), cls, ty, strict=True):
-                if keep(r.get("report_nm")):
-                    s["rows"][r["rcept_no"]] = {k: r.get(k, "") for k in
-                                                ("rcept_no", "rcept_dt", "report_nm", "stock_code", "corp_name", "corp_cls")}
-        with _LOCK:
-            save_json(LIST_PATH, store)
-
-    if not s["to"]:
-        s["from"], s["to"] = ymd(want), ymd(want - DAY)
-    try:
-        b = _d(s["from"]) - DAY
-        while want <= b:
-            a = max(want, b - datetime.timedelta(days=84))
-            grab(a, b)
-            s["from"] = ymd(a)
-            b = a - DAY
-        a = max(_d(s["from"]), _d(s["to"]) - datetime.timedelta(days=3))
-        while a <= today:
-            e = min(today, a + datetime.timedelta(days=84))
-            grab(a, e)
-            s["to"] = ymd(e)
-            a = e + DAY
-    except Exception as ex:
-        print(f"  [!] DART 목록({ty}) 조회 실패 — 저장된 {s['from']}~{s['to']} 구간으로 계산: {type(ex).__name__}")
-    cut = ymd(want - datetime.timedelta(days=30))
-    s["rows"] = {k: r for k, r in s["rows"].items() if r["rcept_dt"] >= cut}
-    s["from"] = max(s["from"], cut)
-    with _LOCK:
-        save_json(LIST_PATH, store)
-    return [r for r in s["rows"].values() if r["rcept_dt"] >= ymd(want)]
-
 
 # ── 수집: 원문 파싱 ──
 def parse_charter(t):
@@ -227,7 +183,7 @@ def _download(jobs, cache, label):
 def collect(universe):
     """거래소공시 이력(2년+) 원문 파싱 → div_history.json, 주총용 명부폐쇄는 목록만"""
     hist = dv.load_doc_cache()
-    rows = [r for r in listing("I", HIST_DAYS, _kind) if r["stock_code"] in universe]
+    rows = [r for r in listing("I", HIST_DAYS) if r["stock_code"] in universe and _kind(r["report_nm"])]
     jobs, agm_records = [], {}
     for r in rows:
         k = _kind(r["report_nm"])
@@ -250,8 +206,8 @@ def policies(universe):
     """종목별 최신 정기보고서의 배당 표 (없으면 직전 보고서로, 최대 4건)"""
     cache = _load(POLICY_PATH, {})
     by = {}
-    for r in listing("A", POLICY_DAYS, _periodic):
-        if r["stock_code"] in universe:
+    for r in listing("A", POLICY_DAYS):
+        if r["stock_code"] in universe and _periodic(r["report_nm"]):
             by.setdefault(r["stock_code"], []).append(r)
     for rs in by.values():
         rs.sort(key=lambda r: r["rcept_no"], reverse=True)
@@ -279,21 +235,25 @@ def policies(universe):
     return {s: p for s, p in out.items() if p}
 
 def acc_months(universe):
+    """종목별 결산월(company.json acc_mt). 답을 받은 종목은 다시 묻지 않는다 — '결산월 없음'("") 답도 기록,
+    받기 실패만 기록하지 않고 다음 회차에 다시."""
     cache = _load(ACC_PATH, {})
     def one(s):
         try:
             cc = corp_code(s)
-            j = api({"crtfc_key": KEY, "corp_code": cc}, "company") if cc else {}
+            if not cc:
+                return s, ""        # DART 고유번호 없음 = 물어볼 결산월 없음
+            j = api({"crtfc_key": KEY, "corp_code": cc}, "company")
         except Exception:
-            j = {}
-        return s, j.get("acc_mt", "") if j.get("status") == "000" else ""
+            return s, None
+        return s, {"000": j.get("acc_mt", ""), "013": ""}.get(j.get("status"))
     missing = sorted(set(universe) - set(cache))
     if missing:
         print(f"  [결산월] {len(missing)}종목 조회")
         first = one(missing[0])
-        if first[1]:
+        if first[1] is not None:
             with ThreadPoolExecutor(2) as ex:
-                cache.update({s: m for s, m in [first, *ex.map(one, missing[1:])] if m})
+                cache.update({s: m for s, m in [first, *ex.map(one, missing[1:])] if m is not None})
             save_json(ACC_PATH, cache)
         else:
             print("  [!] 결산월 조회 실패 — 이번 계산은 12월 결산 가정(종목 근거에 표시)")

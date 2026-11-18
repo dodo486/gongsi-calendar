@@ -9,7 +9,7 @@
   python earnings.py 60         # 최근 N일
 """
 import bisect, json, os, re, sys, datetime
-from disclosures import collect_events
+from disclosures import collect_events, stored_rows
 from base import DATA_DIR, load_watchlist, save_json
 from net import TLS_MODE
 import kind_client
@@ -175,12 +175,9 @@ def _dedupe_sort(evs):
     return out
 
 def collect(days=RETAIN_DAYS, watch="__load__"):
-    today = datetime.date.today()
-    bgn = (today - datetime.timedelta(days=days)).strftime("%Y%m%d")
-    end = today.strftime("%Y%m%d")
     if watch == "__load__":
         watch = load_watchlist()
-    evs = [e for e in collect_events(bgn, end, watch=watch, verbose=False) if e.get("category") == "실적"]
+    evs = [e for e in collect_events(stored_rows(days), watch=watch) if e.get("category") == "실적"]
     return _dedupe_sort(evs)
 
 def main(days=RETAIN_DAYS):

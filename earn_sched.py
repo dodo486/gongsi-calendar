@@ -9,7 +9,7 @@
 """
 import json, os, sys, re, datetime
 from base import DATA_DIR, load_watchlist, save_json
-from fetch import fetch_range, parsed
+from fetch import listing, parsed
 from net import TLS_MODE
 
 SCHED_PATH = os.path.join(DATA_DIR, "earn_sched.json")
@@ -19,7 +19,7 @@ IR_KW = "기업설명회"
 COLLECT_DAYS = 45          # 예고는 보통 발표 1~2주 전 — 넉넉히 45일치 훑어 다가오는 일정 확보
 IR_DAYS = 14               # IR 안내는 보통 개최 1~10일 전 접수 — 14일이면 충분
 PAST_KEEP_DAYS = 14        # 지나간 예상 일정도 2주간 캘린더에 유지 (과거분 소멸 방지)
-_last_raw = 0              # 직전 collect()의 DART 원시 응답 수 — 0이면 API 오류 가능성
+_last_raw = 0              # 직전 collect()의 DART 목록 행 수 — 0이면 API 오류 가능성
 
 def parse_sched(t):
     """예고 본문 → {expected_date(공시예정일), period_end(결산기간 종료일)}"""
@@ -63,14 +63,10 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
     if watch == "__load__":
         watch = load_watchlist() or {}
     today = datetime.date.today()
-    end = today.strftime("%Y%m%d")
     cache = _load_cache()
 
     # ① 결산실적공시예고 [예고]
-    bgn = (today - datetime.timedelta(days=days)).strftime("%Y%m%d")
-    rows = []
-    for cls in ("Y", "K"):
-        rows += fetch_range(bgn, end, cls, "I")
+    rows = listing("I", days)
     merged = {}   # (stock, period_end) → entry (정정 대비 최신 접수 우선)
     for r in rows:
         if KW not in (r.get("report_nm") or "") or r.get("stock_code") not in watch:

@@ -20,7 +20,9 @@ from krx_cal import next_bday, norm_date
 import kind_client
 
 SCAN_DAYS = 50                       # 정지/해제 공시 스캔 기간(일)
-BODY_PATH = os.path.join(DATA_DIR, "halt_body_cache.json")  # rcept→{halt_date,reason,expire} 캐시
+FEED_PATH = os.path.join(DATA_DIR, "halt_feed_cache.json")  # "날짜|시장"→정지·해제 공시 행 — 지난 날짜 목록은 안 바뀜
+FEED_RECHECK_DAYS = 2                                        # 오늘·어제 목록만 늦은 공시 대비 매번 다시
+BODY_PATH = os.path.join(DATA_DIR, "halt_body_cache.json")  # rcept→본문 값(정지: halt_date·reason·expire / 해제: release)
 DART_PATH = os.path.join(DATA_DIR, "halt_dart_cache.json")  # stock→{resume,halt} DART 보강 캐시
 
 def _short_reason(reason, extra):
@@ -92,31 +94,41 @@ def dart_resume(stock, halt_date, dcache):
 
 # ── 수집 ──
 HALT_KW = "매매거래정지"
+def _halt_rows(html):
+    """KIND 당일공시 목록 HTML → 정지·해제 공시 행 [접수번호, 제목, 회사명]"""
+    out = []
+    for row in re.split(r"</tr>", html):
+        if HALT_KW not in row:
+            continue
+        ma = re.search(r"openDisclsViewer\('(\d+)'", row)
+        mt = re.search(r"title='([^']*매매거래정지[^']*)'", row)
+        mc = re.search(r"companysummary_open\([^)]*\);\s*return false;\"\s*title='([^']+)'", row)
+        if ma and mt and mc:
+            out.append([ma.group(1), mt.group(1).strip(), mc.group(1).strip()])
+    return out
+
 def collect():
     name2 = kind_client.name2code()
+    fcache = json.load(open(FEED_PATH, encoding="utf-8")) if os.path.exists(FEED_PATH) else {}
     bcache = json.load(open(BODY_PATH, encoding="utf-8")) if os.path.exists(BODY_PATH) else {}
     dcache = json.load(open(DART_PATH, encoding="utf-8")) if os.path.exists(DART_PATH) else {}
+    today = datetime.date.today()
+    recheck_from = (today - datetime.timedelta(days=FEED_RECHECK_DAYS - 1)).strftime("%Y-%m-%d")
+    oldest = (today - datetime.timedelta(days=SCAN_DAYS)).strftime("%Y-%m-%d")
 
     halts, releases, seen = {}, {}, set()   # code→halt / code→release(해제일)
     for dd in range(SCAN_DAYS + 1):
-        d = (datetime.date.today() - datetime.timedelta(days=dd)).strftime("%Y-%m-%d")
+        d = (today - datetime.timedelta(days=dd)).strftime("%Y-%m-%d")
         for market in ("1", "2"):
-            try:
-                html = kind_client.feed(d, market)
-            except Exception:
-                continue
-            for row in re.split(r"</tr>", html):
-                if HALT_KW not in row:
+            key = f"{d}|{market}"
+            if key not in fcache or d >= recheck_from:
+                try:
+                    fcache[key] = _halt_rows(kind_client.feed(d, market))
+                except Exception:
                     continue
-                ma = re.search(r"openDisclsViewer\('(\d+)'", row)
-                mt = re.search(r"title='([^']*매매거래정지[^']*)'", row)
-                mc = re.search(r"companysummary_open\([^)]*\);\s*return false;\"\s*title='([^']+)'", row)
-                if not (ma and mt and mc):
-                    continue
-                nm = mc.group(1).strip()
+            for rcept, title, nm in fcache[key]:
                 if nm not in name2:                       # watchlist 필터
                     continue
-                rcept, title = ma.group(1), mt.group(1).strip()
                 if rcept in seen:
                     continue
                 seen.add(rcept)
@@ -124,10 +136,15 @@ def collect():
                 is_release = ("정지해제" in title) or ("및정지해제" in title) or \
                              (("해제" in title) and ("정지" not in title.replace("정지해제", "")))
                 if is_release:
-                    # 해제 공시 본문의 해제일시(없으면 접수일) — 재개 확정일
-                    t = kind_client.body_text(rcept).replace(" ", "")
-                    m = re.search(r"해제일시(\d{4}-\d{2}-\d{2})", t)
-                    rdate = m.group(1) if m else d
+                    # 해제 공시 본문의 해제일시(없으면 접수일) — 재개 확정일. 받은 본문은 캐시(받기 실패는 다음 회차 재시도)
+                    if rcept in bcache:
+                        rdate = bcache[rcept]["release"]
+                    else:
+                        t = kind_client.body_text(rcept).replace(" ", "")
+                        m = re.search(r"해제일시(\d{4}-\d{2}-\d{2})", t)
+                        rdate = m.group(1) if m else d
+                        if t:
+                            bcache[rcept] = {"release": rdate}
                     if code not in releases or rdate > releases[code]:
                         releases[code] = rdate
                     continue
@@ -168,6 +185,7 @@ def collect():
             continue
         out.append(h)
 
+    save_json(FEED_PATH, {k: v for k, v in fcache.items() if k[:10] >= oldest})
     save_json(BODY_PATH, bcache)
     save_json(DART_PATH, dcache)
     out.sort(key=lambda x: (x.get("halt_date") or "9999", x["corp"]))

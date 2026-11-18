@@ -3,7 +3,7 @@
 - 키: 환경변수 DART_KEY(CI) 또는 dart_key.txt
 - TLS 는 net(사내망 대응), 저장·경로는 base 를 쓴다
 """
-import io, json, os, re, sys, time, datetime, zipfile, urllib.request, urllib.error, ssl
+import io, json, os, re, sys, time, datetime, threading, zipfile, urllib.request, urllib.error, ssl
 from base import BASE, DATA_DIR, save_json
 import net   # import 시 TLS opener 세팅
 
@@ -61,18 +61,71 @@ def fetch_range(bgn, end, corp_cls, pblntf_ty=None, strict=False):
         time.sleep(0.15)  # API 예의상 살짝 쉼
     return out
 
-def fetch_back(days, pblntf_ty=None):
-    """오늘부터 과거 days일, 코스피·코스닥 공시. DART list.json은 corp_code 없이 최대 3개월 조회 제한 → 85일 단위로 나눠 요청
-    (90일이면 1/31~5/1 처럼 2월을 낀 구간이 3개월을 넘어 0건으로 거부됨)"""
-    rows, chunk_end, remain = [], datetime.date.today(), days
-    while remain > 0:
-        step = min(remain, 85)
-        chunk_bgn = chunk_end - datetime.timedelta(days=step)
-        for cls in ("Y", "K"):
-            rows += fetch_range(chunk_bgn.strftime("%Y%m%d"), chunk_end.strftime("%Y%m%d"), cls, pblntf_ty)
-        chunk_end = chunk_bgn - datetime.timedelta(days=1)
-        remain -= step + 1
-    return rows
+# ── 공시 목록 저장본 — 받은 구간은 다시 받지 않는다 ──
+LIST_PATH = os.path.join(DATA_DIR, "dart_listing.json")
+LIST_FIELDS = ("rcept_no", "rcept_dt", "report_nm", "stock_code", "corp_name", "corp_cls", "flr_nm")
+LIST_RETAIN = {"I": 830, "A": 430, "B": 400}   # 유형별 보관 일수 — 가장 길게 쓰는 곳(리서치 이력 800일 등) + 여유
+RECHECK_DAYS = 3                              # 늦게 올라오는 접수 대비 끝 며칠은 매번 다시
+_DAY = datetime.timedelta(days=1)
+_list_lock = threading.Lock()
+_list = {"mtime": None, "store": None}
+
+def _list_store():
+    mt = os.path.getmtime(LIST_PATH) if os.path.exists(LIST_PATH) else None
+    if _list["store"] is None or mt != _list["mtime"]:   # 다른 프로세스가 갱신했으면 다시 읽음
+        _list["store"] = json.load(open(LIST_PATH, encoding="utf-8")) if mt else {}
+        _list["mtime"] = mt
+    return _list["store"]
+
+def _list_save(store):
+    save_json(LIST_PATH, store, indent=None)
+    _list["mtime"] = os.path.getmtime(LIST_PATH)
+
+def listing(ty, days):
+    """DART 목록(유형 ty: I 거래소공시 · A 정기보고서 · B 주요사항보고) 오늘부터 days일치, 코스피+코스닥.
+    받은 구간(from~to)은 저장본을 쓰고 새 구간만 조회한다 — 끝 RECHECK_DAYS일은 늦은 접수 대비 다시.
+    조회가 실패하면 저장된 구간으로 돌려준다(실패를 빈 결과로 굳히지 않음)."""
+    assert days <= LIST_RETAIN[ty], f"{ty} 목록은 {LIST_RETAIN[ty]}일까지만 보관"
+    today = datetime.date.today()
+    want = today - datetime.timedelta(days=days)
+    ymd = lambda d: d.strftime("%Y%m%d")
+    day = lambda s: datetime.datetime.strptime(s, "%Y%m%d").date()
+    with _list_lock:
+        store = _list_store()
+        s = store.setdefault(ty, {"from": "", "to": "", "rows": {}})
+        before = (s["from"], s["to"], len(s["rows"]))
+
+        def grab(a, b):
+            for cls in ("Y", "K"):
+                for r in fetch_range(ymd(a), ymd(b), cls, ty, strict=True):
+                    s["rows"][r["rcept_no"]] = {k: r.get(k, "") for k in LIST_FIELDS}
+
+        if not s["to"]:
+            s["from"], s["to"] = ymd(want), ymd(want - _DAY)
+        try:
+            b = day(s["from"]) - _DAY
+            while want <= b:                      # 앞쪽(과거)으로 모자란 구간
+                a = max(want, b - datetime.timedelta(days=84))
+                grab(a, b)
+                s["from"] = ymd(a)
+                _list_save(store)
+                b = a - _DAY
+            a = max(day(s["from"]), day(s["to"]) - datetime.timedelta(days=RECHECK_DAYS))
+            while a <= today:                     # 뒤쪽(최근) 새 구간 + 끝 며칠 재확인
+                e = min(today, a + datetime.timedelta(days=84))
+                grab(a, e)
+                s["to"] = ymd(e)
+                _list_save(store)
+                a = e + _DAY
+        except Exception as ex:
+            print(f"  [!] DART 목록({ty}) 조회 실패 — 저장된 {s['from']}~{s['to']} 구간으로 계산: {type(ex).__name__}")
+        cut = ymd(today - datetime.timedelta(days=LIST_RETAIN[ty]))
+        s["rows"] = {k: r for k, r in s["rows"].items() if r["rcept_dt"] >= cut}
+        s["from"] = max(s["from"], cut)
+        if (s["from"], s["to"], len(s["rows"])) != before:
+            _list_save(store)
+        return [r for r in s["rows"].values() if r["rcept_dt"] >= ymd(want)]
+
 
 def doc_text(rcept_no):
     url = f"https://opendart.fss.or.kr/api/document.xml?crtfc_key={KEY}&rcept_no={rcept_no}"

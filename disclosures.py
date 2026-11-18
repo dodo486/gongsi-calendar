@@ -7,7 +7,7 @@
 """
 import json, os, sys, datetime
 from base import DATA_DIR, save_json, load_watchlist
-from fetch import fetch_range
+from fetch import fetch_range, listing
 from net import TLS_MODE
 
 # 관심 공시 종류: (제목 키워드, 표시 카테고리). 순서 = 매칭 우선순위.
@@ -23,7 +23,7 @@ CATEGORIES = [
     ("영업(잠정)실적", "실적"), ("실적", "실적"), ("손익구조", "실적"),
     ("배당", "배당"),
 ]
-REPORT_KEYWORDS = [k for k, _ in CATEGORIES]   # 빈 리스트면 종류 필터 없음
+REPORT_KEYWORDS = [k for k, _ in CATEGORIES]
 # DART 공시유형: B=주요사항보고(증자·자사주·CB/BW·감자·합병분할), I=거래소공시(배당·실적·최대주주변경)
 PBLNTF_TYPES = ["B", "I"]
 # 공시 캘린더에서 제외할 카테고리 — 배당·실적·실적예고는 각자 별도 그리드 전담
@@ -35,34 +35,25 @@ def categorize(title):
             return label
     return "기타"
 
-def collect_events(bgn, end, watch="__load__", verbose=True):
-    """기간 내 감시대상+관심종류 공시를 수집해 캘린더용 이벤트 리스트로 반환 (백필·monitor·earnings 공용)"""
+def live_rows(bgn, end):
+    """monitor 실시간 폴링용 — 좁은 구간(어제~오늘)을 저장 없이 바로 조회"""
+    return [r for cls in ("Y", "K") for ty in PBLNTF_TYPES for r in fetch_range(bgn, end, cls, ty)]
+
+def stored_rows(days):
+    """백필·실적 재수집용 — 공용 목록 저장본(받은 구간은 다시 안 받음)"""
+    return [r for ty in PBLNTF_TYPES for r in listing(ty, days)]
+
+def collect_events(rows, watch="__load__"):
+    """DART 목록 행 → 감시대상+관심종류 공시만 캘린더용 이벤트로 (백필·monitor·earnings 공용)"""
     if watch == "__load__":
         watch = load_watchlist()
-    rows, seen = [], set()
-    for cls, label in [("Y", "KOSPI"), ("K", "KOSDAQ")]:
-        raw_n = kept = 0
-        for ty in PBLNTF_TYPES:
-            got = fetch_range(bgn, end, cls, ty)
-            raw_n += len(got)
-            for r in got:
-                rno = r.get("rcept_no")
-                if rno in seen:
-                    continue
-                if watch is not None and r.get("stock_code") not in watch:
-                    continue
-                if REPORT_KEYWORDS and not any(k in (r.get("report_nm") or "") for k in REPORT_KEYWORDS):
-                    continue
-                seen.add(rno)
-                rows.append(r)
-                kept += 1
-        if verbose:
-            print(f"  {label}: {raw_n}건 → {kept}건 (종목+종류 필터 후)")
-
-    events = []
+    events, seen = [], set()
     for r in rows:
         rno = r.get("rcept_no", "")
         title = (r.get("report_nm", "") or "").strip()
+        if rno in seen or (watch is not None and r.get("stock_code") not in watch)                 or not any(k in title for k in REPORT_KEYWORDS):
+            continue
+        seen.add(rno)
         events.append({
             "corp": r.get("corp_name", ""),
             "stock": r.get("stock_code", ""),
@@ -77,11 +68,8 @@ def collect_events(bgn, end, watch="__load__", verbose=True):
     return events
 
 def main(days=7):
-    today = datetime.date.today()
-    bgn = (today - datetime.timedelta(days=days)).strftime("%Y%m%d")
-    end = today.strftime("%Y%m%d")
-    print(f"TLS={TLS_MODE} | 기간 {bgn}~{end}")
-    events = [e for e in collect_events(bgn, end) if e["category"] not in CAL_EXCLUDE]
+    print(f"TLS={TLS_MODE} | 최근 {days}일")
+    events = [e for e in collect_events(stored_rows(days)) if e["category"] not in CAL_EXCLUDE]
 
     # 기존 파일과 병합 — 짧은 기간 백필이 기존 이력을 지우지 않게 (rcept_no 기준 중복 제거)
     out_path = os.path.join(DATA_DIR, "disclosures.json")

@@ -10,7 +10,7 @@
   python monitor.py --test-toast   # 알림만 테스트
 """
 import json, os, sys, time, datetime, platform, subprocess, threading
-from disclosures import collect_events
+from disclosures import collect_events, live_rows
 from base import DATA_DIR, load_watchlist, save_json
 from net import TLS_MODE
 import dividends
@@ -362,7 +362,7 @@ def poll_once(seen, alert=True):
     bgn = (today - datetime.timedelta(days=1)).strftime("%Y%m%d")
     end = today.strftime("%Y%m%d")
     watch = load_watchlist()
-    events = collect_events(bgn, end, watch=watch, verbose=False)
+    events = collect_events(live_rows(bgn, end), watch=watch)
     new = [e for e in events if e["rcept_no"] not in seen]
     new_cal, new_div, new_earn, new_sched, new_cap = [], [], [], [], []
     for e in new:

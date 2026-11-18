@@ -9,7 +9,7 @@
   python capital.py 30         # 최근 30일
 """
 import sys, os, re, json, math, datetime, threading
-from fetch import fetch_back, parsed
+from fetch import listing, parsed
 from base import load_watchlist, DATA_DIR, save_json
 from net import TLS_MODE
 from krx_cal import t_minus, norm_date
@@ -106,8 +106,8 @@ def main(days=SCAN_DAYS):
     today = datetime.date.today()
     watch = load_watchlist() or {}
     cache = load_cache()
-    rows = [r for r in fetch_back(days, "B")   # 증자결정 = 주요사항보고(B)
-            if r.get("stock_code") in watch and _is_cap(r.get("report_nm", ""))]
+    rows = [r for r in listing("B", days)   # 증자결정 = 주요사항보고(B)
+            if r["stock_code"] in watch and _is_cap(r["report_nm"])]
     events = build_events(rows, cache)
     today_s = today.isoformat()
     bonus_done = [(e["stock"], e["ex_date"], float(e["ratio"] or 0))

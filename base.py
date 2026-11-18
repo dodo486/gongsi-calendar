@@ -12,11 +12,11 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
-def save_json(path, obj):
-    """원자적 저장 — 쓰다 만 파일을 웹이 읽는 사고 방지 (tmp에 쓰고 교체)"""
+def save_json(path, obj, indent=1):
+    """원자적 저장 — 쓰다 만 파일을 웹이 읽는 사고 방지 (tmp에 쓰고 교체). 큰 캐시는 indent=None 으로 작게."""
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=1)
+        json.dump(obj, f, ensure_ascii=False, indent=indent)
     os.replace(tmp, path)
 
 _wl_cache = {"mtime": None, "data": None}

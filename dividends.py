@@ -8,7 +8,7 @@
 - 웹은 기준일 날짜에 "회사명 (금액원)" 표시
 """
 import sys, os, re, json, datetime, threading
-from fetch import fetch_range, doc_text
+from fetch import listing, doc_text
 from base import load_watchlist, DATA_DIR, save_json
 from net import TLS_MODE
 from krx_cal import t_minus, norm_date
@@ -93,36 +93,12 @@ def main(days=90):
     watch = div_universe()
     print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 배당 수집대상 {len(watch)} (감시종목+ETF PDF)")
 
-    cache = load_doc_cache()   # research 가 채운 파싱 캐시(=div_history.json)
-    def _is_dec(nm): return "현금ㆍ현물배당결정" in nm
-    def _is_rec(nm): return "주주명부폐쇄" in nm and "배당" in nm
-
-    # (a) 과거분은 캐시에서 바로 재구성 — 90일 list.json 재스캔·문서 재다운로드 모두 0
-    def _crow(rno, c):
-        return {"rcept_no": rno, "stock_code": c.get("stock", ""), "corp_name": c.get("corp", ""),
-                "corp_cls": "Y" if c.get("market") == "KOSPI" else "K", "rcept_dt": c.get("rcept_dt", "")}
-    cached_kind = {}
-    cached_rows = []
-    for rno, c in cache.items():
-        if c.get("kind") in ("decision", "record") and bgn <= c.get("rcept_dt", "") and c.get("stock") in watch:
-            cached_rows.append(_crow(rno, c)); cached_kind[rno] = c["kind"]
-    cached_rnos = set(cached_kind)
-
-    # (b) 캐시가 비었으면(콜드스타트) 전체기간, 아니면 최근 며칠만 라이브 스캔해 신규/누락분 보강(자가치유)
-    scan_days = days if not cache else 5
-    scan_bgn = (today - datetime.timedelta(days=scan_days)).strftime("%Y%m%d")
-    live = []
-    for cls in ("Y", "K"):
-        live += fetch_range(scan_bgn, end, cls, "I")
-    live = [r for r in live if r.get("stock_code") in watch
-            and "자회사" not in (r.get("report_nm") or "")
-            and r["rcept_no"] not in cached_rnos
-            and (_is_dec(r["report_nm"]) or _is_rec(r["report_nm"]))]
-
-    decisions = [r for r in cached_rows if cached_kind[r["rcept_no"]] == "decision"] + [r for r in live if _is_dec(r["report_nm"])]
-    records   = [r for r in cached_rows if cached_kind[r["rcept_no"]] == "record"]   + [r for r in live if _is_rec(r["report_nm"])]
+    cache = load_doc_cache()   # research 가 채운 파싱 캐시(=div_history.json) — 캐시에 없는 원문만 받음
+    rows = [r for r in listing("I", days) if r["stock_code"] in watch and "자회사" not in r["report_nm"]]
+    decisions = [r for r in rows if "현금ㆍ현물배당결정" in r["report_nm"]]
+    records = [r for r in rows if "주주명부폐쇄" in r["report_nm"] and "배당" in r["report_nm"]]
     print(f"  배당결정 {len(decisions)} / 명부폐쇄 {len(records)} "
-          f"(캐시 재사용 {len(cached_rows)} + 라이브 신규 {len(live)} · 신규분만 다운로드)")
+          f"(원문 캐시 없는 {sum(r['rcept_no'] not in cache for r in decisions + records)}건만 다운로드)")
 
     merged = {}  # (stock, div_type) -> entry
     def base(r):
