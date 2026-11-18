@@ -41,10 +41,15 @@ jobs:
           python disclosures.py 90
           python dividends.py 90
           python expiries.py
-          python research.py 430
+          python research.py
+          python research.py --verify
+          python capital.py || echo "capital 실패 — 건너뜀"
           python earnings.py || echo "earnings 실패 — 건너뜀"
           python earn_sched.py || echo "earn_sched 실패 — 건너뜀"
           python kind_limits.py || echo "kind_limits 실패(해외 IP 차단 가능) — 건너뜀"
+
+      - name: 배당 자가 점검 (오류면 여기서 멈춰 배포 안 함 — 이전 배포본 유지)
+        run: python dividend_check.py
 
       - name: 사이트 구성
         run: |
