@@ -10,7 +10,7 @@
 """
 import sys, os, re, json, math, datetime, threading
 from fetch import fetch_back, load_watchlist, DATA_DIR, TLS_MODE, save_json, parsed
-from dividends import t_minus, norm_date
+from krx_cal import t_minus, norm_date
 import quotes
 
 _LOCK = threading.RLock()

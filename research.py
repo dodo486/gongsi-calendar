@@ -15,6 +15,7 @@ import sys, os, re, json, datetime, calendar, statistics, threading
 from concurrent.futures import ThreadPoolExecutor
 from fetch import fetch_range, DATA_DIR, save_json, doc_text, api, KEY, corp_code
 import dividends as dv
+from krx_cal import t_minus
 import earn_sched
 
 D = datetime.date
@@ -645,7 +646,7 @@ def build(days=HIST_DAYS):
         companies[c["stock"]] = company_out(c, missed)
         for p in preds:
             events.append({"corp": c["corp"], "stock": c["stock"], "market": c["market"], **p,
-                           "confirm_date": dv.t_minus_2(p["record_date"]), "ex_date": dv.t_minus(p["record_date"], 1),
+                           "confirm_date": dv.t_minus_2(p["record_date"]), "ex_date": t_minus(p["record_date"], 1),
                            "basis": f"{p['quarter']} {p['div_type']} · {p['method']} — {p['why']} · {p['anchor']} · 금액 {p['amount_basis']}"})
     events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "days": days,
@@ -678,7 +679,7 @@ def verify():
                 rows.append({**base, "pred": "미실시 판정", "note": miss})
                 continue
             prec = _d(p["record_date"])
-            pex, aex = _d(dv.t_minus(_iso(prec), 1)), _d(dv.t_minus(_iso(r["record"]), 1))
+            pex, aex = _d(t_minus(_iso(prec), 1)), _d(t_minus(_iso(r["record"]), 1))
             rows.append({**base, "pred": p["method"], "pred_record": p["record_date"], "alt": p["alt"],
                          "err": abs((prec - r["record"]).days),
                          "err_alt": {k: abs((_d(x) - r["record"]).days) for k, x in p["alt"].items()},

@@ -5,72 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📅 공시캘린더</title>
 <!-- FullCalendar: 로컬 벤더링(외부 CDN 의존 제거 — 사내망 TLS/차단으로 인한 빈 화면 방지). v6 글로벌 빌드는 CSS를 JS가 자동 주입 -->
-<script src="vendor/fullcalendar.min.js"></script>
-<script src="common.js"></script>
+<script src="common/vendor/fullcalendar.min.js"></script>
+<script src="common/common.js"></script>
+<link rel="stylesheet" href="common/common.css">
 <style>
-  :root{
-    --bg:#0f1116; --panel:#171a21; --line:#262b36; --text:#e6e9ef; --muted:#8b93a3;
-    --kospi:#3b82f6; --kosdaq:#f59e0b; --accent:#22c55e; --div:#a855f7; --exp:#ef4444; --est:#eab308;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:"Malgun Gothic","Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text)}
-  header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-  header h1{font-size:18px;margin:0}
-  .meta{color:var(--muted);font-size:12px}
-  .controls{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
-  input[type=search]{background:var(--panel);border:1px solid var(--line);color:var(--text);padding:7px 10px;border-radius:8px;width:200px;font-size:13px}
-  .chip{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:13px;user-select:none}
-  .chip.on{color:#fff}
-  .chip.kospi.on{background:var(--kospi);border-color:var(--kospi)}
-  .chip.kosdaq.on{background:var(--kosdaq);border-color:var(--kosdaq)}
-  .cal-row{display:flex;height:calc(100vh - 90px);min-height:560px}
-  .cal-col{display:flex;flex-direction:column;flex:1;min-height:0}
-  #calendar{flex:1;padding:14px;overflow:auto}
-  #side{width:360px;border-left:1px solid var(--line);background:var(--panel);padding:16px;overflow:auto}
-  #side h2{font-size:14px;color:var(--muted);margin:0 0 10px}
-  .detail .corp{font-size:18px;font-weight:700}
-  .detail .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px;vertical-align:middle}
-  .badge.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
-  .badge.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
-  .detail .title{margin:12px 0;font-size:15px;line-height:1.5}
-  .detail .big{font-size:26px;font-weight:800;color:var(--div);margin:10px 0}
-  .detail .row{font-size:13px;color:var(--muted);margin:4px 0}
-  .btn{display:inline-block;margin-top:14px;background:var(--accent);color:#04240f;font-weight:700;padding:10px 14px;border-radius:8px;text-decoration:none;font-size:14px}
-  .empty{color:var(--muted);font-size:13px}
-  .why{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
-  .why .wh{font-weight:700;font-size:13px;margin-bottom:8px;color:var(--est)}
-  .why .row{font-size:12.5px;line-height:1.55}
-  .why .ev{font-size:12px;color:var(--muted);margin:3px 0;line-height:1.5}
-  .fc{--fc-border-color:var(--line);--fc-page-bg-color:transparent;--fc-neutral-bg-color:#1b1f28;
-      --fc-today-bg-color:rgba(34,197,94,.08);--fc-list-event-hover-bg-color:#1b1f28}
-  .fc .fc-toolbar-title{font-size:16px}
-  /* 휴장일(공휴일) — 날짜 글자 빨간색 (오늘 동그라미보다 먼저 선언해 오늘이 우선) */
-  .fc .holiday .fc-daygrid-day-number{color:#ef4444;font-weight:700}
-  /* 오늘 날짜 강조 — 초록 동그라미 (만기일 노란 별표와 헷갈리지 않게) */
-  .fc .fc-day-today .fc-daygrid-day-number{
-    background:#22c55e;color:#04240f;font-weight:800;
-    min-width:26px;height:26px;padding:0 3px;margin:3px;
-    display:inline-flex;align-items:center;justify-content:center;
-    border-radius:999px;box-shadow:0 0 0 3px rgba(34,197,94,.35);}
-  /* 만기일(선물·옵션) — 날짜 옆 노란 별표 */
-  .fc .expday .fc-daygrid-day-number::after{
-    content:"★";color:#facc15;margin-left:2px;font-size:13px;
-    text-shadow:0 0 2px rgba(0,0,0,.5);vertical-align:top;}
-  .fc .fc-button{background:var(--panel);border-color:var(--line);color:var(--text);text-transform:none}
-  .fc .fc-button-primary:not(:disabled).fc-button-active{background:var(--accent);border-color:var(--accent);color:#04240f}
-  .fc-daygrid-event{cursor:pointer;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  @media (max-width: 800px){   /* 모바일: 세로 배치, 사이드는 캘린더 아래로 */
-    header{padding:10px 12px;gap:8px}
-    header h1{font-size:16px}
-    .meta{display:none}
-    .controls{margin-left:0;width:100%}
-    input[type=search]{width:110px;flex:1}
-    .cal-row{flex-direction:column;height:auto}
-    #calendar{height:62vh;padding:8px;flex:none}
-    #side{width:auto;border-left:none;border-top:1px solid var(--line)}
-    .fc .fc-toolbar-title{font-size:14px}
-    .fc-daygrid-event{font-size:10px}
-  }
   .clock{font-family:"Consolas","Menlo",monospace;font-size:24px;font-weight:800;color:#facc15;letter-spacing:2px;padding:4px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
   .tabs{display:flex;gap:6px}
   .tab{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px;font-weight:600}
@@ -1027,7 +965,8 @@ function connectSSE(){
       refresh();
       if(MODE==="board") renderLimits();
     };
-    bindChartSSE(_es);   // 공통: reload=새로고침 / openchart=토스트 클릭 차트 (common.js)
+    _es.addEventListener("reload", () => location.reload());          // 페이지 HTML 바뀜 → 새로고침
+    _es.addEventListener("openchart", ev => openChart(ev.data));      // 토스트 클릭 → 차트
     _es.onerror = ()=>{};   // 브라우저 EventSource가 자동 재접속 (폴백 폴링도 병행)
   }catch(_){ /* EventSource 미지원 시 30초 폴링으로 동작 */ }
 }

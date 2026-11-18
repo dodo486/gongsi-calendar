@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-"""한국 증시 휴장일 달력 — 여러 모듈(dividends·expiries)이 공유해 중복 제거.
+"""한국 증시 휴장일 달력·영업일 계산 — 배당·증자·만기 등 여러 모듈이 공유해 중복 제거.
 fetch(=API 키) 의존이 없어 단독으로도 import 가능."""
-import datetime
+import datetime, re
+import numpy as np
 import holidays as _hol
 
 def holiday_dates(years):
@@ -20,3 +21,22 @@ def default_years():
     """오늘 기준 전년~내년 — 배당락일/만기일 계산에 충분한 범위."""
     y = datetime.date.today().year
     return [y - 1, y, y + 1]
+
+_HOL_ARR = np.array(sorted(str(d) for d in holiday_dates(default_years())), dtype="datetime64[D]")
+
+def t_minus(record_iso, n):
+    """기준일(배당기준일·신주배정기준일) 기준 n번째 직전 영업일. n=1 → 락일, n=2 → 권리부 마지막 매수일.
+    T+2 결제라 '기준일까지 결제되는 마지막 영업일(L)'이 기준 — 기준일이 영업일이면 L=기준일,
+    휴장일(주말·공휴일·12/31 폐장)이면 L=그 직전 영업일. 락일 = L-1, 매수일 = L-2 영업일.
+    예) 2024 기준일 12/31(휴장) → L=12/30, 배당락 12/27, 매수일 12/26 (실제 KRX 일정과 일치)."""
+    if not record_iso:
+        return ""
+    try:
+        last = np.busday_offset(np.datetime64(record_iso, "D"), 0, roll="backward", holidays=_HOL_ARR)  # L
+        return str(np.busday_offset(last, -n, holidays=_HOL_ARR))
+    except Exception:
+        return ""
+
+def norm_date(s):
+    m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
+    return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else ""

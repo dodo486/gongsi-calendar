@@ -16,6 +16,7 @@
 import os, json, datetime
 from fetch import DATA_DIR, save_json
 import dividends as dv
+from krx_cal import t_minus
 import index_pdf
 
 OUT = os.path.join(DATA_DIR, "divpoints.json")
@@ -72,7 +73,7 @@ def build():
     pdfs = index_pdf.load().get("indices", {})
     today = datetime.date.today()
     exps = expiries(today.isoformat())
-    earliest_ex = dv.t_minus((today + datetime.timedelta(days=14)).isoformat(), 1)
+    earliest_ex = t_minus((today + datetime.timedelta(days=14)).isoformat(), 1)
     divs = [d for d in merged_dividends() if d.get("ex_date") and exps and today.isoformat() < d["ex_date"] <= exps[-1]]
     for d in divs:
         d["undecided"] = (d["src"] == "예상" and (d.get("method") in ("유동", "유동 가능") or d.get("may_change"))

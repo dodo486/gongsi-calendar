@@ -8,27 +8,10 @@
 - 웹은 기준일 날짜에 "회사명 (금액원)" 표시
 """
 import sys, os, re, json, datetime, threading
-import numpy as np
 from fetch import fetch_range, load_watchlist, DATA_DIR, TLS_MODE, save_json, doc_text
-from krx_cal import holiday_dates, default_years
+from krx_cal import t_minus, norm_date
 
 _LOCK = threading.RLock()   # dividends.json 동시 쓰기 방지 (main 재생성 vs upsert)
-
-# 영업일 계산용 휴장일 배열(numpy) — 공용 달력(krx_cal)에서 생성
-_HOL_ARR = np.array(sorted(str(d) for d in holiday_dates(default_years())), dtype="datetime64[D]")
-
-def t_minus(record_iso, n):
-    """배당기준일 기준 n번째 직전 영업일. n=1 → 배당락일, n=2 → 배당매수일(배당부 마지막 매수일).
-    T+2 결제라 '기준일까지 결제되는 마지막 영업일(L)'이 기준 — 기준일이 영업일이면 L=기준일,
-    휴장일(주말·공휴일·12/31 폐장)이면 L=그 직전 영업일. 배당락 = L-1, 매수일 = L-2 영업일.
-    예) 2024 기준일 12/31(휴장) → L=12/30, 배당락 12/27, 매수일 12/26 (실제 KRX 일정과 일치)."""
-    if not record_iso:
-        return ""
-    try:
-        last = np.busday_offset(np.datetime64(record_iso, "D"), 0, roll="backward", holidays=_HOL_ARR)  # L
-        return str(np.busday_offset(last, -n, holidays=_HOL_ARR))
-    except Exception:
-        return ""
 
 def div_universe():
     """배당 수집 대상 = 감시종목(코스피200+코스닥150) ∪ 지수배당포인트용 ETF PDF 구성종목.
@@ -48,10 +31,6 @@ def norm_div_type(s):
         if kw in s:
             return kw + "배당"
     return s
-
-def norm_date(s):
-    m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
-    return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else ""
 
 def parse_decision(t):
     per = re.search(r"1주당\s*배당금\(원\)\s*보통주식\s*([\d,]+)", t)
