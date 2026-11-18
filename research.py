@@ -298,6 +298,8 @@ def context(stock, entries, policy, acc, agm_records):
     seen = {(r["type"], r["record"]) for r in rounds}
     for t, decided, record in (policy or {}).get("rows", []):
         record, decided = _d(record), _d(decided)
+        if decided and record and decided < record - datetime.timedelta(days=180):
+            decided = None   # 회사 표 오기(확정일이 기준일보다 반년 넘게 앞섬 — 예: 2025-02-06 → 2026-02-28)
         if record and (t, record) not in seen:
             fy, q, qe = round_of(t, record, decided, acc)
             rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
