@@ -29,6 +29,9 @@
   .divlist .di b{font-size:14px}
   .divlist .di .sub{font-size:12px;color:var(--muted)}
   .divlist .mkt{font-size:10px;padding:1px 6px;border-radius:5px;margin-left:4px}
+  #dayList .mkt{font-size:11px;font-weight:800;padding:1px 6px;border-radius:5px;margin-right:4px}
+  #dayList .mkt.KOSPI{background:#1d4ed8;color:#fff}
+  #dayList .mkt.KOSDAQ{background:#f59e0b;color:#1a1200}
   .mkt.KOSPI{background:rgba(59,130,246,.2);color:#93c5fd}
   .mkt.KOSDAQ{background:rgba(245,158,11,.2);color:#fcd34d}
   .back{display:inline-block;margin-bottom:10px;color:var(--div);cursor:pointer;font-size:13px}
@@ -64,6 +67,13 @@
   /* 배당 — 권리락(T-1) 진빨강 / 매수일(T-2) 연빨강 */
   .fc-event.dv-ex{background:#dc2626;border-color:#dc2626;color:#fff;font-weight:600}
   .fc-event.dv-buy{background:#fca5a5;border-color:#fca5a5;color:#3a0a0a;font-weight:600}
+  /* 월 캘린더 + 아래 선택한 날짜 목록 */
+  .cal-scroll{flex:1;min-height:0;overflow:auto}
+  .cal-scroll #calendar{flex:none;overflow:visible;padding-bottom:4px}
+  .fc .fc-daygrid-day{cursor:pointer}
+  .fc .fc-daygrid-day.sel{background:rgba(34,197,94,.10);box-shadow:inset 0 0 0 2px var(--accent)}
+  .day-h{padding:8px 14px 6px;font-weight:700;font-size:14px;border-top:1px solid var(--line)}
+  #dayList{padding:0 14px 14px}
   /* 예상배당 급 — 1급(고정)이 가장 확실, 아래로 갈수록 날짜 근거가 약함 */
   .fc-event.est{font-weight:600}
   .fc-event.est-g0{background:#f59e0b;border-color:#f59e0b;color:#241a00}
@@ -128,7 +138,11 @@
         <span>· 진한색=권리락(T-1), 연한색=매수일(T-2)</span>
       </span>
     </div>
-    <div id="calendar"></div>
+    <div class="cal-scroll">
+      <div id="calendar"></div>
+      <div class="day-h" id="dayHead"></div>
+      <div id="dayList"></div>
+    </div>
   </div>
   <div id="side">
     <h2>오늘의 배당공시</h2>
@@ -143,7 +157,8 @@ let DIV = [], CAP = [], HALT = [], EXP = [];
 let RES = {companies:{}, events:[]};   // 리서치: 기준일 판정 + 예상배당(research.json)
 let DP = null;                         // 지수배당포인트(divpoints.json)
 let HOL = new Set(), EXPD = new Set(); // 휴장일·만기일 ISO 날짜 — 캘린더 날짜 빨간 글자·노란 별표
-let calendar;
+let calendar, dayCal;                  // 위: 월 캘린더(같은 날 같은 종류 많으면 묶음) / 아래: 선택한 날짜 목록(다 펼침)
+let selDate = dISO(new Date());
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
 let divListMode = false;               // 사이드가 '오늘의 배당공시' 목록이면 갱신 때 다시 그림
 const todayISO = () => dISO(new Date());
@@ -372,13 +387,13 @@ function estEvents(){   // 예상배당(리서치 추정) — 노란색. 실제 
   return out;
 }
 
-const GROUP_MAX = 4;   // 월 보기에서 같은 날 같은 종류가 이보다 많으면 요약 한 줄, 목록은 상세 패널 표로 (목록 보기는 다 펼침)
+const GROUP_MAX = 4;   // 월 캘린더에서 같은 날 같은 종류가 이보다 많으면 요약 한 줄 (아래 날짜 목록은 다 펼침)
 const GROUP_LABEL = {eb:"💡[예상 배당매수일]", ex:"💡[예상 배당락]", vb:"[배당매수일]", vx:"[배당권리락]"};
 function applyFilters(){
   const all = divEvents().concat(estEvents()).concat(capEvents()).concat(haltEvents());
   const groups = {};
   all.forEach(ev=> (groups[ev.start+"|"+ev.id.replace(/\d+$/,"")] ||= []).push(ev));
-  const events = calendar.view.type.startsWith("list") ? all : Object.values(groups).flatMap(g=>{
+  const events = Object.values(groups).flatMap(g=>{
     if(g.length <= GROUP_MAX) return g;
     const items = g.map(ev=> ev.extendedProps), kind = g[0].id.replace(/\d+$/,"");
     const label = GROUP_LABEL[kind] || g[0].title.split(" ")[0];
@@ -390,6 +405,27 @@ function applyFilters(){
     calendar.removeAllEvents();
     calendar.addEventSource(events);
   });
+  dayCal.batchRendering(()=>{
+    dayCal.removeAllEvents();
+    dayCal.addEventSource(all);
+  });
+  dayHeader();
+}
+
+function dayHeader(){
+  const n = dayCal.getEvents().filter(ev=> dISO(ev.start)===selDate).length;
+  const d = new Date(selDate+"T00:00:00");
+  document.getElementById("dayHead").textContent =
+    `📅 ${d.getMonth()+1}월 ${d.getDate()}일(${"일월화수목금토"[d.getDay()]}) 일정 ${n}건 · 캘린더에서 날짜를 누르면 바뀝니다`;
+}
+function markSel(){
+  document.querySelectorAll(".fc-daygrid-day[data-date]").forEach(el=> el.classList.toggle("sel", el.dataset.date===selDate));
+}
+function selectDate(iso){
+  selDate = iso;
+  markSel();
+  dayCal.gotoDate(iso);
+  dayHeader();
 }
 
 function stageLadder(e){
@@ -593,19 +629,30 @@ async function boot(){
   // 만기일·휴장일 먼저 로드 — 캘린더 render 전에 HOL 을 채워야 휴일 빨간색이 첫 렌더부터 적용됨
   try{ const ex = await getJSON("expiries.json");
        EXP = ex.events||[]; HOL = new Set(ex.holidays||[]); EXPD = new Set(EXP.map(e=>e.date)); }catch(_){}
-  let viewType = "list3m";
+  const eventClick = (info)=>{ info.jsEvent.preventDefault(); const p=info.event.extendedProps; showDetail(p); if(info.jsEvent.detail>=2) openChart(p.stock||p.code); };   // 단일=상세 / 더블=차트
   calendar = new FullCalendar.Calendar(document.getElementById("calendar"),{
-    initialView:viewType, locale:"ko", height:"100%", firstDay:0, dayMaxEvents:6,
+    initialView:"dayGridMonth", locale:"ko", height:"auto", firstDay:0, dayMaxEvents:3,
+    stickyHeaderDates:false, moreLinkText:(n)=>`+${n}건`,
     showNonCurrentDates:false, fixedWeekCount:false,   // 전월·다음월 날짜 숨김 + 여분 주 제거
-    headerToolbar:{left:"prev,next today",center:"title",right:"list3m,dayGridMonth"},
-    buttonText:{today:"오늘",month:"월"},
-    views:{list3m:{type:"list", duration:{months:3}, dateAlignment:"day", buttonText:"날짜별 목록"}},   // 오늘부터 3개월
-    allDayText:"",
+    headerToolbar:{left:"prev,next today",center:"title",right:""},
+    buttonText:{today:"오늘"},
     dayCellClassNames:(a)=>{ const iso=dISO(a.date), c=[]; if(HOL.has(iso))c.push("holiday"); if(EXPD.has(iso))c.push("expday"); return c; },   // 휴장일 빨간글자·만기일 별표
-    datesSet:(info)=>{ if(info.view.type!==viewType){ viewType = info.view.type; applyFilters(); } },   // 월 보기는 묶음, 목록은 다 펼침
-    eventClick:(info)=>{ info.jsEvent.preventDefault(); const p=info.event.extendedProps; showDetail(p); if(info.jsEvent.detail>=2) openChart(p.stock||p.code); },   // 단일=상세 / 더블=차트
+    datesSet:()=> markSel(),
+    dateClick:(info)=> selectDate(info.dateStr),
+    moreLinkClick:(info)=>{ selectDate(dISO(info.date)); return "none"; },   // '+N' → 아래 날짜 목록으로
+    eventClick:(info)=>{ selectDate(dISO(info.event.start)); eventClick(info); },
+  });
+  dayCal = new FullCalendar.Calendar(document.getElementById("dayList"),{
+    initialView:"listDay", locale:"ko", headerToolbar:false, height:"auto", allDayText:"",
+    noEventsContent:"이 날 일정이 없습니다", eventClick,
+    eventContent:(arg)=>{   // 시장 구분 KP(코스피)·KQ(코스닥)을 앞에
+      const m = arg.event.extendedProps.market;
+      const mk = {KOSPI:"KP", KOSDAQ:"KQ"}[m];
+      return {html: (mk?`<span class="mkt ${m}">${mk}</span> `:"") + esc(arg.event.title)};
+    },
   });
   calendar.render();
+  dayCal.render();
   await loadData();
   renderDivToday();
   setInterval(refresh, 30000);   // 30초마다 데이터 다시 읽기
