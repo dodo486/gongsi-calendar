@@ -180,11 +180,36 @@ def collect(days=RETAIN_DAYS, watch="__load__"):
     evs = [e for e in collect_events(stored_rows(days), watch=watch) if e.get("category") == "실적"]
     return _dedupe_sort(evs)
 
+TICK_LABEL = {   # 공시 시간대별 전/후 지표 이름
+    "min": ("발표 전5분", "후5분"),
+    "close_gap": ("장후 공시 — 당일 등락", "익일 시가갭"),
+    "open_gap": ("장전 공시 — 전일 등락", "당일 시가갭"),
+    "day": ("당일 등락", "익일 등락"),
+}
+
+def _pct(v):
+    return "-" if v is None else f"{'+' if v > 0 else ''}{v}%"
+
+def _texts(evs):
+    """화면 문구 — 캘린더 제목(발표 전→후 반응이 있으면 그것, 없으면 등락률), 공시시각·전후 반응 한 줄"""
+    for e in evs:
+        if e.get("pre5") is not None or e.get("post5") is not None:
+            e["cal_title"] = f"{e['corp']} ({_pct(e.get('pre5'))}→{_pct(e.get('post5'))})"
+        else:
+            e["cal_title"] = e["corp"] + (f" ({_pct(e['rate'])})" if e.get("rate") is not None else "")
+        if e.get("pre5") is not None or e.get("post5") is not None or e.get("disc_time"):
+            l1, l2 = TICK_LABEL.get(e.get("tick_kind"), TICK_LABEL["min"])
+            e["tick_text"] = f"⏱️ 공시 {e.get('disc_time') or '-'} · {l1} {_pct(e.get('pre5'))} · {l2} {_pct(e.get('post5'))}"
+        else:
+            e["tick_text"] = ""
+    return evs
+
 def main(days=RETAIN_DAYS):
     evs = collect(days)
     _carry_over(evs)     # 이전 파일의 확정값(과거 등락률·공시시각·전후5분) 이어받기
     _attach_quotes(evs)
     _attach_ticks(evs)   # 공시시각(KIND) + 발표 전5분/후5분(네이버 분봉, 최근 6거래일 한정)
+    _texts(evs)
     save_json(EARN_PATH, {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "count": len(evs), "events": evs,
@@ -198,6 +223,7 @@ def refresh_quotes():
         return False
     d = json.load(open(EARN_PATH, encoding="utf-8"))
     _attach_quotes(d.get("events", []))
+    _texts(d.get("events", []))
     d["generated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_json(EARN_PATH, d)
     return True

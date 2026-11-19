@@ -100,7 +100,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def _serve_earnfacts(self):
-        """실적 상세 — consensus.facts (네이버+DART, 캐시 30분)"""
+        """실적 상세 — consensus.view (판정·수치·경고·수급·추이·뉴스, 원자료는 네이버+DART 캐시 30분)"""
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         code = (qs.get("code") or [""])[0]
         rcept = (qs.get("rcept") or [""])[0]
@@ -109,7 +109,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         try:
             import consensus
-            body = json.dumps(consensus.facts(code, rcept), ensure_ascii=False).encode("utf-8")
+            ev = None
+            if rcept:
+                earn = json.load(open(os.path.join(DATA_DIR, "earnings.json"), encoding="utf-8")).get("events", [])
+                ev = next((e for e in earn if e.get("rcept_no") == rcept), {"date": ""})
+            body = json.dumps(consensus.view(code, rcept, ev), ensure_ascii=False).encode("utf-8")
         except Exception as ex:
             body = json.dumps({"error": str(ex)}).encode("utf-8")
         self.send_response(200)

@@ -110,8 +110,18 @@ def collect(days=COLLECT_DAYS, watch="__load__"):
     evs.sort(key=lambda x: (x["expected_date"], x.get("time", ""), x["corp"]))
     return evs
 
+Q_LABEL = {"03": "1Q", "06": "반기", "09": "3Q", "12": "연간"}   # 결산실적 예고의 결산기간 종료월 → 이름
+
+def _texts(e):
+    """화면 문구 — 분기 이름·캘린더 제목·출처"""
+    ir = e["src"] == "IR"
+    e["q_label"] = Q_LABEL.get((e.get("period_end") or "")[5:7], "")
+    e["cal_title"] = e["corp"] + (" IR" if ir else f" {e['q_label']}" if e.get("period_end") else "")
+    e["src_text"] = "기업설명회(IR)개최 안내공시" if ir else "결산실적공시예고 안내공시"
+    return e
+
 def main(days=COLLECT_DAYS):
-    evs = collect(days)
+    evs = [_texts(e) for e in collect(days)]
     if not evs and _last_raw == 0 and os.path.exists(SCHED_PATH):
         try:
             prev = json.load(open(SCHED_PATH, encoding="utf-8")).get("count", 0)

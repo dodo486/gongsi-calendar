@@ -291,8 +291,8 @@ function showErnDetail(e){   // 예상 실적발표 상세 → 실적 그리드 
         ${isIR
           ? `<div class="row">🎯 ${esc(e.purpose||"실적발표")}</div>
              ${e.sponsor&&e.sponsor!=="-"?`<div class="row">🏦 후원기관 ${esc(e.sponsor)}</div>`:""}`
-          : `<div class="row">🧾 회사가 예고한 결산실적 공시예정일${e.period_end?` (${esc(qLabel(e.period_end))} 실적, 결산기간 종료 ${esc(e.period_end)})`:""}</div>`}
-        <div class="row" style="color:var(--muted)">출처: ${isIR?"기업설명회(IR)개최 안내공시":"결산실적공시예고 안내공시"}</div>
+          : `<div class="row">🧾 회사가 예고한 결산실적 공시예정일${e.period_end?` (${esc(e.q_label)} 실적, 결산기간 종료 ${esc(e.period_end)})`:""}</div>`}
+        <div class="row" style="color:var(--muted)">출처: ${esc(e.src_text)}</div>
         <div id="ernCons"><div class="row" style="color:var(--muted)">컨센서스 불러오는 중…</div></div>
         <a class="btn" href="${esc(e.url)}" target="_blank" rel="noopener">🔗 DART 원문 보기</a>
         <a class="btn" style="background:var(--kospi);color:#fff;margin-left:8px"
@@ -303,15 +303,10 @@ function showErnDetail(e){   // 예상 실적발표 상세 → 실적 그리드 
       const boxc = document.getElementById("ernCons");
       if(!boxc) return;   // 그 사이 다른 항목 클릭됨
       if(!f){ boxc.innerHTML = ""; return; }
-      const rows = trendRows(f, null);
-      const hascons = rows.some(r=>r.consensus);
       let h = `<div class="why"><div class="wh">📈 최근 실적 추이 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익, 억원)</span></div>`;
-      h += rows.map(r=>{
-        const cons = r.consensus ? ` <span style="color:var(--muted)">(컨센)</span>` : "";
-        return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${cons}</div>`;
-      }).join("");
-      if(!hascons) h += `<div class="row" style="color:var(--muted)">컨센서스 없음 (애널리스트 미커버 종목)</div>`;
-      boxc.innerHTML = h + `</div>` + reactRefs(f, null);
+      h += f.trend.map(r=> `<div class="row">${esc(r.label)} &nbsp;${esc(r.sales)}/ ${esc(r.op)}/ ${esc(r.np)}${r.consensus?` <span style="color:var(--muted)">(컨센)</span>`:""}</div>`).join("");
+      if(!f.has_consensus) h += `<div class="row" style="color:var(--muted)">컨센서스 없음 (애널리스트 미커버 종목)</div>`;
+      boxc.innerHTML = h + `</div>` + newsHtml(f.news);
     })();
   }
 }
@@ -418,18 +413,12 @@ function earnActEvents(){   // 실제 실적공시 → 실적 캘린더 보라�
     .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
     .map((e,i)=>({
       id:"a"+i,
-      title:(()=>{   // 발표 전→후 반응 있으면 "전값→후값", 없으면 공시일 등락률
-        const p = v => `${v>0?"+":""}${v}%`;
-        if(e.pre5!=null || e.post5!=null)
-          return `${e.corp} (${e.pre5!=null?p(e.pre5):"-"}→${e.post5!=null?p(e.post5):"-"})`;
-        return `${e.corp}${(e.rate===null||e.rate===undefined)?"":` (${p(e.rate)})`}`;
-      })(),
+      title:e.cal_title,
       start:toISO(e.date), allDay:true, classNames:["eact"],
       extendedProps:{...e, kind:"eact"},
     }));
 }
 
-const eok = v => (v===undefined||v===null||v===""||v==="-") ? "-" : esc(v)+"억";
 async function fetchFacts(code, rcept){
   try{
     const r = await fetch(`/api/earnfacts?code=${encodeURIComponent(code)}${rcept?"&rcept="+encodeURIComponent(rcept):""}`);
@@ -437,20 +426,6 @@ async function fetchFacts(code, rcept){
     const d = await r.json();
     return d.error ? null : d;
   }catch(_){ return null; }
-}
-function trendRows(f, actual){   // 최근 실적 추이 (최신순 5분기, 방금 공시분 포함) + 컨센서스 분기 전부
-  let actRows = (f.quarters||[]).filter(q=>!q.consensus && q.sales!=="-")
-    .map(q=>({label:q.label, sales:q.sales, op:q.op, np:q.np}));
-  const a = actual||{};
-  if(a.label && !actRows.some(r=>r.label===a.label))
-    actRows.push({label:a.label, sales:a.sales, op:a.op, np:a.np});
-  actRows.sort((x,y)=> y.label.localeCompare(x.label));
-  actRows = actRows.slice(0,5);
-  const consRows = (f.quarters||[]).filter(q=>q.consensus)
-    .map(q=>({label:q.label, sales:q.sales, op:q.op, np:q.np, consensus:true}));
-  const rows = actRows.concat(consRows);
-  rows.sort((x,y)=> y.label.localeCompare(x.label));
-  return rows;
 }
 async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 오른쪽 패널 (배당 사이드와 분리)
   const box = document.getElementById("earnDetail");
@@ -471,196 +446,31 @@ async function showEarnFact(e){   // 실적공시 상세 → 실적 그리드 �
   const f = await fetchFacts(e.stock, e.rcept_no||"");
   if(!f){ document.getElementById("factNums").textContent = "실적 데이터를 불러오지 못했습니다 — 공시링크에서 원문을 확인하세요."; return; }
   if(f.marketCap) document.getElementById("factCap").textContent = `(시가총액: ${f.marketCap})`;
-  let a = f.actual||{};
-  let fallbackNote = "";
-  if(!a.label && toNum(a.op)===null && toNum(a.sales)===null){
-    // 원문에서 숫자 자체를 못 뽑은 경우에만 네이버 최근 분기로 폴백
-    // (숫자는 있는데 라벨만 없는 공시를 직전 분기로 바꿔치기하면 판정이 완전히 뒤집힘 — 에코프로비엠 사례)
-    a = pseudoActual(f);
-    if(a.label) fallbackNote = `<div class="row" style="color:var(--muted)">※ 원문 자동추출 불가 — 네이버 최근 분기(${esc(a.label)}) 기준</div>`;
-  }else if(!a.label){
-    a.label = "최근 공시분";   // 숫자는 유효 — 라벨만 미상으로 표기
-  }
-  fillGrowth(f, a);
-  const g = a.growth||{};
-  const est = (f.quarters||[]).find(q=>q.consensus && q.label===a.label) || {};
-  // ① 헤드라인 판정 배지 (영업익 컨센 ±10% / 무컨센이면 YoY·흑전 기준)
-  if(a.label){
-    const v = verdictBadge(a, est);
+  if(f.verdict)
     document.getElementById("factBadge").innerHTML =
-      `<div style="font-size:19px;font-weight:800;color:${v.c};margin:10px 0 2px">${v.t}</div>
-       <div class="row" style="color:var(--muted)">${esc(a.label)} · ${v.sub}</div>`;
-  }
-  // ② 핵심 수치 3줄 압축 (컨센 괴리 · YoY · QoQ)
-  document.getElementById("factNums").innerHTML = a.label
-    ? numLine("매출액", a.sales, est.sales, g.sales)
-      + numLine("영업익", a.op, est.op, g.op)
-      + numLine("순이익", a.np, est.np, g.np) + fallbackNote
+      `<div style="font-size:19px;font-weight:800;color:${TONE[f.verdict.tone]};margin:10px 0 2px">${esc(f.verdict.title)}</div>
+       <div class="row" style="color:var(--muted)">${esc(f.label)} · ${esc(f.verdict.sub)}</div>`;
+  document.getElementById("factNums").innerHTML = f.nums.length
+    ? f.nums.map(n=> `<div class="row">${esc(n.name)} <b style="color:var(--text)">${esc(n.value)}</b> <span style="color:var(--muted)">(${esc(n.detail)})</span></div>`).join("")
+      + (f.fallback_note ? `<div class="row" style="color:var(--muted)">${esc(f.fallback_note)}</div>` : "")
     : `당기 수치 자동 추출 불가 — 아래 추이와 공시 원문을 확인하세요.`;
-  // ③ 공시시각·전후5분 + 경고 플래그 (해당 시만) + 수급(발표 후 기준)
-  const flags = [preRunFlag(f, e), onetimeFlag(a), momentumFlag(a)].filter(Boolean)
-    .map(x=>`<div class="row" style="margin:5px 0">${x}</div>`).join("");
-  const extra = tickLine(e) + flags + flowLine(f, e);
+  const flow = f.flow ? `<div class="row" style="margin:5px 0">💰 수급(${esc(f.flow.label)}): 외국인 <b>${esc(f.flow.frgn)}</b> · 기관 <b>${esc(f.flow.org)}</b>${f.flow.note?` <span style="color:${TONE[f.flow.tone]}">— ${esc(f.flow.note)}</span>`:""} <span style="color:var(--muted)">(주수×종가 근사)</span></div>` : "";
+  const extra = (e.tick_text ? `<div class="row" style="margin:5px 0">${esc(e.tick_text)}</div>` : "")
+    + f.flags.map(x=> `<div class="row" style="margin:5px 0">${esc(x)}</div>`).join("") + flow;
   document.getElementById("factFlags").innerHTML = extra ? `<div class="why">${extra}</div>` : "";
-  // ④ 분기 추이 + 영업이익률
-  const rows = trendRows(f, a);
-  if(rows.length)
+  if(f.trend.length)
     document.getElementById("factTrend").innerHTML = `<div class="why"><div class="wh">📈 최근 실적 추이 <span style="font-weight:400;color:var(--muted)">(매출/영업익/순이익 · 영업이익률)</span></div>`
-      + rows.map(r=>{
-          const s=toNum(r.sales), o=toNum(r.op);
-          const opm = (s&&o!==null)?` <span style="color:var(--muted)">· OPM ${Math.round(o/s*1000)/10}%</span>`:"";
-          const cons = r.consensus ? ` <span style="color:var(--muted)">(컨센)</span>` : "";
-          return `<div class="row">${esc(r.label)} &nbsp;${eok(r.sales)}/ ${eok(r.op)}/ ${eok(r.np)}${opm}${cons}</div>`;
-        }).join("") + `</div>`;
-  // ⑤ 실적발표 이후 반응 — 공시일 이후 뉴스 헤드라인 직접 표시
-  document.getElementById("factRefs").innerHTML = reactRefs(f, e);
+      + f.trend.map(r=> `<div class="row">${esc(r.label)} &nbsp;${esc(r.sales)}/ ${esc(r.op)}/ ${esc(r.np)}${r.opm?` <span style="color:var(--muted)">· OPM ${esc(r.opm)}</span>`:""}${r.consensus?` <span style="color:var(--muted)">(컨센)</span>`:""}</div>`).join("") + `</div>`;
+  document.getElementById("factRefs").innerHTML = newsHtml(f.news);
 }
 
-const ymd = s => String(s||"").replace(/\D/g,"");
-function reactRefs(f, e){   // 실적발표 이후 반응 — 공시일 이후 종목 뉴스 (없으면 최신 뉴스)
-  const news = f.news||[];
-  if(!news.length) return "";
-  const after = (e && e.date) ? news.filter(n=> ymd(n.date) >= ymd(e.date)) : [];
-  const list = after.length ? after : news;
-  const label = after.length ? "공시일 이후 뉴스" : "최신 뉴스";
-  return `<div class="why"><div class="wh">🗞️ 실적발표 이후 반응 <span style="font-weight:400;color:var(--muted)">(${label})</span></div>`
-    + list.slice(0,6).map(n=>
-        `<div class="row">· <a href="${esc(n.url)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${esc((n.date||"").slice(5))} ${esc(n.title)}</a> <span style="color:var(--muted)">— ${esc(n.press)}</span></div>`
-      ).join("") + `</div>`;
+const TONE = {up:"#fb923c", down:"#60a5fa", ok:"var(--accent)", muted:"var(--muted)"};
+function newsHtml(n){   // 실적발표 이후 반응 — 서버가 고른 뉴스
+  if(!n.items.length) return "";
+  return `<div class="why"><div class="wh">🗞️ 실적발표 이후 반응 <span style="font-weight:400;color:var(--muted)">(${esc(n.label)})</span></div>`
+    + n.items.map(x=> `<div class="row">· <a href="${esc(x.url)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${esc((x.date||"").slice(5))} ${esc(x.title)}</a> <span style="color:var(--muted)">— ${esc(x.press)}</span></div>`).join("") + `</div>`;
 }
 
-const toNum = s => { const n = parseFloat(String(s??"").replace(/,/g,"")); return isNaN(n) ? null : n; };
-function pseudoActual(f){   // 네이버 분기 데이터 중 최신 실적 분기를 당기처럼 사용 (원문 파싱 폴백)
-  const qs = (f.quarters||[]).filter(q=>!q.consensus && q.sales!=="-");
-  if(!qs.length) return {};
-  const q = qs[qs.length-1];
-  return {label:q.label, sales:q.sales, op:q.op, np:q.np};
-}
-function fillGrowth(f, a){   // a.growth 없으면 네이버 분기 데이터로 YoY/QoQ 계산
-  if(!a.label || a.growth) return a;
-  const qs = f.quarters||[];
-  const idx = qs.findIndex(x=>x.label===a.label);
-  const key = qs[idx]?.key;
-  const pyIdx = key ? qs.findIndex(x=>x.key===String(+key-100)) : -1;
-  const rate = (c,b)=> (c!=null && b) ? Math.round((c-b)/Math.abs(b)*1000)/10 : null;
-  const mk = k => {
-    const cur = toNum(a[k]);
-    const prev = idx>0 ? toNum(qs[idx-1][k]) : null;
-    const py = pyIdx>=0 ? toNum(qs[pyIdx][k]) : null;
-    return {cur, prev, prev_yr:py, qoq:rate(cur,prev), yoy:rate(cur,py), qoq_flag:"", yoy_flag:""};
-  };
-  a.growth = {sales:mk("sales"), op:mk("op"), np:mk("np")};
-  return a;
-}
-function growthTxt(g){   // 원문 증감율(%) 또는 흑자/적자전환 문구
-  if(!g) return {qoq:"-", yoy:"-"};
-  return {qoq: g.qoq_flag ? esc(g.qoq_flag) : pctTxt(g.qoq),
-          yoy: g.yoy_flag ? esc(g.yoy_flag) : pctTxt(g.yoy)};
-}
-function verdictBadge(a, est){   // 헤드라인 판정 — 영업익 컨센 ±10%(FnGuide 컨벤션), 무컨센은 YoY·흑전
-  const ao = toNum(a.op), eo = toNum(est.op);
-  const g = (a.growth||{}).op || {};
-  if(eo && ao!==null){
-    const sp = Math.round((ao-eo)/Math.abs(eo)*1000)/10;
-    if(sp>=10)  return {t:"🔥 어닝 서프라이즈", c:"#fb923c", sub:`영업익 컨센(${eok(est.op)}) 대비 <b>${pctTxt(sp)}</b>`};
-    if(sp<=-10) return {t:"❄️ 어닝 쇼크", c:"#60a5fa", sub:`영업익 컨센(${eok(est.op)}) 대비 <b>${pctTxt(sp)}</b>`};
-    return {t:"✅ 컨센 부합", c:"var(--accent)", sub:`영업익 컨센(${eok(est.op)}) 대비 ${pctTxt(sp)} (±10% 이내)`};
-  }
-  if(g.yoy_flag) return g.yoy_flag.includes("흑자")
-    ? {t:"🔄 흑자전환", c:"#fb923c", sub:`영업익 ${esc(g.yoy_flag)} (전년동기 대비)`}
-    : {t:`⚠️ ${esc(g.yoy_flag)}`, c:"#60a5fa", sub:"영업익 전년동기 대비"};
-  if(g.yoy!=null){
-    const qq = g.qoq!=null ? ` · QoQ ${pctTxt(g.qoq)}` : "";
-    if(g.yoy>=25)  return {t:"🔥 고성장", c:"#fb923c", sub:`컨센 없음 → 영업익 YoY <b>${pctTxt(g.yoy)}</b>${qq} 기준`};
-    if(g.yoy<=-25) return {t:"❄️ 급감", c:"#60a5fa", sub:`컨센 없음 → 영업익 YoY <b>${pctTxt(g.yoy)}</b>${qq} 기준`};
-    return {t:"➖ 무난", c:"var(--muted)", sub:`컨센 없음 → 영업익 YoY ${pctTxt(g.yoy)}${qq} 기준`};
-  }
-  return {t:"판정 불가", c:"var(--muted)", sub:"컨센·비교 데이터 없음"};
-}
-
-function numLine(name, val, estVal, g){   // 핵심 수치 1줄: 값 (컨센± · YoY · QoQ)
-  const bits = [];
-  const ev = toNum(estVal), av = toNum(val);
-  if(ev && av!==null) bits.push(`컨센 ${pctTxt(Math.round((av-ev)/Math.abs(ev)*1000)/10)}`);
-  const gt = growthTxt(g);
-  bits.push(`YoY ${gt.yoy}`, `QoQ ${gt.qoq}`);
-  return `<div class="row">${name} <b style="color:var(--text)">${eok(val)}</b> <span style="color:var(--muted)">(${bits.join(" · ")})</span></div>`;
-}
-
-const TICK_LABEL = {   // 공시 시간대별 전/후 지표 이름
-  min:       ["발표 전5분", "후5분"],
-  close_gap: ["장후 공시 — 당일 등락", "익일 시가갭"],
-  open_gap:  ["장전 공시 — 전일 등락", "당일 시가갭"],
-  day:       ["당일 등락", "익일 등락"],
-};
-function tickLine(e){   // 공시 접수시각 + 발표 전후 반응 (시간대별 의미가 다름)
-  if(e.pre5==null && e.post5==null && !e.disc_time) return "";
-  const p = v => v==null ? "-" : `${v>0?"+":""}${v}%`;
-  const [l1, l2] = TICK_LABEL[e.tick_kind] || TICK_LABEL.min;
-  return `<div class="row" style="margin:5px 0">⏱️ 공시 ${esc(e.disc_time||"-")} · ${l1} <b>${p(e.pre5)}</b> · ${l2} <b>${p(e.post5)}</b></div>`;
-}
-
-function preRunFlag(f, e){   // 선반영 체크 — 발표 전 5거래일 수익률 ("전날까지 올랐으면 셀온 주의")
-  const ps = f.prices||[];   // 최신순
-  const dIso = e.date ? toISO(e.date) : "";
-  if(!ps.length || !dIso) return null;
-  const idx = ps.findIndex(p=>p.date < dIso);   // 발표일 직전 거래일
-  if(idx<0 || idx+5>=ps.length) return null;
-  const c1 = toNum(ps[idx].close), c0 = toNum(ps[idx+5].close);
-  if(!c1 || !c0) return null;
-  const r = Math.round((c1-c0)/c0*1000)/10;
-  if(r>=10)  return `⚠️ <b>선반영 주의</b> — 발표 전 5거래일 ${pctTxt(r)} 급등, 재료소멸 셀온 가능성`;
-  if(r<=-10) return `ℹ️ 발표 전 5거래일 ${pctTxt(r)} 조정 — 선반영 부담 낮음`;
-  return null;
-}
-
-function onetimeFlag(a){   // 이익의 질 — 영업익·순이익 YoY 괴리 30%p + 원문 키워드 (영업이익 우선 판단)
-  const g = a.growth||{};
-  const oy = g.op?.yoy, ny = g.np?.yoy;
-  const kw = (a.notes||"").match(/일회성|소송|매각|손상|충당금|중단사업|영업외/);
-  if((g.np?.yoy_flag||"") !== (g.op?.yoy_flag||"") || (oy!=null && ny!=null && Math.abs(ny-oy) > 30))
-    return `⚠️ <b>일회성 의심</b> — 순이익 YoY(${pctTxt(ny)}) vs 영업익 YoY(${pctTxt(oy)}) 괴리${kw?` · 원문 '${esc(kw[0])}' 언급`:""} → 영업이익 우선 판단`;
-  if(kw) return `ℹ️ 원문에 '${esc(kw[0])}' 언급 — 일회성 여부 원문 확인`;
-  return null;
-}
-
-function momentumFlag(a){   // YoY가 좋아도 분기 흐름(QoQ)이 꺾이면 경고
-  const q = a.growth?.op?.qoq;
-  if(q!=null && q<=-10)
-    return `⚠️ <b>모멘텀 둔화</b> — 영업익 QoQ ${pctTxt(q)} (YoY 판정과 별개로 직전 분기 대비 감소)`;
-  return null;
-}
-
-function flowLine(f, e){   // 수급 — 공시일 이후 최대 5거래일 순매수 (발표 반응 수급, 주수×종가 근사)
-  let tr = f.trend||[];   // 최신순, 최대 20거래일
-  if(!tr.length) return "";
-  let label = "최근 5거래일";
-  const d = e && e.date;
-  if(d && tr.some(x=>ymd(x.date) >= ymd(d))){       // 공시일 이후 구간만, 공시일부터 5거래일 (날짜 형식 YYYY-MM-DD·YYYYMMDD 맞춰 비교)
-    tr = tr.filter(x=>ymd(x.date) >= ymd(d))
-           .sort((a,b)=>a.date.localeCompare(b.date))
-           .slice(0,5);
-    label = `발표 후 ${tr.length}거래일`;
-  }else{
-    tr = tr.slice(0,5);                   // 공시가 20거래일보다 오래됨 → 최근 5거래일 폴백
-  }
-  const sum = k => {
-    let s = 0, ok = false;
-    tr.forEach(x=>{
-      const q = toNum(x[k]), c = toNum(x.close);
-      if(q!==null && c){ s += q*c; ok = true; }
-    });
-    return ok ? Math.round(s/1e8) : null;
-  };
-  const fr = sum("frgn"), og = sum("org");
-  if(fr===null && og===null) return "";
-  const fmt = v => v===null ? "-" : `${v>0?"+":""}${v.toLocaleString("ko-KR")}억`;
-  const note = (fr>0&&og>0) ? ` <span style="color:var(--accent)">— 쌍끌이 순매수</span>`
-             : ((fr<0&&og<0) ? ` <span style="color:var(--exp)">— 동반 순매도</span>` : "");
-  return `<div class="row" style="margin:5px 0">💰 수급(${label}): 외국인 <b>${fmt(fr)}</b> · 기관 <b>${fmt(og)}</b>${note} <span style="color:var(--muted)">(주수×종가 근사)</span></div>`;
-}
-
-const qLabel = pe => ({"03":"1Q","06":"반기","09":"3Q","12":"연간"}[(pe||"").slice(5,7)] || "");
 async function loadEarnSched(){   // 예정 실적발표 → 캘린더 이벤트(ernEvents)로 표시
   try{
     const d = await (await fetch("data/earn_sched.json?_="+Date.now())).json();
@@ -673,7 +483,7 @@ function ernEvents(){   // 예상 실적발표(예고공시+IR) — 실적 그�
     .filter(e => filters[e.market]!==false && (!q || (e.corp||"").toLowerCase().includes(q)))
     .map((e,i)=>({
       id:"n"+i,
-      title:`${e.corp}${e.src==="IR"?" IR":(e.period_end?" "+qLabel(e.period_end):"")}`,
+      title:e.cal_title,
       start:e.expected_date, allDay:true, classNames:["ern"],
       extendedProps:{...e, kind:"ern"},
     }));
