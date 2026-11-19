@@ -128,11 +128,7 @@
       </span>
       <span class="cal-legend">
         <span class="lg"><i style="background:#dc2626"></i><i style="background:#fca5a5"></i> 확정 배당</span>
-        <span class="lg" title="예상배당 — 기준일 날짜가 얼마나 확실한가">예상:
-          <i style="background:#f59e0b"></i>기준일 공고됨
-          <i style="background:var(--est)"></i>기말 유지 <i style="background:#fde68a"></i>기말·바뀔 수 있음
-          <i style="border:1.5px solid var(--est)"></i>이사회 지정·올해 근거 <i style="border:1.5px dashed var(--est)"></i>이사회 지정·작년 반복
-          <i style="border:1.5px dotted #a3a3a3"></i>근거 약함</span>
+        <span class="lg" title="예상배당 — 기준일 날짜가 얼마나 확실한가">예상: <span id="estLegend"></span></span>
         <span class="lg"><i style="background:#a855f7"></i><i style="background:#c4b5fd"></i> 무상</span>
         <span class="lg"><i style="background:#3b82f6"></i><i style="background:#7dd3fc"></i> 유상</span>
         <span class="lg"><i style="background:#f59e0b"></i> 무상 매도가능(잔고 입고)</span>
@@ -156,7 +152,7 @@
 <script>
 // 배당 페이지 = 이 폴더 + common/ — 데이터는 DATA 아래 DATA_FILES 만 읽는다(따로 배포할 때 이 파일들만 같이 올림)
 const DATA = "../data/";
-const DATA_FILES = ["dividends.json","capital.json","research.json","halts.json","divpoints.json","expiries.json","dividend_check.json"];
+const DATA_FILES = ["dividends.json","capital.json","research.json","halts.json","divpoints.json","expiries.json","dividend_check.json","div_history.json"];
 let DIV = [], CAP = [], HALT = [], EXP = [];
 let RES = {companies:{}, events:[]};   // 리서치: 기준일 판정 + 예상배당(research.json)
 let DP = null;                         // 지수배당포인트(divpoints.json)
@@ -171,26 +167,12 @@ const shown = e => filters[e.market] && matchQ(e);
 const show = {buy:true, ex:true};      // 매수일(T-2)·락일(T-1) 중 무엇을 볼지 — 배당·예상배당·증자 공통
 try{ Object.assign(show, JSON.parse(localStorage.getItem("div.show") || "{}")); }catch(_){}
 
-// 예상배당 날짜 확실도 — 기준일 날짜가 얼마나 확실한가(금액은 별도). research.py 의 판정·날짜 근거로 나눔
-const EST_GRADE = [
-  {g:0, t:"기준일 공고됨·금액만 예상", d:"회사가 기준일을 공고했고 금액만 아직 안 나옴"},
-  {g:1, t:"결산기말 기준일 유지", d:"작년에도 결산기말·분기말이었고, 정관상 바뀔 근거가 없음"},
-  {g:2, t:"결산기말이지만 바뀔 수 있음", d:"작년엔 결산기말·분기말이었지만, 정관상 이사회가 기준일을 따로 정할 수 있음"},
-  {g:3, t:"이사회 지정일·올해 주총/실적발표로 추정", d:"이사회가 정하는 기준일 — 올해 정기주총일·실적발표 예정일에 작년 간격을 더함"},
-  {g:4, t:"이사회 지정일·작년 날짜 반복", d:"이사회가 정하는 기준일 — 올해 근거가 아직 없어 작년 같은 회차 기준일 + 52주"},
-  {g:5, t:"근거 약함", d:"이 회사 이력이 없거나 판별이 어려워 수집대상 전체 중앙값 등으로 추정"},
-];
 const md = iso => iso ? `${+iso.slice(5,7)}/${+iso.slice(8,10)}` : "";
-const estLabel = e => `예상 기준일 ${md(e.record_date)} — ${e.reason || estGrade(e).t}`;   // 날짜 + 이유 한 줄 (research.py 가 회차마다 만든 이유)
-function estGrade(e){
-  if(e.method==="확정 기준일") return EST_GRADE[0];
-  if(e.method==="고정") return EST_GRADE[e.may_change ? 2 : 1];
-  if(e.method==="유동" && e.alt && e.alt.A2) return EST_GRADE[3];
-  if(e.method==="유동" && e.alt && e.alt.A1) return EST_GRADE[4];
-  return EST_GRADE[5];
-}
-const METHOD_TXT = {"고정":"결산기말·분기말 고정", "유동":"이사회가 따로 정함", "유동 가능":"이사회가 정할 수 있음(이력 없음)",
-                    "판별 불가":"판별 불가", "확정 기준일":"기준일 공고됨"};
+const estGrade = e => ({g: RES.grades[e.grade].rank, t: e.grade_label});
+const estLabel = e => `예상 기준일 ${md(e.record_date)} — ${e.reason}`;
+const gradeText = s => s.replaceAll("{end}", "기말");
+const SWATCH = ["background:#f59e0b", "background:var(--est)", "background:#fde68a",
+                "border:1.5px solid var(--est)", "border:1.5px dashed var(--est)", "border:1.5px dotted #a3a3a3"];
 const ALT_TXT = {A1:"작년 날짜 반복", A2:"올해 주총·실적발표 기준"};
 const COND_TXT = {D13:"결산기말 전 한 달에 주총용 명부폐쇄만 있음", D14:"결산기말 전 한 달에 배당 기준일 공고 없음"};
 const CH_TXT = {O:"이사회가 기준일을 따로 정할 수 있음", X:"기준일이 결산기말로 고정"};
@@ -390,7 +372,7 @@ function estEvents(){   // 예상배당 — 날짜 확실도별 노란색 계열
   estList().forEach((e,i)=>{
     const g = estGrade(e);
     const amt = `${e.corp} (예상 ${e.per_share?won(e.per_share)+"원":"미정"}) · ${estLabel(e)}`;
-    const props = {...e, kind:"est", grade:g};
+    const props = {...e, kind:"est"};
     const cls = ["est", "est-g"+g.g];
     if(show.buy) out.push({id:"eb"+i, title:`💡[예상 배당매수일] ${amt}`, start:e.confirm_date||e.record_date,
                            allDay:true, classNames:cls, extendedProps:props});
@@ -452,7 +434,7 @@ function stageLadder(e){
   let h = `<div class="wh" style="margin-top:8px">🪜 기준일 확정 단계 <span class="sub" style="font-weight:400;color:var(--muted)">— ④부터 확정</span></div><div class="lad">${rows}</div>`;
   if(e.kind==="est"){
     const alt = Object.entries(e.alt||{}).map(([k,v])=>`${ALT_TXT[k]||k} ${esc(v)}`).join(" · ");
-    h += `<div class="anc">🧭 <b>${esc(METHOD_TXT[e.method]||e.method)}${e.may_change?" · 바뀔 수 있음":""}</b> — ${esc(e.why)}<br>날짜 근거: ${esc(e.anchor)}${alt?`<br>근거별 날짜: ${alt}`:""}</div>`;
+    h += `<div class="anc">🧭 <b>${esc(e.grade_label)}</b> — ${esc(e.why)}<br>날짜 근거: ${esc(e.anchor)}${alt?`<br>근거별 날짜: ${alt}`:""}</div>`;
     const cond = Object.entries(e.cond||{}).filter(([,v])=>v!==null).map(([k,v])=>`${COND_TXT[k]||k}: ${v?"해당":"해당 없음"}`).join(" · ");
     if(cond) h += `<div class="ev">참고 신호(적중률 측정 중, 판정엔 안 씀) — ${esc(cond)}</div>`;
     h += (e.warn||[]).map(w=>`<div class="ev">⚠ ${esc(w)}</div>`).join("");
@@ -464,7 +446,7 @@ function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월
   if(!c) return "";
   const ch = Object.entries(c.charter||{}).map(([g,x])=>`${g}배당: ${esc(CH_TXT[x.v]||x.v)} <span class="sub">(${esc(x.src)})</span>`).join("<br>");
   const og = Object.entries(c.organ||{}).map(([g,v])=>`${g} ${esc(v)}`).join(" · ");
-  const jd = Object.entries(c.judgments||{}).map(([t,j])=>`<div class="row">· ${esc(t)} ${esc(j.quarter)}: <b>${esc(METHOD_TXT[j.method]||j.method)}${j.may_change?" · 바뀔 수 있음":""}</b> <span class="sub">${esc(j.why)}</span></div>`).join("");
+  const jd = Object.entries(c.judgments||{}).map(([t,j])=>`<div class="row">· ${esc(t)} ${esc(j.quarter)}: <b>${esc(j.grade_label)}</b> <span class="sub">${esc(j.why)}</span></div>`).join("");
   let h = `<div class="why"><div class="wh">🏷️ 이 회사의 기준일 판정</div>${jd}
     <div class="row">정관상 배당기준일: ${ch||"정보 없음"}</div>
     <div class="row">배당액 결정기관: ${og||"미상"} · 결산월 ${esc(String(c.acc_mt))}월${c.acc_known?"":" (조회 실패 — 12월 가정)"}</div>`;
@@ -506,7 +488,7 @@ function showDetail(e){
     const dp = {};
     (DP?.indices||[]).forEach(c=> (c.months||[]).forEach(m=> m.days.forEach(d=> d.items.forEach(x=> dp[x.stock+"|"+d.ex_date] = x))));
     const rows = e.items.map(x=>({x, p:dp[x.stock+"|"+x.ex_date]}))
-      .sort((a,b)=> (b.x.grade?.g ?? -1) - (a.x.grade?.g ?? -1) || (+b.x.per_share||0) - (+a.x.per_share||0));
+      .sort((a,b)=> (b.x.kind==="est" ? estGrade(b.x).g : -1) - (a.x.kind==="est" ? estGrade(a.x).g : -1) || (+b.x.per_share||0) - (+a.x.per_share||0));
     box.innerHTML = `<div class="detail">
         <span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>
         <div class="corp">${esc(e.label)} <span style="font-size:13px;color:var(--muted)">${esc(e.date)} · ${e.items.length}건</span></div>
@@ -516,7 +498,7 @@ function showDetail(e){
         rows.map(({x,p})=>`<tr class="dor" data-i="${e.items.indexOf(x)}">
           <td class="nm">${esc(x.corp)} <span class="mkt ${esc(x.market)}">${esc(x.market)}</span></td>
           <td class="px">${x.per_share?won(x.per_share)+"원":"-"}</td>
-          <td>${x.grade?`<span class="grade">${esc(x.grade.t)}</span>`:esc(x.div_type||x.type||"")}</td>
+          <td>${x.kind==="est"?`<span class="grade">${esc(x.grade_label)}</span>`:esc(x.div_type||x.type||"")}</td>
           <td class="px">${p?p.yield.toFixed(2)+"%":"-"}</td><td class="px">${p?p.points.toFixed(3):"-"}</td></tr>`).join("")}</tbody></table></div>`;
     box.querySelectorAll("#grpTab tr.dor").forEach(el=> el.addEventListener("click",()=> showDetail(e.items[+el.dataset.i])));
   } else if(e.kind==="est"){
@@ -624,8 +606,9 @@ function showDetail(e){
 }
 
 // ── 엑셀: 보고 있는 달 1일부터 이후 배당 전부 (확정 + 예상, 검색·시장 필터 반영) ──
-function exportXlsx(){
+async function exportXlsx(){
   const from = dISO(calendar.view.currentStart);
+  const hist = await getJSON("div_history.json");
   const exps = EXP.map(x=> x.date).sort();
   const afterExp = buy => exps.filter(d=> d <= buy).pop() || "";
   const monthOf  = ex => exps.find(d=> d >= ex) || "";
@@ -643,8 +626,8 @@ function exportXlsx(){
                    `DART 공시 ${e.rcept_dt ? e.rcept_dt.replace(/(\d{4})(\d{2})(\d{2})/,"$1-$2-$3") : ""} ${e.url||""}`.trim(), e.per_share ? "공시 금액" : "",
                    e.per_share ? "확정" : "공고"))
     .concat(estList().filter(e=> e.ex_date && e.ex_date >= from)
-      .map(e=> row(e, estLabel(e),
-                   `${METHOD_TXT[e.method]||e.method} — ${e.why} / 날짜 근거: ${e.anchor}`, e.amount_basis || "", estGrade(e).g)))
+      .map(e=> row(e, `예상 — ${e.grade_label}`,
+                   `${estLabel(e)} / ${e.why} / 날짜 근거: ${e.anchor}`, e.amount_basis || "", estGrade(e).g)))
     .sort((a,b)=> a["배당락일(T-1)"].localeCompare(b["배당락일(T-1)"]) || a["종목명"].localeCompare(b["종목명"], "ko"));
   if(!rows.length){ alert(`${from} 이후 배당이 없습니다.`); return; }
   // 서식 — 머리줄 남색, 구분은 화면 범례처럼 진함(확실)→회색(근거 약함)
@@ -656,7 +639,7 @@ function exportXlsx(){
   const NOTE = {font:{italic:true, color:{rgb:"595959"}}};
   const CELL = {alignment:{vertical:"top"}, border:BOX};
   const WRAP = {alignment:{vertical:"top", wrapText:true}, border:BOX};
-  // 구분 칸 색 — 확정·공고·예상 날짜 확실도 단계(EST_GRADE.g) 별. 화면 범례와 같은 순서
+  // 구분 칸 색 — 확정·공고·예상 구분 단계(rank) 별. 화면 범례와 같은 순서
   const FILL = {확정:"F8CBAD", 공고:"F4B084", 0:"F4B084", 1:"FFD966", 2:"FFE699", 3:"FFF2CC", 4:"EDEDED", 5:"D9D9D9"};
   const fillOf = k => FILL[k] ? {fill:{fgColor:{rgb:FILL[k]}}} : {};
   const paint = (ws, fn) => {
@@ -675,12 +658,13 @@ function exportXlsx(){
   ws["!autofilter"] = {ref: ws["!ref"]};
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "배당");
-  // 설명 탭 — 구분(단계)·칸 뜻. 화면과 같은 문구(EST_GRADE)를 그대로 씀
+  // 설명 탭 — 구분·칸 뜻. 화면과 같은 구분 표(research.json grades)를 그대로 씀
   const guide = [
-    ["구분 칸 색", "뜻 — 예상은 구분 칸에 '예상 기준일 날짜 — 그 날짜를 잡은 이유'가 종목마다 적혀 있고, 색은 날짜가 얼마나 확실한지"],
+    ["구분 칸 색", "뜻 — 예상은 구분 칸에 그 회차의 구분, 근거 칸에 '예상 기준일 날짜 — 그 날짜를 잡은 이유'. 색은 날짜가 얼마나 확실한지"],
     ["확정 — 배당결정 공시(금액·기준일)", "회사가 현금배당결정 공시를 냄 — 금액·기준일 확정", "확정"],
     ["기준일 공고 — 금액 미정", "회사가 기준일(주주명부폐쇄) 공고만 냄 — 날짜 확정, 금액은 아직", "공고"],
-    ...EST_GRADE.map(g=> [`예상 — ${g.t}`, g.d, g.g]),
+    ...Object.values(RES.grades).map(g=> [`예상 — ${gradeText(g.label)}`, gradeText(g.desc), g.rank]),
+    ["※ 기말", "결산배당은 결산기말, 분기배당은 분기말, 중간배당은 반기말 — 구분 칸에는 그 배당종류의 말로 적힘"],
     [],
     ["칸", "뜻"],
     ["종목코드", "A + 6자리 종목코드"],
@@ -689,8 +673,9 @@ function exportXlsx(){
     ["배당락일(T-1)", "이날부터 사면 배당 없음 — 주가가 통상 배당액만큼 빠짐"],
     ["몇월 만기 후", "배당매수일이 들어가지 않는 가장 끝 월물(배당매수일 당일 이전에 끝나는 마지막 만기, 만기 당일 포함) + '만기 후'"],
     ["배당락 월물", "배당락이 걸리는 주식선물 월물 = 배당락일 이후 첫 만기(매월 둘째 목요일)"],
-    ["근거", "확정은 DART 공시일·링크, 예상은 판정 이유와 날짜를 잡은 근거"],
+    ["근거", "확정은 DART 공시일·링크, 예상은 예상 기준일·이유, 판정 근거, 날짜를 잡은 근거"],
     ["금액 근거", "예상 금액은 같은 종류 직전 정기 회차 금액 반복 (특별배당 섞인 회차 제외)"],
+    ["참고 공시 탭", "이 목록 종목들에 대해 배당 산출이 읽은 DART 공시 전부(2년치)와 정기보고서 배당 표 — 공시마다 읽어 낸 내용과 원문 링크"],
     [],
     ["뽑은 범위", `${from} 이후 배당락 · 검색·시장 필터 반영 · ${new Date().toLocaleString("ko-KR")} 기준`],
   ];
@@ -715,14 +700,10 @@ function exportXlsx(){
     ["월물 배정", "배당락일 이후 첫 선·옵 동시만기 → 근월물·차월물"],
     ["예상 금액", "같은 종류 직전 정기 회차 금액 반복 (특별배당 섞인 회차 제외)"],
     [],
-    ["2. 기준일 판정 (위에서부터 먼저 걸리는 것)", "판정"],
-    ["이번 회차 기준일 공고·배당결정이 이미 나옴", "확정"],
-    ["이번 회차 '배당기준일 안내' 자율공시가 나옴", "이사회 지정 (올해 전환)"],
-    ["직전 회차 기준일 ≠ 결산기말·분기말", "이사회 지정"],
-    ["직전 회차 기준일 = 결산기말·분기말, 정관상 이사회가 기준일을 정할 수 있음", "결산기말이지만 바뀔 수 있음"],
-    ["직전 회차 기준일 = 결산기말·분기말, 정관상 결산기말 고정(또는 정관 정보 없음)", "결산기말 기준일 유지"],
-    ["배당 이력 없음", "정관상 이사회 지정 가능 → 이사회가 정할 수 있음 / 결산기말 고정 → 결산기말 / 정보 없음 → 판별 불가"],
-    ["※ 결산기말은 종목별 결산월 기준 (예: 신영증권 3월 결산 → 3/31)", ""],
+    ["2. 구분 (배당결정 공시가 없는 회차)", "구분"],
+    ...Object.values(RES.grades).map(g=> [gradeText(g.rule), gradeText(g.label)]),
+    ["※ 기말 = 결산배당은 결산기말, 분기배당은 분기말, 중간배당은 반기말 — 종목별 결산월 기준 (예: 신영증권 3월 결산 → 3/31)", ""],
+    ["※ 사례 = 선진화 정관이 된 뒤 같은 종류(결산·분기·중간) 배당 회차. 정관을 바꾼 날 = 선진화 정관이 처음 확인된 주총결과·정기보고서 바로 전 주총일 (정관은 주총에서만 바뀜)", ""],
     ["※ 정관 출처: 주총결과 「정관상 기준일 설정 및 변경 세부내역」 > 정기보고서 「배당관련 예측가능성」 표 > 정관 전문", ""],
     [],
     ["3. 이사회 지정일의 날짜 근거 (위에서부터 있는 것)", "계산"],
@@ -757,7 +738,33 @@ function exportXlsx(){
   });
   ls["!cols"] = [{wch:70}, {wch:100}];
   XLSX.utils.book_append_sheet(wb, ls, "산출로직");
-  XLSX.writeFile(wb, `배당목록_${from}부터_${dISO(new Date())}.xlsx`);
+  const KIND = {decision:"현금배당결정", record:"배당 기준일(주주명부폐쇄) 공고", notice:"기타경영사항(자율공시)",
+                agm_call:"주주총회소집결의", agm_result:"주주총회결과", plan:"기업가치제고계획·지배구조보고서"};
+  const ox = c => c ? Object.entries(c).map(([k, v])=> `${k} ${v==="O" ? "이사회가 정할 수 있음" : "결산기말 고정"}`).join(", ") : "";
+  const READ = {
+    decision: h => `${h.div_type} 주당 ${h.per_share}원 · 기준일 ${h.record_date}`,
+    record: h => `${h.div_type} 기준일 ${h.record_date}`,
+    notice: h => h.is_div ? `${h.div_type} 기준일 안내${h.months.length ? ` · ${h.months.join(", ")}` : ""}${h.fyq ? ` · ${h.fyq}` : ""}` : "배당 기준일 안내 아님",
+    agm_call: h => [`${h.regular ? "정기" : "임시"}주총 ${h.agm_date}`, h.charter && `정관: ${ox(h.charter)}`].filter(Boolean).join(" · "),
+    agm_result: h => [`${h.regular ? "정기" : "임시"}주총 ${h.agm_date}`, h.rejected && "부결", h.charter && `정관: ${ox(h.charter)}`].filter(Boolean).join(" · "),
+    plan: h => (h.lines || []).join(" ").slice(0, 500),
+  };
+  const stocks = new Set(rows.map(r=> r["종목코드"].slice(1)));
+  const src = Object.entries(hist).filter(([, h])=> stocks.has(h.stock))
+    .map(([no, h])=> ({"종목코드":"A" + h.stock, "종목명":h.corp, "공시일":toISO(h.rcept_dt), "공시 종류":KIND[h.kind],
+                       "공시 제목":h.title || KIND[h.kind], "읽은 내용":READ[h.kind](h), "DART":`https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${no}`}))
+    .concat([...stocks].filter(st=> RES.companies[st]?.policy_report).map(st=> { const c = RES.companies[st];
+      return {"종목코드":"A" + st, "종목명":c.corp, "공시일":"", "공시 종류":"정기보고서 배당 표", "공시 제목":c.policy_report,
+              "읽은 내용":[c.organ && `배당액 결정기관 ${Object.entries(c.organ).map(([k, v])=> `${k} ${v}`).join(", ")}`,
+                           c.charter && `정관: ${Object.entries(c.charter).map(([k, v])=> `${k} ${v.v==="O" ? "이사회가 정할 수 있음" : "결산기말 고정"}`).join(", ")}`].filter(Boolean).join(" · "),
+              "DART":""}; }))
+    .sort((a, b)=> a["종목명"].localeCompare(b["종목명"], "ko") || b["공시일"].localeCompare(a["공시일"]));
+  const ss = XLSX.utils.json_to_sheet(src);
+  paint(ss, (R, C)=> R===0 ? HEAD : CELL);
+  ss["!cols"] = [9,16,11,30,40,80,60].map(w=> ({wch:w}));
+  ss["!autofilter"] = {ref: ss["!ref"]};
+  XLSX.utils.book_append_sheet(wb, ss, "참고 공시");
+  XLSX.writeFile(wb, `배당목록_${from}부터_${dISO(new Date())}.xlsx`, {bookSST:true});
 }
 
 async function getJSON(name){ return (await fetch(`${DATA}${name}?_=${Date.now()}`)).json(); }
@@ -774,6 +781,8 @@ async function loadData(){
   const meta = document.getElementById("meta");
   meta.textContent = `💰 배당 ${d.count} · 💡예상 ${RES.count||0} · 📈 증자 ${CAP.length} · 🚫 정지 ${HALT.length}${bad}`;
   meta.style.color = bad ? "#f87171" : "";
+  document.getElementById("estLegend").innerHTML = Object.values(RES.grades)
+    .map(g=> `<i style="${SWATCH[g.rank]}"></i>${esc(gradeText(g.label))}`).join(" ");
   applyFilters();
   if(divListMode) renderDivToday();
 }

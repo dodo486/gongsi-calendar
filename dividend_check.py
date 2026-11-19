@@ -37,10 +37,10 @@ GOLDEN = {
                             lambda c, ev: all(e["ladder"][2]["state"] == "off" for e in ev if e["div_type"] == "결산배당"))]),
     "005930": ("삼성전자", [("결산 정관상 결산기말 고정", lambda c, ev: (c["charter"].get("결산") or {}).get("v") == "X"),
                          ("결산·분기 = 결산기말·분기말 고정", lambda c, ev: all(j["method"] == "고정" for j in c["judgments"].values()))]),
-    "095660": ("네오위즈", [("결산 = 결산기말이지만 바뀔 수 있음", lambda c, ev: _judg(c, "결산배당").get("method") == "고정"
-                                                          and _judg(c, "결산배당").get("may_change"))]),
+    "095660": ("네오위즈", [("결산 = 선진화 정관 · 사례 없음", lambda c, ev: _judg(c, "결산배당").get("method") == "고정"
+                                                          and _judg(c, "결산배당").get("grade") == "사례없음")]),
     "017670": ("SK텔레콤", [("분기 = 이사회 지정", lambda c, ev: _judg(c, "분기배당").get("method") == "유동")]),
-    "004020": ("현대제철", [("정기보고서 표 없음", lambda c, ev: not c["charter"]),
+    "004020": ("현대제철", [("결산 정관상 이사회 지정 가능", lambda c, ev: (c["charter"].get("결산") or {}).get("v") == "O"),
                          ("결산 = 이사회 지정", lambda c, ev: _judg(c, "결산배당").get("method") == "유동")]),
 }
 
@@ -98,6 +98,8 @@ def check():
         rec, qe = _d(e["record_date"]), _d(e["quarter_end"])
         if e["method"] not in METHODS:
             err(w, f"알 수 없는 판정 {e['method']!r}")
+        if e.get("grade") not in res.get("grades", {}):
+            err(w, f"알 수 없는 구분 {e.get('grade')!r}")
         if e["method"] == "고정" and rec != qe:
             err(w, f"결산기말 고정인데 기준일 {rec} ≠ 결산기말·분기말 {qe}")
         if rec and qe and not (qe <= rec <= qe + datetime.timedelta(days=SEASON_DAYS[e["div_type"]])) \

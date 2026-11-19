@@ -75,7 +75,7 @@ def build():
     earliest_ex = t_minus((today + datetime.timedelta(days=14)).isoformat(), 1)
     divs = [d for d in merged_dividends() if d.get("ex_date") and exps and today.isoformat() < d["ex_date"] <= exps[-1]]
     for d in divs:
-        d["undecided"] = (d["src"] == "예상" and (d.get("method") in ("유동", "유동 가능") or d.get("may_change"))
+        d["undecided"] = (d["src"] == "예상" and d.get("grade") in ("사례지정", "사례없음", "근거약함")
                           and earliest_ex <= exps[0])
     indices = []
     for cfg in index_pdf.INDICES:

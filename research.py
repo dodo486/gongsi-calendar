@@ -41,6 +41,21 @@ NOTICE_LOOKBACK_DAYS = 45
 SEASON_DAYS = {"결산배당": 123, "중간배당": 92, "분기배당": 92}
 FLOAT_FROM = {"결산배당": 2023, "중간배당": 2025, "분기배당": 2025}
 GROUP = {"결산배당": "결산", "중간배당": "분기중간", "분기배당": "분기중간"}
+END_WORD = {"결산배당": "결산기말", "분기배당": "분기말", "중간배당": "반기말"}
+GRADES = {
+    "공고": {"rank": 0, "label": "기준일 공고됨·금액만 예상", "desc": "회사가 기준일을 공고했고 금액만 아직 안 나옴",
+             "rule": "이번 회차 기준일(주주명부폐쇄) 공고가 나옴"},
+    "미변경": {"rank": 1, "label": "정관 미변경({end} 고정)", "desc": "정관상 기준일이 {end}로 고정 — 선진화 정관이 아님",
+               "rule": "정관상 기준일 {end} 고정, 또는 정관 정보 없이 직전 회차가 {end}"},
+    "사례기말": {"rank": 2, "label": "선진화 정관 · 사례 있음({end})", "desc": "정관을 바꾼 뒤 같은 종류 배당을 {end}에 줌 — 그 회사 방식",
+                 "rule": "선진화 정관 + 정관을 바꾼 뒤 같은 종류 배당 회차가 있고 그때 기준일이 {end}"},
+    "사례지정": {"rank": 3, "label": "선진화 정관 · 사례 있음(이사회 지정)", "desc": "정관을 바꾼 뒤 같은 종류 배당을 이사회가 정한 날에 줌 — 방식은 정해졌고 날짜는 추정",
+                 "rule": "직전 같은 종류 회차 기준일이 {end}이 아님, 또는 이번 회차 '배당기준일 안내' 자율공시가 나옴"},
+    "사례없음": {"rank": 4, "label": "선진화 정관 · 사례 없음 · 바뀔 수 있음", "desc": "정관을 바꾼 뒤 같은 종류 배당을 아직 안 치렀거나, 정관 변경 안건이 주총에 올라옴",
+                 "rule": "선진화 정관인데 바꾼 뒤 같은 종류 배당 회차가 없음, 또는 정관상 기준일 변경 안건이 주총에 상정"},
+    "근거약함": {"rank": 5, "label": "근거 약함", "desc": "정관 정보·배당 이력이 없어 판별이 어려움",
+                 "rule": "정관 정보·배당 이력 없음"},
+}
 PARSE_VERSION = {"notice": 5, "agm_call": 2, "agm_result": 2, "plan": 2}
 
 
@@ -193,7 +208,7 @@ def collect(universe):
     return hist, agm_records
 
 def policies(universe):
-    """종목별 최신 정기보고서의 배당 표 (없으면 직전 보고서로, 최대 4건)"""
+    """종목별 정기보고서 배당 표 — 최신 표(없으면 직전 보고서) + 기간 안 보고서들의 정관 이력"""
     cache = _load(POLICY_PATH, {})
     by = {}
     for r in listing("A", POLICY_DAYS):
@@ -201,25 +216,25 @@ def policies(universe):
             by.setdefault(r["stock_code"], []).append(r)
     for rs in by.values():
         rs.sort(key=lambda r: r["rcept_no"], reverse=True)
-    def first_table(stock):
-        fallback = None
-        for r in by[stock][:4]:
+    def tables(stock):
+        got = []
+        for r in by[stock]:
             if r["rcept_no"] not in cache:
                 try:
                     cache[r["rcept_no"]] = {**parse_policy(doc_text(r["rcept_no"])), "rcept_dt": r["rcept_dt"],
                                             "report": re.sub(r"\s+", " ", r["report_nm"]).strip()}
                 except Exception:
                     continue
-            p = cache[r["rcept_no"]]
-            if p.get("charter"):
-                return stock, p
-            fallback = fallback or (p if p.get("charter_text") else None)
-        return stock, fallback
-    todo = sum(1 for s in by for r in by[s][:4] if r["rcept_no"] not in cache)
+            got.append(cache[r["rcept_no"]])
+        latest = next((p for p in got if p.get("charter")), None) or next((p for p in got if p.get("charter_text")), None)
+        hist = [{"date": p["rcept_dt"], "charter": p.get("charter") or {"결산": p["charter_text"]}}
+                for p in got if p.get("charter") or p.get("charter_text")]
+        return stock, latest and {**latest, "charter_hist": hist}
+    todo = sum(1 for s in by for r in by[s] if r["rcept_no"] not in cache)
     if todo:
         print(f"  [정기보고서] 원문 최대 {todo}건 받는 중")
     with ThreadPoolExecutor(2) as ex:
-        out = dict(ex.map(first_table, list(by)))
+        out = dict(ex.map(tables, list(by)))
     with _LOCK:
         save_json(POLICY_PATH, cache)
     return {s: p for s, p in out.items() if p}
@@ -306,6 +321,11 @@ def context(stock, entries, policy, acc, agm_records):
         a["fy"] = _agm_fy(a["date"], acc)
 
     charter_cands = {"결산": [], "분기중간": []}
+    seen_v = {"결산": [], "분기중간": []}
+    for h in (policy or {}).get("charter_hist", []):
+        for g, v in h["charter"].items():
+            if v in ("O", "X"):
+                seen_v[g].append((_d(h["date"]), v))
     if policy and policy.get("charter"):
         for g, v in policy["charter"].items():
             if v in ("O", "X"):
@@ -321,12 +341,20 @@ def context(stock, entries, policy, acc, agm_records):
         if a["kind"] == "agm_result" and not a["rejected"]:
             for g, v in block.items():
                 charter_cands[g].append({"v": v, "date": a["date"], "src": f"주총결과 정관상 기준일 표 · {a['date']}"})
+                seen_v[g].append((a["date"], v))
         elif a["kind"] == "agm_call" and not any(c["kind"] == "agm_result" and c["date"] == a["date"] for c in agms):
             pending = {"date": _iso(a["date"]), "block": block}
     charter = {g: max(c, key=lambda x: x["date"]) for g, c in charter_cands.items() if c}
+    since = {}
+    agm_days = sorted(a["date"] for a in agms if a["kind"] == "agm_result" and not a["rejected"])
+    for g, vs in seen_v.items():
+        last_x = max((d for d, v in vs if v == "X"), default=None)
+        o = min((d for d, v in vs if v == "O" and (last_x is None or d > last_x)), default=None)
+        if o:
+            since[g] = max((d for d in agm_days if d <= o and (last_x is None or d > last_x)), default=o)
     return {"stock": stock, "corp": corp, "market": market, "acc": acc, "acc_known": acc_known,
             "rounds": rounds, "rec_notices": rec_notices, "notices": notices, "agms": agms, "plans": plans,
-            "agm_records": sorted(agm_records or []), "charter": charter, "charter_pending": pending,
+            "agm_records": sorted(agm_records or []), "charter": charter, "charter_since": since, "charter_pending": pending,
             "organ": (policy or {}).get("organ") or {}, "policy_report": (policy or {}).get("report", "")}
 
 def view(ctx, cut):
@@ -337,6 +365,7 @@ def view(ctx, cut):
     v["notices"] = [n for n in ctx["notices"] if n["date"] < cut]
     v["agms"] = [a for a in ctx["agms"] if a["rcept"] < cut]
     v["agm_records"] = [d for d in ctx["agm_records"] if d < cut]
+    v["charter_since"] = {g: d for g, d in ctx["charter_since"].items() if d < cut}
     return v
 
 def quarter_owner(rounds):
@@ -368,23 +397,35 @@ def _notice(ctx, t, fy, q):
     return next((n for n in reversed(ctx["notices"]) if n["div_type"] in kinds and (n["fy"], n["q"]) == (fy, q)), None)
 
 def judge(ctx, t, fy, q):
-    """§4.2 — (방식, 근거, 바뀔 수 있음)"""
+    """§4.2 — (날짜 방식, 근거, 구분 GRADES 키). 사례 = 선진화 정관이 된 뒤 같은 종류 배당 회차"""
+    g, end = GROUP[t], END_WORD[t]
     notice = _notice(ctx, t, fy, q)
     if notice:
-        return "유동", f"이번 회차 '배당기준일 안내' 자율공시({notice['date']}) — 이사회가 기준일을 따로 정함", False
+        return "유동", f"이번 회차 '배당기준일 안내' 자율공시({notice['date']}) — 이사회가 기준일을 따로 정함", "사례지정"
     past = [r for r in ctx["rounds"] if r["type"] == t]
-    ch = ctx["charter"].get(GROUP[t])
-    if past:
+    ch = (ctx["charter"].get(g) or {}).get("v")
+    since = ctx["charter_since"].get(g)
+    pend = (ctx["charter_pending"].get("block") or {}).get(g) == "O"
+    if past and not past[-1]["fixed"]:
         last = past[-1]
-        if not last["fixed"]:
-            return "유동", f"직전 회차({last['fy']} Q{last['q']}) 기준일 {last['record']}이 결산기말·분기말({last['qe']})이 아님 — 이사회가 따로 정함", False
-        if ch and ch["v"] == "O":
-            return "고정", f"직전 회차 기준일 {last['record']} = 결산기말·분기말. 다만 정관상 이사회가 기준일을 따로 정할 수 있어 바뀔 수 있음", True
-        return "고정", f"직전 회차 기준일 {last['record']} = 결산기말·분기말", False
-    if ch:
-        return ("유동 가능", f"배당 이력 없음 · 정관상 이사회가 기준일을 따로 정할 수 있음 ({ch['src']})", False) if ch["v"] == "O" else \
-               ("고정", f"배당 이력 없음 · 정관상 기준일이 결산기말로 고정 ({ch['src']})", False)
-    return "판별 불가", "정관 정보·배당 이력 없음", False
+        return "유동", f"직전 회차({last['fy']} Q{last['q']}) 기준일 {last['record']}이 {end}({last['qe']})이 아님 — 이사회가 따로 정함", "사례지정"
+    if ch == "O":
+        case = next((r for r in reversed(past) if since and r["record"] > since), None)
+        if case:
+            return "고정", f"선진화 정관 확인({since}) 뒤 {case['fy']} Q{case['q']} 기준일 {case['record']}도 {end} — 그 회사 방식", "사례기말"
+        if past:
+            return "고정", f"직전 회차 기준일 {past[-1]['record']} = {end}. 선진화 정관 확인({since}) 뒤 이 배당은 아직 안 치러 바뀔 수 있음", "사례없음"
+        return "유동 가능", f"배당 이력 없음 · 선진화 정관 ({ctx['charter'][g]['src']})", "사례없음"
+    if pend:
+        return "고정", f"{ctx['charter_pending']['date']} 주총에 정관상 기준일 변경 안건 상정 — 바뀔 수 있음", "사례없음"
+    if past:
+        return "고정", f"직전 회차 기준일 {past[-1]['record']} = {end}" + (" · 정관상 기준일 고정" if ch == "X" else " · 정관 정보 없음"), "미변경"
+    if ch == "X":
+        return "고정", f"배당 이력 없음 · 정관상 기준일이 {end}로 고정 ({ctx['charter'][g]['src']})", "미변경"
+    return "판별 불가", "정관 정보·배당 이력 없음", "근거약함"
+
+def grade_out(key, t):
+    return {"grade": key, "grade_label": GRADES[key]["label"].format(end=END_WORD[t])}
 
 def cond_signals(ctx, qe, today):
     """D13·D14 — 결산기말 직전 한 달: 주총용 명부폐쇄만 / 배당 기준일 공고 없음. 단독으론 틀린 신호(§2.6), 표시·적중률용"""
@@ -410,7 +451,7 @@ def ladder(ctx, t, fy, q, confirmed):
     return [
         {"n": "①", "name": "정관", "state": ("on" if ch["v"] == "O" else "off") if ch else "none",
          "text": ((f"이사회가 기준일을 따로 정할 수 있음 — {ch['src']}" if ch["v"] == "O"
-                   else f"기준일이 결산기말로 고정 — {ch['src']}") if ch else "정관 정보 없음")
+                   else f"기준일이 {END_WORD[t]}로 고정 — {ch['src']}") if ch else "정관 정보 없음")
                  + (f" · 주총({pend['date']}) 정관 기준일 변경 안건 상정" if pend else "")},
         {"n": "②", "name": "결정기관", "state": "on" if organ else "none",
          "text": f"배당액 결정기관 {organ or '미상'}" + (f" · {ctx['policy_report']}" if ctx["policy_report"] else "")},
@@ -452,7 +493,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     past = [r for r in ctx["rounds"] if r["type"] == t]
     prev = past[-1] if past else None
     same_q = next((r for r in reversed(past) if r["q"] == q), None)
-    method, why, may_change = judge(ctx, t, fy, q)
+    method, why, grade = judge(ctx, t, fy, q)
     organ = ctx["organ"].get(GROUP[t], "")
     regular = [a for a in ctx["agms"] if a["regular"]] if t == "결산배당" else []
     agm = next((a for a in reversed(regular) if a["fy"] == fy), None)
@@ -462,7 +503,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     warn, alt, anchor_event = [], {}, None
     md = lambda d: f"{d.month}/{d.day}"
     last_word = "작년" if t == "결산배당" else "직전 회차"
-    end_word = "결산기말" if t == "결산배당" else "분기말"
+    end_word = END_WORD[t]
 
     if not ann_rec and today > qe + datetime.timedelta(days=SEASON_DAYS[t]):
         return None, f"⚠ {fy} Q{q} {t}: 시즌 창(결산기말·분기말 {qe} +{SEASON_DAYS[t]}일) 지나도 배당 공시 없음 → 미실시로 보고 예상 제외"
@@ -470,13 +511,11 @@ def predict_round(ctx, t, fy, q, today, earn, med):
         rec, anchor = ann_rec["record"], f"기준일 공고 {ann_rec['date']} (금액은 아직 미공시)"
         reason = f"회사가 기준일 공고({md(ann_rec['date'])}) · 금액은 아직"
     elif method == "고정":
-        rec, anchor = qe, "결산기말·분기말 고정"
-        ch = (ctx["charter"].get(GROUP[t]) or {}).get("v")
-        if may_change:
-            reason = f"{last_word} {md(prev['record'])} · 정관상 이사회가 다른 날로 정할 수 있어 바뀔 수 있음"
-        else:
-            reason = (f"{last_word}도 {md(prev['record'])}" if prev else "배당 이력 없음") + \
-                     (f" · 정관상 기준일이 {end_word}로 고정" if ch == "X" else f" · {end_word}에서 바꾼 적 없음")
+        rec, anchor = qe, f"{end_word} 고정"
+        reason = (f"{last_word}도 {md(prev['record'])}" if prev else "배당 이력 없음") + {
+            "미변경": f" · 정관상 기준일이 {end_word}로 고정",
+            "사례기말": f" · 정관을 바꾼 뒤에도 {end_word}",
+            "사례없음": " · 정관을 바꾼 뒤 처음(또는 변경 안건 상정)이라 바뀔 수 있음"}[grade]
     else:
         if same_q and not same_q["fixed"]:
             alt["A1"] = same_q["record"] + datetime.timedelta(weeks=52 * (fy - same_q["fy"]))
@@ -533,7 +572,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     reg = next((r for r in reversed(past) if not r["special"] and r["dps"]), None)
     return {"div_type": t, "fy": fy, "q": q, "quarter": f"{fy} Q{q}", "quarter_end": _iso(qe),
             "record_date": _iso(rec), "pay_date": _iso(pay), "method": "확정 기준일" if ann_rec else method,
-            "may_change": may_change and not ann_rec, "why": why, "anchor": anchor, "reason": reason,
+            **grade_out("공고" if ann_rec else grade, t), "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: _iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
             "per_share": reg["dps"] if reg else "",
@@ -570,8 +609,8 @@ def company_out(ctx, missed):
         qs = sorted(q for q, ot in owner.items() if ot == t) or [rs[-1]["q"]]
         nq = next((x for x in qs if x > rs[-1]["q"]), None)
         fy, q = (rs[-1]["fy"], nq) if nq else (rs[-1]["fy"] + 1, qs[0])
-        m, why, may = judge(ctx, t, fy, q)
-        judgments[t] = {"method": m, "why": why, "may_change": may, "quarter": f"{fy} Q{q}"}
+        m, why, grade = judge(ctx, t, fy, q)
+        judgments[t] = {"method": m, "why": why, **grade_out(grade, t), "quarter": f"{fy} Q{q}"}
     ladders = {f"{r['type']}|{_iso(r['record'])}": ladder(view(ctx, r["decided"] or r["record"]), r["type"], r["fy"], r["q"], True)
                for r in ctx["rounds"][-12:]}
     return {"corp": ctx["corp"], "market": ctx["market"], "acc_mt": ctx["acc"], "acc_known": ctx["acc_known"],
@@ -624,7 +663,7 @@ def build(days=HIST_DAYS):
                            "basis": f"{p['quarter']} {p['div_type']} · {p['method']} — {p['why']} · {p['anchor']} · 금액 {p['amount_basis']}"})
     events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "days": days,
-               "medians": med, "companies": companies, "count": len(events), "events": events}
+               "medians": med, "grades": GRADES, "companies": companies, "count": len(events), "events": events}
     with _LOCK:
         save_json(OUT_PATH, payload)
     n = lambda m: sum(1 for e in events if e["method"] == m)
@@ -654,7 +693,7 @@ def verify():
                 continue
             prec = _d(p["record_date"])
             pex, aex = _d(t_minus(_iso(prec), 1)), _d(t_minus(_iso(r["record"]), 1))
-            rows.append({**base, "pred": p["method"], "pred_record": p["record_date"], "alt": p["alt"],
+            rows.append({**base, "pred": p["method"], "grade": p["grade"], "pred_record": p["record_date"], "alt": p["alt"],
                          "err": abs((prec - r["record"]).days),
                          "err_alt": {k: abs((_d(x) - r["record"]).days) for k, x in p["alt"].items()},
                          "month_ok": month(pex) == month(aex), "cond": p["cond"],
@@ -675,6 +714,7 @@ def verify():
         "회차": len(rows),
         "판정 적중(고정/유동)": pct(len(ok), len(judged)),
         "판정 내역": {m: sum(1 for x in rows if x["pred"] == m) for m in ("고정", "유동", "유동 가능", "판별 불가", "확정 기준일", "미실시 판정")},
+        "구분 내역": {k: sum(1 for x in rows if x.get("grade") == k) for k in GRADES},
         "유동 기준일 오차 중앙값(일)": medv([x["err"] for x in flo]),
         "A1 오차 중앙값(일)": medv([x["err_alt"]["A1"] for x in flo if "A1" in x["err_alt"]]),
         "A2 오차 중앙값(일)": medv([x["err_alt"]["A2"] for x in flo if "A2" in x["err_alt"]]),
