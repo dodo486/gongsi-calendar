@@ -626,16 +626,15 @@ function showDetail(e){
 // ── 엑셀: 보고 있는 달 1일부터 이후 배당 전부 (확정 + 예상, 검색·시장 필터 반영) ──
 function exportXlsx(){
   const from = dISO(calendar.view.currentStart);
-  const exps = EXP.filter(x=> x.type==="선·옵 동시만기").map(x=> x.date).sort();
-  const afterExp = ex => exps.filter(d=> d < ex).pop() || "";      // 배당락 직전 동시만기
-  const monthOf  = ex => exps.find(d=> d >= ex) || "";              // 배당락이 걸리는 월물(그 이후 첫 동시만기)
+  const exps = EXP.map(x=> x.date).sort();
+  const afterExp = buy => exps.filter(d=> d <= buy).pop() || "";
+  const monthOf  = ex => exps.find(d=> d >= ex) || "";
   const ym = d => d ? d.slice(0,7) : "";
   const row = (e, kind, why, amtWhy, fill) => ({ _fill: fill,
     "종목코드": "A" + e.stock, "종목명": e.corp, "시장": {KOSPI:"KP", KOSDAQ:"KQ"}[e.market] || e.market,
     "구분": kind, "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
     "기준일": e.record_date || "", "배당매수일(T-2)": e.confirm_date || "", "배당락일(T-1)": e.ex_date || "",
-    "지급(예정)일": e.pay_date || "",
-    "몇월 만기 후": afterExp(e.ex_date) ? `${ym(afterExp(e.ex_date))} 만기 후` : "",
+    "몇월 만기 후": afterExp(e.confirm_date) ? `${Number(afterExp(e.confirm_date).slice(5,7))}월 만기 후` : "",
     "배당락 월물": monthOf(e.ex_date) ? `${ym(monthOf(e.ex_date))}물` : "",
     "근거": why, "금액 근거": amtWhy,
   });
@@ -672,7 +671,7 @@ function exportXlsx(){
   rows.forEach(r=> delete r._fill);
   const ws = XLSX.utils.json_to_sheet(rows);
   paint(ws, (R, C)=> R===0 ? HEAD : C===3 ? {...CELL, ...fillOf(fills[R-1]), font:{bold:true}} : CELL);
-  ws["!cols"] = [9,16,5,34,9,11,11,13,13,11,13,10,70,30].map(w=> ({wch:w}));
+  ws["!cols"] = [9,16,5,34,9,11,11,13,13,13,10,70,30].map(w=> ({wch:w}));
   ws["!autofilter"] = {ref: ws["!ref"]};
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "배당");
@@ -688,8 +687,8 @@ function exportXlsx(){
     ["시장", "KP 코스피 / KQ 코스닥"],
     ["배당매수일(T-2)", "이날까지 사야 배당을 받음 (기준일까지 결제되는 마지막 영업일의 2영업일 전)"],
     ["배당락일(T-1)", "이날부터 사면 배당 없음 — 주가가 통상 배당액만큼 빠짐"],
-    ["몇월 만기 후", "배당락일 직전의 선물·옵션 동시만기(3·6·9·12월 둘째 목요일)"],
-    ["배당락 월물", "배당락이 걸리는 지수선물 월물 = 배당락일 이후 첫 동시만기 (지수배당포인트와 같은 규칙)"],
+    ["몇월 만기 후", "배당매수일이 들어가지 않는 가장 끝 월물(배당매수일 당일 이전에 끝나는 마지막 만기, 만기 당일 포함) + '만기 후'"],
+    ["배당락 월물", "배당락이 걸리는 주식선물 월물 = 배당락일 이후 첫 만기(매월 둘째 목요일)"],
     ["근거", "확정은 DART 공시일·링크, 예상은 판정 이유와 날짜를 잡은 근거"],
     ["금액 근거", "예상 금액은 같은 종류 직전 정기 회차 금액 반복 (특별배당 섞인 회차 제외)"],
     [],
@@ -712,7 +711,7 @@ function exportXlsx(){
     ["공시 수집", "배당 수집대상(코스피200·코스닥150·ETF PDF 구성종목)의 2년치 공시"],
     ["기준일 판정", "이번 회차 기준일이 결산기말·분기말 고정인지, 이사회가 따로 정하는 날인지"],
     ["예상 기준일", "결산기말 고정이면 결산기말·분기말, 이사회 지정이면 날짜 근거 + 그 회사의 작년 간격"],
-    ["날짜 계산", "배당락일 = 기준일 T-1 영업일, 매수일 = T-2 영업일, 지급일"],
+    ["날짜 계산", "배당락일 = 기준일 T-1 영업일, 매수일 = T-2 영업일"],
     ["월물 배정", "배당락일 이후 첫 선·옵 동시만기 → 근월물·차월물"],
     ["예상 금액", "같은 종류 직전 정기 회차 금액 반복 (특별배당 섞인 회차 제외)"],
     [],
@@ -737,11 +736,10 @@ function exportXlsx(){
     ["자율공시 'N월 이후'", "기준일 ≥ N월 1일"],
     ["미실시", "날짜 근거(주총·실적발표)가 3일 넘게 지났는데 배당 공시가 없으면 그 회차는 예상에서 뺌"],
     [],
-    ["5. 배당락일 · 매수일 · 지급일", ""],
+    ["5. 배당락일 · 매수일", ""],
     ["기준", "T+2 결제. L = 기준일 이전(포함) 마지막 영업일"],
     ["배당락일", "L − 1 영업일"],
     ["배당매수일", "L − 2 영업일 (예: 기준일 12/31 휴장 → L 12/30, 배당락 12/27, 매수일 12/26)"],
-    ["예상 지급일", "배당결정 공시의 지급예정일, 없으면 주총일 또는 기준일 + 작년 간격"],
     [],
     ["6. 월물과 지수배당포인트", ""],
     ["월물", "배당락일이 든 첫 선·옵 동시만기. 날짜가 움직일 수 있는 회차는 '월물 미정'"],
