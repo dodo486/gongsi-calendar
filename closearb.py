@@ -47,6 +47,10 @@ MIN_SAMPLES = 20         # 장중 표본(분)이 이보다 적으면 z 를 내�
 TREND_MINUTES = 5        # 화면 추이 간격
 BASKET_MIN = 5           # 바스켓 추이 한 칸에 필요한 종목 수
 BASKET_FLAT = 0.05       # 10분 변화가 이 %p 안이면 오름·내림에 안 센다
+Z_HOT = 3                # |z| 이 이상 = 튄 종목
+Z_CALM = 2               # |z| 이 미만 = 잠잠
+HOT_MAX = 12             # 튄 종목 카드 수
+TREND_END = 390          # 추이 그래프 끝(09:00 기준 분, 15:20=380)
 
 
 def phase_of(now):
@@ -126,6 +130,8 @@ def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, mark1520, ser
     for hm in sorted(series):
         trend[_minute_of_day(hm) // TREND_MINUTES * TREND_MINUTES] = round(series[hm], 3)
     vol1520 = (mark1520 or {}).get("fut_vol")
+    vol_after = fut["volume"] - vol1520 if fut.get("volume") is not None and vol1520 is not None else None
+    z = round(dev / std, 1) if dev is not None and n >= MIN_SAMPLES and std > 0 else None
     bid_q, ask_q = krx.get("total_bid_qty"), krx.get("total_ask_qty")
     return {
         "code": code, "name": stock["name"], "market": stock["market"], "fut_code": fut_info["code"], "fut_month": fut_info["month"],
@@ -137,12 +143,16 @@ def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, mark1520, ser
         "nxt": nxt_mid,
         "nxt_gap_pct": _pct(spot, nxt_mid),
         "fut": fut.get("price"), "fut_vol": fut.get("volume"),
-        "fut_vol_after1520": fut["volume"] - vol1520 if fut.get("volume") is not None and vol1520 is not None else None,
+        "fut_vol_after1520": vol_after,
         "basis_pct": basis, "mean_pct": round(mean, 3) if mean is not None else None, "n": n,
         "dev_pct": dev,
         "chg10_pct": round(basis - series[max(before)], 3) if basis is not None and before else None,
         "dev_won": round(dev / 100 * spot * fut_info["multiplier"]) if dev is not None else None,
-        "z": round(dev / std, 1) if dev is not None and n >= MIN_SAMPLES and std > 0 else None,
+        "z": z,
+        "level": "hot" if z is not None and abs(z) >= Z_HOT else "calm" if z is None or abs(z) < Z_CALM else "",
+        "side": ("현물 매도 · 선물 매수" if dev < 0 else "현물 매수 · 선물 매도") if dev is not None else "",
+        "no_fut_trade": vol_after == 0,
+        "rank": 1000 + abs(z) if z is not None else abs(dev) if dev is not None else -1,
         "trend": sorted(trend.items()),
     }
 
@@ -303,6 +313,8 @@ class Monitor:
             "marks": sorted(k for k in marks if k != "nxt"),
             "prev_date": self.prev_day.strftime("%Y-%m-%d") if self.prev_day else None,
             "baskets": baskets,
+            "z_hot": Z_HOT, "end_min": TREND_END, "now_min": min(TREND_END, _minute_of_day(now.strftime("%H%M"))),
+            "hot_codes": [r["code"] for r in sorted((r for r in rows if r["level"] == "hot"), key=lambda r: -abs(r["z"]))[:HOT_MAX]],
             "rows": rows,
         })
         return NXT_ONLY_SECONDS if nxt_only else 0
