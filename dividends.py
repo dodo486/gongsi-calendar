@@ -90,6 +90,44 @@ def load_doc_cache():
             return {}
     return {}
 
+SAME_ROUND_GAP = 31
+
+def assemble(entries, acc):
+    """배당결정·기준일 공고 → 회차 (dividends·research 공용). 접수 순으로 돌아 같은 회차는 나중 공시(정정)가 이긴다.
+    entries: {kind decision|record, stock, corp, market, rcept_no, rcept_dt(YYYYMMDD), div_type, per_share, record_date, pay_date}
+    acc: {종목: 결산월}. 반환: 회차마다 {stock, corp, market, div_type, record_date, per_share, pay_date,
+    decided(첫 배당결정 접수일 ISO, 없으면 ""), rcept_no(최근 배당결정, 없으면 기준일 공고), rcept_dt(최근 접수일)}"""
+    ymd = lambda s: f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+    merged = {}
+    def key_of(e, decided):
+        if e["div_type"] not in TYPE_QUARTERS:   # 배당종류를 못 읽은 공시 → 같은 종목·같은 기준일 회차에 붙임
+            same = [k for k, r in merged.items() if r["stock"] == e["stock"] and r["record_date"] == e["record_date"]]
+            if len(same) == 1:
+                return same[0]
+        k = _round_key(e["stock"], e["div_type"], e["record_date"], decided, acc.get(e["stock"], 12))
+        old = merged.get(k, {}).get("record_date")
+        if old and e.get("record_date") and abs((datetime.date.fromisoformat(old) - datetime.date.fromisoformat(e["record_date"])).days) > SAME_ROUND_GAP:
+            return (e["stock"], e["div_type"], e["record_date"])   # 배당종류를 잘못 읽은 다른 회차 — 정정은 기준일을 한 달 넘게 옮기지 않음
+        return k
+    order = sorted(entries, key=lambda e: (e["kind"] != "decision", e["rcept_dt"], e["rcept_no"]))
+    for e in order:
+        if e["kind"] == "record" and not e.get("record_date"):
+            continue
+        dec = e["kind"] == "decision"
+        r = merged.setdefault(key_of(e, ymd(e["rcept_dt"]) if dec else None),
+                              {"stock": e["stock"], "corp": e["corp"], "market": e["market"], "div_type": "",
+                               "per_share": "", "record_date": "", "pay_date": "", "decided": "", "rcept_no": e["rcept_no"], "rcept_dt": ""})
+        r["div_type"] = e["div_type"] if e.get("div_type") in TYPE_QUARTERS else r["div_type"] or e.get("div_type") or ""
+        r["rcept_dt"] = max(r["rcept_dt"], e["rcept_dt"])
+        if e.get("record_date"):
+            r["record_date"] = e["record_date"]
+        if dec:
+            r["per_share"] = e.get("per_share") or r["per_share"]
+            r["pay_date"] = e.get("pay_date") or r["pay_date"]
+            r["decided"] = r["decided"] or ymd(e["rcept_dt"])
+            r["rcept_no"] = e["rcept_no"]
+    return [r for r in merged.values() if r["record_date"]]
+
 def doc_fields(rcept_no, kind, cache=None):
     """공시 원문의 배당 필드(per_share/record_date/pay_date/div_type)를 반환.
     캐시에 있으면 재사용(다운로드 0), 없으면 그때만 원문 1회 다운로드+파싱.
@@ -120,53 +158,21 @@ def main(days=90):
         acc = {s: int(m) for s, m in json.load(open(ACC_PATH, encoding="utf-8")).items() if str(m).isdigit()}
     except (OSError, ValueError):
         acc = {}
-    ymd = lambda s: f"{s[:4]}-{s[4:6]}-{s[6:8]}"
-    merged = {}  # 회차 키 -> entry
-    def key_of(stock, div_type, record, decided):
-        if div_type not in TYPE_QUARTERS:   # 배당종류를 못 읽은 공시 → 같은 종목·같은 기준일 회차에 붙임
-            same = [k for k, e in merged.items() if e["stock"] == stock and e["record_date"] == record]
-            if len(same) == 1:
-                return same[0]
-        return _round_key(stock, div_type, record, decided, acc.get(stock, 12))
-    def base(r):
-        return {"corp": r["corp_name"], "stock": r["stock_code"],
-                "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ",
-                "per_share": "", "record_date": "", "pay_date": "",
-                "rcept_no": r["rcept_no"],
-                "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={r['rcept_no']}"}
-
-    # 1) 배당결정 → 배당금·기준일·지급일. 접수 순으로 돌아 같은 회차의 정정 공시가 원본을 덮음
-    for r in decisions:
-        try: d = doc_fields(r["rcept_no"], "decision", cache)
-        except Exception: continue
-        key = key_of(r["stock_code"], d["div_type"], d["record_date"], ymd(r["rcept_dt"]))
-        e = merged.setdefault(key, base(r))
-        e["div_type"] = d["div_type"] or e.get("div_type", "")
-        e["_dec_dt"] = r["rcept_dt"]
-        e["per_share"] = d["per_share"] or e["per_share"]
-        e["pay_date"] = d["pay_date"] or e["pay_date"]
-        e["rcept_no"] = r["rcept_no"]; e["url"] = base(r)["url"]
-        if d["record_date"]: e["record_date"] = d["record_date"]
-
-    # 2) 명부폐쇄(기준일) → 같은 회차의 기준일 (나중 공시가 이김)
-    for r in records:
-        try: d = doc_fields(r["rcept_no"], "record", cache)
-        except Exception: continue
-        if not d["record_date"]: continue
-        key = key_of(r["stock_code"], d["div_type"], d["record_date"], None)
-        e = merged.setdefault(key, base(r))
-        e["div_type"] = d["div_type"] or e.get("div_type", "")
-        e["_rec_dt"] = r["rcept_dt"]; e["record_date"] = d["record_date"]
-
+    entries = []
+    for kind, rs in (("decision", decisions), ("record", records)):
+        for r in rs:
+            try:
+                d = doc_fields(r["rcept_no"], kind, cache)
+            except Exception:
+                continue
+            entries.append({**d, "kind": kind, "stock": r["stock_code"], "corp": r["corp_name"],
+                            "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ", "rcept_no": r["rcept_no"], "rcept_dt": r["rcept_dt"]})
     events = []
-    for e in merged.values():
-        if not e["record_date"]:
-            continue
-        e["rcept_dt"] = max(e.get("_dec_dt", ""), e.get("_rec_dt", ""))  # 최근 접수일(YYYYMMDD)
+    for e in assemble(entries, acc):
+        e.pop("decided")
+        e["url"] = f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={e['rcept_no']}"
         e["confirm_date"] = t_minus_2(e["record_date"])  # 배당매수일 = 잔고확정일 (기준일 T-2 영업일)
         e["ex_date"] = t_minus(e["record_date"], 1)      # 배당락일 (기준일 T-1 영업일)
-        for k in ("_dec_dt", "_rec_dt"):
-            e.pop(k, None)
         events.append(e)
     events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
 

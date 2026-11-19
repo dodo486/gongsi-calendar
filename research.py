@@ -285,13 +285,11 @@ def context(stock, entries, policy, acc, agm_records):
     acc_known = acc is not None
     acc = acc or 12
     corp = market = ""
-    dec, rec_notices, notices, agms, plans = {}, [], [], [], []
+    rec_notices, notices, agms, plans = [], [], [], []
     for e in sorted(entries, key=lambda x: x["rcept_dt"]):
         corp, market = e.get("corp") or corp, e.get("market") or market
         k, rd = e["kind"], _d(e["rcept_dt"])
-        if k == "decision" and e.get("record_date") and e.get("div_type") in TYPE_QUARTERS:
-            dec.setdefault((e["div_type"], e["record_date"]), []).append(e)
-        elif k == "record" and e.get("record_date"):
+        if k == "record" and e.get("record_date"):
             rec_notices.append({"date": rd, "record": _d(e["record_date"]), "div_type": e.get("div_type", "")})
         elif k == "notice" and e.get("is_div"):
             t = e["div_type"]
@@ -306,12 +304,13 @@ def context(stock, entries, policy, acc, agm_records):
             plans.append({"date": rd, "title": e.get("title", ""), "lines": e["lines"]})
 
     rounds = []
-    for (t, rds), es in dec.items():
-        record, decided = _d(rds), _d(es[0]["rcept_dt"])
+    for r in dv.assemble([{**e, "div_type": e.get("div_type") or ""} for e in entries if e["kind"] in ("decision", "record")], {stock: acc}):
+        if not r["decided"] or r["div_type"] not in TYPE_QUARTERS:
+            continue
+        t, record, decided = r["div_type"], _d(r["record_date"]), _d(r["decided"])
         fy, q, qe = round_of(t, record, decided, acc)
         rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
-                       "dps": es[-1].get("per_share", ""), "pay": _norm(es[-1].get("pay_date")), "src": "공시",
-                       "rcept_no": es[-1]["rcept_no"]})
+                       "dps": r["per_share"], "pay": _norm(r["pay_date"]), "src": "공시", "rcept_no": r["rcept_no"]})
     seen = {(r["type"], r["record"]) for r in rounds}
     for t, decided, record in (policy or {}).get("rows", []):
         record, decided = _d(record), _d(decided)
