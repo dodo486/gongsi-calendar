@@ -133,7 +133,22 @@ def collect(sel_date=None, watch_only=True, enrich=True, enrich_cap=ENRICH_CAP):
         if changed:
             _save_exp_cache(cache)
     _attach_rates(events)   # 주식선물 → 기초주식 실시간 등락률(매 주기 갱신)
+    for e in events:
+        e["emphasis"] = e["stage"] >= 3
+        e["active_from"], e["active_to"] = _hot_window(e.get("time", ""), e.get("expand_time", ""))
     return events
+
+HOT_NO_EXPAND_MIN = 5   # 확대예정 시각을 아직 못 읽었으면 도달 뒤 5분을 '지금 걸림'으로
+
+def _hot_window(tm, expand):
+    """'지금 걸림' 구간 — 도달 시각 ~ 확대예정 시각(없으면 도달 + 5분). 앱 알림·화면 공통."""
+    if not re.match(r"\d{1,2}:\d{2}", tm or ""):
+        return "", ""
+    if expand:
+        return tm[:5], expand[:5]
+    h, m = map(int, tm[:5].split(":"))
+    t = h * 60 + m + HOT_NO_EXPAND_MIN
+    return tm[:5], f"{t // 60 % 24:02d}:{t % 60:02d}"
 
 def main():
     sel = sys.argv[1] if len(sys.argv) > 1 and re.match(r"\d{4}-\d{2}-\d{2}", sys.argv[1]) else None

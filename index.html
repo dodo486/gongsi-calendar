@@ -330,21 +330,12 @@ function showDetail(e){   // 공시 상세 (공시 탭 사이드)
     </div>`;
 }
 
-const actClass = k => (["사이드카","서킷브레이커","거래정지"].includes(k) ? "danger"
-                     : k==="거래재개" ? "ok"
-                     : ["투자경고","투자위험","투자주의","단기과열","공매도과열"].includes(k) ? "warn" : "info");
+const hot = e => { const now = new Date().toTimeString().slice(0,5); return !!e.active_to && e.active_from <= now && now < e.active_to; };   // 생산자가 정한 발동·걸림 구간 안인지
 async function loadActions(){   // KRX 시장조치 데이터만 로드(렌더는 renderLimits 가 상단 구획으로 함께 처리)
   try{
     const d = await (await fetch("data/krx_actions.json?_="+Date.now())).json();
     ACT = d.events||[];
   }catch(_){ ACT = []; }
-}
-function actHot(e){   // 시장조치 '지금 발동중' = 발동시각 ~ 해제예정시각 사이 (선물 가격제한폭 limHot과 동일 방식)
-  if(!e.until) return false;
-  const s = limTime(e.time), en = limTime(e.until);
-  if(s===null || en===null) return false;
-  const now = Date.now();
-  return now >= s-60000 && now < en;
 }
 async function loadLimits(){
   try{
@@ -357,23 +348,7 @@ async function loadLimits(){
   }
   renderLimits();
 }
-function limTime(s){   // "HH:MM[:SS]" → 오늘 그 시각의 timestamp(ms), 형식 아니면 null
-  if(!s || !/^\d{1,2}:\d{2}/.test(s)) return null;
-  const p = s.split(":").map(Number);
-  const d = new Date(); d.setHours(p[0], p[1], p[2]||0, 0);
-  return d.getTime();
-}
-function limHot(e){   // '지금 걸림' = 도달시각 ~ 확대예정시각 사이(제한폭 확대 전까지 핀 상태)
-  const now = Date.now();
-  const start = limTime(e.time);
-  if(start === null) return false;
-  const end = limTime(e.expand_time);
-  const s = start - 60000;   // 도달 1분 전 여유
-  return end !== null ? (now >= s && now < end)
-                      : (now >= s && now <= start + 5*60000);   // 확대예정 없으면 도달 후 5분
-}
 function renderLimits(){
-  indexCodes();   // 시장조치 행(코드 없음)의 회사명→코드 매핑을 최신화
   const q = filters.q.trim().toLowerCase();
   const list = LIM.filter(e=> !q || (e.name||"").toLowerCase().includes(q));
   const upN = list.filter(e=>e.direction==="상승").length;
@@ -383,10 +358,9 @@ function renderLimits(){
   const acts = ACT.filter(e=> !q || `${e.title}${e.kind}`.toLowerCase().includes(q));
   const actRow = e=>{
     const dir = e.direction==="매수" ? " ▲매수" : (e.direction==="매도" ? " ▼매도" : "");
-    const hot = actHot(e);
-    return `<div class="li${hot?" hot":""}" data-url="${esc(e.url)}" data-code="${esc(NAME2CODE[e.corp]||"")}">
+    return `<div class="li${hot(e)?" hot":""}" data-url="${esc(e.url)}" data-code="${esc(e.code||"")}">
       <span class="t">${esc(e.time)}</span>
-      <span class="ak ${actClass(e.kind)}">${esc(e.kind)}${e.action?(" "+esc(e.action)):""}</span>
+      <span class="ak ${esc(e.severity)}">${esc(e.kind)}${e.action?(" "+esc(e.action)):""}</span>
       <span class="mk ${esc(e.market)}">${esc(e.market)}</span>
       <span class="etitle">${esc(e.title)}${dir}</span>
       ${e.until?`<span class="et">(해제예정 ${esc(e.until)})</span>`:""}
@@ -397,11 +371,10 @@ function renderLimits(){
   const row = e=>{
     const up = e.direction==="상승";
     const idx = e.kind==="지수선물";
-    const hot = limHot(e);
-    return `<div class="li ${up?"up":"down"}${hot?" hot":""}" data-url="${esc(e.url)}" data-code="${esc(e.code||"")}">
+    return `<div class="li ${up?"up":"down"}${hot(e)?" hot":""}" data-url="${esc(e.url)}" data-code="${esc(e.code||"")}">
       <span class="kb ${idx?"idx":"stk"}">${idx?"지수선물":"주식선물"}</span>
       <span class="t">${esc(e.time)}</span>
-      <span class="dir${(e.stage||0)>=3?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계 ${up?"(상)":"(하)"}</span>
+      <span class="dir${e.emphasis?" s3":""}">${up?"▲":"▼"} ${esc(String(e.stage||"?"))}단계 ${up?"(상)":"(하)"}</span>
       <span class="nm">${esc(e.name)}</span>
       ${(e.rate!=null)?`<span class="chg ${e.rate>0?"up":(e.rate<0?"down":"")}">(${e.rate>0?"+":""}${esc(String(e.rate))}%)</span>`:""}
       ${idx?"":`<span class="mk ${e.market}">${esc(e.market)}</span>`}
@@ -413,7 +386,7 @@ function renderLimits(){
       ${items.length ? items.map(rowFn).join("") : `<div class="empty">해당 없음</div>`}
     </div>`;
   if(acts.length){   // 🏛️ 시장조치 — 전체폭 상단, 아래 주식/지수선물 칼럼과 구분선으로 분리
-    const anyHot = acts.some(actHot);   // 사이드카·서킷 발동중 → 상단 헤더 빨간 깜빡(풀리면 자동 정지)
+    const anyHot = acts.some(hot);   // 사이드카·서킷 발동중 → 상단 헤더 빨간 깜빡(풀리면 자동 정지)
     h += `<div class="limsec danger${anyHot?" blink":""}">🏛️ 시장조치 (${acts.length})${anyHot?" · 🔴 발동중":""}</div>`
        + acts.map(actRow).join("") + `<div class="lim-hr"></div>`;
   }
@@ -876,7 +849,6 @@ async function loadData(){
     document.getElementById("meta").textContent = `공시 ${d.count}건 · 갱신 ${d.generated_at||""}`;
     applyFilters();
   }
-  indexCodes();
 }
 const refresh = () => keepScroll(loadData);
 
@@ -944,15 +916,7 @@ async function boot(){
 }
 
 // openChart() 는 common.js 에서 제공 (알파스퀘어 차트를 'alphachart' 탭 재사용으로 열기)
-const NAME2CODE = {};   // 회사명 → 종목코드 (시장조치처럼 코드 없는 항목의 클릭 차트용)
-function indexCodes(){   // 로드된 데이터에서 이름↔코드 맵 채우기 (loadData 때 호출)
-  const put = (nm,cd)=>{ if(nm && /^\d{6}$/.test(cd||"")) NAME2CODE[nm]=cd; };
-  (ALL||[]).forEach(e=>put(e.corp, e.stock));
-  (EARN||[]).forEach(e=>put(e.corp, e.code||e.stock));
-  (SCHED||[]).forEach(e=>put(e.corp, e.code||e.stock));
-  (LIM||[]).forEach(e=>put(e.name, e.code));
-}
-const evCode = p => (p && (p.stock || p.code)) || NAME2CODE[p && p.corp] || "";   // 이벤트/행 → 종목코드
+const evCode = p => (p && (p.stock || p.code)) || "";   // 이벤트/행 → 종목코드
 let _es = null;
 const TAB_FILES = {closearb:["closearb.json"], industry:["industry_action.json"], guide:[], div:[]};   // div 는 dividend/index.html 이 스스로 갱신
 const OTHER_TAB_FILES = Object.values(TAB_FILES).flat();

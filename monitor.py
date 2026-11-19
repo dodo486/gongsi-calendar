@@ -239,22 +239,9 @@ def notify_halt(e):
     buttons = [("🔗 KIND 공시", e["url"])]
     _toast(title, msg, chart or e["url"], buttons)
 
-CRITICAL_ACTIONS = ("사이드카", "서킷브레이커")   # 시장 전체 조치 — 무조건 알림 대상
-
-def _action_active(e):
-    """사이드카·서킷 등 자동해제 조치가 아직 안 풀렸는지 (발동시각 ~ 해제예정시각 사이)."""
-    tm, until = e.get("time"), e.get("until")
-    if not tm or not until:
-        return False
-    return tm <= datetime.datetime.now().strftime("%H:%M") < until
-
-def _limit_active(e):
-    """선물 가격제한폭 도달이 아직 확대 전인지 (도달시각 ~ 확대예정시각 사이).
-    확대예정시각 미상(본문 미보강)이면 판단 불가 → False(다음 주기 보강 후 판정)."""
-    tm, exp = e.get("time"), e.get("expand_time")
-    if not tm or not exp:
-        return False
-    return tm <= datetime.datetime.now().strftime("%H:%M") < exp[:5]
+def _active(e):
+    """사이드카·서킷 자동해제 전, 선물 가격제한폭 확대 전 — 생산자가 정한 구간(active_from ~ active_to) 안인지"""
+    return bool(e.get("active_to")) and e["active_from"] <= datetime.datetime.now().strftime("%H:%M") < e["active_to"]
 
 def poll_actions(ac_seen, alert=True):
     """KRX 시장조치 폴링 — krx_actions.json 최신화 + 신규 조치 토스트. ac_seen: 전용 in-memory 중복셋.
@@ -275,7 +262,7 @@ def poll_actions(ac_seen, alert=True):
             continue
         ac_seen.add(e["rcept_no"])
         # 일반 조치는 alert=True 일 때만 / 사이드카·서킷은 발동중이면 baseline 이라도 무조건
-        if alert or (e["kind"] in CRITICAL_ACTIONS and _action_active(e)):
+        if alert or (e["critical"] and _active(e)):
             print(f"  🚨 시장조치 [{e['kind']}] {e['market']} {e['action']} {e['title'][:40]}")
             notify_action(e)
             alerted += 1
@@ -300,7 +287,7 @@ def poll_limits(lim_seen, alert=True):
             continue
         lim_seen.add(e["rcept_no"])   # 신규는 등록(재알림 방지); 알림은 단계 조건만
         # 실시간 신규(alert) + 재시작 baseline 이라도 아직 제한폭 확대 전이면 무조건(사이드카와 통일)
-        if (alert or _limit_active(e)) and (e.get("stage") or 0) >= ALERT_MIN_STAGE:
+        if (alert or _active(e)) and (e.get("stage") or 0) >= ALERT_MIN_STAGE:
             print(f"  🚨 선물 {'상한' if e['direction']=='상승' else '하한'}: "
                   f"{e['name']} {e['stage']}단계 ({e['kind']})")
             notify_limit(e)

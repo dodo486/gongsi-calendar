@@ -46,12 +46,14 @@ def _until(kind, action, tm):
     except Exception:
         return ""
 
-# 시장 전체 조치(특정 종목 아님) — 감시대상 필터와 무관하게 항상 알림
+# 시장 전체 조치(특정 종목 아님) — 감시대상 필터와 무관하게 항상 유지·알림
 _MARKET_WIDE = ("사이드카", "서킷브레이커")
+SEVERITY = {"사이드카": "danger", "서킷브레이커": "danger", "거래정지": "danger", "거래재개": "ok",
+            "투자경고": "warn", "투자위험": "warn", "투자주의": "warn", "단기과열": "warn", "공매도과열": "warn"}
 
 def collect(sel_date=None):
     d = sel_date or datetime.date.today().strftime("%Y-%m-%d")
-    names = {re.sub(r"\s+", "", n) for n in kind_client.name2code()}   # 감시대상 종목명(공백 제거해 매칭 안정화)
+    codes = {re.sub(r"\s+", "", n): c for n, (c, _) in kind_client.name2code().items()}   # 감시대상 종목명(공백 제거해 매칭 안정화) → 코드
     events = []
     for mt, market in (("1", "KOSPI"), ("2", "KOSDAQ")):
         try:
@@ -73,7 +75,7 @@ def collect(sel_date=None):
             if kind == "시장안내":
                 continue   # 기타시장안내(NXT 등 루틴 안내)는 제외
             # 코스피200·코스닥150 종목만 — 사이드카·서킷브레이커(시장 전체 조치)는 예외로 항상 유지
-            if kind not in _MARKET_WIDE and (not corp or re.sub(r"\s+", "", corp) not in names):
+            if kind not in _MARKET_WIDE and (not corp or re.sub(r"\s+", "", corp) not in codes):
                 continue
             m_time = re.search(r'([0-9]{1,2}:[0-9]{2})', tds[0])
             tm = m_time.group(1) if m_time else ""
@@ -84,7 +86,9 @@ def collect(sel_date=None):
                 "time": tm, "market": market, "kind": kind,
                 "direction": "매수" if "매수" in title else ("매도" if "매도" in title else ""),
                 "action": action, "until": _until(kind, action, tm),
-                "corp": corp,
+                "corp": corp, "code": codes.get(re.sub(r"\s+", "", corp), ""),
+                "severity": SEVERITY.get(kind, "info"), "critical": kind in _MARKET_WIDE,
+                "active_from": tm if _until(kind, action, tm) else "", "active_to": _until(kind, action, tm),
                 "title": (f"{corp} {title}" if corp else title), "submitter": submitter,
                 "rcept_no": rno,
                 "url": kind_client.VIEWER.format(m_acpt.group(1)) if m_acpt else "https://kind.krx.co.kr",
