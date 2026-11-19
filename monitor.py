@@ -16,6 +16,7 @@ from net import TLS_MODE
 import dividends
 import expiries
 import research
+import divbook
 import divpoints
 import kind_limits
 import earnings
@@ -88,6 +89,7 @@ def refresh_dividends():
     """배당 데이터(dividends.json) 재계산 — 목록은 저장본, 원문은 캐시라 새 공시분만 받음"""
     def work():
         print("  [배당] 데이터 갱신 시작..."); dividends.main(90); print("  [배당] 갱신 완료")
+        divbook.build()
         divpoints.refresh()   # 지수배당포인트 재계산 (PDF·지수종가는 하루 1회만 수집)
         check_dividends()
     _run_guarded(_div_lock, work, "배당")
@@ -107,6 +109,7 @@ def refresh_research():
     """리서치(선진화 판별 + 예상배당) 갱신 — 이력은 rcept_no 캐시라 신규 문서만 파싱"""
     def work():
         print("  [리서치] 선진화·예상배당 갱신 시작..."); research.build(); research.verify(); print("  [리서치] 갱신 완료")
+        divbook.build()
         divpoints.refresh()   # 예상배당 바뀜 → 지수배당포인트 재계산
         check_dividends()
     _run_guarded(_res_lock, work, "리서치")

@@ -133,6 +133,21 @@ def check():
                 err(f"예고 {c['corp']}({s}) {n['date']}",
                     f"{n['quarter']} {n['div_type']} 에 붙었는데 공시일과 결산기말·분기말({qe:%Y-%m})이 너무 멂: {n['title']}")
 
+    # ── 배당 장부 ──
+    book = _load("div_book.json")
+    if book:
+        ids = [r["id"] for r in book["rows"]]
+        if len(ids) != len(set(ids)):
+            err("배당 장부", "같은 회차 id 중복")
+        for r in book["rows"]:
+            w = f"장부 {r['corp']}({r['stock']}) {r.get('div_type', '')} {r['record_date']}"
+            if r["grade"] not in book["grades"]:
+                err(w, f"알 수 없는 구분 {r['grade']!r}")
+            if any(not m["date"] for m in r["marks"]):
+                err(w, "캘린더 표시 날짜 없음")
+        if not set(book["today_ids"]) | set(book["upcoming_ids"]) <= set(ids):
+            err("배당 장부", "오늘·다음 만기 목록에 장부에 없는 회차")
+
     # ── 지수배당포인트 ──
     dp = _load("divpoints.json")
     if dp:

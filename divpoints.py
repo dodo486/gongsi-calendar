@@ -5,10 +5,8 @@
         = 지수 × (배당 때문에 지수가 빠지는 비율)   ← 지수를 곱하는 건 '비율 → 포인트' 환산
 대상:  오늘 < 배당락일 ≤ 차월물 만기일, 배당락일이 든 첫 만기로 월물 배정 (오늘 배당락분은 이미 가격에 반영돼 제외)
 
-배당 출처: dividends.json(DART 확정) 우선, 없으면 research.json(예상).
-같은 종목·배당구분의 예상은 확정 기준일 ±45일 안이면 같은 회차로 보고 버린다(이중 계상 방지).
-기준일 공고만 있고 금액이 없는 확정분은 예상 금액을 빌려 쓰고 '금액예상'으로 표시한다.
-월물 미정: 기준일 공고 전인 유동(또는 바뀔 수 있는 고정) 회차 중, 오늘+14일 기준일(상법 §354 2주 공고)로도
+배당 출처: 배당 장부 div_book.json (확정·예상을 회차마다 한 줄로 합친 것 — divbook.py).
+월물 미정: 날짜가 확실하지 않은 구분(GRADES firm=False) 회차 중, 오늘+14일 기준일(상법 §354 2주 공고)로도
 근월물 만기 전에 배당락이 올 수 있는 것 — 예상 배당락 월물에 넣되 따로 합산 (설계 §4.6).
 
   python divpoints.py
@@ -19,7 +17,6 @@ from krx_cal import t_minus
 import index_pdf
 
 OUT = os.path.join(DATA_DIR, "divpoints.json")
-SAME_ROUND_DAYS = 45
 FORMULA = "배당포인트 = 지수(전일종가) × Σ(PDF수량 × 주당배당금) ÷ Σ(PDF 주식평가액)"
 
 def _load(name, default):
@@ -35,48 +32,28 @@ def _amt(s):
     except ValueError:
         return None
 
-def _days(a, b):
-    return abs((datetime.date.fromisoformat(a) - datetime.date.fromisoformat(b)).days)
-
 def expiries(today_iso):
     """근월물·차월물 만기 = 오늘 이후 선·옵 동시만기(3·6·9·12월) 앞 두 개. 코스피200·코스닥150·KRX300 선물 공통."""
     evs = _load("expiries.json", {}).get("events", [])
     return sorted(e["date"] for e in evs if e.get("type") == "선·옵 동시만기" and e["date"] > today_iso)[:2]
 
-def merged_dividends():
-    """확정(dividends.json) + 예상(research.json) 병합 → 회차별 1건."""
-    conf = _load("dividends.json", {}).get("events", [])
-    pred = _load("research.json", {}).get("events", [])
-    out = []
-    for e in conf:
-        if not e.get("record_date"):
-            continue
-        amt = _amt(e.get("per_share"))
-        out.append({**e, "dps": amt, "status": "확정" if amt else "금액미정", "src": "공시"})
-    for p in pred:
-        if not p.get("record_date"):
-            continue
-        same = [c for c in out if c["stock"] == p["stock"] and c.get("status") != "예상"
-                and (c.get("div_type") or "") in ("", p.get("div_type") or "")
-                and _days(c["record_date"], p["record_date"]) <= SAME_ROUND_DAYS]
-        if same:
-            for c in same:   # 기준일은 공시됐는데 금액이 없으면 예상 금액을 빌림
-                if c["status"] == "금액미정" and _amt(p.get("per_share")):
-                    c["dps"], c["status"], c["basis"] = _amt(p["per_share"]), "금액예상", p.get("basis", "")
-            continue
-        amt = _amt(p.get("per_share"))
-        out.append({**p, "dps": amt, "status": "예상" if amt else "금액미정", "url": "", "src": "예상"})
-    return out
+def book_dividends():
+    """배당 장부(div_book.json) 회차 → 포인트 계산용 (금액·상태·월물 미정 여부는 장부 구분에서)"""
+    book = _load("div_book.json", {})
+    grades = book.get("grades", {})
+    status = lambda r: ("확정" if r["amount_src"] == "공시" else "금액예상" if r["kind"] == "div" else "예상") if r.get("per_share") else "금액미정"
+    return [{**r, "dps": _amt(r.get("per_share")), "status": status(r), "src": "공시" if r["kind"] == "div" else "예상",
+             "firm": grades[r["grade"]]["firm"]} for r in book.get("rows", [])], grades
 
 def build():
     pdfs = index_pdf.load().get("indices", {})
     today = datetime.date.today()
     exps = expiries(today.isoformat())
     earliest_ex = t_minus((today + datetime.timedelta(days=14)).isoformat(), 1)
-    divs = [d for d in merged_dividends() if d.get("ex_date") and exps and today.isoformat() < d["ex_date"] <= exps[-1]]
+    rows, _ = book_dividends()
+    divs = [d for d in rows if exps and today.isoformat() < d["ex_date"] <= exps[-1]]
     for d in divs:
-        d["undecided"] = (d["src"] == "예상" and d.get("grade") in ("사례지정", "사례없음", "근거약함")
-                          and earliest_ex <= exps[0])
+        d["undecided"] = not d["firm"] and earliest_ex <= exps[0]
     indices = []
     for cfg in index_pdf.INDICES:
         ix = pdfs.get(cfg["key"]) or {}
@@ -101,14 +78,14 @@ def build():
                 if not (lo < d["ex_date"] <= exp) or not r or not r.get("qty"):
                     continue
                 if not d["dps"]:
-                    m["undetermined"].append({"corp": d["corp"], "stock": d["stock"], "ex_date": d["ex_date"],
+                    m["undetermined"].append({"id": d["id"], "corp": d["corp"], "stock": d["stock"], "ex_date": d["ex_date"],
                                               "div_type": d.get("div_type", ""), "url": d.get("url", ""), "undecided": d["undecided"]})
                     continue
                 price = r["value"] / r["qty"]
                 pt = lvl * r["qty"] * d["dps"] / den
                 by_day.setdefault(d["ex_date"], []).append({
-                    "corp": d["corp"], "stock": d["stock"], "div_type": d.get("div_type", ""), "status": d["status"],
-                    "method": d.get("method", "확정"), "undecided": d["undecided"],
+                    "id": d["id"], "corp": d["corp"], "stock": d["stock"], "div_type": d.get("div_type", ""), "status": d["status"],
+                    "undecided": d["undecided"],
                     "dps": d["dps"], "qty": r["qty"], "price": round(price, 2), "weight": round(r["value"] / den * 100, 3),
                     "yield": round(d["dps"] / price * 100, 4), "points": round(pt, 4),
                     "record_date": d["record_date"], "url": d.get("url", ""), "basis": d.get("basis", "")})

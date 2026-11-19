@@ -43,6 +43,7 @@ jobs:
           python expiries.py
           python research.py
           python research.py --verify
+          python divbook.py
           python capital.py || echo "capital 실패 — 건너뜀"
           python earnings.py || echo "earnings 실패 — 건너뜀"
           python earn_sched.py || echo "earn_sched 실패 — 건너뜀"
