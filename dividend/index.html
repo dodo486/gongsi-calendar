@@ -549,6 +549,9 @@ function exportXlsx(){
   XLSX.utils.book_append_sheet(wb, ws, "배당");
   // 설명 탭 — 구분·칸 뜻. 장부의 구분 표를 그대로 씀
   const guide = [
+    ["태그", "뜻 — 구분 이름 앞 [ ] 는 날짜가 얼마나 확실한지"],
+    ...Object.entries(BOOK.tags).map(([t, d])=> [`[${t}]`, d]),
+    [],
     ["구분 칸 색", "뜻 — 구분 칸에 그 회차의 구분, 근거 칸에 공시 링크 또는 '예상 기준일 날짜 — 그 날짜를 잡은 이유'. 색은 날짜가 얼마나 확실한지"],
     ...Object.entries(G).map(([k, g])=> [g.label, g.desc, k]),
     ["※ 기말", "결산배당은 결산기말, 분기배당은 분기말, 중간배당은 반기말 — 구분 칸에는 그 배당종류의 말로 적힘"],
@@ -571,7 +574,7 @@ function exportXlsx(){
   paint(gs, (R, C, v)=> {
     const row = guide[R];
     if(!row.length) return {};
-    if(row[0]==="구분 칸 색" || row[0]==="칸") return HEAD;
+    if(row[0]==="태그" || row[0]==="구분 칸 색" || row[0]==="칸") return HEAD;
     if(row[0]==="뽑은 범위") return NOTE;
     return C===0 ? {...WRAP, ...fillOf(row[2]), font:{bold:true}} : WRAP;
   });

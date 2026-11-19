@@ -9,7 +9,7 @@
 """
 import os, json, datetime
 from base import DATA_DIR, save_json
-from research import GRADES, END_WORD, DART
+from research import GRADES, TAGS, END_WORD, DART
 
 OUT = os.path.join(DATA_DIR, "div_book.json")
 SOURCES = os.path.join(DATA_DIR, "div_sources.json")
@@ -88,6 +88,7 @@ def build():
 
     nxt = next((d for d in exps if d > today), "")
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "today": today,
+               "tags": TAGS,
                "grades": {k: {**g, **{f: g[f].format(end="기말") for f in ("label", "desc", "rule")}} for k, g in GRADES.items()}, "next_expiry": nxt,
                "today_ids": [r["id"] for r in rows if r["kind"] == "div" and r.get("rcept_dt") == today.replace("-", "")],
                "upcoming_ids": [r["id"] for r in rows if r["kind"] == "div" and today < r["ex_date"] and (not nxt or r["ex_date"] <= nxt)],

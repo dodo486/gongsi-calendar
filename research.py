@@ -46,24 +46,30 @@ END_WORD = {"결산배당": "결산기말", "분기배당": "분기말", "중간
 _RED = {"buy": "background:#fca5a5;border:1px solid #fca5a5;color:#3a0a0a;font-weight:600",
         "ex": "background:#dc2626;border:1px solid #dc2626;color:#fff;font-weight:600"}
 _EST = lambda css: {"buy": css + ";font-weight:600", "ex": css + ";font-weight:600"}
+TAGS = {   # 구분 이름 앞 태그 — 날짜가 얼마나 확실한가
+    "확정": "회사가 공시함 — 날짜(와 금액)가 정해짐",
+    "사실상 확정": "공시는 없지만 정관·사례로 날짜가 정해짐 — 결산기말·분기말·반기말",
+    "예상": "이사회가 따로 정하는 건 확실하고 날짜만 추정",
+    "미정": "기말일지 이사회 지정일지조차 모름",
+}
 GRADES = {
-    "확정": {"rank": 0, "label": "확정 — 배당결정 공시(금액·기준일)", "desc": "회사가 현금배당결정 공시를 냄 — 금액·기준일 확정",
+    "확정": {"rank": 0, "tag": "확정", "label": "[확정] 날짜·금액 공시", "desc": "회사가 현금배당결정 공시를 냄 — 금액·기준일 확정",
              "rule": "이번 회차 현금배당결정 공시가 나옴", "firm": True, "style": _RED, "xl": "F8CBAD"},
-    "공고": {"rank": 1, "label": "기준일 공고 — 금액 미정", "desc": "회사가 기준일(주주명부폐쇄) 공고만 냄 — 날짜 확정, 금액은 아직",
+    "공고": {"rank": 1, "tag": "확정", "label": "[확정] 날짜 공시 · 금액 미정", "desc": "회사가 기준일(주주명부폐쇄) 공고만 냄 — 날짜 확정, 금액은 아직",
              "rule": "이번 회차 기준일(주주명부폐쇄) 공고가 나옴", "firm": True, "style": _RED, "xl": "F4B084"},
-    "미변경": {"rank": 2, "label": "정관 미변경({end} 고정)", "desc": "정관상 기준일이 {end}로 고정 — 선진화 정관이 아님",
+    "미변경": {"rank": 2, "tag": "사실상 확정", "label": "[사실상 확정] 날짜 고정 · 정관 미변경({end})", "desc": "정관상 기준일이 {end}로 고정 — 선진화 정관이 아님",
                "rule": "정관상 기준일 {end} 고정, 또는 정관 정보 없이 직전 회차가 {end}", "firm": True,
                "style": _EST("background:#eab308;border:1px solid #eab308;color:#241a00"), "xl": "FFD966"},
-    "사례기말": {"rank": 3, "label": "선진화 정관 · 사례 있음({end})", "desc": "정관을 바꾼 뒤 같은 종류 배당을 {end}에 줌 — 그 회사 방식",
+    "사례기말": {"rank": 3, "tag": "사실상 확정", "label": "[사실상 확정] 날짜 고정 · 선진화 정관이지만 {end} 유지", "desc": "정관을 바꾼 뒤 같은 종류 배당을 {end}에 줌 — 그 회사 방식",
                  "rule": "선진화 정관 + 정관을 바꾼 뒤 같은 종류 배당 회차가 있고 그때 기준일이 {end}", "firm": True,
                  "style": _EST("background:#fde68a;border:1px solid #fde68a;color:#241a00"), "xl": "FFE699"},
-    "사례지정": {"rank": 4, "label": "선진화 정관 · 사례 있음(이사회 지정)", "desc": "정관을 바꾼 뒤 같은 종류 배당을 이사회가 정한 날에 줌 — 방식은 정해졌고 날짜는 추정",
+    "사례지정": {"rank": 4, "tag": "예상", "label": "[예상] 이사회 지정일 · 날짜 추정", "desc": "정관을 바꾼 뒤 같은 종류 배당을 이사회가 정한 날에 줌 — 방식은 정해졌고 날짜는 추정",
                  "rule": "직전 같은 종류 회차 기준일이 {end}이 아님, 또는 이번 회차 '배당기준일 안내' 자율공시가 나옴", "firm": False,
                  "style": _EST("background:rgba(234,179,8,.18);border:1.5px solid #eab308;color:#fde047"), "xl": "FFF2CC"},
-    "사례없음": {"rank": 5, "label": "선진화 정관 · 사례 없음 · 바뀔 수 있음", "desc": "정관을 바꾼 뒤 같은 종류 배당을 아직 안 치렀거나, 정관 변경 안건이 주총에 올라옴",
+    "사례없음": {"rank": 5, "tag": "미정", "label": "[미정] 바뀔 수 있음 · 선진화 정관 첫 회차", "desc": "정관을 바꾼 뒤 같은 종류 배당을 아직 안 치렀거나, 정관 변경 안건이 주총에 올라옴",
                  "rule": "선진화 정관인데 바꾼 뒤 같은 종류 배당 회차가 없음, 또는 정관상 기준일 변경 안건이 주총에 상정", "firm": False,
                  "style": _EST("background:transparent;border:1.5px dashed #eab308;color:#fde047"), "xl": "EDEDED"},
-    "근거약함": {"rank": 6, "label": "근거 약함", "desc": "정관 정보·배당 이력이 없어 판별이 어려움",
+    "근거약함": {"rank": 6, "tag": "미정", "label": "[미정] 근거 약함", "desc": "정관 정보·배당 이력이 없어 판별이 어려움",
                  "rule": "정관 정보·배당 이력 없음", "firm": False,
                  "style": _EST("background:transparent;border:1.5px dotted #a3a3a3;color:#d4d4d4"), "xl": "D9D9D9"},
 }

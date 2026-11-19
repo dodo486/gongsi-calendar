@@ -191,6 +191,7 @@ def collect():
         # 관련성 필터: 재개가 과거로 3일 넘게 지난 건 제외(이미 풀림)
         if resume and resume < (datetime.date.today() - datetime.timedelta(days=3)).strftime("%Y-%m-%d"):
             continue
+        h["marks"] = _marks(h)
         out.append(h)
 
     save_json(FEED_PATH, {k: v for k, v in fcache.items() if k[:10] >= oldest})
@@ -210,7 +211,7 @@ def _marks(e):
     return out
 
 def main():
-    evs = [{**e, "marks": _marks(e)} for e in collect()]
+    evs = collect()
     payload = {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "count": len(evs), "events": evs,
