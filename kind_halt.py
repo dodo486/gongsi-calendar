@@ -199,8 +199,18 @@ def collect():
     out.sort(key=lambda x: (x.get("halt_date") or "9999", x["corp"]))
     return out
 
+def _marks(e):
+    """화면 캘린더 표시 — 정지 시작·거래재개(확정/예정) 두 점"""
+    out = []
+    if e.get("halt_date"):
+        out.append({"type": "", "date": e["halt_date"], "title": f"🚫 {e['corp']} 정지·{e.get('reason') or ''}", "cls": "halt-stop"})
+    if e.get("resume_date"):
+        out.append({"type": "", "date": e["resume_date"], "title": f"✅ {e['corp']} 재개{'' if e['resume_confirmed'] else '(예정)'}",
+                    "cls": "halt-resume" if e["resume_confirmed"] else "halt-resume halt-tent"})
+    return out
+
 def main():
-    evs = collect()
+    evs = [{**e, "marks": _marks(e)} for e in collect()]
     payload = {
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "count": len(evs), "events": evs,

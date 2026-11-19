@@ -98,9 +98,48 @@ def build_events(rows, cache):
                            **d}
     return [_finalize(e) for e in merged.values()]
 
+def _won(n):
+    return f"{n:,.0f}"
+
+def _pct(v):
+    return f"{v:+.2f}%" if v else "0%"
+
+def _view(e, today_s):
+    """화면이 그대로 그리는 값 — 캘린더 표시(날짜·제목·색 클래스·매수일/락일 구분), 다음 일정, 무상 1주 보유 손익"""
+    bonus = e["type"] == "무상증자"
+    pre = "무상" if bonus else "유상"
+    even = (f" 본전 {_won(e['base_price'])}·현재 {_won(e['price'])} {_pct(e['ret'])}" if e.get("ret") is not None
+            else f" 예상기준가 {_won(e['base_price'])}" if e.get("base_price") else "")
+    marks = [{"type": "buy", "date": e["buy_date"], "title": f"[{pre}매수일] {e['corp']}", "cls": "cap-bonus-buy" if bonus else "cap-rights-buy"},
+             {"type": "ex", "date": e["ex_date"], "title": f"[{pre}권리락] {e['corp']}{even}", "cls": "cap-bonus-ex" if bonus else "cap-rights-ex"}]
+    if e.get("sell_date"):
+        marks.append({"type": "", "date": e["sell_date"], "title": f"[무상매도가능] {e['corp']} ⚠엠피스 장부단가{even}", "cls": "cap-sell"})
+    if e.get("listing_date"):
+        tail = even if bonus else (f" 발행가 {_won(e['issue_adj'])}·현재 {_won(e['price'])} {_pct(e['issue_ret'])}" if e.get("issue_ret") is not None else "")
+        marks.append({"type": "", "date": e["listing_date"], "title": f"[{pre}신주상장{'·락금액 보정' if bonus else ''}] {e['corp']}{tail}", "cls": "cap-list"})
+    if e.get("rights_date"):
+        marks.append({"type": "", "date": e["rights_date"], "cls": "cap-warrant",
+                      "title": f"[유상신주인수권] {e['corp']}" + (f" 본전 {_won(e['even_rights'])}·" if e.get("even_rights") is not None else " ")
+                               + (f"이론 {_won(e['rights_theo'])}" if e.get("rights_theo") is not None else "")})
+    e["id"] = f"{e['rcept_no']}|{e['type']}"
+    e["marks"] = [m for m in marks if m["date"]]
+    sched = [("매수일", e.get("buy_date")), ("권리락", e.get("ex_date")), ("증서상장", e.get("rights_date")),
+             ("매도가능", e.get("sell_date")), ("신주상장", e.get("listing_date"))]
+    e["next"] = next(({"label": k, "date": d} for k, d in sorted((x for x in sched if x[1] and x[1] >= today_s), key=lambda x: x[1])), None)
+    r, base, p = float(e.get("ratio") or 0), e.get("base_price"), e.get("sell_price") or e.get("price")
+    if bonus and r and base and p and e.get("ret") is not None:
+        lock, back = round(base * r), round(p * r)
+        e["hold"] = {"ratio": e["ratio"], "base": base, "price": p, "lock": lock, "back": back, "gap": back - lock,
+                     "price_src": "매도 가능일 종가" if e.get("sell_price") is not None else "현재가",
+                     "note": "" if e.get("sell_price") is not None else " (매도 가능일 전 — 현재가로 계산)"}
+    return e
+
 def _save(events):
+    today_s = datetime.date.today().isoformat()
+    events = [_view(e, today_s) for e in events]
     events.sort(key=lambda x: x.get("buy_date") or x.get("record_date"))
-    payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "today": today_s,
+               "ongoing_ids": [e["id"] for e in sorted((e for e in events if e["next"]), key=lambda e: e["next"]["date"])],
                "count": len(events), "events": events}
     with _LOCK:
         save_json(CAP_PATH, payload)

@@ -141,7 +141,7 @@
 // 배당 페이지 = 이 폴더 + common/ — 데이터는 DATA 아래 DATA_FILES 만 읽는다(따로 배포할 때 이 파일들만 같이 올림)
 const DATA = "../data/";
 const DATA_FILES = ["div_book.json","div_sources.json","capital.json","research.json","halts.json","divpoints.json","expiries.json","dividend_check.json"];
-let BOOK = {rows:[], grades:{}}, ROWS = [], SRC = {rows:[]}, CAP = [], HALT = [], EXP = [];
+let BOOK = {rows:[], grades:{}}, ROWS = [], SRC = {rows:[]}, CAPD = {events:[], ongoing_ids:[]}, CAP = [], HALT = [], EXP = [];
 let RES = {companies:{}, events:[]};   // 리서치: 기준일 판정 + 예상배당(research.json)
 let DP = null;                         // 지수배당포인트(divpoints.json)
 let HOL = new Set(), EXPD = new Set(); // 휴장일·만기일 ISO 날짜 — 캘린더 날짜 빨간 글자·노란 별표
@@ -149,7 +149,6 @@ let calendar, dayCal;                  // 위: 월 캘린더(같은 날 같은 �
 let selDate = dISO(new Date());
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
 let divListMode = false;               // 사이드가 '오늘의 배당공시' 목록이면 갱신 때 다시 그림
-const todayISO = () => dISO(new Date());
 const matchQ = e => { const q = filters.q.trim().toLowerCase(); return !q || `${e.corp}`.toLowerCase().includes(q); };
 const shown = e => filters[e.market] && matchQ(e);
 const show = {buy:true, ex:true};      // 매수일(T-2)·락일(T-1) 중 무엇을 볼지 — 배당·예상배당·증자 공통
@@ -237,7 +236,6 @@ function bindDp(box){
 function renderDivToday(){
   divListMode = true;
   const box = document.getElementById("detail"); box.className = "";
-  const ti = todayISO();
   // 상단: 오늘 뜬 배당공시 (접수일=오늘)
   const byId = Object.fromEntries(ROWS.map(r=> [r.id, r]));
   const list = BOOK.today_ids.map(id=> byId[id]).filter(e=> filters[e.market]);
@@ -249,19 +247,17 @@ function renderDivToday(){
   });
   h += `</div>`;
   // 중간: 진행 중인 유·무상증자 (남은 일정이 있는 건) — 다음 일정순, 행 클릭→상세
-  const capNow = CAP.filter(e=> filters[e.market]).map(e=>({e,
-      next: [["매수일",e.buy_date],["권리락",e.ex_date],["증서상장",e.rights_date],["매도가능",e.sell_date],["신주상장",e.listing_date]]
-              .filter(([,d])=> d && d>=ti).sort((a,b)=>a[1].localeCompare(b[1]))[0]}))
-    .filter(x=> x.next).sort((a,b)=> a.next[1].localeCompare(b.next[1]));
+  const capById = Object.fromEntries(CAP.map(e=> [e.id, e]));
+  const capNow = CAPD.ongoing_ids.map(id=> capById[id]).filter(e=> filters[e.market]);
   h += `<div class="divlist" style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">
     <div class="lh">📈 진행 중인 유·무상증자 (${capNow.length}) <span style="font-weight:400;color:var(--muted);font-size:11px">· 행 클릭→상세</span></div>`;
   if(!capNow.length) h += `<div class="empty">해당 없음</div>`;
   else h += `<table class="dortab" id="capTab"><thead><tr><th>종목</th><th>다음 일정</th><th>본전</th><th>현재</th><th>수익률</th></tr></thead><tbody>${
-    capNow.map(({e,next})=>{
+    capNow.map(e=>{
       const bonus = e.type==="무상증자";
-      return `<tr class="dor" data-rc="${esc(e.rcept_no)}" data-ty="${esc(e.type)}">
+      return `<tr class="dor" data-id="${esc(e.id)}">
         <td class="nm">${esc(e.corp)} <span style="font-size:10px;font-weight:700;color:${bonus?"#a855f7":"#3b82f6"}">${bonus?"무상":"유상"}</span></td>
-        <td>${esc(next[1].slice(5))} ${esc(next[0])}</td>
+        <td>${esc(e.next.date.slice(5))} ${esc(e.next.label)}</td>
         <td class="px">${e.base_price?won(e.base_price)+(e.ret==null?" (예상)":""):"-"}</td>
         <td class="px">${e.price?won(e.price):"-"}</td>
         <td class="px" style="font-weight:700;color:${e.ret>0?"#ef4444":e.ret<0?"#3b82f6":"var(--muted)"}">${e.ret!=null?pctTxt(e.ret):"-"}</td></tr>`;
@@ -284,66 +280,29 @@ function renderDivToday(){
     showDetail(byId[el.dataset.id]);
   }));
   box.querySelectorAll("#capTab tr.dor").forEach(el=> el.addEventListener("click",()=>{
-    const e = CAP.find(x=>x.rcept_no===el.dataset.rc && x.type===el.dataset.ty); if(e) showDetail({...e, kind:"cap"});
+    showDetail({...capById[el.dataset.id], kind:"cap"});
   }));
   renderDivUpTable();
 }
 
-function haltEvents(){   // 거래정지 → '🚫정지 시작' + '✅거래재개' 2점 이벤트
-  const out = [];
-  HALT.filter(shown).forEach((e,i)=>{
-    const props = {...e, kind:"halt"};
-    if(e.halt_date)
-      out.push({id:"hs"+i, title:`🚫 ${e.corp} 정지·${e.reason||""}`, start:e.halt_date,
-                allDay:true, classNames:["halt-stop"], extendedProps:props});
-    if(e.resume_date)
-      out.push({id:"hr"+i, title:`✅ ${e.corp} 재개${e.resume_confirmed?"":"(예정)"}`, start:e.resume_date,
-                allDay:true, classNames:["halt-resume", ...(e.resume_confirmed?[]:["halt-tent"])], extendedProps:props});
-  });
-  return out;
+function markEvents(list, kind){   // 증자·거래정지 — 생산자의 표시(날짜·제목·색 클래스)를 그대로, 매수일/락일 표시는 체크박스대로
+  return list.filter(shown).flatMap((e,i)=> e.marks.filter(m=> !m.type || show[m.type]).map((m,j)=>
+    ({id:`${kind}${j}_${i}`, title:m.title, start:m.date, allDay:true, classNames:m.cls.split(" "), extendedProps:{...e, kind}})));
 }
 function bookEvents(){   // 배당 — 장부의 회차별 표시(날짜·제목·묶음·색)를 그대로
   return ROWS.filter(shown).flatMap((r,i)=> r.marks.filter(m=> show[m.type]).map(m=>
     ({id:`b${m.type}${i}`, title:m.title, start:m.date, allDay:true, group:m.group,
       extendedProps:{...r, _style:BOOK.grades[r.grade].style[m.type]}})));
 }
-function capEvents(){   // 유상·무상증자 — 신주배정기준일 기준 권리락(T-1)/권리부매수(T-2)
-  const out = [];
-  CAP.filter(shown).forEach((e,i)=>{
-    const bonus = e.type==="무상증자";
-    const pre = bonus ? "무상" : "유상";
-    const props = {...e, kind:"cap"};
-    const even = e.ret!=null ? ` 본전 ${won(e.base_price)}·현재 ${won(e.price)} ${pctTxt(e.ret)}`
-               : e.base_price ? ` 예상기준가 ${won(e.base_price)}` : "";
-    if(show.buy && (e.buy_date||e.record_date))
-      out.push({id:"cb"+i, title:`[${pre}매수일] ${e.corp}`, start:e.buy_date||e.record_date, allDay:true,
-                classNames:[bonus?"cap-bonus-buy":"cap-rights-buy"], extendedProps:props});
-    if(show.ex && (e.ex_date||e.record_date))
-      out.push({id:"cx"+i, title:`[${pre}권리락] ${e.corp}${even}`, start:e.ex_date||e.record_date, allDay:true,
-                classNames:[bonus?"cap-bonus-ex":"cap-rights-ex"], extendedProps:props});
-    // 무상 매도 가능일(신주상장 T-2) — 잔고가 들어와 팔 수 있는 날, 엠피스 장부단가 주의
-    if(e.sell_date)
-      out.push({id:"cs"+i, title:`[무상매도가능] ${e.corp} ⚠엠피스 장부단가${even}`, start:e.sell_date, allDay:true,
-                classNames:["cap-sell"], extendedProps:props});
-    // 신주 상장(입고)일 — 무·유 공통, 항상 표시(실제 신주가 계좌에 들어오는 날)
-    if(e.listing_date)
-      out.push({id:"cl"+i, title:`[${pre}신주상장${bonus?"·락금액 보정":""}] ${e.corp}${bonus?even:(e.issue_ret!=null?` 발행가 ${won(e.issue_adj)}·현재 ${won(e.price)} ${pctTxt(e.issue_ret)}`:"")}`, start:e.listing_date, allDay:true,
-                classNames:["cap-list"], extendedProps:props});
-    // 신주인수권증서 상장(입고)일 — 유상만(서버에서 유상만 채움)
-    if(e.rights_date)
-      out.push({id:"cw"+i, title:`[유상신주인수권] ${e.corp}${e.even_rights!=null?` 본전 ${won(e.even_rights)}·`:" "}${e.rights_theo!=null?`이론 ${won(e.rights_theo)}`:""}`, start:e.rights_date, allDay:true,
-                classNames:["cap-warrant"], extendedProps:props});
-  });
-  return out;
-}
+
 const GROUP_MAX = 4;   // 월 캘린더에서 같은 날 같은 종류가 이보다 많으면 요약 한 줄 (아래 날짜 목록은 다 펼침)
 function applyFilters(){
-  const all = bookEvents().concat(capEvents()).concat(haltEvents());
+  const all = bookEvents().concat(markEvents(CAP, "cap")).concat(markEvents(HALT, "halt"));
   const groups = {};
-  all.forEach(ev=> (groups[ev.start+"|"+(ev.group || ev.id.replace(/\d+$/,""))] ||= []).push(ev));
+  all.forEach(ev=> (groups[ev.start+"|"+(ev.group || ev.title.split(" ")[0])] ||= []).push(ev));
   const events = Object.values(groups).flatMap(g=>{
     if(g.length <= GROUP_MAX) return g;
-    const items = g.map(ev=> ev.extendedProps), kind = g[0].id.replace(/\d+$/,"");
+    const items = g.map(ev=> ev.extendedProps), kind = g[0].id;
     const label = g[0].group || g[0].title.split(" ")[0];
     const n = m => items.filter(x=> x.market===m).length;
     return [{id:"g"+kind+g[0].start, title:`${label} ${g.length}건 · 코스피 ${n("KOSPI")} / 코스닥 ${n("KOSDAQ")}`, start:g[0].start,
@@ -496,19 +455,13 @@ function showDetail(e){
             <b style="color:#f59e0b">⚠ 엠피스에는 신주 잔고가 아직 반영되지 않아 장부단가가 높게 잡혀 있습니다. 이때 매도차익을 잡으면 그 손익이 빠질(잃어버릴) 수 있으니 확인하세요.</b></div>
           <div class="row">2. <b>신주 상장일(${esc(e.listing_date||"-")})</b> — 락금액을 보정합니다.</div>
           <div class="row">3. <b>지수차익 관점</b> — 권리락으로 주가가 빠졌어도 지수차익에서 그만큼 수익을 봤습니다. 락 맞은 금액이 조금 들어왔다고 손실로 생각하지 마세요.</div>
-          ${(()=>{   // 1주 보유 기준: 락 금액 vs 신주로 돌아온 금액, 그 차이는 지수선물 매도가 반대로 메움
-            const r = Number(e.ratio), base = e.base_price, p = e.sell_price ?? e.price;
-            if(!r || !base || !p || e.ret==null) return "";
-            const lock = Math.round(base*r), back = Math.round(p*r), gap = back - lock;
-            const est = e.sell_price==null ? " (매도 가능일 전 — 현재가로 계산)" : "";
-            const sg = n => (n>0?"+":"")+won(n);
-            return `<table class="dortab" style="margin-top:6px"><thead><tr><th colspan="2">1주 보유 기준 (신주 ${esc(e.ratio)}주)${est}</th></tr></thead><tbody>
-              <tr><td>락 맞은 금액 (기준가 ${won(base)} × ${esc(e.ratio)})</td><td class="px">−${won(lock)}</td></tr>
-              <tr><td>신주로 돌아온 금액 (${e.sell_price==null?"현재가":"매도 가능일 종가"} ${won(p)} × ${esc(e.ratio)})</td><td class="px">+${won(back)}</td></tr>
-              <tr><td>현물만 보면 (그 사이 주가 변동분)</td><td class="px" style="color:${gap>0?"#ef4444":gap<0?"#3b82f6":"inherit"}">${sg(gap)}</td></tr>
-              <tr><td>지수선물 매도 (같은 변동을 반대로)</td><td class="px" style="color:${-gap>0?"#ef4444":-gap<0?"#3b82f6":"inherit"}">${sg(-gap)}</td></tr>
-              <tr><td><b>지수차익 손익 (현물 + 선물)</b></td><td class="px"><b>0</b></td></tr></tbody></table>`;
-          })()}
+          ${e.hold?(()=>{ const h = e.hold, sg = n => (n>0?"+":"")+won(n), col = n => n>0?"#ef4444":n<0?"#3b82f6":"inherit";
+            return `<table class="dortab" style="margin-top:6px"><thead><tr><th colspan="2">1주 보유 기준 (신주 ${esc(h.ratio)}주)${esc(h.note)}</th></tr></thead><tbody>
+              <tr><td>락 맞은 금액 (기준가 ${won(h.base)} × ${esc(h.ratio)})</td><td class="px">−${won(h.lock)}</td></tr>
+              <tr><td>신주로 돌아온 금액 (${esc(h.price_src)} ${won(h.price)} × ${esc(h.ratio)})</td><td class="px">+${won(h.back)}</td></tr>
+              <tr><td>현물만 보면 (그 사이 주가 변동분)</td><td class="px" style="color:${col(h.gap)}">${sg(h.gap)}</td></tr>
+              <tr><td>지수선물 매도 (같은 변동을 반대로)</td><td class="px" style="color:${col(-h.gap)}">${sg(-h.gap)}</td></tr>
+              <tr><td><b>지수차익 손익 (현물 + 선물)</b></td><td class="px"><b>0</b></td></tr></tbody></table>`; })():""}
         </div>`:""}
         <div class="why"><div class="wh">📍 날짜 안내</div>
           <div class="row">📌 <b>신주배정기준일(${esc(e.record_date)})</b> — 이날 주주명부에 있어야 ${bonus?"무상":"유상"}신주를 배정받습니다.</div>
@@ -688,7 +641,7 @@ async function loadData(){
   BOOK = await getJSON("div_book.json");
   ROWS = BOOK.rows;
   if(SRC.generated_at !== BOOK.generated_at) try{ SRC = await getJSON("div_sources.json"); }catch(_){}
-  try{ CAP = (await getJSON("capital.json")).events||[]; }catch(_){ CAP = []; }
+  try{ CAPD = await getJSON("capital.json"); CAP = CAPD.events; }catch(_){ CAPD = {events:[], ongoing_ids:[]}; CAP = []; }
   try{ RES = await getJSON("research.json"); }catch(_){}
   try{ HALT = (await getJSON("halts.json")).events||[]; }catch(_){ HALT = []; }
   try{ DP = await getJSON("divpoints.json"); }catch(_){ DP = null; }
