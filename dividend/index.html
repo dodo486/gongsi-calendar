@@ -434,7 +434,7 @@ function stageLadder(e){
   let h = `<div class="wh" style="margin-top:8px">🪜 기준일 확정 단계 <span class="sub" style="font-weight:400;color:var(--muted)">— ④부터 확정</span></div><div class="lad">${rows}</div>`;
   if(e.kind==="est"){
     const alt = Object.entries(e.alt||{}).map(([k,v])=>`${ALT_TXT[k]||k} ${esc(v)}`).join(" · ");
-    h += `<div class="anc">🧭 <b>${esc(e.grade_label)}</b> — ${esc(e.why)}<br>날짜 근거: ${esc(e.anchor)}${alt?`<br>근거별 날짜: ${alt}`:""}</div>`;
+    h += `<div class="anc">🧭 <b>${esc(e.grade_label)}</b> — ${esc(e.why)}${e.case?`<br>사례: ${esc(e.case)}`:""}<br>날짜 근거: ${esc(e.anchor)}${alt?`<br>근거별 날짜: ${alt}`:""}</div>`;
     const cond = Object.entries(e.cond||{}).filter(([,v])=>v!==null).map(([k,v])=>`${COND_TXT[k]||k}: ${v?"해당":"해당 없음"}`).join(" · ");
     if(cond) h += `<div class="ev">참고 신호(적중률 측정 중, 판정엔 안 씀) — ${esc(cond)}</div>`;
     h += (e.warn||[]).map(w=>`<div class="ev">⚠ ${esc(w)}</div>`).join("");
@@ -446,7 +446,7 @@ function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월
   if(!c) return "";
   const ch = Object.entries(c.charter||{}).map(([g,x])=>`${g}배당: ${esc(CH_TXT[x.v]||x.v)} <span class="sub">(${esc(x.src)})</span>`).join("<br>");
   const og = Object.entries(c.organ||{}).map(([g,v])=>`${g} ${esc(v)}`).join(" · ");
-  const jd = Object.entries(c.judgments||{}).map(([t,j])=>`<div class="row">· ${esc(t)} ${esc(j.quarter)}: <b>${esc(j.grade_label)}</b> <span class="sub">${esc(j.why)}</span></div>`).join("");
+  const jd = Object.entries(c.judgments||{}).map(([t,j])=>`<div class="row">· ${esc(t)} ${esc(j.quarter)}: <b>${esc(j.grade_label)}</b> <span class="sub">${esc(j.why)}${j.case?` · 사례: ${esc(j.case)}`:""}</span></div>`).join("");
   let h = `<div class="why"><div class="wh">🏷️ 이 회사의 기준일 판정</div>${jd}
     <div class="row">정관상 배당기준일: ${ch||"정보 없음"}</div>
     <div class="row">배당액 결정기관: ${og||"미상"} · 결산월 ${esc(String(c.acc_mt))}월${c.acc_known?"":" (조회 실패 — 12월 가정)"}</div>`;
@@ -615,7 +615,7 @@ async function exportXlsx(){
   const ym = d => d ? d.slice(0,7) : "";
   const row = (e, kind, why, amtWhy, fill) => ({ _fill: fill,
     "종목코드": "A" + e.stock, "종목명": e.corp, "시장": {KOSPI:"KP", KOSDAQ:"KQ"}[e.market] || e.market,
-    "구분": kind, "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
+    "구분": kind, "사례": e.case || "", "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
     "기준일": e.record_date || "", "배당매수일(T-2)": e.confirm_date || "", "배당락일(T-1)": e.ex_date || "",
     "몇월 만기 후": afterExp(e.confirm_date) ? `${Number(afterExp(e.confirm_date).slice(5,7))}월 만기 후` : "",
     "배당락 월물": monthOf(e.ex_date) ? `${ym(monthOf(e.ex_date))}물` : "",
@@ -654,7 +654,7 @@ async function exportXlsx(){
   rows.forEach(r=> delete r._fill);
   const ws = XLSX.utils.json_to_sheet(rows);
   paint(ws, (R, C)=> R===0 ? HEAD : C===3 ? {...CELL, ...fillOf(fills[R-1]), font:{bold:true}} : CELL);
-  ws["!cols"] = [9,16,5,34,9,11,11,13,13,13,10,70,30].map(w=> ({wch:w}));
+  ws["!cols"] = [9,16,5,34,50,9,11,11,13,13,13,10,70,30].map(w=> ({wch:w}));
   ws["!autofilter"] = {ref: ws["!ref"]};
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "배당");
@@ -669,6 +669,7 @@ async function exportXlsx(){
     ["칸", "뜻"],
     ["종목코드", "A + 6자리 종목코드"],
     ["시장", "KP 코스피 / KQ 코스닥"],
+    ["사례", "사례 구분의 근거 — 선진화 정관이 된 뒤 같은 종류 배당 회차(또는 이번 회차 기준일 안내 자율공시)와 DART 링크, 사례 없음이면 정관 확인 시점"],
     ["배당매수일(T-2)", "이날까지 사야 배당을 받음 (기준일까지 결제되는 마지막 영업일의 2영업일 전)"],
     ["배당락일(T-1)", "이날부터 사면 배당 없음 — 주가가 통상 배당액만큼 빠짐"],
     ["몇월 만기 후", "배당매수일이 들어가지 않는 가장 끝 월물(배당매수일 당일 이전에 끝나는 마지막 만기, 만기 당일 포함) + '만기 후'"],

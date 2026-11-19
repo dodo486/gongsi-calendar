@@ -27,6 +27,7 @@ POLICY_PATH = os.path.join(DATA_DIR, "div_policy.json")
 ACC_PATH = os.path.join(DATA_DIR, "acc_mt.json")
 EXP_PATH = os.path.join(DATA_DIR, "expiries.json")
 HIST_PATH = dv.HIST_PATH
+DART = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo="
 _LOCK = threading.RLock()
 
 HIST_DAYS = 800
@@ -287,7 +288,7 @@ def context(stock, entries, policy, acc, agm_records):
             fy, q = e.get("fyq") or min(((fy, q, quarter_end(fy, q, acc)) for fy in range(rd.year - 1, rd.year + 2) for q in TYPE_QUARTERS[t]
                                           if quarter_end(fy, q, acc) >= rd - datetime.timedelta(days=NOTICE_LOOKBACK_DAYS)), key=lambda c: c[2])[:2]
             hint = next((m for m in e.get("months", []) if m > rd.strftime("%Y-%m")), "")
-            notices.append({"date": rd, "div_type": t, "fy": fy, "q": q, "hint": hint, "title": e.get("title", "")})
+            notices.append({"date": rd, "div_type": t, "fy": fy, "q": q, "hint": hint, "title": e.get("title", ""), "rcept_no": e["rcept_no"]})
         elif k in ("agm_call", "agm_result") and e.get("agm_date"):
             agms.append({"date": _d(e["agm_date"]), "kind": k, "rcept": rd, "charter": e.get("charter"),
                          "regular": e.get("regular", False), "rejected": e.get("rejected", False)})
@@ -299,7 +300,8 @@ def context(stock, entries, policy, acc, agm_records):
         record, decided = _d(rds), _d(es[0]["rcept_dt"])
         fy, q, qe = round_of(t, record, decided, acc)
         rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
-                       "dps": es[-1].get("per_share", ""), "pay": _norm(es[-1].get("pay_date")), "src": "공시"})
+                       "dps": es[-1].get("per_share", ""), "pay": _norm(es[-1].get("pay_date")), "src": "공시",
+                       "rcept_no": es[-1]["rcept_no"]})
     seen = {(r["type"], r["record"]) for r in rounds}
     for t, decided, record in (policy or {}).get("rows", []):
         record, decided = _d(record), _d(decided)
@@ -308,7 +310,7 @@ def context(stock, entries, policy, acc, agm_records):
         if record and (t, record) not in seen:
             fy, q, qe = round_of(t, record, decided, acc)
             rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
-                           "dps": "", "pay": None, "src": "정기보고서 표"})
+                           "dps": "", "pay": None, "src": "정기보고서 표", "rcept_no": ""})
             seen.add((t, record))
     rounds.sort(key=lambda r: r["record"])
     for r in rounds:
@@ -397,32 +399,39 @@ def _notice(ctx, t, fy, q):
     return next((n for n in reversed(ctx["notices"]) if n["div_type"] in kinds and (n["fy"], n["q"]) == (fy, q)), None)
 
 def judge(ctx, t, fy, q):
-    """§4.2 — (날짜 방식, 근거, 구분 GRADES 키). 사례 = 선진화 정관이 된 뒤 같은 종류 배당 회차"""
+    """§4.2 — {method 날짜 방식, why 근거, grade GRADES 키, case 사례 근거}. 사례 = 선진화 정관이 된 뒤 같은 종류 배당 회차"""
     g, end = GROUP[t], END_WORD[t]
+    out = lambda method, why, grade, case="": {"method": method, "why": why, "grade": grade, "case": case}
+    on_round = lambda r, how: f"{r['fy']} Q{r['q']} 기준일 {r['record']}({how})" + (f" {DART}{r['rcept_no']}" if r["rcept_no"] else f" · {r['src']}")
     notice = _notice(ctx, t, fy, q)
     if notice:
-        return "유동", f"이번 회차 '배당기준일 안내' 자율공시({notice['date']}) — 이사회가 기준일을 따로 정함", "사례지정"
+        return out("유동", f"이번 회차 '배당기준일 안내' 자율공시({notice['date']}) — 이사회가 기준일을 따로 정함", "사례지정",
+                   f"이번 회차 기준일 안내 자율공시 {notice['date']} {DART}{notice['rcept_no']}")
     past = [r for r in ctx["rounds"] if r["type"] == t]
     ch = (ctx["charter"].get(g) or {}).get("v")
     since = ctx["charter_since"].get(g)
     pend = (ctx["charter_pending"].get("block") or {}).get(g) == "O"
     if past and not past[-1]["fixed"]:
         last = past[-1]
-        return "유동", f"직전 회차({last['fy']} Q{last['q']}) 기준일 {last['record']}이 {end}({last['qe']})이 아님 — 이사회가 따로 정함", "사례지정"
+        return out("유동", f"직전 회차({last['fy']} Q{last['q']}) 기준일 {last['record']}이 {end}({last['qe']})이 아님 — 이사회가 따로 정함", "사례지정",
+                   on_round(last, "이사회 지정"))
     if ch == "O":
         case = next((r for r in reversed(past) if since and r["record"] > since), None)
         if case:
-            return "고정", f"선진화 정관 확인({since}) 뒤 {case['fy']} Q{case['q']} 기준일 {case['record']}도 {end} — 그 회사 방식", "사례기말"
+            return out("고정", f"선진화 정관 확인({since}) 뒤 {case['fy']} Q{case['q']} 기준일 {case['record']}도 {end} — 그 회사 방식", "사례기말",
+                       on_round(case, end))
+        gone = f"없음 · 선진화 정관 {since}부터 ({ctx['charter'][g]['src']})"
         if past:
-            return "고정", f"직전 회차 기준일 {past[-1]['record']} = {end}. 선진화 정관 확인({since}) 뒤 이 배당은 아직 안 치러 바뀔 수 있음", "사례없음"
-        return "유동 가능", f"배당 이력 없음 · 선진화 정관 ({ctx['charter'][g]['src']})", "사례없음"
+            return out("고정", f"직전 회차 기준일 {past[-1]['record']} = {end}. 선진화 정관 확인({since}) 뒤 이 배당은 아직 안 치러 바뀔 수 있음", "사례없음", gone)
+        return out("유동 가능", f"배당 이력 없음 · 선진화 정관 ({ctx['charter'][g]['src']})", "사례없음", gone)
     if pend:
-        return "고정", f"{ctx['charter_pending']['date']} 주총에 정관상 기준일 변경 안건 상정 — 바뀔 수 있음", "사례없음"
+        return out("고정", f"{ctx['charter_pending']['date']} 주총에 정관상 기준일 변경 안건 상정 — 바뀔 수 있음", "사례없음",
+                   f"없음 · {ctx['charter_pending']['date']} 주총 정관 변경 안건")
     if past:
-        return "고정", f"직전 회차 기준일 {past[-1]['record']} = {end}" + (" · 정관상 기준일 고정" if ch == "X" else " · 정관 정보 없음"), "미변경"
+        return out("고정", f"직전 회차 기준일 {past[-1]['record']} = {end}" + (" · 정관상 기준일 고정" if ch == "X" else " · 정관 정보 없음"), "미변경")
     if ch == "X":
-        return "고정", f"배당 이력 없음 · 정관상 기준일이 {end}로 고정 ({ctx['charter'][g]['src']})", "미변경"
-    return "판별 불가", "정관 정보·배당 이력 없음", "근거약함"
+        return out("고정", f"배당 이력 없음 · 정관상 기준일이 {end}로 고정 ({ctx['charter'][g]['src']})", "미변경")
+    return out("판별 불가", "정관 정보·배당 이력 없음", "근거약함")
 
 def grade_out(key, t):
     return {"grade": key, "grade_label": GRADES[key]["label"].format(end=END_WORD[t])}
@@ -493,7 +502,8 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     past = [r for r in ctx["rounds"] if r["type"] == t]
     prev = past[-1] if past else None
     same_q = next((r for r in reversed(past) if r["q"] == q), None)
-    method, why, grade = judge(ctx, t, fy, q)
+    j = judge(ctx, t, fy, q)
+    method, why, grade = j["method"], j["why"], j["grade"]
     organ = ctx["organ"].get(GROUP[t], "")
     regular = [a for a in ctx["agms"] if a["regular"]] if t == "결산배당" else []
     agm = next((a for a in reversed(regular) if a["fy"] == fy), None)
@@ -572,7 +582,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     reg = next((r for r in reversed(past) if not r["special"] and r["dps"]), None)
     return {"div_type": t, "fy": fy, "q": q, "quarter": f"{fy} Q{q}", "quarter_end": _iso(qe),
             "record_date": _iso(rec), "pay_date": _iso(pay), "method": "확정 기준일" if ann_rec else method,
-            **grade_out("공고" if ann_rec else grade, t), "why": why, "anchor": anchor, "reason": reason,
+            **grade_out("공고" if ann_rec else grade, t), "case": j["case"], "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: _iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
             "per_share": reg["dps"] if reg else "",
@@ -609,8 +619,8 @@ def company_out(ctx, missed):
         qs = sorted(q for q, ot in owner.items() if ot == t) or [rs[-1]["q"]]
         nq = next((x for x in qs if x > rs[-1]["q"]), None)
         fy, q = (rs[-1]["fy"], nq) if nq else (rs[-1]["fy"] + 1, qs[0])
-        m, why, grade = judge(ctx, t, fy, q)
-        judgments[t] = {"method": m, "why": why, **grade_out(grade, t), "quarter": f"{fy} Q{q}"}
+        j = judge(ctx, t, fy, q)
+        judgments[t] = {"method": j["method"], "why": j["why"], **grade_out(j["grade"], t), "case": j["case"], "quarter": f"{fy} Q{q}"}
     ladders = {f"{r['type']}|{_iso(r['record'])}": ladder(view(ctx, r["decided"] or r["record"]), r["type"], r["fy"], r["q"], True)
                for r in ctx["rounds"][-12:]}
     return {"corp": ctx["corp"], "market": ctx["market"], "acc_mt": ctx["acc"], "acc_known": ctx["acc_known"],
@@ -634,9 +644,9 @@ def contexts():
     pol = policies(universe)
     acc = acc_months(universe)
     by = {}
-    for e in hist.values():
+    for no, e in hist.items():
         if e.get("stock") in universe:
-            by.setdefault(e["stock"], []).append(e)
+            by.setdefault(e["stock"], []).append({**e, "rcept_no": no})
     return [context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)) for s in sorted(universe)]
 
 def build(days=HIST_DAYS):
