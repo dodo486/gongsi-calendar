@@ -21,7 +21,7 @@
   marks.1520  동시호가 직전   marks.1530  KRX 종가   marks.1545  선물 종가   marks.nxt  NXT 마지막
   next.open / next.0930  다음 거래일 KRX 시가·09:30 가격 (종가가 얼마나 돌아왔나)
 
-  python -m derive.closearb   # 1회 받아서 data/closearb.json 갱신
+  python -m derive.closearb   # 1회 받아서 data/out/closearb.json 갱신
 """
 import os, json, time, datetime, statistics
 from concurrent.futures import ThreadPoolExecutor

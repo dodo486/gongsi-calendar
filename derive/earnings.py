@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 실적 공시 실시간 수집 + 현재 주가 등락률(네이버)
-- fetch.collect_events 로 '실적' 카테고리 공시만 골라 data/earnings.json 저장
+- fetch.collect_events 로 '실적' 카테고리 공시만 골라 data/out/earnings.json 저장
 - 각 종목의 현재 등락률은 네이버 실시간 시세(polling.finance.naver.com)로 부착 (KRX 차단 우회)
 - 웹 결합뷰의 '실적 그리드'(상하한가와 배당 사이)가 이 파일을 읽음
 사용:
-  python -m derive.earnings            # 최근 30일 실적 공시 + 등락률 → data/earnings.json
+  python -m derive.earnings            # 최근 30일 실적 공시 + 등락률 → data/out/earnings.json
   python -m derive.earnings 60         # 최근 N일
 """
 import bisect, json, os, re, sys, datetime

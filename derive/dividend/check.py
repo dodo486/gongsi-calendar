@@ -7,7 +7,7 @@
 - 지수배당포인트: 월물 합계, 배당락일이 그 월물 구간 안인가
 - 정답표: docs/배당예측-워크플로우.md §5.1 사례 8종목
 - 적중률: div_verify.py 결과가 기준 아래로 떨어지지 않았나
-결과는 data/dividend_check.json — 오류가 있으면 monitor 가 알림, CI 는 배포를 멈춘다.
+결과는 data/out/dividend_check.json — 오류가 있으면 monitor 가 알림, CI 는 배포를 멈춘다.
 사용:
   python -m derive.dividend.check        # 오류 있으면 종료코드 1
 """
@@ -209,7 +209,7 @@ def main():
     for x in warns[:20]:
         print("  △", x)
     if len(warns) > 20:
-        print(f"  … 경고 {len(warns) - 20}건 더 (data/dividend_check.json)")
+        print(f"  … 경고 {len(warns) - 20}건 더 (data/out/dividend_check.json)")
     return errors
 
 if __name__ == "__main__":

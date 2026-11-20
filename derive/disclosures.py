@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""공시 탭 — 저장소의 DART 목록에서 감시종목(코스피200+코스닥150)의 관심 종류 공시 → data/disclosures.json
+"""공시 탭 — 저장소의 DART 목록에서 감시종목(코스피200+코스닥150)의 관심 종류 공시 → data/out/disclosures.json
 - 웹(index.html) 공시 탭이 이 JSON을 읽어 캘린더에 표시, monitor 가 실시간 갱신·토스트
 - 실적 그리드(earnings)도 collect_events 로 '실적' 공시를 고른다
 사용:

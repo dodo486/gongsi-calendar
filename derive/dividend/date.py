@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """배당 3단계 날짜 — 사실 → 회차별 구분(GRADES)과 예상 기준일. 금액은 div_amount. 설계 정본 docs/배당예측-워크플로우.md §4
 
-  python -m derive.dividend.date   → data/div_estimates.json (companies + events)
+  python -m derive.dividend.date   → data/out/div_estimates.json (companies + events)
 """
 import os, datetime
 from core import universe

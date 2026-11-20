@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""배당 장부 — 확정(dividends.json) + 예상(div_estimates.json)을 회차마다 한 줄로 합친다 → data/div_book.json
+"""배당 장부 — 확정(dividends.json) + 예상(div_estimates.json)을 회차마다 한 줄로 합친다 → data/out/div_book.json
 
 화면·엑셀·지수배당포인트는 이 장부만 읽는다(구분·날짜·만기·금액·근거·캘린더 표시가 다 들어 있음).
 같은 종목·배당종류의 예상은 확정 기준일 ±45일 안이면 같은 회차로 보고 버린다. 기준일 공고만 있고 금액이 없으면 예상 금액을 빌린다.
-참고 공시(배당 산출이 읽은 공시와 읽어 낸 내용) → data/div_sources.json
+참고 공시(배당 산출이 읽은 공시와 읽어 낸 내용) → data/out/div_sources.json
 
   python -m derive.dividend.book
 """

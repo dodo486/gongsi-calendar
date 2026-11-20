@@ -3,9 +3,9 @@
 - 대상 공시: 저장소의 유상·무상·유무상증자결정(감시대상, 파서는 ingest/parsers/capital.py)
 - 신주배정기준일 → 권리부매수일(T-2)·권리락일(T-1) 계산 (배당 T-1/T-2 로직 재사용)
 - 제3자배정 등 신주배정기준일이 없는 건은 자동 제외(권리락 없음)
-- data/capital.json 저장 → 배당 캘린더에 무증(보라/연보라)·유증(파랑/하늘) 표시
+- data/out/capital.json 저장 → 배당 캘린더에 무증(보라/연보라)·유증(파랑/하늘) 표시
 사용:
-  python -m derive.capital            # 최근 1년 유·무상증자 → data/capital.json
+  python -m derive.capital            # 최근 1년 유·무상증자 → data/out/capital.json
   python -m derive.capital 30         # 최근 30일
 """
 import sys, os, math, datetime, threading

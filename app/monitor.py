@@ -3,7 +3,7 @@
 공시캘린더 실시간 폴러 (백그라운드 상주)
 - POLL_SECONDS 마다 어제~오늘 공시(감시대상+관심종류)를 확인 (자정 경계 누락 방지)
 - 새 공시가 뜨면 OS 알림 (윈도우: 토스트·클릭 시 DART 원문 / 맥: 알림센터 / 리눅스: notify-send)
-- 새 공시를 data/disclosures.json 에 자동 반영 → 웹 캘린더가 자동 갱신
+- 새 공시를 data/out/disclosures.json 에 자동 반영 → 웹 캘린더가 자동 갱신
 사용:
   python -m app.monitor            # 상주 모드 (1분 폴링)
   python -m app.monitor --once     # 1회만 확인하고 종료 (테스트)
@@ -230,7 +230,7 @@ def live_pass(lim_seen, ac_seen, alert=True):
 INDUSTRY_POLL_SECONDS = 60  # 인더스트리 액션 — 전 종목 스냅샷 1회(수 초), 묶음 재구성은 30일마다
 
 def industry_loop():
-    """인더스트리 액션 전용 루프(별도 스레드) → data/industry_action.json."""
+    """인더스트리 액션 전용 루프(별도 스레드) → data/out/industry_action.json."""
     while True:
         try:
             industry.daily_upkeep()
@@ -242,7 +242,7 @@ def industry_loop():
 HALT_POLL_SECONDS = 600   # 거래정지/재개 알림 확인 — halts.json 은 들여오기·계산이 갱신
 
 def halt_loop():
-    """거래정지 알림 전용 루프 — 계산이 만든 data/halts.json 에서 새 정지 종목 토스트(첫 주기는 시딩만, 폭주 방지)."""
+    """거래정지 알림 전용 루프 — 계산이 만든 data/out/halts.json 에서 새 정지 종목 토스트(첫 주기는 시딩만, 폭주 방지)."""
     halt_seen, first = set(), True
     while True:
         try:

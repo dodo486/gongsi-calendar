@@ -2,10 +2,10 @@
 """
 선물 상하한가(가격제한폭 단계 도달) — 저장소의 KIND 파생상품시장 '가격제한폭 확대요건 도달' 공시
 - 지수선물(코스피200선물·KRX300선물 등) + 주식선물(코스피200/코스닥150 편입 종목) 로 분류·필터
-- data/limits.json 저장 → 웹 '상하한가' 탭이 읽음
+- data/out/limits.json 저장 → 웹 '상하한가' 탭이 읽음
 - 실시간: monitor.py 가 폴링하며 신규 접수번호(acptNo)에 윈도우 토스트 알림
 사용:
-  python -m derive.limits            # 오늘 선물 가격제한폭 도달 공시 → data/limits.json
+  python -m derive.limits            # 오늘 선물 가격제한폭 도달 공시 → data/out/limits.json
   python -m derive.limits 2026-05-06 # 특정일자
 """
 import os, sys, re, datetime

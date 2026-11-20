@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """인더스트리 액션 — 같이 움직이는 종목 묶음(굵은 묶음)과 오늘 그 묶음으로 몰린 돈.
 
-묶기 (data/industry_groups.json, REBUILD_DAYS 마다 직전 LOOKBACK 거래일 일봉으로 다시 만든다)
+묶기 (data/cache/industry_groups.json, REBUILD_DAYS 마다 직전 LOOKBACK 거래일 일봉으로 다시 만든다)
 1. 소속표: 네이버 테마(md.themes)
 2. 정제: 시장 베타를 뺀 일간 수익률이 같은 테마 나머지 평균과 상관 PRUNE 미만이면 그 테마에서 뺀다.
    3종목 미만으로 줄어든 테마는 버린다
@@ -10,9 +10,9 @@
 묶음 품질 기준(2026-11 측정, 앞 1년으로 묶고 뒤 1년): 묶음 안 잔차 상관 0.25 / 밖 0.00,
 한 묶음 2종목+ +5% 날 덜 오른 멤버의 다음 날 시장 대비 +0.08% (무작위 묶음 -0.04%).
 
-오늘 (data/industry_action.json, 60초): 전 종목 스냅샷으로 묶음·세부 테마별 거래대금 합, 평균 등락,
+오늘 (data/out/industry_action.json, 60초): 전 종목 스냅샷으로 묶음·세부 테마별 거래대금 합, 평균 등락,
 상승 비율, 대장주(거래대금 1위).
-네이버 소속표 원본은 날마다 data/theme_snapshots/YYYYMMDD.json 으로 남긴다(사후 편입 없는 재검증용).
+네이버 소속표 원본은 날마다 data/cache/theme_snapshots/YYYYMMDD.json 으로 남긴다(사후 편입 없는 재검증용).
 
   python -m derive.industry          # 오늘 집계 1회 (묶음 파일이 없거나 오래됐으면 먼저 다시 묶음)
   python -m derive.industry rebuild  # 묶음 강제 재구성

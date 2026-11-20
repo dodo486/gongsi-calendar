@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """배당 검증 — 과거 회차마다 공시 직전 사실(view)로 같은 추정을 돌려 날짜·구분·금액 적중률. 설계 정본 docs/배당예측-워크플로우.md §5
 
-  python -m derive.dividend.verify   → data/div_verify.json
+  python -m derive.dividend.verify   → data/out/div_verify.json
 """
 import os, json, datetime, statistics
 from core.paths import save_json, OUT_DIR

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""예상 실적발표 일정 — 저장소의 결산실적공시예고[예고]·기업설명회(IR)개최[IR] → data/earn_sched.json (웹 배당 캘린더 청록색)
+"""예상 실적발표 일정 — 저장소의 결산실적공시예고[예고]·기업설명회(IR)개최[IR] → data/out/earn_sched.json (웹 배당 캘린더 청록색)
 같은 회차는 최신 접수가 이김. IR은 개최목적에 '실적'이 든 것만.
 
   python -m derive.earn_sched

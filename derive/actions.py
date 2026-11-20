@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """KRX 시장조치 — 저장소의 KIND 당일공시(유가·코스닥) 중 '시장본부/거래소 발신' 행
 - 사이드카, 서킷브레이커, 매매거래정지/재개, 투자경고·위험·주의, 단기과열, 공매도과열 등 (파생 가격제한폭은 limits)
-- data/krx_actions.json 저장 → 웹 상단 '시장조치' 리스트 + monitor 토스트
+- data/out/krx_actions.json 저장 → 웹 상단 '시장조치' 리스트 + monitor 토스트
 사용:
-  python -m derive.actions            # 오늘 시장조치 → data/krx_actions.json
+  python -m derive.actions            # 오늘 시장조치 → data/out/krx_actions.json
   python -m derive.actions 2026-08-04 # 특정일자
 """
 import os, sys, re, datetime

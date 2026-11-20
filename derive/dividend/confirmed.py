@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""확정 배당 — 저장소의 배당결정·기준일 공고(최근 90일 접수) → 회차 → data/dividends.json. 회차 규칙(assemble)은 배당 사실과 공용
+"""확정 배당 — 저장소의 배당결정·기준일 공고(최근 90일 접수) → 회차 → data/out/dividends.json. 회차 규칙(assemble)은 배당 사실과 공용
 
   python -m derive.dividend.confirmed [일수=90]
 """

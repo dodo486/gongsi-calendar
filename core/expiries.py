@@ -4,7 +4,7 @@
 - KOSPI200 옵션: 매월 둘째 목요일
 - KOSPI200 선물: 3·6·9·12월 둘째 목요일 (옵션과 동시만기 = 네 마녀의 날)
 - 해당일이 휴장일(주말·공휴일)이면 직전 영업일로 조정
-→ data/expiries.json
+→ data/out/expiries.json
 """
 import os, datetime
 from core.paths import save_json, OUT_DIR

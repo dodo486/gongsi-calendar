@@ -7,9 +7,9 @@
     · 만료가 구체적 날짜 → 그 날짜 (확정)
     · 만료가 '변경상장/신주' 등 다중일 → DART 결정공시의 '상장예정일' 당겨옴 (예정)
     · KIND '정지해제' 공시가 이미 나온 종목 → 그 해제일로 확정(예정 딱지 제거)
-- data/halts.json 저장 → 웹 공시 캘린더가 '🚫정지 시작'·'✅거래재개' 2점 이벤트로 표시
+- data/out/halts.json 저장 → 웹 공시 캘린더가 '🚫정지 시작'·'✅거래재개' 2점 이벤트로 표시
 사용:
-  python -m derive.halts            # 최근 정지/재개 → data/halts.json
+  python -m derive.halts            # 최근 정지/재개 → data/out/halts.json
 """
 import os, re, datetime
 from core import store, universe

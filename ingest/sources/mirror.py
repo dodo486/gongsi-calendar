@@ -11,7 +11,7 @@ PG 접속 정보가 없으므로 여기선 돌지 않는다.
 
     # 소스(중앙 PG)와 대상(로컬 미러)을 env로 준다
     export SISE_DB_URL="postgresql://...supabase..."      # 소스(중앙)
-    export SISE_DB_PATH="$(pwd)/data/sise.db"             # 대상(로컬 미러)
+    export SISE_DB_PATH="$(pwd)/data/cache/sise.db"             # 대상(로컬 미러)
     python -m ingest.sources.mirror                                  # 전체 테이블 복제
     python -m ingest.sources.mirror --tables candles investor_flows  # 일부만
     python -m ingest.sources.mirror --dry-run                        # 행 수만 확인
