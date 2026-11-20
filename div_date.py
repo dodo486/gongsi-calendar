@@ -225,7 +225,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
             **grade_out("공고" if ann_rec else grade, t), "case": j["case"], "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: _iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
-            **div_amount.estimate(ctx, t, rec),
+            **div_amount.estimate(ctx, t, fy, rec),
             "ladder": ladder(ctx, t, fy, q, bool(ann_rec))}, None
 
 def forecast(ctx, today, earn, med):

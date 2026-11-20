@@ -59,7 +59,7 @@ def build():
         if same:
             for c in same:
                 if not c.get("per_share") and p.get("per_share"):
-                    c.update(per_share=p["per_share"], amount_src="예상", amount_basis=p.get("amount_basis", ""))
+                    c.update(per_share=p["per_share"], amount_src="예상", amount_basis=p.get("amount_basis", ""), amount_cands=p["amount_cands"])
             continue
         rows.append({**p, "kind": "est", "amount_src": "예상" if p.get("per_share") else "", "url": "",
                      "headline": f"예상 기준일 {_md(p['record_date'])} — {p['reason']}",

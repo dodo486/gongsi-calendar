@@ -15,7 +15,7 @@ from base import DATA_DIR, load_watchlist, save_json
 from net import TLS_MODE
 import dividends
 import expiries
-import div_date, div_verify
+import div_date, div_verify, naver_dps, dart_alot
 import divbook
 import divpoints
 import kind_limits
@@ -108,7 +108,7 @@ _res_lock = threading.Lock()
 def refresh_div_estimates():
     """배당 추정(구분·예상 기준일·금액) 갱신 — 이력은 rcept_no 캐시라 신규 문서만 파싱"""
     def work():
-        print("  [배당 추정] 갱신 시작..."); div_date.build(); div_verify.verify(); print("  [배당 추정] 갱신 완료")
+        print("  [배당 추정] 갱신 시작..."); naver_dps.collect(); dart_alot.collect(); div_date.build(); div_verify.verify(); print("  [배당 추정] 갱신 완료")
         divbook.build()
         divpoints.refresh()   # 예상배당 바뀜 → 지수배당포인트 재계산
         check_dividends()

@@ -3,7 +3,8 @@
 import datetime, statistics
 from dividends import TYPE_QUARTERS, quarter_end, round_of
 import dividends as dv
-from div_collect import _d, _norm, _iso, collect, policies, acc_months
+from div_collect import _d, _norm, _iso, _load, collect, policies, acc_months
+import naver_dps
 
 NOTICE_LOOKBACK_DAYS = 45
 SPECIAL_MULT = 2
@@ -120,6 +121,7 @@ def view(ctx, cut):
     v["agm_records"] = [d for d in ctx["agm_records"] if d < cut]
     v["charter_since"] = {g: d for g, d in ctx["charter_since"].items() if d < cut}
     v["splits"] = [x for x in ctx["splits"] if x["date"] < cut]
+    v["dps_cons"] = [x for x in ctx["dps_cons"] if x["date"] < cut]
     return v
 
 def quarter_owner(rounds):
@@ -176,5 +178,7 @@ def contexts():
     for no, e in hist.items():
         if e.get("stock") in universe:
             by.setdefault(e["stock"], []).append({**e, "rcept_no": no})
-    return [context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)) for s in sorted(universe)]
+    cons = _load(naver_dps.PATH, {})
+    return [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)),
+             "dps_cons": [{**x, "date": _d(x["date"])} for x in cons.get(s, [])]} for s in sorted(universe)]
 

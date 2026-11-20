@@ -9,6 +9,7 @@ from krx_cal import t_minus
 from div_collect import D, _d, _iso, _load
 from div_facts import view, medians, contexts
 from div_date import GRADES, GROUP, predict_round
+import div_amount
 
 VERIFY_PATH = os.path.join(DATA_DIR, "div_verify.json")
 EXP_PATH = os.path.join(DATA_DIR, "expiries.json")
@@ -50,7 +51,7 @@ def verify():
                          "err_alt": {k: abs((_d(x) - r["record"]).days) for k, x in p["alt"].items()},
                          "month_ok": month(pex) == month(aex), "cond": p["cond"],
                          "pred_dps": int(p["per_share"]) if p["per_share"] else None, "actual_dps": int(r["dps"]) if r["dps"] else None,
-                         "actual_special": r["special"],
+                         "actual_special": r["special"], "sig_dps": {c["signal"]: c["value"] for c in p["amount_signals"]},
                          "charter": (c["charter"].get(GROUP[r["type"]]) or {}).get("v", ""),
                          "prev_fixed": next((x["fixed"] for x in reversed(v["rounds"]) if x["type"] == r["type"]), None)})
     judged = [x for x in rows if x["pred"] in ("고정", "유동")]
@@ -77,6 +78,8 @@ def verify():
         "조건부 신호(정관 O · 직전 고정)": cond,
         "금액": {t or "전체": amount_hits([x for x in rows if x.get("pred_dps") and x.get("actual_dps") and (not t or x["type"] == t)])
                  for t in ("", "결산배당", "분기배당", "중간배당")},
+        "신호별 금액": {sg.__name__: amount_hits([{**x, "pred_dps": x["sig_dps"][sg.__name__]} for x in rows
+                                                 if sg.__name__ in x.get("sig_dps", {}) and x.get("actual_dps")]) for sg in div_amount.SIGNALS},
         "한계": "정관(정기보고서 표)은 최신값 사용 — 과거 시점 값이 아님. 실적발표 예정일 과거분 없음 → 백테스트에서 A2 이사회형 미사용",
     }
     save_json(VERIFY_PATH, {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "summary": summary, "rows": rows})
