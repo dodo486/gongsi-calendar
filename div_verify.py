@@ -25,9 +25,9 @@ def amount_hits(xs):
             "±20%": pct(sum(e <= 20 for e in err)), "오차 중앙값(%)": round(statistics.median(err), 1),
             "특별배당 섞인 회차": sum(x["actual_special"] for x in xs)}
 
-def verify():
+def verify(ctxs=None):
     today = D.today()
-    ctxs = contexts()
+    ctxs = ctxs or contexts()
     med = medians(ctxs)
     exps = sorted(_d(e["date"]) for e in _load(EXP_PATH, {}).get("events", []) if e.get("type") == "선·옵 동시만기")
     month = lambda ex: next((x for x in exps if x >= ex), None)

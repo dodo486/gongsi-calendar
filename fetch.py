@@ -116,7 +116,6 @@ def listing(ty, days):
                 e = min(today, a + datetime.timedelta(days=84))
                 grab(a, e)
                 s["to"] = ymd(e)
-                _list_save(store)
                 a = e + _DAY
         except Exception as ex:
             print(f"  [!] DART 목록({ty}) 조회 실패 — 받은 구간 {s['from']}~{s['to']}: {type(ex).__name__}")
@@ -129,6 +128,10 @@ def listing(ty, days):
             raise RuntimeError(f"DART 목록({ty}) {s['from']}~{s['to']} — 요청 {ymd(want)}~{ymd(today)} 를 다 못 받음")
         return [r for r in s["rows"].values() if r["rcept_dt"] >= ymd(want)]
 
+
+def has_body(report_nm):
+    """[첨부정정]은 첨부만 고친 공시 — 본문이 없어 doc_text 가 늘 실패하고, 읽을 새 내용도 없다"""
+    return "[첨부정정]" not in (report_nm or "")
 
 def doc_text(rcept_no):
     url = f"https://opendart.fss.or.kr/api/document.xml?crtfc_key={KEY}&rcept_no={rcept_no}"

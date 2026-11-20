@@ -8,7 +8,7 @@
 - 웹은 기준일 날짜에 "회사명 (금액원)" 표시
 """
 import sys, os, re, json, datetime, calendar, threading
-from fetch import listing, doc_text
+from fetch import listing, doc_text, has_body
 from base import load_watchlist, DATA_DIR, save_json
 from net import TLS_MODE
 from krx_cal import t_minus, norm_date
@@ -147,7 +147,7 @@ def main(days=90):
     print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 배당 수집대상 {len(watch)} (감시종목+ETF PDF)")
 
     cache = load_doc_cache()   # div_collect 가 채운 파싱 캐시(=div_history.json) — 캐시에 없는 원문만 받음
-    rows = sorted((r for r in listing("I", days) if r["stock_code"] in watch and "자회사" not in r["report_nm"]),
+    rows = sorted((r for r in listing("I", days) if r["stock_code"] in watch and "자회사" not in r["report_nm"] and has_body(r["report_nm"])),
                   key=lambda r: (r["rcept_dt"], r["rcept_no"]))   # 접수 순 — 같은 회차는 나중 공시(정정)가 이김
     decisions = [r for r in rows if "현금ㆍ현물배당결정" in r["report_nm"]]
     records = [r for r in rows if "주주명부폐쇄" in r["report_nm"] and "배당" in r["report_nm"]]

@@ -15,7 +15,7 @@ from base import DATA_DIR, load_watchlist, save_json
 from net import TLS_MODE
 import dividends
 import expiries
-import div_date, div_verify, naver_dps, dart_alot
+import div_facts, div_date, div_verify, naver_dps, dart_alot
 import divbook
 import divpoints
 import kind_limits
@@ -105,10 +105,21 @@ def refresh_earnings(full=False):
     _run_guarded(_earn_lock, work, "실적")
 
 _res_lock = threading.Lock()
+_res_day = {"date": None}
 def refresh_div_estimates():
-    """배당 추정(구분·예상 기준일·금액) 갱신 — 이력은 rcept_no 캐시라 신규 문서만 파싱"""
+    """배당 추정(구분·예상 기준일·금액) 갱신 — 원문은 rcept_no 캐시라 새 공시만 받음.
+    전 종목 재추정은 계산만이라 1초 안. 하루 한 번: 컨센·배당 이력 수집과 백테스트"""
     def work():
-        print("  [배당 추정] 갱신 시작..."); naver_dps.collect(); dart_alot.collect(); div_date.build(); div_verify.verify(); print("  [배당 추정] 갱신 완료")
+        today = datetime.date.today()
+        daily = _res_day["date"] != today
+        print("  [배당 추정] 갱신 시작...")
+        if daily:
+            naver_dps.collect(); dart_alot.collect()
+        ctxs = div_facts.contexts()
+        div_date.build(ctxs)
+        if daily:
+            div_verify.verify(ctxs); _res_day["date"] = today
+        print("  [배당 추정] 갱신 완료")
         divbook.build()
         divpoints.refresh()   # 예상배당 바뀜 → 지수배당포인트 재계산
         check_dividends()

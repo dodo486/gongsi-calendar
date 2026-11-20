@@ -7,7 +7,7 @@ DART 회사정보 결산월 → acc_mt.json
 """
 import os, re, json, datetime, threading
 from concurrent.futures import ThreadPoolExecutor
-from fetch import listing, doc_text, api, KEY, corp_code
+from fetch import listing, doc_text, has_body, api, KEY, corp_code
 from base import DATA_DIR, save_json
 import dividends as dv
 
@@ -45,7 +45,7 @@ def _load(path, default):
 # ── 수집: 목록 ──
 def _kind(nm):
     c = re.sub(r"\s+", "", nm or "")
-    if "자회사" in c:
+    if "자회사" in c or not has_body(nm):
         return None
     if "현금ㆍ현물배당결정" in c:
         return "decision"
@@ -64,7 +64,7 @@ def _kind(nm):
     return None
 
 def _periodic(nm):
-    return any(k in (nm or "") for k in ("사업보고서", "반기보고서", "분기보고서"))
+    return has_body(nm) and any(k in (nm or "") for k in ("사업보고서", "반기보고서", "분기보고서"))
 
 # ── 수집: 원문 파싱 ──
 def parse_charter(t):

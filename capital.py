@@ -9,7 +9,7 @@
   python capital.py 30         # 최근 30일
 """
 import sys, os, re, json, math, datetime, threading
-from fetch import listing, parsed
+from fetch import listing, parsed, has_body
 from base import load_watchlist, DATA_DIR, save_json
 from net import TLS_MODE
 from krx_cal import t_minus, norm_date
@@ -33,7 +33,7 @@ RE_SECTIONS = re.compile(r"Ⅰ\.\s*유상증자\s*1\.(.*?)Ⅱ\.\s*무상증자\s
 RE_ISSUE = re.compile(r"(확정|예정)발행가\s*보통주식\s*\(원\)\s*([\d,]+)")
 
 def _is_cap(nm):
-    return any(k in (nm or "") for k in ("유상증자결정", "무상증자결정", "유무상증자결정"))
+    return has_body(nm) and any(k in (nm or "") for k in ("유상증자결정", "무상증자결정", "유무상증자결정"))
 
 def parse_cap(t, nm):
     """증자구분 → 필드. 유무상증자결정은 본문 Ⅰ(유상)·Ⅱ(무상)를 따로 파싱. 신주배정기준일 없는 구분은 뺀다."""

@@ -277,9 +277,9 @@ def company_out(ctx, missed):
             "plans": [{"date": _iso(p["date"]), "title": p["title"], "lines": p["lines"]} for p in ctx["plans"]][-2:],
             "evidence": ev}
 
-def build(days=HIST_DAYS):
+def build(ctxs=None, days=HIST_DAYS):
     today = D.today()
-    ctxs = contexts()
+    ctxs = ctxs or contexts()
     try:
         earn_all = earn_sched.collect(watch=dv.div_universe())
     except Exception as ex:
