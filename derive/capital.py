@@ -1,71 +1,22 @@
 # -*- coding: utf-8 -*-
-"""유상·무상증자 캘린더용 데이터 추출 (원문 파싱 — 정형 API 없음)
-- 대상 공시: 주요사항보고서(유상증자결정 / 무상증자결정 / 유무상증자결정) — 감시대상 한정(배당과 동일)
-- 신주배정기준일 파싱 → 권리부매수일(T-2)·권리락일(T-1) 계산 (배당 T-1/T-2 로직 재사용)
+"""유상·무상증자 캘린더
+- 대상 공시: 저장소의 유상·무상·유무상증자결정(감시대상, 파서는 ingest/parsers/capital.py)
+- 신주배정기준일 → 권리부매수일(T-2)·권리락일(T-1) 계산 (배당 T-1/T-2 로직 재사용)
 - 제3자배정 등 신주배정기준일이 없는 건은 자동 제외(권리락 없음)
 - data/capital.json 저장 → 배당 캘린더에 무증(보라/연보라)·유증(파랑/하늘) 표시
 사용:
   python -m derive.capital            # 최근 1년 유·무상증자 → data/capital.json
   python -m derive.capital 30         # 최근 30일
 """
-import sys, os, re, json, math, datetime, threading
-from ingest.sources.dart import listing, parsed, has_body
-from core.paths import load_watchlist, DATA_DIR, save_json
-from ingest.sources.net import TLS_MODE
-from core.krx_cal import t_minus, norm_date
-from ingest.sources import kis as md_feed
+import sys, os, math, datetime, threading
+from core import store, universe, market as md_feed
+from core.paths import DART_VIEW, save_json, OUT_DIR
+from core.krx_cal import t_minus
 
 _LOCK = threading.RLock()
-CAP_PATH = os.path.join(DATA_DIR, "capital.json")
-CACHE_PATH = os.path.join(DATA_DIR, "cap_cache.json")   # rcept_no -> 파싱결과(원문 재다운로드 방지)
+CAP_PATH = os.path.join(OUT_DIR, "capital.json")
 SCAN_DAYS = 365   # 공시일 기준 과거 1년 — 지난 증자도 공시가 오래됐다는 이유로 캘린더에서 빠지지 않게
-
-RE_REC = re.compile(r"신주배정기준일\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
-# 무상: "1주당 신주배정 주식수 보통주식 (주) 0.5" / 유상: "1주당 신주배정주식수 (주) 0.24" 둘 다 대응
-RE_RATIO = re.compile(r"1주당\s*신주배정\s*주식수\s*(?:보통주식)?\s*\(주\)\s*([\d.]+)")
-# 신주 상장(입고)예정일 — 무상 "신주의 상장 예정일" / 유상 "신주의 상장예정일" 둘 다.
-# 라벨 바로 뒤 날짜만 잡으므로 정정공시의 정정전(라벨~날짜 사이에 사유텍스트) 은 건너뛰고 정정후가 잡힌다.
-RE_LIST = re.compile(r"신주의\s*상장\s*예정일\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
-# 신주인수권증서 상장(입고) 시작일 — 유상 주주배정 "신주인수권증서 상장(예정)기간 : YYYY.MM.DD ~ ..."
-RE_RIGHTS = re.compile(r"신주인수권증서\s*상장(?:예정)?기간\s*[:：]?\s*(\d{4}\D+\d{1,2}\D+\d{1,2})")
-RE_SECTIONS = re.compile(r"Ⅰ\.\s*유상증자\s*1\.(.*?)Ⅱ\.\s*무상증자\s*1\.(.*)")
-# 유상 신주 발행가 — 확정 우선, 없으면 예정. 정정공시는 정정표 뒤에 본문이 오므로 마지막 값을 쓴다.
-RE_ISSUE = re.compile(r"(확정|예정)발행가\s*보통주식\s*\(원\)\s*([\d,]+)")
-
-def _is_cap(nm):
-    return has_body(nm) and any(k in (nm or "") for k in ("유상증자결정", "무상증자결정", "유무상증자결정"))
-
-def parse_cap(t, nm):
-    """증자구분 → 필드. 유무상증자결정은 본문 Ⅰ(유상)·Ⅱ(무상)를 따로 파싱. 신주배정기준일 없는 구분은 뺀다."""
-    if "유무상증자결정" in nm:
-        m = RE_SECTIONS.search(t)
-        parts = {"유상증자": m.group(1), "무상증자": m.group(2)} if m else {}
-    else:
-        parts = {"유상증자" if "유상증자결정" in nm else "무상증자": t}
-    out = {}
-    for typ, s in parts.items():
-        m = RE_REC.search(s)
-        if not m:
-            continue
-        r = RE_RATIO.search(s)
-        ml = RE_LIST.search(s)
-        mr = RE_RIGHTS.search(s)
-        issue = dict(RE_ISSUE.findall(s)) if typ == "유상증자" else {}
-        out[typ] = {"record_date": norm_date(m.group(1)),
-                    "issue_price": int((issue.get("확정") or issue.get("예정") or "0").replace(",", "")),
-                    "ratio": r.group(1) if r else "",
-                    "listing_date": norm_date(ml.group(1)) if ml else "",   # 신주 상장(입고)일
-                    # 신주인수권증서 상장(입고)일 — 유상 주주배정에만 존재, 무상 오탐 방지
-                    "rights_date": norm_date(mr.group(1)) if mr and typ == "유상증자" else ""}
-    return out
-
-def load_cache():
-    if os.path.exists(CACHE_PATH):
-        try:
-            return json.load(open(CACHE_PATH, encoding="utf-8"))
-        except Exception:
-            return {}
-    return {}
+CAP_KINDS = ("cap_mixed", "cap_rights", "cap_bonus")
 
 def _finalize(e):
     e["buy_date"] = t_minus(e["record_date"], 2)   # 권리부매수일(T-2) — 이날까지 매수해야 신주배정
@@ -74,29 +25,26 @@ def _finalize(e):
         e["sell_date"] = t_minus(e.get("listing_date", ""), 2)
     return e
 
-def build_events(rows, cache):
+def build_events(days):
     """같은 증자 = 같은 종목·증자구분이고 신주배정기준일이 120일 안 — 접수 순으로 돌아 정정 공시가 원본을 덮음.
     신주배정기준일 있는 건만."""
+    since = (datetime.date.today() - datetime.timedelta(days=days)).strftime("%Y%m%d")
+    watch = universe.watch()
+    rows = sorted(((no, r) for k in CAP_KINDS for no, r in store.load(k).items() if r["stock"] in watch and r["rcept_dt"] >= since),
+                  key=lambda x: (x[1]["rcept_dt"], x[0]))
     merged = {}
-    for r in sorted(rows, key=lambda r: (r.get("rcept_dt", ""), r["rcept_no"])):
-        try:
-            parts = parsed(r["rcept_no"], lambda t: parse_cap(t, r["report_nm"]), cache)
-        except Exception:
-            continue
-        for typ, d in parts.items():
-            if not d["record_date"]:
+    for no, r in rows:
+        for typ in ("유상증자", "무상증자"):
+            d = r.get(typ)
+            if not d or not d["record_date"]:
                 continue
             rec = datetime.date.fromisoformat(d["record_date"])
-            key = next((k for k, e in merged.items() if k[:2] == (r["stock_code"], typ)
+            key = next((k for k, e in merged.items() if k[:2] == (r["stock"], typ)
                         and abs((datetime.date.fromisoformat(e["record_date"]) - rec).days) <= 120),
-                       (r["stock_code"], typ, r["rcept_no"]))
-            merged[key] = {"corp": r["corp_name"], "stock": r["stock_code"],
-                           "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ",
-                           "type": typ, "rcept_no": r["rcept_no"],
-                           "rcept_dt": r.get("rcept_dt", ""),
-                           "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={r['rcept_no']}",
-                           **d}
-    return [_finalize(e) for e in merged.values()]
+                       (r["stock"], typ, no))
+            merged[key] = {"corp": r["corp"], "stock": r["stock"], "market": r["market"], "type": typ, "rcept_no": no,
+                           "rcept_dt": r["rcept_dt"], "url": DART_VIEW + no, **d}
+    return [_finalize(e) for e in merged.values()], len(rows)
 
 def _won(n):
     return f"{n:,.0f}"
@@ -147,11 +95,7 @@ def _save(events):
 
 def main(days=SCAN_DAYS):
     today = datetime.date.today()
-    watch = load_watchlist() or {}
-    cache = load_cache()
-    rows = [r for r in listing("B", days)   # 증자결정 = 주요사항보고(B)
-            if r["stock_code"] in watch and _is_cap(r["report_nm"])]
-    events = build_events(rows, cache)
+    events, n_rows = build_events(days)
     today_s = today.isoformat()
     bonus_done = [(e["stock"], e["ex_date"], float(e["ratio"] or 0))
                   for e in events if e["type"] == "무상증자" and e["ex_date"] <= today_s]
@@ -185,10 +129,8 @@ def main(days=SCAN_DAYS):
                 elif issue:   # 보유 수익률 = (주가 + r × 증서 이론가) ÷ 권리부 매수가 − 1
                     e["even_rights"] = round(base - issue)   # 본전 증서가 = 기준가 − 발행가
                     e["ret"] = round(((price + r * e["rights_theo"]) / (base * (1 + r) - issue * r) - 1) * 100, 2)
-    with _LOCK:
-        save_json(CACHE_PATH, cache)   # 신규 파싱분 캐시 보존(다음 회차 재다운로드 방지)
     _save(events)
-    print(f"TLS={TLS_MODE} | 과거 {days}일 | 감시대상 {len(watch)} | 증자결정 {len(rows)}건 → {len(events)}건(기준일有) 저장")
+    print(f"과거 {days}일 | 증자결정 {n_rows}건 → {len(events)}건(기준일有) 저장")
     for e in events:
         extra = ""
         if e.get("listing_date"): extra += f" · 신주상장 {e['listing_date']}"

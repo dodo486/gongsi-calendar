@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-"""로컬 웹서버 — index.html + data/ 를 브라우저에서 열어줌
-+ /events (SSE): data/*.json 이 바뀌는 즉시 브라우저로 '변경' 이벤트를 밀어줌
+"""로컬 웹서버 — web/ 화면 + data/out 결과를 브라우저에서 열어줌
++ /events (SSE): data/out/*.json 이 바뀌는 즉시 브라우저로 '변경' 이벤트를 밀어줌
   → 브라우저가 새로고침 없이 즉시 다시 로드 (배당·실적·상하한가 실시간 반영)
 + /api/earnfacts?code=XXXXXX[&rcept=접수번호]: 실적 상세(시총·컨센서스·분기 추이) JSON
 """
 import http.server, os, time, json, re, threading
 import urllib.parse
 
-from core.paths import BASE, DATA_DIR
-HTML_PAGES = [os.path.join(BASE, n) for n in ("index.html", os.path.join("dividend", "index.html"))]
+from core.paths import BASE, OUT_DIR
+WEB = os.path.join(BASE, "web")
+HTML_PAGES = [os.path.join(WEB, n) for n in ("index.html", os.path.join("dividend", "index.html"))]
 PORT = 8777
 
 # 토스트 클릭 → 차트 열기 브로드캐스트용
@@ -34,10 +35,10 @@ def data_mtimes():
     """{data/*.json 파일명: mtime} — 바뀐 파일 이름을 화면에 알려 그 탭에 필요한 것만 다시 그리게 한다."""
     out = {}
     try:
-        for n in os.listdir(DATA_DIR):
+        for n in os.listdir(OUT_DIR):
             if n.endswith(".json"):
                 try:
-                    out[n] = os.path.getmtime(os.path.join(DATA_DIR, n))
+                    out[n] = os.path.getmtime(os.path.join(OUT_DIR, n))
                 except OSError:
                     pass
     except OSError:
@@ -48,7 +49,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"   # SSE 스트리밍용 (keep-alive)
 
     def __init__(self, *a, **k):
-        super().__init__(*a, directory=BASE, **k)
+        super().__init__(*a, directory=WEB, **k)
+
+    def translate_path(self, path):
+        """화면은 web/, 계산 결과는 /data/out/ → data/out (저장소·캐시는 내보내지 않음)"""
+        p = urllib.parse.unquote(path.split("?")[0])
+        if p.startswith("/data/out/"):
+            return os.path.join(OUT_DIR, *[x for x in p[len("/data/out/"):].split("/") if x not in ("", ".", "..")])
+        return super().translate_path(path)
 
     def log_message(self, *a):  # 콘솔 조용히
         pass
@@ -100,7 +108,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def _serve_earnfacts(self):
-        """실적 상세 — consensus.view (판정·수치·경고·수급·추이·뉴스, 원자료는 네이버+DART 캐시 30분)"""
+        """실적 상세 — earn_detail.view (판정·수치·경고·수급·추이·뉴스, 원자료는 네이버+DART 캐시 30분)"""
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         code = (qs.get("code") or [""])[0]
         rcept = (qs.get("rcept") or [""])[0]
@@ -108,12 +116,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_error(400)
             return
         try:
-            from derive import earn_detail as consensus
+            from derive import earn_detail
+            from ingest import earn_facts
             ev = None
             if rcept:
-                earn = json.load(open(os.path.join(DATA_DIR, "earnings.json"), encoding="utf-8")).get("events", [])
+                earn = json.load(open(os.path.join(OUT_DIR, "earnings.json"), encoding="utf-8")).get("events", [])
                 ev = next((e for e in earn if e.get("rcept_no") == rcept), {"date": ""})
-            body = json.dumps(consensus.view(code, rcept, ev), ensure_ascii=False).encode("utf-8")
+            body = json.dumps(earn_detail.view(earn_facts.facts(code, rcept), ev), ensure_ascii=False).encode("utf-8")
         except Exception as ex:
             body = json.dumps({"error": str(ex)}).encode("utf-8")
         self.send_response(200)
@@ -186,7 +195,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 def _warm_quotes():
     """네이버 연결(keep-alive)을 미리 데워 첫 종목 클릭의 콜드 핸드셰이크(수 초) 제거."""
     try:
-        from ingest.sources import kis as md_feed
+        from core import market as md_feed
         md_feed.daily_price("005930", 1)      # m.stock 핸드셰이크
         md_feed.investor_trend("005930", 1)
     except Exception:

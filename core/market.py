@@ -16,9 +16,10 @@ jhts.marketdata 미설치 시 AVAILABLE=False, 함수는 빈 값을 돌려준다
 KIS 키가 없으면(mock 모드) 실시간은 가짜값 대신 '없음'을 돌려준다(데이터 정직성).
 """
 import os
-from core.paths import DATA_DIR
+from core.paths import CACHE_DIR
 
-os.environ.setdefault("SISE_DB_PATH", os.path.join(DATA_DIR, "sise.db"))
+os.environ.setdefault("SISE_DATA_DIR", CACHE_DIR)   # jhts 의 시세 DB·KIS 토큰 위치
+os.environ.setdefault("SISE_DB_PATH", os.path.join(CACHE_DIR, "sise.db"))
 
 try:
     import jhts.marketdata as md

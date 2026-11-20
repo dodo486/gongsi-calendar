@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
-"""KRX 시장조치 실시간 수집 — KIND 당일공시 중 '시장본부/거래소 발신' 행
-- 사이드카, 서킷브레이커, 매매거래정지/재개, 투자경고·위험·주의, 단기과열, 공매도과열, 기타시장안내 등
-- 코스피=marketType 1 / 코스닥=marketType 2 (파생 가격제한폭은 kind_limits 가 전담)
+"""KRX 시장조치 — 저장소의 KIND 당일공시(유가·코스닥) 중 '시장본부/거래소 발신' 행
+- 사이드카, 서킷브레이커, 매매거래정지/재개, 투자경고·위험·주의, 단기과열, 공매도과열 등 (파생 가격제한폭은 limits)
 - data/krx_actions.json 저장 → 웹 상단 '시장조치' 리스트 + monitor 토스트
 사용:
   python -m derive.actions            # 오늘 시장조치 → data/krx_actions.json
   python -m derive.actions 2026-08-04 # 특정일자
 """
 import os, sys, re, datetime
-from core.paths import DATA_DIR, save_json
-from ingest.sources.net import TLS_MODE
-from ingest.sources import kind as kind_client
+from core.paths import save_json, OUT_DIR
+from core import store, universe
+from core.paths import KIND_VIEW
 
-ACTIONS_PATH = os.path.join(DATA_DIR, "krx_actions.json")
+ACTIONS_PATH = os.path.join(OUT_DIR, "krx_actions.json")
 
 def _classify(t):
     low = (t or "").lower().replace(" ", "")   # "Side car"/"사이드카"/"Sidecar" 표기 변형 흡수
@@ -53,57 +52,46 @@ SEVERITY = {"사이드카": "danger", "서킷브레이커": "danger", "거래정
 
 def collect(sel_date=None):
     d = sel_date or datetime.date.today().strftime("%Y-%m-%d")
-    codes = {re.sub(r"\s+", "", n): c for n, (c, _) in kind_client.name2code().items()}   # 감시대상 종목명(공백 제거해 매칭 안정화) → 코드
+    codes = {re.sub(r"\s+", "", n): c for n, (c, _) in universe.watch_names().items()}   # 감시대상 종목명(공백 제거) → 코드
     events = []
-    for mt, market in (("1", "KOSPI"), ("2", "KOSDAQ")):
-        try:
-            html = kind_client.feed(d, mt)
-        except Exception:
-            continue
-        for row in re.split(r"</tr>", html):
-            tds = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
-            if len(tds) < 4:
-                continue
-            submitter = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", tds[3])).strip()
-            if "시장본부" not in submitter and "거래소" not in submitter:
+    for k in ("kind_action", "kind_halt"):
+        for no, r in store.load(k).items():
+            if r["rcept_dt"] != d.replace("-", "") or not ("시장본부" in r["submitter"] or "거래소" in r["submitter"]):
                 continue   # 시장본부/거래소 발신만 = 시장조치 (개별사 공시 제외)
-            m_corp = re.search(r"title='([^']+)'", tds[1])   # 회사명 (종목-특정 조치일 때만 존재)
-            corp = m_corp.group(1).strip() if m_corp else ""
-            m_title = re.search(r"title='([^']+)'", tds[2])  # 공시 제목 (2번째 셀 = 제목 링크)
-            title = (m_title.group(1) if m_title else re.sub(r"<[^>]+>", " ", tds[2])).strip()
+            corp, title, tm = r["corp"], r["title"], r["time"]
             kind = _classify(title)
             if kind == "시장안내":
                 continue   # 기타시장안내(NXT 등 루틴 안내)는 제외
             # 코스피200·코스닥150 종목만 — 사이드카·서킷브레이커(시장 전체 조치)는 예외로 항상 유지
             if kind not in _MARKET_WIDE and (not corp or re.sub(r"\s+", "", corp) not in codes):
                 continue
-            m_time = re.search(r'([0-9]{1,2}:[0-9]{2})', tds[0])
-            tm = m_time.group(1) if m_time else ""
             action = _action(title)
-            m_acpt = re.search(r"openDisclsViewer\('(\d+)'", row)
-            rno = m_acpt.group(1) if m_acpt else f"{d.replace('-','')}{market}{tm}{title[:16]}"
+            until = _until(kind, action, tm)
             events.append({
-                "time": tm, "market": market, "kind": kind,
+                "time": tm, "market": r["market"], "kind": kind,
                 "direction": "매수" if "매수" in title else ("매도" if "매도" in title else ""),
-                "action": action, "until": _until(kind, action, tm),
+                "action": action, "until": until,
                 "corp": corp, "code": codes.get(re.sub(r"\s+", "", corp), ""),
                 "severity": SEVERITY.get(kind, "info"), "critical": kind in _MARKET_WIDE,
-                "active_from": tm if _until(kind, action, tm) else "", "active_to": _until(kind, action, tm),
-                "title": (f"{corp} {title}" if corp else title), "submitter": submitter,
-                "rcept_no": rno,
-                "url": kind_client.VIEWER.format(m_acpt.group(1)) if m_acpt else "https://kind.krx.co.kr",
+                "active_from": tm if until else "", "active_to": until,
+                "title": (f"{corp} {title}" if corp else title), "submitter": r["submitter"],
+                "rcept_no": no, "url": KIND_VIEW.format(no),
             })
     events.sort(key=lambda e: (e["time"], e["rcept_no"]), reverse=True)
     return events
 
-def main(sel_date=None):
+def build(sel_date=None):
     evs = collect(sel_date)
     save_json(ACTIONS_PATH, {
         "date": sel_date or datetime.date.today().strftime("%Y-%m-%d"),
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "count": len(evs), "events": evs,
     })
-    print(f"TLS={TLS_MODE} | krx_actions.json 저장: {len(evs)}건")
+    return evs
+
+def main(sel_date=None):
+    evs = build(sel_date)
+    print(f"krx_actions.json 저장: {len(evs)}건")
     for e in evs:
         print(f"  {e['time']} {e['market']} [{e['kind']}] {e['action']} {e['title'][:50]}")
 

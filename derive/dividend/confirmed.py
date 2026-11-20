@@ -5,7 +5,7 @@
 """
 import sys, os, datetime, calendar
 from core import store, universe
-from core.paths import DATA_DIR, DART_VIEW, save_json
+from core.paths import DART_VIEW, save_json, OUT_DIR
 from core.krx_cal import t_minus
 
 # ── 회차 — 배당 하나 = 종목 · 배당종류 · 사업연도 · 분기 ──
@@ -84,7 +84,7 @@ def main(days=90):
         e["ex_date"] = t_minus(e["record_date"], 1)       # 배당락일 (기준일 T-1 영업일)
         events.append(e)
     events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
-    save_json(os.path.join(DATA_DIR, "dividends.json"),
+    save_json(os.path.join(OUT_DIR, "dividends.json"),
               {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "count": len(events), "events": events})
     print(f"저장: dividends.json ({len(events)}건, 배당금有 {sum(1 for e in events if e['per_share'])}건)")
 

@@ -10,12 +10,11 @@
 """
 import bisect, json, os, re, sys, datetime
 from derive.disclosures import collect_events, stored_rows
-from core.paths import DATA_DIR, load_watchlist, save_json
-from ingest.sources.net import TLS_MODE
-from ingest.sources import kind as kind_client
-from ingest.sources import kis as md_feed  # 시세는 jhts 시세수집팀 위임(예전 네이버 스크래핑 코드는 jhts로 이관)
+from core.paths import load_watchlist, save_json, OUT_DIR
+from core import store
+from core import market as md_feed  # 시세는 jhts 시세수집팀 위임(예전 네이버 스크래핑 코드는 jhts로 이관)
 
-EARN_PATH = os.path.join(DATA_DIR, "earnings.json")
+EARN_PATH = os.path.join(OUT_DIR, "earnings.json")
 RETAIN_DAYS = 30
 QUOTE_CAP = 80          # 등락률 조회 종목 상한(과도한 네이버 호출 방지)
 TICK_CAP = 30           # 1회 실행당 공시시각+분봉(전후5분) 신규 계산 상한
@@ -49,18 +48,9 @@ def _attach_quotes(events):
     return events
 
 def kind_disc_time(corp, date_ymd, market):
-    """KIND 당일공시 목록에서 해당 회사의 실적 공시 접수시각(HH:MM) 조회 (DART list엔 시각 없음)"""
-    try:
-        page = kind_client.feed(f"{date_ymd[:4]}-{date_ymd[4:6]}-{date_ymd[6:]}", "1" if market == "KOSPI" else "2", corp)
-        for row in re.split(r"</tr>", page):
-            mt = re.search(r'txc">\s*([0-9]{1,2}:[0-9]{2})', row)
-            ti = re.search(r"openDisclsViewer\([^)]*\)\"\s*title='([^']+)'", row)
-            if mt and ti and "실적" in ti.group(1):
-                return mt.group(1)
-    except Exception:
-        pass
-    return ""
-
+    """저장소의 KIND 당일공시 목록에서 해당 회사의 실적 공시 접수시각(HH:MM) (DART 목록엔 시각 없음)"""
+    page = store.load("kind_feed").get(f"{date_ymd[:4]}-{date_ymd[4:6]}-{date_ymd[6:]}|{'K1' if market == 'KOSPI' else 'K2'}", [])
+    return next((r["time"] for r in page if r["corp"] == corp and "실적" in r["title"] and r["time"]), "")
 
 def _tick_rates(cmap, date_ymd, hhmm):
     """공시시각 기준 전5분/후5분 등락률(%) — 같은 날 15분 이내 분봉만 인정"""
@@ -215,7 +205,7 @@ def main(days=RETAIN_DAYS):
         "count": len(evs), "events": evs,
     })
     got = sum(e.get("rate") is not None for e in evs)
-    print(f"TLS={TLS_MODE} | earnings.json 저장: {len(evs)}건 (등락률 {got})")
+    print(f"earnings.json 저장: {len(evs)}건 (등락률 {got})")
 
 def refresh_quotes():
     """실적 목록 재수집 없이 등락률만 갱신(가벼움) — 폴러가 매 주기 호출"""

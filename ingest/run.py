@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
-"""들여오기 한 바퀴 — 주기 원천 → DART 목록에서 새 접수번호만 → 그 종류 파서 한 번 → 저장소. 바뀐 종류 이름들을 돌려준다(날이 바뀌면 "day" 포함).
-받은 공시는 다시 받지 않고(파서 버전을 올린 종류만 다시 읽음), 받기 실패는 그날 다시 시도하지 않는다.
+"""들여오기 한 바퀴 — 주기 원천 → 공시 목록(DART·KIND)에서 새 접수번호만 → 그 종류 파서 한 번 → 저장소.
+바뀐 종류 이름들을 돌려준다(날이 바뀌면 "day" 포함). 받은 공시는 다시 받지 않고(파서 버전을 올린 종류만 다시 읽음),
+받기 실패는 RETRY_MIN 분 뒤에 다시. fast = 장중 고속 바퀴 — KIND 오늘 목록만.
 
   python -m ingest.run
 """
-import re, datetime, threading
+import os, re, time, datetime, threading
 from concurrent.futures import ThreadPoolExecutor
 from core import store
+from core.krx_cal import is_business_day
 from ingest.registry import DOCS, FEEDS
-from ingest.sources.dart import listing, doc_text, has_body
+from ingest.sources import dart, kind
 
+RETRY_MIN = 10
+KIND_RECHECK_DAYS = 2      # KIND 목록은 오늘·어제만 늦은 공시 대비 다시, 지난 날짜는 저장본
+KIND_MARKET = {"K1": "KOSPI", "K2": "KOSDAQ", "K3": "파생"}
 _lock = threading.Lock()
 
 def _feeds(today):
@@ -28,26 +33,61 @@ def _feeds(today):
     store.save("_feeds", done)
     return changed
 
-def _docs(today):
-    failed, changed = dict(store.load("_failed")), set()
-    for ty in sorted({d.listing for d in DOCS}):
-        docs = [d for d in DOCS if d.listing == ty]
-        since = {d.kind: (datetime.date.today() - datetime.timedelta(days=d.days)).strftime("%Y%m%d") for d in docs}
+def _dart_rows(ty, days):
+    for r in dart.listing(ty, days):
+        if dart.has_body(r["report_nm"]):
+            yield {"no": r["rcept_no"], "title": re.sub(r"\s+", " ", r["report_nm"]).strip(), "stock": r["stock_code"],
+                   "corp": r["corp_name"], "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ", "rcept_dt": r["rcept_dt"]}
+
+def _kind_rows(ty, days, today, fast, changed):
+    """KIND 당일공시 목록 — 날짜·시장마다 한 번 받아 저장(지난 날짜는 안 바뀜). 목록이 비정상이면 저장 안 함"""
+    before = store.load("kind_feed")
+    pages = dict(before)
+    d0 = datetime.date.fromisoformat(today)
+    for n in range(0 if fast else days, -1, -1):
+        d = d0 - datetime.timedelta(days=n)
+        key = f"{d.isoformat()}|{ty}"
+        if key not in pages or n < KIND_RECHECK_DAYS:
+            try:
+                ok, rows = kind.rows(d.isoformat(), ty[1])
+            except Exception:
+                continue
+            if ok or not is_business_day(d):
+                pages[key] = rows
+        for r in pages.get(key, []):
+            yield {"no": r["acpt"], "title": r["title"], "stock": "", "corp": r["corp"], "market": KIND_MARKET[ty],
+                   "rcept_dt": d.strftime("%Y%m%d"), "time": r["time"], "submitter": r["submitter"], "indices": r["indices"]}
+    oldest = (d0 - datetime.timedelta(days=max(d.days for d in DOCS if ty in d.lists))).isoformat()
+    pages = {k: v for k, v in pages.items() if not k.endswith(ty) or k[:10] >= oldest}
+    if pages != before:
+        store.save("kind_feed", pages)
+        changed.add("kind_feed")
+
+def _docs(today, fast):
+    failed, changed, now = dict(store.load("_failed")), set(), time.time()
+    lists = sorted({ty for d in DOCS for ty in d.lists if not fast or ty.startswith("K")})
+    for ty in lists:
+        docs = [d for d in DOCS if ty in d.lists]
+        days = max(d.days for d in docs)
+        listed = os.path.getmtime(dart.LIST_PATH) if os.path.exists(dart.LIST_PATH) else None
+        rows = list(_kind_rows(ty, days, today, fast, changed) if ty.startswith("K") else _dart_rows(ty, days))
+        if not ty.startswith("K") and os.path.getmtime(dart.LIST_PATH) != listed:
+            changed.add("dart_listing")
+        since = {d.kind: (datetime.date.fromisoformat(today) - datetime.timedelta(days=d.days)).strftime("%Y%m%d") for d in docs}
         stored = {d.kind: store.load(d.kind) for d in docs}
         stocks, jobs = {}, []
-        for r in listing(ty, max(d.days for d in docs)):
-            if not has_body(r["report_nm"]):
-                continue
-            c = re.sub(r"\s+", "", r["report_nm"])
-            d = next((d for d in docs if d.match(c)), None)
+        for r in rows:
+            c = re.sub(r"\s+", "", r["title"])
+            d = next((d for d in docs if d.match(c, r)), None)
             if not d or r["rcept_dt"] < since[d.kind]:
                 continue
-            if d.kind not in stocks:
-                stocks[d.kind] = d.stocks()
-            if r["stock_code"] not in stocks[d.kind]:
-                continue
-            have = stored[d.kind].get(r["rcept_no"])
-            if (have and have.get("v", 1) >= d.version) or failed.get(r["rcept_no"]) == today:
+            if d.stocks:
+                if d.kind not in stocks:
+                    stocks[d.kind] = d.stocks()
+                if r["stock"] not in stocks[d.kind]:
+                    continue
+            have = stored[d.kind].get(r["no"])
+            if (have and have.get("v", 1) >= d.version) or now - failed.get(r["no"], 0) < RETRY_MIN * 60:
                 continue
             jobs.append((d, r))
         if not jobs:
@@ -55,31 +95,33 @@ def _docs(today):
         print(f"  [들여오기] 목록 {ty} 새 공시 {len(jobs)}건")
         def one(job):
             d, r = job
+            if not d.parse:
+                return job, {}
             try:
-                return job, d.parse(doc_text(r["rcept_no"])) if d.parse else {}
+                t = kind.body_text(r["no"]) if ty.startswith("K") else dart.doc_text(r["no"])
+                return job, d.parse(t) if t else None
             except Exception:
                 return job, None
-        rows = {}
+        new = {}
         with ThreadPoolExecutor(2) as ex:
             for (d, r), v in ex.map(one, jobs):
                 if v is None:
-                    failed[r["rcept_no"]] = today
+                    failed[r["no"]] = now
                     continue
-                rows.setdefault(d.kind, dict(store.load(d.kind)))[r["rcept_no"]] = {
-                    "kind": d.kind, "stock": r["stock_code"], "corp": r["corp_name"],
-                    "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ", "rcept_dt": r["rcept_dt"],
-                    "title": re.sub(r"\s+", " ", r["report_nm"]).strip(), "v": d.version, **v}
-        for k, v in rows.items():
+                row = {k: x for k, x in r.items() if k != "no"}
+                new.setdefault(d.kind, dict(stored[d.kind]))[r["no"]] = {"kind": d.kind, **row, "v": d.version, **v}
+        for k, v in new.items():
             store.save(k, v)
             changed.add(k)
-    store.save("_failed", {k: v for k, v in failed.items() if v == today})
+    store.save("_failed", {k: v for k, v in failed.items() if now - v < RETRY_MIN * 60})
     return changed
 
-def run():
+def run(fast=False):
     today = datetime.date.today().isoformat()
     with _lock:
-        changed = _feeds(today) | _docs(today)
-    print(f"  [들여오기] 바뀐 종류: {', '.join(sorted(changed)) or '없음'}")
+        changed = (set() if fast else _feeds(today)) | _docs(today, fast)
+    if changed or not fast:
+        print(f"  [들여오기] 바뀐 종류: {', '.join(sorted(changed)) or '없음'}")
     return changed
 
 if __name__ == "__main__":

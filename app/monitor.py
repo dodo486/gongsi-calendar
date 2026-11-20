@@ -10,27 +10,24 @@
   python -m app.monitor --test-toast   # 알림만 테스트
 """
 import json, os, sys, time, datetime, platform, subprocess, threading
-from derive.disclosures import collect_events, live_rows
-from core.paths import DATA_DIR, load_watchlist, save_json
+from derive.disclosures import collect_events
+from ingest.sources.dart import live_rows
+from core.paths import load_watchlist, load_json, save_json, OUT_DIR, CACHE_DIR
 from ingest.sources.net import TLS_MODE
 from ingest import run as ingest
 from derive import run as derive
-from derive import limits as kind_limits
 from derive import earnings
-from derive import actions as krx_actions
 from derive import closearb
-from derive import capital
 from derive import industry
-from ingest.sources import kis as md_feed
+from core import market as md_feed
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
 SELF_HEAL_SECONDS = 600    # 배당·증자·실적 전체 재계산 주기 — 받기 실패로 빠진 원문 재시도(목록은 저장본이라 가벼움)
 RETENTION_DAYS = 365       # 공시 캘린더 이력 보관 기간 (오래된 이벤트 자동 정리)
 SEEN_KEEP_DAYS = 30        # 알림 중복방지 기록 보관 기간 (폴링 창은 2일이라 충분)
-DATA_PATH = os.path.join(DATA_DIR, "disclosures.json")
-SEEN_PATH = os.path.join(DATA_DIR, "seen.json")   # 알림 중복방지용 (공시/배당/상하한가 공통)
-LIMITS_PATH = os.path.join(DATA_DIR, "limits.json")   # 선물 상하한가(가격제한폭)
+DATA_PATH = os.path.join(OUT_DIR, "disclosures.json")
+SEEN_PATH = os.path.join(CACHE_DIR, "seen.json")   # 알림 중복방지용 (공시/배당/상하한가 공통)
 ALERT_MIN_STAGE = 1   # 상하한가 토스트 최소 단계 (1=전부 / 2=2·3단계 / 3=실질 상한하한만)
 
 def load_seen():
@@ -38,7 +35,7 @@ def load_seen():
         return set(json.load(open(SEEN_PATH, encoding="utf-8")))
     seen = set()   # 최초 실행: 기존 데이터의 접수번호로 시드
     for f in ("disclosures.json", "dividends.json", "earnings.json", "earn_sched.json"):
-        p = os.path.join(DATA_DIR, f)
+        p = os.path.join(OUT_DIR, f)
         if os.path.exists(p):
             for e in json.load(open(p, encoding="utf-8")).get("events", []):
                 if e.get("rcept_no"):
@@ -73,10 +70,10 @@ def _run_guarded(lock, work, name):
     threading.Thread(target=run, daemon=True).start()
 
 _pipe_lock = threading.Lock()
-def refresh(full=False):
-    """들여오기 한 바퀴 → 바뀐 종류를 읽는 계산만(full 이면 전부). 배당 자가 점검 오류는 알림"""
+def refresh(full=False, also=()):
+    """들여오기 한 바퀴 → 바뀐 종류(+also)를 읽는 계산만(full 이면 전부). 배당 자가 점검 오류는 알림"""
     def work():
-        changed = ingest.run()
+        changed = ingest.run() | set(also)
         errors = derive.run(None if full else changed).get("dividend_check")
         if errors:
             notify({"category": "점검", "corp": "배당 데이터", "market": "",
@@ -84,21 +81,9 @@ def refresh(full=False):
     _run_guarded(_pipe_lock, work, "들여오기·계산")
 
 _earn_lock = threading.Lock()
-def refresh_earnings(full=False):
-    """실적 데이터 갱신 — full=True: 재수집+등락률(무거움) / False: 등락률만(가벼움). 중복 실행 방지."""
-    def work():
-        if full:
-            print("  [실적] 재수집 시작..."); earnings.main(30); print("  [실적] 완료")
-        else:
-            earnings.refresh_quotes()
-    _run_guarded(_earn_lock, work, "실적")
-
-_cap_lock = threading.Lock()
-def refresh_capital():
-    """유·무상증자 데이터(capital.json) 재생성 — 원문 파싱이라 무거워 별도 스레드/중복방지(캐시로 신규분만 다운로드)"""
-    def work():
-        print("  [증자] 유·무상증자 갱신 시작..."); capital.main(); print("  [증자] 갱신 완료(과거 1년 공시)")
-    _run_guarded(_cap_lock, work, "증자")
+def refresh_quotes():
+    """실적 등락률만 갱신(가벼움) — 실적 목록 자체는 refresh() 의 계산이 만든다"""
+    _run_guarded(_earn_lock, earnings.refresh_quotes, "실적 등락률")
 
 def load_payload():
     if os.path.exists(DATA_PATH):
@@ -215,56 +200,32 @@ def _active(e):
     """사이드카·서킷 자동해제 전, 선물 가격제한폭 확대 전 — 생산자가 정한 구간(active_from ~ active_to) 안인지"""
     return bool(e.get("active_to")) and e["active_from"] <= datetime.datetime.now().strftime("%H:%M") < e["active_to"]
 
-def poll_actions(ac_seen, alert=True):
-    """KRX 시장조치 폴링 — krx_actions.json 최신화 + 신규 조치 토스트. ac_seen: 전용 in-memory 중복셋.
+def alert_actions(evs, ac_seen, alert=True):
+    """새 시장조치 토스트. ac_seen: 전용 in-memory 중복셋.
     사이드카·서킷브레이커는 재시작 baseline 이라도 '아직 안 풀렸으면' 무조건 토스트(놓침 방지)."""
-    try:
-        evs = krx_actions.collect()
-    except Exception as ex:
-        print(f"  [시장조치] 수집 실패: {ex}")
-        return 0
-    save_json(krx_actions.ACTIONS_PATH, {
-        "date": datetime.date.today().strftime("%Y-%m-%d"),
-        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "count": len(evs), "events": evs,
-    })
-    alerted = 0
     for e in evs:
         if e["rcept_no"] in ac_seen:
             continue
         ac_seen.add(e["rcept_no"])
-        # 일반 조치는 alert=True 일 때만 / 사이드카·서킷은 발동중이면 baseline 이라도 무조건
         if alert or (e["critical"] and _active(e)):
             print(f"  🚨 시장조치 [{e['kind']}] {e['market']} {e['action']} {e['title'][:40]}")
             notify_action(e)
-            alerted += 1
-    return alerted
 
-def poll_limits(lim_seen, alert=True):
-    """선물 상하한가 — KIND 파생 공시(가격제한폭 도달) 폴링. limits.json 최신화 + 신규 알림.
-    lim_seen: 이 기능 전용 in-memory 중복셋(공시 seen 과 분리 → 전용 스레드에서 독립 동작)."""
-    try:
-        evs = kind_limits.collect()   # 오늘 코스피200/코스닥150 선물 가격제한폭 도달
-    except Exception as ex:
-        print(f"  [상하한가] 수집 실패: {ex}")
-        return 0
-    save_json(LIMITS_PATH, {
-        "date": datetime.date.today().strftime("%Y-%m-%d"),
-        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "count": len(evs), "events": evs,
-    })
-    alerted = 0
+def alert_limits(evs, lim_seen, alert=True):
+    """새 선물 가격제한폭 도달 토스트 — 실시간 신규 + 재시작 baseline 이라도 아직 제한폭 확대 전이면(사이드카와 통일)"""
     for e in evs:
         if e["rcept_no"] in lim_seen:
             continue
-        lim_seen.add(e["rcept_no"])   # 신규는 등록(재알림 방지); 알림은 단계 조건만
-        # 실시간 신규(alert) + 재시작 baseline 이라도 아직 제한폭 확대 전이면 무조건(사이드카와 통일)
+        lim_seen.add(e["rcept_no"])
         if (alert or _active(e)) and (e.get("stage") or 0) >= ALERT_MIN_STAGE:
-            print(f"  🚨 선물 {'상한' if e['direction']=='상승' else '하한'}: "
-                  f"{e['name']} {e['stage']}단계 ({e['kind']})")
+            print(f"  🚨 선물 {'상한' if e['direction']=='상승' else '하한'}: {e['name']} {e['stage']}단계 ({e['kind']})")
             notify_limit(e)
-            alerted += 1
-    return alerted
+
+def live_pass(lim_seen, ac_seen, alert=True):
+    """장중 고속 바퀴 — KIND 오늘 목록만 들여오기 → 시장조치·상하한가 계산(등락률은 매번) → 새 건 토스트"""
+    out = derive.run(ingest.run(fast=True) | {"live"}, log=False)
+    alert_limits(out.get("limits") or [], lim_seen, alert)
+    alert_actions(out.get("actions") or [], ac_seen, alert)
 
 INDUSTRY_POLL_SECONDS = 60  # 인더스트리 액션 — 전 종목 스냅샷 1회(수 초), 묶음 재구성은 30일마다
 
@@ -278,20 +239,14 @@ def industry_loop():
             print(f"  [인더스트리] 갱신 실패: {ex}")
         time.sleep(INDUSTRY_POLL_SECONDS)
 
-HALT_POLL_SECONDS = 1800  # 거래정지/재개 — 하루 단위로만 바뀌어 30분이면 충분 (KIND+DART 무거움)
+HALT_POLL_SECONDS = 600   # 거래정지/재개 알림 확인 — halts.json 은 들여오기·계산이 갱신
 
 def halt_loop():
-    """거래정지/재개 전용 루프(별도 스레드) — KIND 정지·해제 공시 + DART 재개예정일 → data/halts.json.
-    신규 정지 종목은 OS 토스트(첫 주기는 시딩만, 폭주 방지)."""
-    from derive import halts as kind_halt
+    """거래정지 알림 전용 루프 — 계산이 만든 data/halts.json 에서 새 정지 종목 토스트(첫 주기는 시딩만, 폭주 방지)."""
     halt_seen, first = set(), True
     while True:
         try:
-            evs = kind_halt.collect()
-            payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                       "count": len(evs), "events": evs}
-            save_json(os.path.join(DATA_DIR, "halts.json"), payload)
-            for e in evs:
+            for e in load_json(os.path.join(OUT_DIR, "halts.json"), {}).get("events", []):
                 rc = e.get("rcept_no")
                 if rc and rc not in halt_seen:
                     halt_seen.add(rc)
@@ -299,20 +254,16 @@ def halt_loop():
                         notify_halt(e)
             first = False
         except Exception as ex:
-            print(f"  [거래정지] 갱신 실패: {ex}")
+            print(f"  [거래정지] 알림 확인 실패: {ex}")
         time.sleep(HALT_POLL_SECONDS)
 
 def limits_loop(lim_seen, ac_seen):
-    """상하한가·시장조치 전용 고속 루프(별도 스레드) — 공시/실적과 무관하게 LIMITS_POLL_SECONDS 마다 갱신."""
+    """상하한가·시장조치 전용 고속 루프(별도 스레드) — LIMITS_POLL_SECONDS 마다"""
     while True:
         try:
-            poll_limits(lim_seen)
+            live_pass(lim_seen, ac_seen)
         except Exception as ex:
-            print(f"  [상하한가 루프 오류] {ex}")
-        try:
-            poll_actions(ac_seen)
-        except Exception as ex:
-            print(f"  [시장조치 루프 오류] {ex}")
+            print(f"  [상하한가·시장조치 루프 오류] {ex}")
         time.sleep(LIMITS_POLL_SECONDS)
 
 def poll_once(seen, alert=True):
@@ -347,12 +298,8 @@ def poll_once(seen, alert=True):
         have = {e.get("rcept_no") for e in payload["events"]}
         payload["events"] = [e for e in new_cal if e["rcept_no"] not in have] + payload["events"]
         save_payload(payload)
-    if new_div or new_sched:
-        refresh()                             # 새 배당·실적예고 공시 → 들여오기 → 바뀐 것만 계산
-    if new_cap:
-        refresh_capital()                     # 신규 증자 → 증자 재계산
-    if new_earn:
-        refresh_earnings(full=True)           # 신규 실적 → 재수집(등락률 포함)
+    if new_div or new_sched or new_cap or new_earn:
+        refresh()                             # 새 배당·실적·실적예고·증자 공시 → 들여오기 → 바뀐 것만 계산
     return len(new)
 
 def main():
@@ -367,17 +314,13 @@ def main():
 
     if "--once" in sys.argv:
         n = poll_once(seen)
-        poll_limits(set(), alert=False)
-        poll_actions(set(), alert=False)
+        live_pass(set(), set(), alert=False)
         print(f"1회 확인 완료 - 공시 신규 {n}건 (limits/krx_actions 갱신됨)"); return
 
-    refresh(full=True)            # 들여오기 + 전 계산 1회 (만기일·배당·실적예고)
-    refresh_capital()     # 유·무상증자 데이터 1회 갱신 (신주배정기준일 T-1/T-2)
-    refresh_earnings(full=True)   # 실적 공시 + 현재 등락률 1회 재수집
+    refresh(full=True)            # 들여오기 + 전 계산 1회 (만기일·배당·실적·실적예고·증자·공시 탭·정지)
     lim_seen, ac_seen = set(), set()   # 상하한가·시장조치 전용 중복셋(공시 seen 과 분리)
     try:
-        poll_limits(lim_seen, alert=False)   # baseline: 현재 도달분을 담고 알림 억제(재시작 스팸 방지)
-        poll_actions(ac_seen, alert=False)   # 시장조치 baseline
+        live_pass(lim_seen, ac_seen, alert=False)   # baseline: 현재분을 담고 알림 억제(재시작 스팸 방지, 아직 걸린 건 알림)
         print("  [상하한가·시장조치] baseline 완료")
     except Exception as ex:
         print(f"  [상하한가·시장조치] baseline 실패: {ex}")
@@ -397,14 +340,12 @@ def main():
     while True:
         try:
             n = poll_once(seen)   # 상하한가는 별도 스레드(limits_loop)가 5초마다 전담
-            refresh_earnings()    # 실적 등락률만 매 주기 갱신(가벼움; 신규 실적은 poll_once가 재수집 트리거)
+            refresh_quotes()      # 실적 등락률만 매 주기 갱신(가벼움; 신규 실적은 poll_once 가 refresh 트리거)
             # 주기적 전체 재계산 — 받기 실패로 빠진 원문을 다시 시도
             if time.time() - last_heal >= SELF_HEAL_SECONDS:
                 last_heal = time.time()
-                refresh()             # 들여오기 — 날이 바뀌었으면 오늘 기준 계산도
-                refresh_capital()
-                refresh_earnings(full=True)
-                print("  [주기 재계산] 들여오기·증자·실적")
+                refresh(also={"quotes"})   # 들여오기 + 시세 쓰는 계산(증자) — 날이 바뀌었으면 오늘 기준 계산도
+                print("  [주기 재계산] 들여오기·시세 계산")
             ts = datetime.datetime.now().strftime("%H:%M:%S")
             print(f"[{ts}] 확인 완료 (공시 신규 {n} · seen {len(seen)})")
         except Exception as ex:

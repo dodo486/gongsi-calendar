@@ -12,17 +12,17 @@
   python -m derive.dividend.points
 """
 import os, json, datetime
-from core.paths import DATA_DIR, save_json
+from core.paths import save_json, OUT_DIR
 from core.krx_cal import t_minus
 from core.universe import INDICES, PDF_PATH
 from core.paths import load_json
 
-OUT = os.path.join(DATA_DIR, "divpoints.json")
+OUT = os.path.join(OUT_DIR, "divpoints.json")
 FORMULA = "배당포인트 = 지수(전일종가) × Σ(PDF수량 × 주당배당금) ÷ Σ(PDF 주식평가액)"
 
 def _load(name, default):
     try:
-        return json.load(open(os.path.join(DATA_DIR, name), encoding="utf-8"))
+        return json.load(open(os.path.join(OUT_DIR, name), encoding="utf-8"))
     except Exception:
         return default
 

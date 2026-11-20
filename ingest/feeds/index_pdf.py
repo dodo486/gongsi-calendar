@@ -13,10 +13,10 @@
 
   python -m ingest.feeds.index_pdf          # 오늘분이 없을 때만 수집 (--force: 무조건 재수집)
 """
-import sys, os, re, json, datetime
+import sys, re, json, datetime
 from ingest.sources import net  # 사내망 TLS opener 세팅
 import requests
-from core.paths import DATA_DIR, save_json
+from core.paths import save_json
 
 from core.universe import INDICES, PDF_PATH as OUT
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128 Safari/537.36"}

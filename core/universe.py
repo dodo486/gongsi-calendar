@@ -11,10 +11,19 @@ INDICES = [
     {"key": "krx300", "name": "KRX300", "etf": "TIGER KRX300", "etf_code": "292160",
      "src": "tiger", "fund": "KR7292160009", "level_fund": "KR7292160009"},
 ]
-PDF_PATH = os.path.join(DATA_DIR, "index_pdf.json")
+PDF_PATH = os.path.join(DATA_DIR, "store", "index_pdf.json")   # 지수 PDF 원천(ingest.feeds.index_pdf) — 저장소에 둠
 
 def watch():
     return set(load_watchlist() or {})
+
+def watch_names():
+    """감시종목 회사명 → (종목코드, 시장). KIND 목록엔 회사명만 있어 코드로 바꿀 때 쓴다."""
+    m = {}
+    for code, info in (load_watchlist() or {}).items():
+        nm = (info.get("name") or info.get("corp") or "").strip()
+        if nm:
+            m[nm] = (code, info.get("market", ""))
+    return m
 
 def div():
     pdf = load_json(PDF_PATH, {})

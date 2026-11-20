@@ -6,9 +6,9 @@
 """
 import os, datetime
 from core import store, universe
-from core.paths import DATA_DIR, DART_VIEW, save_json
+from core.paths import DART_VIEW, save_json, OUT_DIR
 
-SCHED_PATH = os.path.join(DATA_DIR, "earn_sched.json")
+SCHED_PATH = os.path.join(OUT_DIR, "earn_sched.json")
 COLLECT_DAYS = 45          # 예고는 보통 발표 1~2주 전 — 45일치 접수분에서 다가오는 일정
 IR_DAYS = 14               # IR 안내는 보통 개최 1~10일 전 접수
 PAST_KEEP_DAYS = 14        # 지나간 예상 일정도 2주간 캘린더에 유지

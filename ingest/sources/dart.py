@@ -4,7 +4,8 @@
 - TLS 는 net(사내망 대응), 저장·경로는 base 를 쓴다
 """
 import io, json, os, re, sys, time, datetime, threading, zipfile, urllib.request, urllib.error, ssl
-from core.paths import BASE, DATA_DIR, save_json
+from core import store
+from core.paths import BASE, save_json, CACHE_DIR
 from ingest.sources import net   # import 시 TLS opener 세팅
 
 _KEY_PATH = os.path.join(BASE, "dart_key.txt")
@@ -63,7 +64,7 @@ def fetch_range(bgn, end, corp_cls, pblntf_ty=None, strict=False, tries=5):
     return out
 
 # ── 공시 목록 저장본 — 받은 구간은 다시 받지 않는다 ──
-LIST_PATH = os.path.join(DATA_DIR, "dart_listing.json")
+LIST_PATH = os.path.join(store.DIR, "dart_listing.json")   # 목록 자체도 사실 — 계산이 저장소로 읽음
 LIST_FIELDS = ("rcept_no", "rcept_dt", "report_nm", "stock_code", "corp_name", "corp_cls", "flr_nm")
 LIST_RETAIN = {"I": 830, "A": 430, "B": 400}   # 유형별 보관 일수 — 가장 길게 쓰는 곳(리서치 이력 800일 등) + 여유
 RECHECK_DAYS = 3                              # 늦게 올라오는 접수 대비 끝 며칠은 매번 다시
@@ -81,6 +82,10 @@ def _list_store():
 def _list_save(store):
     save_json(LIST_PATH, store, indent=None)
     _list["mtime"] = os.path.getmtime(LIST_PATH)
+
+def live_rows(bgn, end, types=("B", "I")):
+    """monitor 실시간 감지용 — 좁은 구간(어제~오늘)을 저장 없이 바로 조회"""
+    return [r for cls in ("Y", "K") for ty in types for r in fetch_range(bgn, end, cls, ty, tries=1)]
 
 def listing(ty, days):
     """DART 목록(유형 ty: I 거래소공시 · A 정기보고서 · B 주요사항보고) 오늘부터 days일치, 코스피+코스닥.
@@ -145,7 +150,7 @@ def doc_text(rcept_no):
         except Exception: txt = data.decode("utf-8", "replace")
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", txt))
 
-CORP_PATH = os.path.join(DATA_DIR, "corp_codes.json")
+CORP_PATH = os.path.join(CACHE_DIR, "corp_codes.json")
 _corp = None
 def corp_code(stock):
     """종목코드 → DART 고유번호 (corpCode.xml, 7일 캐시)"""
@@ -176,9 +181,3 @@ def corp_code(stock):
         save_json(CORP_PATH, _corp)
     return _corp.get(stock, "")
 
-def parsed(rcept_no, parse, cache):
-    """원문 파싱 결과를 rcept_no 로 캐시. 받기 실패(접수 직후 DART 미제공 등)는 예외로 올리고
-    캐시에 남기지 않는다 — 실패를 빈 값으로 굳히지 않고 다음 회차에 다시 받는다."""
-    if rcept_no not in cache:
-        cache[rcept_no] = parse(doc_text(rcept_no))
-    return cache[rcept_no]

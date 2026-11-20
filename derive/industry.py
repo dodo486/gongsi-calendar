@@ -22,12 +22,12 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
-from ingest.sources import kis as md_feed
-from core.paths import DATA_DIR, save_json
+from core import market as md_feed
+from core.paths import save_json, OUT_DIR, CACHE_DIR
 
-GROUPS_PATH = os.path.join(DATA_DIR, "industry_groups.json")
-ACTION_PATH = os.path.join(DATA_DIR, "industry_action.json")
-SNAP_DIR = os.path.join(DATA_DIR, "theme_snapshots")
+GROUPS_PATH = os.path.join(CACHE_DIR, "industry_groups.json")
+ACTION_PATH = os.path.join(OUT_DIR, "industry_action.json")
+SNAP_DIR = os.path.join(CACHE_DIR, "theme_snapshots")
 
 LOOKBACK = 250      # 묶을 때 쓰는 거래일 수
 REBUILD_DAYS = 30   # 묶음 재구성 주기(일)

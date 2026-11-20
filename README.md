@@ -26,8 +26,8 @@
 | `ingest/` | 들여오기 — `run`(한 바퀴) · `registry`(공시 종류·주기 원천) · `sources/`(DART·KIND·네이버·시세 접속) · `parsers/`(원문→값) · `feeds/`(주기 원천) |
 | `derive/` | 계산 — `run` · `registry`(읽는 종류·앞 계산) · `dividend/`(확정·사실·날짜·금액·장부·지수배당포인트·검증·점검) · 공시 탭·증자·실적·상하한가 등 |
 | `app/` | `monitor`(폴러: 들여오기 → 계산 → 알림) · `serve`(웹, http://localhost:8777) · `launch`(원클릭 런처) · `check_layers`(층 검사) |
-| `index.html` · `dividend/` · `common/` | 화면 — 계산 결과만 읽음 |
-| `data/store/` | 사실 저장소 (종류별, 접수번호마다 한 줄) |
+| `web/` | 화면(`index.html` · `dividend/` · `common/`) — 계산 결과(`data/out`)만 읽음 |
+| `data/` | `store/` 사실 저장소(종류별, 접수번호마다 한 줄 + 공시 목록) · `out/` 계산 결과 · `cache/` 토큰·시세 DB·알림 기록 |
 
 ## 설치 & 실행
 

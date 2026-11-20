@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""층 검사 — 계산(derive)은 들여오기(ingest)를 import 하지 않는다(저장소만 읽음), 파서는 접속하지 않는다. 어기면 실패(CI).
-MIGRATING = 아직 들여오기·계산으로 나누는 중인 모듈 — 다 나누면 비운다.
+"""구조 검사(CI) — 층: 계산(derive)은 들여오기(ingest)를 import 하지 않고, 파서는 접속하지 않는다.
+등록표: 계산이 읽는 종류는 누군가 채우고, 들여오는 종류는 누군가 읽는다.
 
   python -m app.check_layers
 """
 import os, re, sys
 from core.paths import BASE
 
-MIGRATING = {"derive/capital.py", "derive/earnings.py", "derive/earn_detail.py", "derive/halts.py", "derive/limits.py",
-             "derive/actions.py", "derive/disclosures.py", "derive/closearb.py", "derive/industry.py"}
+SIGNALS = {"day", "live", "quotes", "dart_listing", "kind_feed"}   # 들여오기·monitor 가 내는 변화 신호
+UNREAD_OK = {"alot"}   # 배당 이력 — 배당성향×이익 금액 신호용으로 모아 둠, 신호를 붙이면 뺀다
 RULES = [("derive/", r"^\s*(from|import) ingest\b", "계산 층이 들여오기를 import"),
          ("ingest/parsers/", r"^\s*(from|import) (ingest\.sources|urllib|requests)\b", "파서가 접속")]
 
@@ -17,13 +17,19 @@ def main():
     for root, _, fs in os.walk(BASE):
         for f in fs:
             rel = os.path.relpath(os.path.join(root, f), BASE).replace(os.sep, "/")
-            if not f.endswith(".py") or rel in MIGRATING:
+            if not f.endswith(".py"):
                 continue
             src = open(os.path.join(root, f), encoding="utf-8").read()
             bad += [f"{rel}: {why}" for pre, pat, why in RULES if rel.startswith(pre) and re.search(pat, src, re.M)]
+    from ingest.registry import DOCS, FEEDS
+    from derive.registry import CALCS
+    made = {d.kind for d in DOCS} | {f.name for f in FEEDS} | SIGNALS
+    read = set().union(*(c.reads for c in CALCS))
+    bad += [f"등록표: 계산이 읽는데 채우는 곳 없음 — {k}" for k in sorted(read - made)]
+    bad += [f"등록표: 들여오는데 읽는 계산 없음 — {k}" for k in sorted(made - read - UNREAD_OK)]
     for x in bad:
         print("  ✖", x)
-    print(f"층 검사: 위반 {len(bad)} · 나누는 중 {len(MIGRATING)}")
+    print(f"구조 검사: 위반 {len(bad)}")
     return bad
 
 if __name__ == "__main__":

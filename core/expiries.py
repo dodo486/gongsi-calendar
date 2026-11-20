@@ -7,7 +7,7 @@
 → data/expiries.json
 """
 import os, datetime
-from core.paths import DATA_DIR, save_json
+from core.paths import save_json, OUT_DIR
 from core.krx_cal import holiday_dates, default_years, prev_business_day
 
 def second_thursday(year, month):
@@ -34,7 +34,7 @@ def build(years=None):
     payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                "count": len(events), "events": events,
                "holidays": sorted(d.strftime("%Y-%m-%d") for d in hol)}   # 웹 캘린더 휴일(빨간 글자) 표시용
-    save_json(os.path.join(DATA_DIR, "expiries.json"), payload)
+    save_json(os.path.join(OUT_DIR, "expiries.json"), payload)
     return payload
 
 if __name__ == "__main__":

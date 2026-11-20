@@ -4,7 +4,7 @@
   python -m derive.dividend.verify   → data/div_verify.json
 """
 import os, json, datetime, statistics
-from core.paths import DATA_DIR, save_json
+from core.paths import save_json, OUT_DIR
 from core.krx_cal import t_minus
 from core.paths import load_json as _load
 from core.krx_cal import to_date as _d, iso as _iso
@@ -12,8 +12,8 @@ from derive.dividend.facts import view, medians, contexts
 from derive.dividend.date import GRADES, GROUP, predict_round
 from derive.dividend import amount as div_amount
 
-VERIFY_PATH = os.path.join(DATA_DIR, "div_verify.json")
-EXP_PATH = os.path.join(DATA_DIR, "expiries.json")
+VERIFY_PATH = os.path.join(OUT_DIR, "div_verify.json")
+EXP_PATH = os.path.join(OUT_DIR, "expiries.json")
 
 
 def amount_hits(xs):

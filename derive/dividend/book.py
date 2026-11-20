@@ -8,19 +8,19 @@
   python -m derive.dividend.book
 """
 import os, json, datetime
-from core.paths import DATA_DIR, save_json
+from core.paths import save_json, OUT_DIR
 from derive.dividend.date import GRADES, TAGS, END_WORD
 from core import store
 from core.paths import DART_VIEW as DART
 
-OUT = os.path.join(DATA_DIR, "div_book.json")
-SOURCES = os.path.join(DATA_DIR, "div_sources.json")
+OUT = os.path.join(OUT_DIR, "div_book.json")
+SOURCES = os.path.join(OUT_DIR, "div_sources.json")
 SAME_ROUND_DAYS = 45
 
 
 def _load(name, default):
     try:
-        return json.load(open(os.path.join(DATA_DIR, name), encoding="utf-8"))
+        return json.load(open(os.path.join(OUT_DIR, name), encoding="utf-8"))
     except Exception:
         return default
 

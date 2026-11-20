@@ -328,13 +328,13 @@ function showDetail(e){   // 공시 상세 (공시 탭 사이드)
 const hot = e => { const now = new Date().toTimeString().slice(0,5); return !!e.active_to && e.active_from <= now && now < e.active_to; };   // 생산자가 정한 발동·걸림 구간 안인지
 async function loadActions(){   // KRX 시장조치 데이터만 로드(렌더는 renderLimits 가 상단 구획으로 함께 처리)
   try{
-    const d = await (await fetch("data/krx_actions.json?_="+Date.now())).json();
+    const d = await (await fetch("data/out/krx_actions.json?_="+Date.now())).json();
     ACT = d.events||[];
   }catch(_){ ACT = []; }
 }
 async function loadLimits(){
   try{
-    const d = await (await fetch("data/limits.json?_="+Date.now())).json();
+    const d = await (await fetch("data/out/limits.json?_="+Date.now())).json();
     LIM = d.events||[];
     LIMGEN = d.generated_at||"";
   }catch(_){
@@ -402,7 +402,7 @@ function bindOpen(box){   // .li 항목 더블클릭 → 종목이면 차트(alp
 }
 async function loadEarnings(){
   try{
-    const d = await (await fetch("data/earnings.json?_="+Date.now())).json();
+    const d = await (await fetch("data/out/earnings.json?_="+Date.now())).json();
     EARN = d.events||[];
   }catch(_){ EARN = []; }
   renderEarnCal();
@@ -473,7 +473,7 @@ function newsHtml(n){   // 실적발표 이후 반응 — 서버가 고른 뉴�
 
 async function loadEarnSched(){   // 예정 실적발표 → 캘린더 이벤트(ernEvents)로 표시
   try{
-    const d = await (await fetch("data/earn_sched.json?_="+Date.now())).json();
+    const d = await (await fetch("data/out/earn_sched.json?_="+Date.now())).json();
     SCHED = d.events||[];
   }catch(_){ SCHED = []; }
 }
@@ -496,9 +496,9 @@ function renderEarnCal(){   // 실적 캘린더 갱신 — 실제 공시(보라)
   });
 }
 
-let IA = null, IA_SORT = "value", IA_SEL = null;   // data/industry_action.json
+let IA = null, IA_SORT = "value", IA_SEL = null;   // data/out/industry_action.json
 async function loadIndustry(){
-  try{ IA = await (await fetch("data/industry_action.json?_="+Date.now())).json(); }catch(_){ IA = null; }
+  try{ IA = await (await fetch("data/out/industry_action.json?_="+Date.now())).json(); }catch(_){ IA = null; }
   document.getElementById("meta").textContent = IA
     ? `🏭 묶음 ${IA.groups.length}개 · 갱신 ${IA.generated_at} · 묶은 날 ${IA.groups_built_at.slice(0,10)} (일봉 ${IA.window[0]}~${IA.window[1]})`
     : "인더스트리 데이터 없음";
@@ -554,9 +554,9 @@ document.getElementById("industryView").addEventListener("click", e=>{
   if(r){ IA_SEL = r.dataset.g; document.querySelectorAll(".ia-row.sel").forEach(x=>x.classList.remove("sel")); r.classList.add("sel"); renderIndustryDetail(); }
 });
 
-let CA = null, CA_SORT = "z";   // data/closearb.json
+let CA = null, CA_SORT = "z";   // data/out/closearb.json
 async function loadClosearb(){
-  try{ CA = await (await fetch("data/closearb.json?_="+Date.now())).json(); }catch(_){ CA = null; }
+  try{ CA = await (await fetch("data/out/closearb.json?_="+Date.now())).json(); }catch(_){ CA = null; }
   document.getElementById("meta").textContent = CA
     ? `⚖️ ${CA.phase} · 갱신 ${CA.generated_at} · 오늘 기록 ${CA.marks.join("·")||"없음"}`
     : "종가 차익 데이터 없음";
@@ -653,7 +653,7 @@ async function loadData(){
     document.getElementById("meta").textContent =
       `🏛️ 시장조치 ${ACT.length} · 🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · ⏱ 상하한가 갱신 ${LIMGEN}`;
   } else {
-    const d = await (await fetch("data/disclosures.json?_="+Date.now())).json();
+    const d = await (await fetch("data/out/disclosures.json?_="+Date.now())).json();
     ALL = d.events||[];
     document.getElementById("meta").textContent = `공시 ${d.count}건 · 갱신 ${d.generated_at||""}`;
     applyFilters();
@@ -689,7 +689,7 @@ function switchMode(mode){
 
 async function boot(){
   // 만기일·휴장일 먼저 로드 — 캘린더 render 전에 HOL 을 채워야 휴일 빨간색이 첫 렌더부터 적용됨
-  try{ const ex = await (await fetch("data/expiries.json?_="+Date.now())).json();
+  try{ const ex = await (await fetch("data/out/expiries.json?_="+Date.now())).json();
        EXP = ex.events||[]; HOL = new Set(ex.holidays||[]);
        EXPD = new Set(EXP.map(e=>e.date)); }catch(_){ EXP=[]; }
   calendar = new FullCalendar.Calendar(document.getElementById("calendar"),{

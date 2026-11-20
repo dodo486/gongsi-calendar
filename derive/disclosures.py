@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-"""공시 탭 수집 — 감시종목(코스피200+코스닥150)의 관심 종류 공시 → data/disclosures.json
+"""공시 탭 — 저장소의 DART 목록에서 감시종목(코스피200+코스닥150)의 관심 종류 공시 → data/disclosures.json
 - 웹(index.html) 공시 탭이 이 JSON을 읽어 캘린더에 표시, monitor 가 실시간 갱신·토스트
 - 실적 그리드(earnings)도 collect_events 로 '실적' 공시를 고른다
 사용:
   python -m derive.disclosures 90   # 과거 90일 백필 (기존 파일과 병합)
 """
 import json, os, sys, datetime
-from core.paths import DATA_DIR, save_json, load_watchlist
-from ingest.sources.dart import fetch_range, listing
-from ingest.sources.net import TLS_MODE
+from core import store
+from core.paths import DART_VIEW, save_json, load_watchlist, OUT_DIR
 
 # 관심 공시 종류: (제목 키워드, 표시 카테고리). 순서 = 매칭 우선순위.
 CATEGORIES = [
@@ -35,13 +34,11 @@ def categorize(title):
             return label
     return "기타"
 
-def live_rows(bgn, end):
-    """monitor 실시간 폴링용 — 좁은 구간(어제~오늘)을 저장 없이 바로 조회"""
-    return [r for cls in ("Y", "K") for ty in PBLNTF_TYPES for r in fetch_range(bgn, end, cls, ty, tries=1)]
-
 def stored_rows(days):
-    """백필·실적 재수집용 — 공용 목록 저장본(받은 구간은 다시 안 받음)"""
-    return [r for ty in PBLNTF_TYPES for r in listing(ty, days)]
+    """저장소의 DART 목록(들여오기가 채움) 중 최근 days 일 접수분"""
+    since = (datetime.date.today() - datetime.timedelta(days=days)).strftime("%Y%m%d")
+    lst = store.load("dart_listing")
+    return [r for ty in PBLNTF_TYPES for r in lst.get(ty, {}).get("rows", {}).values() if r["rcept_dt"] >= since]
 
 def collect_events(rows, watch="__load__"):
     """DART 목록 행 → 감시대상+관심종류 공시만 캘린더용 이벤트로 (백필·monitor·earnings 공용)"""
@@ -62,17 +59,16 @@ def collect_events(rows, watch="__load__"):
             "category": categorize(title),
             "date": r.get("rcept_dt", ""),   # YYYYMMDD
             "rcept_no": rno,
-            "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={rno}",
+            "url": DART_VIEW + rno,
             "flr": r.get("flr_nm", ""),
         })
     return events
 
 def main(days=7):
-    print(f"TLS={TLS_MODE} | 최근 {days}일")
     events = [e for e in collect_events(stored_rows(days)) if e["category"] not in CAL_EXCLUDE]
 
     # 기존 파일과 병합 — 짧은 기간 백필이 기존 이력을 지우지 않게 (rcept_no 기준 중복 제거)
-    out_path = os.path.join(DATA_DIR, "disclosures.json")
+    out_path = os.path.join(OUT_DIR, "disclosures.json")
     if os.path.exists(out_path):
         have = {e["rcept_no"] for e in events}
         old = json.load(open(out_path, encoding="utf-8")).get("events", [])

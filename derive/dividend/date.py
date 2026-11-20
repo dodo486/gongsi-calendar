@@ -5,14 +5,14 @@
 """
 import os, datetime
 from core import universe
-from core.paths import DATA_DIR, DART_VIEW as DART, save_json
+from core.paths import DART_VIEW as DART, save_json, OUT_DIR
 from core.krx_cal import t_minus, to_date as _d, iso as _iso
 from derive.dividend.confirmed import quarter_end
 from derive import earn_sched
 from derive.dividend import amount as div_amount
 from derive.dividend.facts import view, quarter_owner, pattern, medians, contexts
 
-OUT_PATH = os.path.join(DATA_DIR, "div_estimates.json")
+OUT_PATH = os.path.join(OUT_DIR, "div_estimates.json")
 HORIZON_DAYS = 270
 MISS_GRACE_DAYS = 3
 NOTICE_MIN_DAYS = 14

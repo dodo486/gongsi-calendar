@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-"""KRX KIND(kind.krx.co.kr) 접속 — 당일공시 목록·공시 본문·감시종목 이름 매핑.
-거래정지(kind_halt)·선물 상하한가(kind_limits)·시장조치(krx_actions)가 같이 쓴다.
+"""KRX KIND(kind.krx.co.kr) 접속 — 당일공시 목록·공시 본문. 들여오기(ingest.run)만 쓴다.
 (data.krx.co.kr 은 이 PC에서 차단되지만 kind 는 접근 가능)"""
-import re, datetime, http.cookiejar, urllib.request, urllib.parse
+import re, time, datetime, threading, http.cookiejar, urllib.error, urllib.request, urllib.parse
 from ingest.sources.net import build_ssl_context
-from core.paths import load_watchlist
 
 FEED_URL = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
-VIEWER = "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={}&docno="
 
+GAP = 0.3                  # 요청 사이 최소 간격(초) — KIND 는 몰아서 받으면 429
+BACKOFF = (5, 20)          # 429 를 받으면 쉬었다 다시
 _OPENER = None
+_pace = {"lock": threading.Lock(), "at": 0.0}
+
 def get(url, data=None, ref="https://kind.krx.co.kr/", ajax=False):
     """쿠키 유지 세션으로 GET(data 있으면 POST) → 디코드한 본문. 문서서버는 euc-kr 이 섞여 있어 utf-8 실패 시 euc-kr."""
     global _OPENER
@@ -22,7 +23,17 @@ def get(url, data=None, ref="https://kind.krx.co.kr/", ajax=False):
     if data is not None:
         hdr["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
         data = urllib.parse.urlencode(data).encode()
-    b = _OPENER.open(urllib.request.Request(url, data=data, headers=hdr), timeout=20).read()
+    for wait in (*BACKOFF, None):
+        with _pace["lock"]:
+            time.sleep(max(0.0, _pace["at"] + GAP - time.time()))
+            _pace["at"] = time.time()
+        try:
+            b = _OPENER.open(urllib.request.Request(url, data=data, headers=hdr), timeout=20).read()
+            break
+        except urllib.error.HTTPError as ex:
+            if ex.code != 429 or wait is None:
+                raise
+            time.sleep(wait)
     for enc in ("utf-8", "euc-kr"):
         try:
             return b.decode(enc)
@@ -39,6 +50,21 @@ def feed(sel_date, market_type, corp=""):
             "marketType": market_type, "searchCorpName": corp}
     return get(FEED_URL, data, ref=FEED_URL, ajax=True)
 
+def rows(sel_date, market_type):
+    """당일공시 목록 → (목록이 제대로 왔나, 행들 [{acpt 접수번호, time, corp 회사명, title, submitter 제출인, indices 지수 범례}])"""
+    html = feed(sel_date, market_type)
+    txt = lambda s: re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", s)).strip()
+    attr = lambda s: (re.search(r"title='([^']+)'", s) or [None, ""])[1].strip()
+    out = []
+    for row in re.split(r"</tr>", html):
+        acpt = re.search(r"openDisclsViewer\('(\d+)'", row)
+        tds = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
+        if acpt and len(tds) >= 3:
+            out.append({"acpt": acpt[1], "time": (re.search(r"([0-9]{1,2}:[0-9]{2})", tds[0]) or [None, ""])[1],
+                        "corp": attr(tds[1]), "title": attr(tds[2]) or txt(tds[2]),
+                        "submitter": txt(tds[3]) if len(tds) > 3 else "", "indices": re.findall(r"alt='([^']+)'", row)})
+    return "openDisclsViewer" in html, out
+
 def body_text(rcept):
     """공시 본문 평문(태그 제거·공백 정규화). KIND 3단계: searchInitInfo → docNo → searchContents 의 setPath(.htm) → 본문.
     못 받으면 빈 문자열."""
@@ -52,12 +78,3 @@ def body_text(rcept):
     if not u:
         return ""
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", get(u.group(1), ref=ref)))
-
-def name2code():
-    """감시종목 회사명 → (종목코드, 시장). KIND 목록엔 회사명만 있어 코드로 바꿀 때 쓴다."""
-    m = {}
-    for code, info in (load_watchlist() or {}).items():
-        nm = (info.get("name") or info.get("corp") or "").strip()
-        if nm:
-            m[nm] = (code, info.get("market", ""))
-    return m

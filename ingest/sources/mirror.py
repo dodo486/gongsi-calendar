@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 from jhts.marketdata import config, db
-from core.paths import DATA_DIR
+from core.paths import CACHE_DIR
 
 
 def _table_names(sqlite_path):
@@ -85,7 +85,7 @@ def main(argv=None):
     if not src_url:
         print("ERROR: SISE_DB_URL(중앙 PG)이 없습니다. 러너에서 크리덴셜과 함께 실행하세요.")
         return 2
-    dest = os.environ.get("SISE_DB_PATH") or os.path.join(DATA_DIR, "sise.db")
+    dest = os.environ.get("SISE_DB_PATH") or os.path.join(CACHE_DIR, "sise.db")
     Path(dest).parent.mkdir(parents=True, exist_ok=True)
 
     tables = args.tables or _table_names(dest)

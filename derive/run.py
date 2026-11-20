@@ -6,7 +6,7 @@
 import sys
 from derive.registry import CALCS
 
-def run(changed=None):
+def run(changed=None, log=True):
     """changed: 바뀐 종류 이름들(None 이면 전부). 반환 {계산 이름: 결과}"""
     done, failed = {}, set()
     for c in CALCS:
@@ -20,7 +20,8 @@ def run(changed=None):
         except Exception as ex:
             failed.add(c.name)
             print(f"  [계산] {c.name} 실패: {type(ex).__name__} {ex}")
-    print(f"  [계산] {', '.join(done) or '없음'}" + (f" · 실패 {', '.join(sorted(failed))}" if failed else ""))
+    if log or failed:
+        print(f"  [계산] {', '.join(done) or '없음'}" + (f" · 실패 {', '.join(sorted(failed))}" if failed else ""))
     return done
 
 if __name__ == "__main__":

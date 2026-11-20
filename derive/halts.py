@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-"""매매거래정지·거래재개 수집기 — KRX KIND(정지/해제 공시) + DART(재개 예정일 보강)
+"""매매거래정지·거래재개 — 저장소의 KIND 정지/해제 공시(본문: 정지일시·사유·만료일시·해제일시) + DART 결정공시 상장예정일
 
-- KIND todaydisclosure(marketType 1=유가, 2=코스닥)에서 '매매거래정지' 제목 공시 스캔
 - watchlist(코스피200+코스닥150) 종목만 남김 (노이즈 컷)
-- 각 정지 공시 본문에서 정지일시·정지사유·만료일시 파싱
 - 재개(해제) 예정일:
     · 만료가 '장종료시까지'(당일정지) → 익영업일 (확정)
     · 만료가 구체적 날짜 → 그 날짜 (확정)
@@ -13,160 +11,38 @@
 사용:
   python -m derive.halts            # 최근 정지/재개 → data/halts.json
 """
-import json, os, re, datetime
-from core.paths import DATA_DIR, save_json
-from ingest.sources.dart import KEY, api, doc_text, corp_code
-from core.krx_cal import next_bday, norm_date, is_business_day
-from ingest.sources import kind as kind_client
+import os, re, datetime
+from core import store, universe
+from core.paths import KIND_VIEW, save_json, OUT_DIR
+from core.krx_cal import next_bday
 
 SCAN_DAYS = 50                       # 정지/해제 공시 스캔 기간(일)
-FEED_PATH = os.path.join(DATA_DIR, "halt_feed_cache.json")  # "날짜|시장"→정지·해제 공시 행 — 지난 날짜 목록은 안 바뀜
-FEED_RECHECK_DAYS = 2                                        # 오늘·어제 목록만 늦은 공시 대비 매번 다시
-BODY_PATH = os.path.join(DATA_DIR, "halt_body_cache.json")  # rcept→본문 값(정지: halt_date·reason·expire / 해제: release)
-DART_PATH = os.path.join(DATA_DIR, "halt_dart_cache.json")  # stock→{resume,halt} DART 보강 캐시
-
-def _short_reason(reason, extra):
-    """정지사유(+기타사유) → 짧은 라벨."""
-    txt = (extra or "") + " " + (reason or "")
-    for kw in ("주식분할", "액면분할", "주식병합", "액면병합", "무상증자", "유상증자", "감자",
-               "회사분할", "합병", "영업양수도", "주식교환", "조회공시", "불성실공시",
-               "상장적격성", "실질심사", "정리매매", "투자자 보호", "투자유의"):
-        if kw.replace(" ", "") in txt.replace(" ", ""):
-            return kw
-    r = (reason or "").strip()
-    return (r[:20] + "…") if len(r) > 20 else (r or "매매거래정지")
-
-def _parse_body(rcept, cache):
-    """정지 공시 본문 파싱(캐시). return {halt_date, reason, reason_full, expire}."""
-    if rcept in cache:
-        return cache[rcept]
-    t = kind_client.body_text(rcept)
-    if not t:   # 받기 실패는 캐시에 남기지 않음 — 다음 회차 재시도
-        return {"halt_date": "", "reason": "", "reason_full": "", "expire": ""}
-    tc = t.replace(" ", "")
-    hd = re.search(r"정지일시(\d{4}-\d{2}-\d{2})", tc)
-    exp = re.search(r"만료일시([^0-9]*?(?:\d{4}-\d{2}-\d{2})?[가-힣]*)", tc)
-    sy = re.search(r"정지사유(.*?)3\.정지기간", tc)
-    et = re.search(r"기타사유[:：]?\s*([가-힣A-Za-z0-9]+)", tc)
-    reason_full = (sy.group(1) if sy else "").strip()
-    out = {
-        "halt_date": hd.group(1) if hd else "",
-        "reason": _short_reason(reason_full, et.group(1) if et else ""),
-        "reason_full": reason_full[:60],
-        "expire": (exp.group(1) if exp else "").strip(),
-    }
-    cache[rcept] = out
-    return out
-
-# ── DART 보강 (결정공시 상장예정일) ──
-_DATE = r"(\d{4}\D+\d{1,2}\D+\d{1,2})"
-
-def dart_resume(stock, halt_date, dcache):
-    """분할/병합/감자/회사분할 결정공시에서 '상장예정일'(=재개 예정일) 당겨오기. 캐시."""
-    key = f"{stock}|{halt_date}"
-    if key in dcache:
-        return dcache[key]
-    res = ""
-    try:
-        cc = corp_code(stock)
-    except Exception:
-        return ""   # 고유번호 표를 못 받음 — 캐시에 남기지 않고 다음 회차 재시도
-    if cc:
-        try:
-            end = datetime.date.today().strftime("%Y%m%d")
-            bgn = (datetime.date.today() - datetime.timedelta(days=150)).strftime("%Y%m%d")
-            d = api({"crtfc_key": KEY, "corp_code": cc, "bgn_de": bgn, "end_de": end,
-                     "page_no": 1, "page_count": 100})
-            if d.get("status") not in ("000", "013"):   # 013 = 조회 결과 없음(정상)
-                return ""
-            for r in d.get("list", []):
-                nm = r.get("report_nm", "")
-                if not any(k in nm for k in ("분할결정", "병합", "감자결정", "회사분할")):
-                    continue
-                if "정지" in nm:          # KRX 정지공시 자체는 제외(결정 원문만)
-                    continue
-                t = doc_text(r["rcept_no"]).replace(" ", "")
-                m = re.search(r"상장예정일" + _DATE, t)
-                if m:
-                    res = norm_date(m.group(1))
-                    break
-        except Exception:
-            return ""   # 받기 실패는 캐시에 남기지 않음 — 다음 회차 재시도
-    dcache[key] = res
-    return res
-
-# ── 수집 ──
-HALT_KW = "매매거래정지"
-def _halt_rows(html):
-    """KIND 당일공시 목록 HTML → 정지·해제 공시 행 [접수번호, 제목, 회사명]"""
-    out = []
-    for row in re.split(r"</tr>", html):
-        if HALT_KW not in row:
-            continue
-        ma = re.search(r"openDisclsViewer\('(\d+)'", row)
-        mt = re.search(r"title='([^']*매매거래정지[^']*)'", row)
-        mc = re.search(r"companysummary_open\([^)]*\);\s*return false;\"\s*title='([^']+)'", row)
-        if ma and mt and mc:
-            out.append([ma.group(1), mt.group(1).strip(), mc.group(1).strip()])
-    return out
+RELIST_DAYS = 150                    # 재개 예정일을 찾을 결정공시 기간(일)
 
 def collect():
-    name2 = kind_client.name2code()
-    fcache = json.load(open(FEED_PATH, encoding="utf-8")) if os.path.exists(FEED_PATH) else {}
-    bcache = json.load(open(BODY_PATH, encoding="utf-8")) if os.path.exists(BODY_PATH) else {}
-    dcache = json.load(open(DART_PATH, encoding="utf-8")) if os.path.exists(DART_PATH) else {}
-    today = datetime.date.today()
-    recheck_from = (today - datetime.timedelta(days=FEED_RECHECK_DAYS - 1)).strftime("%Y-%m-%d")
-    oldest = (today - datetime.timedelta(days=SCAN_DAYS)).strftime("%Y-%m-%d")
-
-    halts, releases, seen = {}, {}, set()   # code→halt / code→[해제일]
-    for dd in range(SCAN_DAYS + 1):
-        d = (today - datetime.timedelta(days=dd)).strftime("%Y-%m-%d")
-        for market in ("1", "2"):
-            key = f"{d}|{market}"
-            rows = fcache.get(key)
-            if rows is None or d >= recheck_from:
-                try:
-                    html = kind_client.feed(d, market)
-                except Exception:
-                    continue
-                rows = _halt_rows(html)
-                # 공시가 하나도 없는 영업일 목록은 오류 페이지일 수 있어 저장하지 않음(다음 회차 재조회)
-                if "openDisclsViewer" in html or not is_business_day(datetime.date.fromisoformat(d)):
-                    fcache[key] = rows
-            for rcept, title, nm in rows:
-                if nm not in name2:                       # watchlist 필터
-                    continue
-                if rcept in seen:
-                    continue
-                seen.add(rcept)
-                code, mk = name2[nm]
-                is_release = ("정지해제" in title) or ("및정지해제" in title) or \
-                             (("해제" in title) and ("정지" not in title.replace("정지해제", "")))
-                if is_release:
-                    # 해제 공시 본문의 해제일시(없으면 접수일) — 재개 확정일. 받은 본문은 캐시(받기 실패는 다음 회차 재시도)
-                    if rcept in bcache:
-                        rdate = bcache[rcept]["release"]
-                    else:
-                        t = kind_client.body_text(rcept).replace(" ", "")
-                        m = re.search(r"해제일시(\d{4}-\d{2}-\d{2})", t)
-                        rdate = m.group(1) if m else d
-                        if t:
-                            bcache[rcept] = {"release": rdate}
-                    releases.setdefault(code, []).append(rdate)
-                    continue
-                # 정지(또는 예고) 공시 — 종목별 최신 1건만
-                if code in halts:
-                    continue
-                b = _parse_body(rcept, bcache)
-                halts[code] = {
-                    "corp": nm, "code": code, "market": mk,
-                    "reason": b["reason"], "reason_full": b["reason_full"],
-                    "halt_date": b["halt_date"], "expire": b["expire"],
-                    "rcept_no": rcept, "url": kind_client.VIEWER.format(rcept),
-                    "pre": "예고" in title,
-                }
-
+    name2 = universe.watch_names()
+    since = (datetime.date.today() - datetime.timedelta(days=SCAN_DAYS)).strftime("%Y%m%d")
+    halts, releases = {}, {}   # code→halt / code→[해제일]
+    for rcept, r in sorted(store.load("kind_halt").items(), key=lambda x: (x[1]["rcept_dt"], x[0]), reverse=True):   # 최신 먼저
+        nm, title = r["corp"], r["title"]
+        if nm not in name2 or r["rcept_dt"] < since:   # watchlist 필터
+            continue
+        code, mk = name2[nm]
+        is_release = ("정지해제" in title) or ("및정지해제" in title) or                      (("해제" in title) and ("정지" not in title.replace("정지해제", "")))
+        if is_release:   # 해제 공시 본문의 해제일시(없으면 접수일) — 재개 확정일
+            releases.setdefault(code, []).append(r["release"] or f"{r['rcept_dt'][:4]}-{r['rcept_dt'][4:6]}-{r['rcept_dt'][6:]}")
+            continue
+        if code in halts:   # 정지(또는 예고) 공시 — 종목별 최신 1건만
+            continue
+        halts[code] = {"corp": nm, "code": code, "market": mk, "reason": r["reason"], "reason_full": r["reason_full"],
+                       "halt_date": r["halt_date"], "expire": r["expire"], "rcept_no": rcept, "url": KIND_VIEW.format(rcept),
+                       "pre": "예고" in title}
+    relist_since = (datetime.date.today() - datetime.timedelta(days=RELIST_DAYS)).strftime("%Y%m%d")
+    relist = {}   # 종목 → 분할·병합·감자·회사분할 결정공시의 상장예정일 (최신 공시)
+    for k in ("split", "reduction"):
+        for no, d in store.load(k).items():
+            if d.get("listing_date") and d["rcept_dt"] >= relist_since and (d["stock"] not in relist or no > relist[d["stock"]][0]):
+                relist[d["stock"]] = (no, d["listing_date"])
     out = []
     for code, h in halts.items():
         exp = h.pop("expire", "")
@@ -183,9 +59,8 @@ def collect():
             resume = next_bday(h["halt_date"]); confirmed = True
         # 4) 다중일(변경상장/신주 등) → DART 상장예정일(예정)
         elif re.search(r"변경상장|신주|상장", exp) or not exp:
-            r = dart_resume(code, h["halt_date"], dcache)
-            if r:
-                resume, confirmed = r, False
+            if code in relist:
+                resume, confirmed = relist[code][1], False
         h["resume_date"] = resume
         h["resume_confirmed"] = confirmed
         # 관련성 필터: 재개가 과거로 3일 넘게 지난 건 제외(이미 풀림)
@@ -194,9 +69,6 @@ def collect():
         h["marks"] = _marks(h)
         out.append(h)
 
-    save_json(FEED_PATH, {k: v for k, v in fcache.items() if k[:10] >= oldest})
-    save_json(BODY_PATH, bcache)
-    save_json(DART_PATH, dcache)
     out.sort(key=lambda x: (x.get("halt_date") or "9999", x["corp"]))
     return out
 
@@ -216,7 +88,7 @@ def main():
         "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "count": len(evs), "events": evs,
     }
-    save_json(os.path.join(DATA_DIR, "halts.json"), payload)
+    save_json(os.path.join(OUT_DIR, "halts.json"), payload)
     conf = sum(e["resume_confirmed"] for e in evs)
     print(f"halts.json 저장: {len(evs)}건 (재개확정 {conf} · 예정 {len(evs)-conf})")
     for e in evs:

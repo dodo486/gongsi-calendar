@@ -52,8 +52,8 @@ jobs:
       - name: 사이트 구성
         run: |
           mkdir -p site
-          cp -r index.html common dividend site/
-          cp -r data site/data
+          cp -r web/. site/
+          cp -r data site/data   # out(화면) + store(다음 실행이 이어 받는 사실 저장소)
           touch site/.nojekyll
 
       - name: gh-pages 배포

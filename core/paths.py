@@ -10,7 +10,10 @@ except Exception:
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE, "data")
-os.makedirs(DATA_DIR, exist_ok=True)
+OUT_DIR = os.path.join(DATA_DIR, "out")       # 계산 결과 — 화면·엑셀·CI 배포가 읽음
+CACHE_DIR = os.path.join(DATA_DIR, "cache")   # 토큰·고유번호·시세 DB·알림 기록·조회 캐시
+for _d in (OUT_DIR, CACHE_DIR):
+    os.makedirs(_d, exist_ok=True)
 
 def save_json(path, obj, indent=1):
     """원자적 저장 — 쓰다 만 파일을 웹이 읽는 사고 방지 (tmp에 쓰고 교체). 큰 캐시는 indent=None 으로 작게."""
@@ -31,6 +34,7 @@ def load_json(path, default):
         return default
 
 DART_VIEW = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo="
+KIND_VIEW = "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={}&docno="
 
 _wl_cache = {"mtime": None, "data": None}
 def load_watchlist():

@@ -12,10 +12,10 @@
   python -m derive.dividend.check        # 오류 있으면 종료코드 1
 """
 import datetime, json, os, re, sys
-from core.paths import DATA_DIR, save_json
+from core.paths import save_json, OUT_DIR
 from core.krx_cal import t_minus
 
-OUT_PATH = os.path.join(DATA_DIR, "dividend_check.json")
+OUT_PATH = os.path.join(OUT_DIR, "dividend_check.json")
 SEASON_DAYS = {"결산배당": 123, "중간배당": 92, "분기배당": 92}
 METHODS = {"고정", "유동", "유동 가능", "판별 불가", "확정 기준일"}
 JARGON = re.compile(r"\bA[12]\b|\bD1[34]\b|정관 [OX]\b|앵커")
@@ -52,7 +52,7 @@ def _d(s):
         return None
 
 def _load(name):
-    path = os.path.join(DATA_DIR, name)
+    path = os.path.join(OUT_DIR, name)
     return json.load(open(path, encoding="utf-8")) if os.path.exists(path) else None
 
 def check():

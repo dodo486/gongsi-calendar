@@ -25,13 +25,13 @@
 """
 import os, json, time, datetime, statistics
 from concurrent.futures import ThreadPoolExecutor
-from ingest.sources import kis as md_feed
-from core.paths import DATA_DIR, save_json, load_watchlist
+from core import market as md_feed
+from core.paths import save_json, load_watchlist, OUT_DIR, CACHE_DIR
 from core.expiries import second_thursday
 from core.krx_cal import holiday_dates, prev_business_day, session_delay
 
-LIVE_PATH = os.path.join(DATA_DIR, "closearb.json")
-LOG_DIR = os.path.join(DATA_DIR, "closearb")
+LIVE_PATH = os.path.join(OUT_DIR, "closearb.json")
+LOG_DIR = os.path.join(CACHE_DIR, "closearb")
 
 PHASES = [
     ("NXT 프리마켓", "0800", "0850"),

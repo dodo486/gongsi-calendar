@@ -139,7 +139,7 @@
 </div>
 <script>
 // 배당 페이지 = 이 폴더 + common/ — 데이터는 DATA 아래 DATA_FILES 만 읽는다(따로 배포할 때 이 파일들만 같이 올림)
-const DATA = "../data/";
+const DATA = "../data/out/";
 const DATA_FILES = ["div_book.json","div_sources.json","capital.json","div_estimates.json","halts.json","divpoints.json","expiries.json","dividend_check.json"];
 let BOOK = {rows:[], grades:{}}, ROWS = [], SRC = {rows:[]}, CAPD = {events:[], ongoing_ids:[]}, CAP = [], HALT = [], EXP = [];
 let RES = {companies:{}, events:[]};   // 리서치: 기준일 판정 + 예상배당(div_estimates.json)
