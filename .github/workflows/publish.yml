@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: pip install numpy holidays
+      - run: pip install numpy holidays requests
 
       - name: 이전 배포 데이터 복원 (리서치 파싱 캐시 재사용)
         run: |
