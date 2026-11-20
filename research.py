@@ -108,6 +108,8 @@ def _kind(nm):
         return "record" if "배당" in c else "agm_record"
     if "기타경영사항" in c and ("배당" in c or "기준일" in c or c.endswith("기타경영사항(자율공시)")):
         return "notice"
+    if "주식분할결정" in c or "주식병합결정" in c:
+        return "split"
     if "주주총회소집결의" in c:
         return "agm_call"
     if "주주총회결과" in c:
@@ -148,6 +150,15 @@ def parse_agm(t):
             "regular": bool(re.search(r"구분\s*정기주주총회|정기주주총회\s*결과", t)),
             "rejected": bool(re.search(r"특별결의[^.]{0,100}?부결", t))}
 
+def parse_split(t):
+    """주식분할·병합결정 — 1주당 가액 전→후 비율 = 주식수 배수(분할 5,000→500 은 10, 병합 500→2,500 은 0.2), 신주 효력발생일"""
+    m = re.search(r"1주당\s*가액\s*\(원\)\s*([\d,]+)\s+([\d,]+)", t)
+    eff = re.search(r"효력발생일\s*(\d{4}-\d{2}-\d{2})", t)
+    if not m or not eff:
+        return {}
+    before, after = (int(x.replace(",", "")) for x in m.groups())
+    return {"factor": before / after, "effective": eff.group(1)} if before and after else {}
+
 def parse_plan(t):
     lines = []
     for m in re.finditer(r"배당\s*기준일|배당\s*절차|선\s*배당|배당액을?\s*먼저", t):
@@ -165,6 +176,7 @@ PARSE = {
     "agm_call": parse_agm,
     "agm_result": parse_agm,
     "plan": parse_plan,
+    "split": parse_split,
 }
 
 YM = r"(\d{4}\s*(?:\.|년)\s*\d{1,2}\s*월?|-)"
@@ -283,6 +295,14 @@ def acc_months(universe):
 
 
 # ── 회사 단위 정리 ──
+def share_factor(splits, a, b):
+    """a 날짜 주식 1주가 b 날짜에 몇 주인지 — 그 사이 효력이 난 분할·병합 배수의 곱"""
+    f = 1.0
+    for x in splits:
+        if a < x["effective"] <= b:
+            f *= x["factor"]
+    return f
+
 def _agm_fy(agm, acc):
     return max(fy for fy in range(agm.year - 2, agm.year + 1) if quarter_end(fy, 4, acc) < agm)
 
@@ -291,11 +311,14 @@ def context(stock, entries, policy, acc, agm_records):
     acc_known = acc is not None
     acc = acc or 12
     corp = market = ""
-    rec_notices, notices, agms, plans = [], [], [], []
+    rec_notices, notices, agms, plans, splits = [], [], [], [], []
     for e in sorted(entries, key=lambda x: x["rcept_dt"]):
         corp, market = e.get("corp") or corp, e.get("market") or market
         k, rd = e["kind"], _d(e["rcept_dt"])
-        if k == "record" and e.get("record_date"):
+        if k == "split" and e.get("effective"):
+            sp = {"date": rd, "effective": _d(e["effective"]), "factor": e["factor"]}
+            splits = [x for x in splits if not (x["factor"] == sp["factor"] and abs((x["effective"] - sp["effective"]).days) <= 120)] + [sp]
+        elif k == "record" and e.get("record_date"):
             rec_notices.append({"date": rd, "record": _d(e["record_date"]), "div_type": e.get("div_type", "")})
         elif k == "notice" and e.get("is_div"):
             t = e["div_type"]
@@ -331,7 +354,8 @@ def context(stock, entries, policy, acc, agm_records):
     for r in rounds:
         r["fixed"] = r["record"] == r["qe"]
         r["amount_first"] = bool(r["decided"] and r["decided"] < r["record"])
-        prior = sorted(int(x["dps"]) for x in rounds if x["type"] == r["type"] and x["record"] < r["record"] and x["dps"])
+        prior = sorted(int(x["dps"]) / share_factor(splits, x["record"], r["record"]) for x in rounds
+                       if x["type"] == r["type"] and x["record"] < r["record"] and x["dps"])
         med = prior[len(prior) // 2] if prior else 0
         r["special"] = bool(med and r["dps"] and int(r["dps"]) > SPECIAL_MULT * med)
     for a in agms:
@@ -371,7 +395,7 @@ def context(stock, entries, policy, acc, agm_records):
             since[g] = max((d for d in agm_days if d <= o and (last_x is None or d > last_x)), default=o)
     return {"stock": stock, "corp": corp, "market": market, "acc": acc, "acc_known": acc_known,
             "rounds": rounds, "rec_notices": rec_notices, "notices": notices, "agms": agms, "plans": plans,
-            "agm_records": sorted(agm_records or []), "charter": charter, "charter_since": since, "charter_pending": pending,
+            "agm_records": sorted(agm_records or []), "charter": charter, "charter_since": since, "charter_pending": pending, "splits": splits,
             "organ": (policy or {}).get("organ") or {}, "policy_report": (policy or {}).get("report", "")}
 
 def view(ctx, cut):
@@ -383,6 +407,7 @@ def view(ctx, cut):
     v["agms"] = [a for a in ctx["agms"] if a["rcept"] < cut]
     v["agm_records"] = [d for d in ctx["agm_records"] if d < cut]
     v["charter_since"] = {g: d for g, d in ctx["charter_since"].items() if d < cut}
+    v["splits"] = [x for x in ctx["splits"] if x["date"] < cut]
     return v
 
 def quarter_owner(rounds):
@@ -595,13 +620,15 @@ def predict_round(ctx, t, fy, q, today, earn, med):
         warn.append(f"기준일→지급 {(pay - rec).days}일 — 3개월 한도(상법 §354③) 초과")
 
     reg = next((r for r in reversed(past) if not r["special"] and r["dps"]), None)
+    adj = share_factor(ctx["splits"], reg["record"], rec) if reg else 1.0
     return {"div_type": t, "fy": fy, "q": q, "quarter": f"{fy} Q{q}", "quarter_end": _iso(qe),
             "record_date": _iso(rec), "pay_date": _iso(pay), "method": "확정 기준일" if ann_rec else method,
             **grade_out("공고" if ann_rec else grade, t), "case": j["case"], "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: _iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
-            "per_share": reg["dps"] if reg else "",
-            "amount_basis": f"직전 정기 회차({reg['fy']} Q{reg['q']}) {int(reg['dps']):,}원 반복" if reg else "금액 이력 없음",
+            "per_share": str(round(int(reg["dps"]) / adj)) if reg else "",
+            "amount_basis": (f"직전 정기 회차({reg['fy']} Q{reg['q']}) {int(reg['dps']):,}원 반복"
+                             + (f" · 그 뒤 {'분할' if adj > 1 else '병합'} 1주→{adj:g}주 보정" if adj != 1 else "")) if reg else "금액 이력 없음",
             "ladder": ladder(ctx, t, fy, q, bool(ann_rec))}, None
 
 def forecast(ctx, today, earn, med):
@@ -697,6 +724,16 @@ def build(days=HIST_DAYS):
 
 
 # ── 검증 (§5.2) ──
+def amount_hits(xs):
+    """예상 금액 적중 — 정확히 같음 · ±5% · ±20% · 오차 중앙값 (특별배당 섞인 실제 회차는 따로 셈)"""
+    if not xs:
+        return {}
+    err = [abs(x["pred_dps"] - x["actual_dps"]) / x["actual_dps"] * 100 for x in xs]
+    pct = lambda k: f"{k}/{len(xs)} ({k / len(xs) * 100:.0f}%)"
+    return {"같음": pct(sum(x["pred_dps"] == x["actual_dps"] for x in xs)), "±5%": pct(sum(e <= 5 for e in err)),
+            "±20%": pct(sum(e <= 20 for e in err)), "오차 중앙값(%)": round(statistics.median(err), 1),
+            "특별배당 섞인 회차": sum(x["actual_special"] for x in xs)}
+
 def verify():
     today = D.today()
     ctxs = contexts()
@@ -722,6 +759,8 @@ def verify():
                          "err": abs((prec - r["record"]).days),
                          "err_alt": {k: abs((_d(x) - r["record"]).days) for k, x in p["alt"].items()},
                          "month_ok": month(pex) == month(aex), "cond": p["cond"],
+                         "pred_dps": int(p["per_share"]) if p["per_share"] else None, "actual_dps": int(r["dps"]) if r["dps"] else None,
+                         "actual_special": r["special"],
                          "charter": (c["charter"].get(GROUP[r["type"]]) or {}).get("v", ""),
                          "prev_fixed": next((x["fixed"] for x in reversed(v["rounds"]) if x["type"] == r["type"]), None)})
     judged = [x for x in rows if x["pred"] in ("고정", "유동")]
@@ -746,6 +785,8 @@ def verify():
         "유동 기준일 ±7일 이내": pct(sum(1 for x in flo if x["err"] <= 7), len(flo)),
         "월물 적중": pct(sum(1 for x in rows if x.get("month_ok")), sum(1 for x in rows if "month_ok" in x)),
         "조건부 신호(정관 O · 직전 고정)": cond,
+        "금액": {t or "전체": amount_hits([x for x in rows if x.get("pred_dps") and x.get("actual_dps") and (not t or x["type"] == t)])
+                 for t in ("", "결산배당", "분기배당", "중간배당")},
         "한계": "정관(정기보고서 표)은 최신값 사용 — 과거 시점 값이 아님. 실적발표 예정일 과거분 없음 → 백테스트에서 A2 이사회형 미사용",
     }
     save_json(VERIFY_PATH, {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "summary": summary, "rows": rows})

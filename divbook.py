@@ -100,7 +100,8 @@ def build():
 
 
 KIND = {"decision": "현금배당결정", "record": "배당 기준일(주주명부폐쇄) 공고", "notice": "기타경영사항(자율공시)",
-        "agm_call": "주주총회소집결의", "agm_result": "주주총회결과", "plan": "기업가치제고계획·지배구조보고서"}
+        "agm_call": "주주총회소집결의", "agm_result": "주주총회결과", "plan": "기업가치제고계획·지배구조보고서",
+        "split": "주식분할·병합결정"}
 
 def _ox(c):
     return ", ".join(f"{k} {'이사회가 정할 수 있음' if v == 'O' else '결산기말 고정'}" for k, v in (c or {}).items())
@@ -115,6 +116,7 @@ READ = {
     "agm_result": lambda h: " · ".join(x for x in [f"{'정기' if h.get('regular') else '임시'}주총 {h.get('agm_date', '')}",
                                                     h.get("rejected") and "부결", h.get("charter") and f"정관: {_ox(h['charter'])}"] if x),
     "plan": lambda h: " ".join(h.get("lines") or [])[:500],
+    "split": lambda h: f"1주 → {h['factor']:g}주 · 효력발생일 {h['effective']}" if h.get("factor") else "비율 못 읽음",
 }
 
 def build_sources(stocks):
