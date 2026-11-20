@@ -78,14 +78,12 @@ def build():
         amt = r.get("per_share")
         if r["kind"] == "est":
             money = f"(예상 {_won(amt)}원)" if amt else "(예상 미정)"
-            tail = f" · 예상 기준일 {_md(r['record_date'])} — {r['reason']}"
             names = {"buy": "💡[예상 배당매수일]", "ex": "💡[예상 배당락]"}
         else:
             money = f"({'예상 ' if r['amount_src'] == '예상' else ''}{_won(amt)}원)" if amt else "(금액 미정)"
-            tail = ""
             names = {"buy": "[배당매수일]", "ex": "[배당권리락]"}
         r["marks"] = [{"type": k, "date": r["confirm_date" if k == "buy" else "ex_date"], "group": n,
-                       "title": f"{n} {r['corp']} {money}{tail}"} for k, n in names.items()]
+                       "title": f"{n} {r['corp']} {money} {r['grade_label']}"} for k, n in names.items()]
     rows.sort(key=lambda r: (r["ex_date"], r["corp"]))
 
     nxt = next((d for d in exps if d > today), "")
