@@ -18,35 +18,28 @@
 
 ## 구성
 
-| 파일 | 역할 |
+들여오기 → 계산 → 보여주기 세 층. 규칙·확장 방법은 [docs/구조.md](docs/구조.md).
+
+| 폴더 | 역할 |
 |---|---|
-| `base.py` · `net.py` | 공용 기반 — 경로·json 저장·감시종목·콘솔 / 사내망 TLS |
-| `fetch.py` | DART 접속(공시 목록·원문·고유번호) — 공용 |
-| `kind_client.py` | KRX KIND 접속(당일공시 목록·본문·회사명→코드) — 공용 |
-| `krx_cal.py` | 휴장일·영업일(T-1·T-2)·날짜 정규화 — 공용 |
-| `md_feed.py` | 시세 창구(jhts 시세수집팀) — 공용 |
-| `disclosures.py` | 공시 탭 — 관심 종류 공시 수집·분류 (증자=유형B, 거래소=유형I) |
-| `dividends.py` | 배당금·기준일 원문 파싱, T-2 잔고확정일 계산, 증분 반영(upsert) |
-| `div_collect.py` → `div_facts.py` → `div_date.py`·`div_amount.py` → `divbook.py` | 배당 수집 → 회사별 사실 → 구분·예상 기준일·예상 금액 → 장부 (`div_verify.py` 백테스트) |
-| `expiries.py` | 선물·옵션 만기일 규칙 계산 |
-| `get_watchlist.py` | 코스피200(네이버) + 코스닥150(스냅샷) → `watchlist.json` |
-| `monitor.py` | 실시간 폴러(1분), 새 공시 감지·알림·캘린더 반영 |
-| `serve.py` / `index.html` | 웹 캘린더 (FullCalendar, http://localhost:8777) |
-| `dividend/` | 배당 화면(따로 배포 가능 — `dividend/` + `common/` + 배당 데이터) |
-| `common/` | 화면 공용(common.js·common.css·FullCalendar) |
-| `launch.py` | 원클릭 런처(폴러+웹, 중복실행 방지) — 기동·창 열기는 여기만 |
+| `core/` | 공용 기반 — 경로·저장·저장소(`store`)·대상 종목(`universe`)·영업일·만기 규칙 |
+| `ingest/` | 들여오기 — `run`(한 바퀴) · `registry`(공시 종류·주기 원천) · `sources/`(DART·KIND·네이버·시세 접속) · `parsers/`(원문→값) · `feeds/`(주기 원천) |
+| `derive/` | 계산 — `run` · `registry`(읽는 종류·앞 계산) · `dividend/`(확정·사실·날짜·금액·장부·지수배당포인트·검증·점검) · 공시 탭·증자·실적·상하한가 등 |
+| `app/` | `monitor`(폴러: 들여오기 → 계산 → 알림) · `serve`(웹, http://localhost:8777) · `launch`(원클릭 런처) · `check_layers`(층 검사) |
+| `index.html` · `dividend/` · `common/` | 화면 — 계산 결과만 읽음 |
+| `data/store/` | 사실 저장소 (종류별, 접수번호마다 한 줄) |
 
 ## 설치 & 실행
 
 1. Python 3 + 패키지: `pip install numpy holidays` (+ 윈도우 알림용 `winotify pillow` — 맥/리눅스는 불필요)
 2. **DART API 키 발급** ([opendart.fss.or.kr](https://opendart.fss.or.kr)) → `dart_key.txt.example` 를 `dart_key.txt` 로 복사 후 키 입력
-3. 감시대상 생성: `python get_watchlist.py`
-4. 실행: `python launch.py` (또는 바탕화면 아이콘)
+3. 감시대상 생성: `python -m ingest.feeds.watchlist`
+4. 실행: `python -m app.launch` (또는 바탕화면 아이콘)
 
 ```
-python launch.py         # 폴러 + 웹 한 번에
-python disclosures.py 90 # 과거 90일 공시 백필
-python dividends.py 90   # 배당 데이터 추출
+python -m app.launch         # 폴러 + 웹 한 번에
+python -m derive.disclosures 90 # 과거 90일 공시 백필
+python -m ingest.run && python -m derive.run   # 들여오기 + 전 계산
 ```
 
 ## 환경 참고

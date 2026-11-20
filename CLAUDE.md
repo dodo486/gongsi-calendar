@@ -21,7 +21,7 @@
 ## 하지 않는 것
 
 - **자동기동을 임의로 되살리지 않는다.** 2026-08-21 예약작업·시작프로그램 전량 제거, 현재는 아침에
-  바탕화면 `공시캘린더`(= `pythonw launch.py`)를 직접 누르는 방식이다. 서버 기동·창 열기는 `launch.py` 한 곳만 한다. 재정의는 예정돼
+  바탕화면 `공시캘린더`(= `pythonw -m app.launch`)를 직접 누르는 방식이다. 서버 기동·창 열기는 `app/launch.py` 한 곳만 한다. 재정의는 예정돼
   있지만(`PROJECT.md` §4.5) **사용자 지시가 있을 때만** 손댄다. 새 기동 경로를 만들면 구방식 등록을
   반드시 같이 제거한다 — 잔재가 남아 "껐는데 왜 계속 뜨지" 혼선을 만든 적이 있다.
 - **프런트 라이브러리를 CDN에서 불러오지 않는다.** FullCalendar는 `common/vendor/` 로컬 벤더링이다(`2e9b80b`).
@@ -43,8 +43,8 @@
 
 ```bash
 python -c "import fetch; print(len(fetch.KEY))"   # 40 이어야 함 (DART 키 정상)
-python disclosures.py 3                           # data/disclosures.json 갱신되는지
-python launch.py                                  # 포트 8777 LISTENING + GET /index.html 200
+python -m derive.disclosures 3                           # data/disclosures.json 갱신되는지
+python -m app.launch                                  # 포트 8777 LISTENING + GET /index.html 200
 ```
 
 - 토스트 관련 수정은 `monitor_run.log`에 발사 기록이 찍혔는지까지 확인한다. 로그에 찍혔는데 배너가

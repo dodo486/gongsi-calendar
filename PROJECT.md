@@ -98,19 +98,19 @@ DART는 **푸시(웹소켓) 없음**. 실시간 = **짧은 주기 폴링(polling
 
 ### 개별 실행 (개발용)
 ```
-python monitor.py --once       # 폴러 1회 확인 (상주·웹은 launch.py 로만 켬)
-python monitor.py --test-toast # 알림 테스트
-python get_watchlist.py        # 감시대상 갱신 (코스피200 네이버 + 코스닥150 스냅샷)
-python disclosures.py 90       # 과거 N일 공시 백필 (증자·자사주 등 8종, 배당 제외)
-python dividends.py 90         # 배당 추출 (배당금+기준일 원문 파싱) → data/dividends.json
-python expiries.py             # 선물·옵션 만기일 생성(규칙 계산) → data/expiries.json
-python kind_limits.py          # 선물 상하한가(가격제한폭 도달) KIND 공시 → data/limits.json
-python kind_halt.py            # 매매거래정지/재개 KIND 공시 → data/halts.json
-python krx_actions.py          # 시장조치(사이드카·서킷·투자경고)
-python index_pdf.py            # 지수배당포인트용 ETF PDF(KODEX200·KODEX코스닥150·TIGER KRX300)+지수종가 → data/index_pdf.json (하루 1회, --force)
-python divpoints.py            # 지수배당포인트(근월물) 계산 → data/divpoints.json
-python industry.py [rebuild]   # 인더스트리 액션 → data/industry_action.json (rebuild = 굵은 묶음 강제 재구성)
-python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바탕화면 '공시캘린더' 아이콘이 이걸 호출)
+python -m app.monitor --once       # 폴러 1회 확인 (상주·웹은 launch.py 로만 켬)
+python -m app.monitor --test-toast # 알림 테스트
+python -m ingest.feeds.watchlist        # 감시대상 갱신 (코스피200 네이버 + 코스닥150 스냅샷)
+python -m derive.disclosures 90       # 과거 N일 공시 백필 (증자·자사주 등 8종, 배당 제외)
+python -m derive.dividend.confirmed 90         # 배당 추출 (배당금+기준일 원문 파싱) → data/dividends.json
+python -m core.expiries             # 선물·옵션 만기일 생성(규칙 계산) → data/expiries.json
+python -m derive.limits          # 선물 상하한가(가격제한폭 도달) KIND 공시 → data/limits.json
+python -m derive.halts            # 매매거래정지/재개 KIND 공시 → data/halts.json
+python -m derive.actions          # 시장조치(사이드카·서킷·투자경고)
+python -m ingest.feeds.index_pdf            # 지수배당포인트용 ETF PDF(KODEX200·KODEX코스닥150·TIGER KRX300)+지수종가 → data/index_pdf.json (하루 1회, --force)
+python -m derive.dividend.points            # 지수배당포인트(근월물) 계산 → data/divpoints.json
+python -m derive.industry [rebuild]   # 인더스트리 액션 → data/industry_action.json (rebuild = 굵은 묶음 강제 재구성)
+python -m app.launch               # 폴러+웹 동시 기동 + 크롬 앱창 (바탕화면 '공시캘린더' 아이콘이 이걸 호출)
 ```
 
 ### 폴링 주기 — 전부 `monitor.py` 상수
@@ -314,7 +314,7 @@ python launch.py               # 폴러+웹 동시 기동 + 크롬 앱창 (바�
 - 2026-11-11: **기동 경로 정리 — 켜는 건 `launch.py` 하나** (사용자 지시: "덕지덕지 되어있는거 다 지우고 키는건 하나에서").
   · 점검: 예약작업·시작프로그램·Run 키·스크립트 어디에도 자동기동 없음(8/21 제거 상태 그대로). 수동 유지(사용자 선택).
   · 지움: 바탕화면 이름 없는 중복 아이콘(`.lnk`, 8/24, 같은 `pythonw launch.py`), `serve.py` 의 브라우저 탭 열기(`open_browser`·`--no-browser`)와
-    단독 실행 진입점, 문서의 `python serve.py`·`python monitor.py`(상주) 기동 안내, 없는 아이콘 이름 `공시캘린더 서버 실행`.
+    단독 실행 진입점, 문서의 `python -m app.serve`·`python -m app.monitor`(상주) 기동 안내, 없는 아이콘 이름 `공시캘린더 서버 실행`.
   · `launch.py`: 대시보드 창이 이미 있으면 새로 열지 않고 맨 앞으로, 새로 열면 뜰 때까지 기다려 맨 앞으로(다른 창 뒤에 깔리지 않게).
 
 - 2026-11-11: **무상증자 할 일 + 매도 가능일** (사용자 지시).

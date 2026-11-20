@@ -37,20 +37,17 @@ jobs:
 
       - name: 데이터 갱신
         run: |
-          python get_watchlist.py || echo "watchlist 갱신 실패 — 리포 커밋본 사용"
-          python disclosures.py 90
-          python dividends.py 90
-          python expiries.py
-          python div_date.py
-          python div_verify.py
-          python divbook.py
-          python capital.py || echo "capital 실패 — 건너뜀"
-          python earnings.py || echo "earnings 실패 — 건너뜀"
-          python earn_sched.py || echo "earn_sched 실패 — 건너뜀"
-          python kind_limits.py || echo "kind_limits 실패(해외 IP 차단 가능) — 건너뜀"
+          python -m ingest.feeds.watchlist || echo "watchlist 갱신 실패 — 리포 커밋본 사용"
+          python -m app.check_layers
+          python -m ingest.run
+          python -m derive.run
+          python -m derive.disclosures 90
+          python -m derive.capital || echo "capital 실패 — 건너뜀"
+          python -m derive.earnings || echo "earnings 실패 — 건너뜀"
+          python -m derive.limits || echo "kind_limits 실패(해외 IP 차단 가능) — 건너뜀"
 
       - name: 배당 자가 점검 (오류면 여기서 멈춰 배포 안 함 — 이전 배포본 유지)
-        run: python dividend_check.py
+        run: python -m derive.dividend.check
 
       - name: 사이트 구성
         run: |

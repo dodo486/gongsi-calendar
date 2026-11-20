@@ -1,0 +1,34 @@
+# -*- coding: utf-8 -*-
+"""계산 등록표 — 계산마다 읽는 저장소 종류와 앞 계산. 새 계산은 여기 한 줄 + 계산 파일 하나.
+"day" = 날이 바뀜(오늘 기준으로 달라지는 계산). 순서는 앞 계산이 먼저 오게 적는다."""
+from dataclasses import dataclass
+from typing import Callable
+from core import expiries
+from derive import earn_sched
+from derive.dividend import confirmed, facts, date, verify, book, points, check
+
+
+@dataclass(frozen=True)
+class Calc:
+    name: str
+    reads: frozenset            # 이 종류가 바뀌면 다시 계산
+    after: tuple                # 이 계산들이 다시 돌면 따라서 다시 계산
+    run: Callable
+
+
+DIV_FACTS = frozenset(facts.DOC_KINDS) | {"agm_record", "charter_table", "acc_mt", "dps_consensus", "index_pdf"}
+
+CALCS = [
+    Calc("expiries", frozenset({"day"}), (), expiries.build),
+    Calc("dividends", frozenset({"decision", "record", "acc_mt", "index_pdf", "day"}), (), confirmed.main),
+    Calc("earn_sched", frozenset({"earn_notice", "ir", "day"}), (), earn_sched.main),
+    Calc("div_estimates", DIV_FACTS | {"earn_notice", "ir", "day"}, (), date.build),
+    Calc("div_verify", frozenset({"day"}), (), verify.verify),            # 백테스트 — 하루 한 번
+    Calc("div_book", frozenset(), ("expiries", "dividends", "div_estimates"), book.build),
+    Calc("divpoints", frozenset({"index_pdf", "day"}), ("div_book",), points.refresh),
+    Calc("dividend_check", frozenset(), ("div_book", "div_verify", "divpoints"), check.main),
+]
+
+_names = [c.name for c in CALCS]
+assert len(_names) == len(set(_names)), "등록표에 같은 계산이 두 번"
+assert all(a in _names[:i] for i, c in enumerate(CALCS) for a in c.after), "앞 계산은 위에 적어야 함"
