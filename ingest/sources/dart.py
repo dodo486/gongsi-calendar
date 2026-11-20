@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """DART(OpenDART) 접속 — 공시 목록·원문·고유번호. 이벤트와 무관한 공용 수집 도구.
-- 키: 환경변수 DART_KEY(CI) 또는 dart_key.txt
+- 키: dart_key.txt
 - TLS 는 net(사내망 대응), 저장·경로는 base 를 쓴다
 """
 import io, json, os, re, sys, time, datetime, threading, zipfile, urllib.request, urllib.error, ssl
@@ -9,12 +9,10 @@ from core.paths import BASE, save_json, CACHE_DIR
 from ingest.sources import net   # import 시 TLS opener 세팅
 
 _KEY_PATH = os.path.join(BASE, "dart_key.txt")
-KEY = os.environ.get("DART_KEY", "").strip()   # CI(GitHub Actions)에선 시크릿 env로 주입
-if not KEY:
-    if not os.path.exists(_KEY_PATH):
-        sys.exit("[!] dart_key.txt 없음 — dart_key.txt.example 을 dart_key.txt 로 복사하고 "
-                 "OpenDART API 키를 넣어주세요 (무료 발급: https://opendart.fss.or.kr)")
-    KEY = open(_KEY_PATH, encoding="utf-8").read().strip()
+if not os.path.exists(_KEY_PATH):
+    sys.exit("[!] dart_key.txt 없음 — dart_key.txt.example 을 dart_key.txt 로 복사하고 "
+             "OpenDART API 키를 넣어주세요 (무료 발급: https://opendart.fss.or.kr)")
+KEY = open(_KEY_PATH, encoding="utf-8").read().strip()
 
 def api(params, endpoint="list", tries=5):
     """OpenDART JSON API. 연결 오류는 tries 번까지 5·10·20·40초 쉬며 재시도 — 실시간 감시는 tries=1 로 바로 실패."""

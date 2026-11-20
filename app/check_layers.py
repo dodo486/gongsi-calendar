@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""구조 검사(CI) — 층: 계산(derive)은 들여오기(ingest)를 import 하지 않고, 파서는 접속하지 않는다.
+"""구조 검사 — 층: 계산(derive)은 들여오기(ingest)를 import 하지 않고, 파서는 접속하지 않는다.
 등록표: 계산이 읽는 종류는 누군가 채우고, 들여오는 종류는 누군가 읽는다.
 
   python -m app.check_layers

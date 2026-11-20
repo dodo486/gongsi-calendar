@@ -10,7 +10,7 @@ except Exception:
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE, "data")
-OUT_DIR = os.path.join(DATA_DIR, "out")       # 계산 결과 — 화면·엑셀·CI 배포가 읽음
+OUT_DIR = os.path.join(DATA_DIR, "out")       # 계산 결과 — 화면·엑셀이 읽음
 CACHE_DIR = os.path.join(DATA_DIR, "cache")   # 토큰·고유번호·시세 DB·알림 기록·조회 캐시
 for _d in (OUT_DIR, CACHE_DIR):
     os.makedirs(_d, exist_ok=True)
