@@ -27,7 +27,7 @@
 | `md_feed.py` | 시세 창구(jhts 시세수집팀) — 공용 |
 | `disclosures.py` | 공시 탭 — 관심 종류 공시 수집·분류 (증자=유형B, 거래소=유형I) |
 | `dividends.py` | 배당금·기준일 원문 파싱, T-2 잔고확정일 계산, 증분 반영(upsert) |
-| `research.py` | 배당 이력 430일 캐시, **배당 선진화 판별** + **예상배당 추정**(캘린더 노란색) |
+| `div_collect.py` → `div_facts.py` → `div_date.py`·`div_amount.py` → `divbook.py` | 배당 수집 → 회사별 사실 → 구분·예상 기준일·예상 금액 → 장부 (`div_verify.py` 백테스트) |
 | `expiries.py` | 선물·옵션 만기일 규칙 계산 |
 | `get_watchlist.py` | 코스피200(네이버) + 코스닥150(스냅샷) → `watchlist.json` |
 | `monitor.py` | 실시간 폴러(1분), 새 공시 감지·알림·캘린더 반영 |

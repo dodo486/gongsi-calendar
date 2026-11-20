@@ -41,8 +41,8 @@ jobs:
           python disclosures.py 90
           python dividends.py 90
           python expiries.py
-          python research.py
-          python research.py --verify
+          python div_date.py
+          python div_verify.py
           python divbook.py
           python capital.py || echo "capital 실패 — 건너뜀"
           python earnings.py || echo "earnings 실패 — 건너뜀"

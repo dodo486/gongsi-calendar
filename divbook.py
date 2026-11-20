@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""배당 장부 — 확정(dividends.json) + 예상(research.json)을 회차마다 한 줄로 합친다 → data/div_book.json
+"""배당 장부 — 확정(dividends.json) + 예상(div_estimates.json)을 회차마다 한 줄로 합친다 → data/div_book.json
 
 화면·엑셀·지수배당포인트는 이 장부만 읽는다(구분·날짜·만기·금액·근거·캘린더 표시가 다 들어 있음).
 같은 종목·배당종류의 예상은 확정 기준일 ±45일 안이면 같은 회차로 보고 버린다. 기준일 공고만 있고 금액이 없으면 예상 금액을 빌린다.
@@ -9,7 +9,8 @@
 """
 import os, json, datetime
 from base import DATA_DIR, save_json
-from research import GRADES, TAGS, END_WORD, DART
+from div_date import GRADES, TAGS, END_WORD
+from div_collect import DART
 
 OUT = os.path.join(DATA_DIR, "div_book.json")
 SOURCES = os.path.join(DATA_DIR, "div_sources.json")
@@ -38,7 +39,7 @@ def _label(key, t):
 def build():
     today = datetime.date.today().isoformat()
     conf = _load("dividends.json", {}).get("events", [])
-    pred = _load("research.json", {}).get("events", [])
+    pred = _load("div_estimates.json", {}).get("events", [])
     exps = sorted(e["date"] for e in _load("expiries.json", {}).get("events", []))
 
     rows = []
@@ -122,7 +123,7 @@ READ = {
 def build_sources(stocks):
     """엑셀 참고 공시 탭 — 장부 종목에 대해 배당 산출이 읽은 DART 공시(2년치)와 정기보고서 배당 표"""
     hist = _load("div_history.json", {})
-    companies = _load("research.json", {}).get("companies", {})
+    companies = _load("div_estimates.json", {}).get("companies", {})
     rows = [{"stock": h["stock"], "종목코드": "A" + h["stock"], "종목명": h.get("corp", ""), "공시일": f"{h['rcept_dt'][:4]}-{h['rcept_dt'][4:6]}-{h['rcept_dt'][6:8]}",
              "공시 종류": KIND[h["kind"]], "공시 제목": h.get("title") or KIND[h["kind"]], "읽은 내용": READ[h["kind"]](h), "DART": DART + no}
             for no, h in hist.items() if h.get("stock") in stocks and h.get("kind") in KIND]

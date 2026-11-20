@@ -51,9 +51,9 @@ def parse_record(t):
     return {"record_date": norm_date(rec.group(1)) if rec else "",
             "div_type": norm_div_type(div.group(1) if div else "")}
 
-# ── 회차 — 배당 하나 = 종목 · 배당종류 · 사업연도 · 분기 (research 도 같은 규칙을 씀) ──
+# ── 회차 — 배당 하나 = 종목 · 배당종류 · 사업연도 · 분기 (div_facts 도 같은 규칙을 씀) ──
 TYPE_QUARTERS = {"분기배당": (1, 2, 3), "중간배당": (2,), "결산배당": (4,)}
-ACC_PATH = os.path.join(DATA_DIR, "acc_mt.json")   # 종목별 결산월 (research.acc_months 가 채움)
+ACC_PATH = os.path.join(DATA_DIR, "acc_mt.json")   # 종목별 결산월 (div_collect.acc_months 가 채움)
 
 def quarter_end(fy, q, acc):
     m, y = acc - 3 * (4 - q), fy
@@ -76,9 +76,9 @@ def _round_key(stock, div_type, record, decided, acc):
     fy, q, _ = round_of(div_type, d(record), d(decided), acc)
     return (stock, div_type, fy, q)
 
-# --- 배당 원문 파싱 캐시 (dividends·research 공용) ---
+# --- 배당 원문 파싱 캐시 (dividends·div_collect 공용) ---
 # rcept_no 별 파싱 결과를 저장/재사용 → 같은 공시 문서를 두 번 다시 내려받지 않는다.
-# research.collect 가 장기 이력을 채우고, dividends.main 이 그걸 그대로 재사용.
+# div_collect.collect 가 장기 이력을 채우고, dividends.main 이 그걸 그대로 재사용.
 HIST_PATH = os.path.join(DATA_DIR, "div_history.json")
 
 def load_doc_cache():
@@ -93,7 +93,7 @@ def load_doc_cache():
 SAME_ROUND_GAP = 31
 
 def assemble(entries, acc):
-    """배당결정·기준일 공고 → 회차 (dividends·research 공용). 접수 순으로 돌아 같은 회차는 나중 공시(정정)가 이긴다.
+    """배당결정·기준일 공고 → 회차 (dividends·div_collect 공용). 접수 순으로 돌아 같은 회차는 나중 공시(정정)가 이긴다.
     entries: {kind decision|record, stock, corp, market, rcept_no, rcept_dt(YYYYMMDD), div_type, per_share, record_date, pay_date}
     acc: {종목: 결산월}. 반환: 회차마다 {stock, corp, market, div_type, record_date, per_share, pay_date,
     decided(첫 배당결정 접수일 ISO, 없으면 ""), rcept_no(최근 배당결정, 없으면 기준일 공고), rcept_dt(최근 접수일)}"""
@@ -146,7 +146,7 @@ def main(days=90):
     watch = div_universe()
     print(f"TLS={TLS_MODE} | 기간 {bgn}~{end} | 배당 수집대상 {len(watch)} (감시종목+ETF PDF)")
 
-    cache = load_doc_cache()   # research 가 채운 파싱 캐시(=div_history.json) — 캐시에 없는 원문만 받음
+    cache = load_doc_cache()   # div_collect 가 채운 파싱 캐시(=div_history.json) — 캐시에 없는 원문만 받음
     rows = sorted((r for r in listing("I", days) if r["stock_code"] in watch and "자회사" not in r["report_nm"]),
                   key=lambda r: (r["rcept_dt"], r["rcept_no"]))   # 접수 순 — 같은 회차는 나중 공시(정정)가 이김
     decisions = [r for r in rows if "현금ㆍ현물배당결정" in r["report_nm"]]

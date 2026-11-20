@@ -140,9 +140,9 @@
 <script>
 // 배당 페이지 = 이 폴더 + common/ — 데이터는 DATA 아래 DATA_FILES 만 읽는다(따로 배포할 때 이 파일들만 같이 올림)
 const DATA = "../data/";
-const DATA_FILES = ["div_book.json","div_sources.json","capital.json","research.json","halts.json","divpoints.json","expiries.json","dividend_check.json"];
+const DATA_FILES = ["div_book.json","div_sources.json","capital.json","div_estimates.json","halts.json","divpoints.json","expiries.json","dividend_check.json"];
 let BOOK = {rows:[], grades:{}}, ROWS = [], SRC = {rows:[]}, CAPD = {events:[], ongoing_ids:[]}, CAP = [], HALT = [], EXP = [];
-let RES = {companies:{}, events:[]};   // 리서치: 기준일 판정 + 예상배당(research.json)
+let RES = {companies:{}, events:[]};   // 리서치: 기준일 판정 + 예상배당(div_estimates.json)
 let DP = null;                         // 지수배당포인트(divpoints.json)
 let HOL = new Set(), EXPD = new Set(); // 휴장일·만기일 ISO 날짜 — 캘린더 날짜 빨간 글자·노란 별표
 let calendar, dayCal;                  // 위: 월 캘린더(같은 날 같은 종류 많으면 묶음) / 아래: 선택한 날짜 목록(다 펼침)
@@ -336,7 +336,7 @@ function selectDate(iso){
 }
 
 function stageLadder(e){
-  // 5단계 사다리·앵커·경고 — research.py 가 계산한 값을 그대로 그림 (예상=e.ladder, 확정=회차별 ladders)
+  // 5단계 사다리·앵커·경고 — div_date.py 가 계산한 값을 그대로 그림 (예상=e.ladder, 확정=회차별 ladders)
   const c = (RES.companies||{})[e.stock] || {};
   const lad = e.kind==="est" ? e.ladder : (c.ladders||{})[`${e.div_type}|${e.record_date}`];
   if(!lad) return "";
@@ -353,7 +353,7 @@ function stageLadder(e){
   }
   return h;
 }
-function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월·계획·근거 (research.json)
+function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월·계획·근거 (div_estimates.json)
   const c = (RES.companies||{})[stock];
   if(!c) return "";
   const ch = Object.entries(c.charter||{}).map(([g,x])=>`${g}배당: ${esc(CH_TXT[x.v]||x.v)} <span class="sub">(${esc(x.src)})</span>`).join("<br>");
@@ -378,7 +378,7 @@ function whyBlock(e){
   h += stageLadder(e);
   return h + `</div>` + companyBlock(e.stock) + divHistBlock(e.stock);
 }
-function divHistBlock(stock){   // 이 회사가 원래 주는 배당 — 구성(분기·결산 등) + 회차별 이력 (research.json)
+function divHistBlock(stock){   // 이 회사가 원래 주는 배당 — 구성(분기·결산 등) + 회차별 이력 (div_estimates.json)
   const c = (RES.companies||{})[stock];
   if(!c || !(c.rounds||[]).length) return "";
   return `<div class="why"><div class="wh">📚 이 회사의 배당 구성: <span style="color:var(--est)">${esc(c.pattern||"")}</span></div>
@@ -645,7 +645,7 @@ async function loadData(){
   ROWS = BOOK.rows;
   if(SRC.generated_at !== BOOK.generated_at) try{ SRC = await getJSON("div_sources.json"); }catch(_){}
   try{ CAPD = await getJSON("capital.json"); CAP = CAPD.events; }catch(_){ CAPD = {events:[], ongoing_ids:[]}; CAP = []; }
-  try{ RES = await getJSON("research.json"); }catch(_){}
+  try{ RES = await getJSON("div_estimates.json"); }catch(_){}
   try{ HALT = (await getJSON("halts.json")).events||[]; }catch(_){ HALT = []; }
   try{ DP = await getJSON("divpoints.json"); }catch(_){ DP = null; }
   let chk = null;

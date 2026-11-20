@@ -15,7 +15,7 @@ from base import DATA_DIR, load_watchlist, save_json
 from net import TLS_MODE
 import dividends
 import expiries
-import research
+import div_date, div_verify
 import divbook
 import divpoints
 import kind_limits
@@ -105,14 +105,14 @@ def refresh_earnings(full=False):
     _run_guarded(_earn_lock, work, "실적")
 
 _res_lock = threading.Lock()
-def refresh_research():
-    """리서치(선진화 판별 + 예상배당) 갱신 — 이력은 rcept_no 캐시라 신규 문서만 파싱"""
+def refresh_div_estimates():
+    """배당 추정(구분·예상 기준일·금액) 갱신 — 이력은 rcept_no 캐시라 신규 문서만 파싱"""
     def work():
-        print("  [리서치] 선진화·예상배당 갱신 시작..."); research.build(); research.verify(); print("  [리서치] 갱신 완료")
+        print("  [배당 추정] 갱신 시작..."); div_date.build(); div_verify.verify(); print("  [배당 추정] 갱신 완료")
         divbook.build()
         divpoints.refresh()   # 예상배당 바뀜 → 지수배당포인트 재계산
         check_dividends()
-    _run_guarded(_res_lock, work, "리서치")
+    _run_guarded(_res_lock, work, "배당 추정")
 
 _cap_lock = threading.Lock()
 def refresh_capital():
@@ -377,7 +377,7 @@ def poll_once(seen, alert=True):
         save_payload(payload)
     if new_div:
         refresh_dividends()                   # 신규 배당 → 확정 배당 재계산
-        refresh_research()                    # 이력·기준일 판정·예상배당 갱신
+        refresh_div_estimates()                    # 이력·기준일 판정·예상배당 갱신
     if new_cap:
         refresh_capital()                     # 신규 증자 → 증자 재계산
     if new_earn:
@@ -409,7 +409,7 @@ def main():
         print(f"  [만기일] 생성 실패: {ex}")
     refresh_dividends()   # 상주 시작 시 배당 데이터 1회 갱신
     refresh_capital()     # 유·무상증자 데이터 1회 갱신 (신주배정기준일 T-1/T-2)
-    refresh_research()    # 선진화 판별 + 예상배당 갱신 (캐시 기반이라 신규 문서만 파싱)
+    refresh_div_estimates()    # 선진화 판별 + 예상배당 갱신 (캐시 기반이라 신규 문서만 파싱)
     refresh_earnings(full=True)   # 실적 공시 + 현재 등락률 1회 재수집
     refresh_earn_sched()          # 예상 실적발표 일정 1회 재수집
     lim_seen, ac_seen = set(), set()   # 상하한가·시장조치 전용 중복셋(공시 seen 과 분리)

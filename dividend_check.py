@@ -6,7 +6,7 @@
 - 회차·공시 짝: 회차의 결산기말 여부, 기준일 안내 자율공시가 붙은 회차가 그럴듯한가
 - 지수배당포인트: 월물 합계, 배당락일이 그 월물 구간 안인가
 - 정답표: docs/배당예측-워크플로우.md §5.1 사례 8종목
-- 적중률: research.py --verify 결과가 기준 아래로 떨어지지 않았나
+- 적중률: div_verify.py 결과가 기준 아래로 떨어지지 않았나
 결과는 data/dividend_check.json — 오류가 있으면 monitor 가 알림, CI 는 배포를 멈춘다.
 사용:
   python dividend_check.py        # 오류 있으면 종료코드 1
@@ -88,7 +88,7 @@ def check():
         seen.add(key)
 
     # ── 예상 배당 ──
-    res = _load("research.json") or {"events": [], "companies": {}}
+    res = _load("div_estimates.json") or {"events": [], "companies": {}}
     real = {}
     for e in div["events"]:
         real.setdefault(e.get("stock"), []).append(_d(e.get("record_date")))
@@ -176,7 +176,7 @@ def check():
     for s, (nm, cases) in GOLDEN.items():
         c = res["companies"].get(s)
         if not c:
-            err(f"정답표 {nm}({s})", "research.json 에 없음")
+            err(f"정답표 {nm}({s})", "div_estimates.json 에 없음")
             continue
         for name, ok in cases:
             try:
@@ -187,9 +187,9 @@ def check():
                 err(f"정답표 {nm}({s})", f"기대와 다름 — {name}")
 
     # ── 적중률 ──
-    ver = _load("research_verify.json")
+    ver = _load("div_verify.json")
     if not ver:
-        warn("적중률", "research_verify.json 없음 — python research.py --verify")
+        warn("적중률", "div_verify.json 없음 — python div_verify.py")
     else:
         sm = ver["summary"]
         for k, lim in MIN_HIT.items():
