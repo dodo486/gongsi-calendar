@@ -55,6 +55,7 @@ async function load(){
       </div>`).join("") + "</div>";
   }).join("");
 }
+window.refresh = load;   // 앱 탭으로 돌아올 때 바로 다시
 load(); setInterval(load, 2000);
 </script>
 </body>

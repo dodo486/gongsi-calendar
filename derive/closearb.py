@@ -86,7 +86,7 @@ def _minute_of_day(hhmm):
     return minutes(hhmm) - minutes(md_feed.KRX_OPEN)
 
 
-def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, before_auction, series):
+def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, before_auction, series, mktcap):
     auction = phase == md_feed.AUCTION and krx.get("expected_price")
     spot = krx.get("expected_price") if auction else krx.get("price")
     nxt_mid = (nxt["ask"] + nxt["bid"]) / 2 if nxt.get("ask") and nxt.get("bid") else nxt.get("price")
@@ -107,7 +107,7 @@ def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, before_auctio
     z = round(dev / std, 1) if dev is not None and n >= MIN_SAMPLES and std > 0 else None
     bid_q, ask_q = krx.get("total_bid_qty"), krx.get("total_ask_qty")
     return {
-        "code": code, "name": stock["name"], "market": stock["market"], "fut_code": fut_info["code"], "fut_month": fut_info["month"],
+        "code": code, "name": stock["name"], "market": stock["market"], "mktcap": mktcap, "fut_code": fut_info["code"], "fut_month": fut_info["month"],
         "multiplier": fut_info["multiplier"],
         "status": status,
         "spot": spot, "spot_kind": "예상" if auction else ("종가" if phase in (md_feed.PRE, md_feed.FUT_CLOSE, md_feed.AFTER) else "현재"),
@@ -164,6 +164,7 @@ class Monitor:
         watch = universe.stocks() or {}
         self.watch = {c: v for c, v in watch.items() if c in self.futs}
         self.codes = sorted(self.watch)
+        self.mktcap = {r["code"]: r.get("mktcap") for r in md_feed.market_snapshot() if r["code"] in self.watch}   # 하루 한 번 — 정렬용
         self.feeds = {md_feed.KRX_STOCK: self.codes, md_feed.KRX_FUT: [self.futs[c]["code"] for c in self.codes],
                       md_feed.KRX_STATUS: self.codes, md_feed.NXT_STOCK: self.codes}
         md_feed.watch("종가 차익", self.on_tick, self.feeds)
@@ -288,7 +289,7 @@ class Monitor:
             krx, fut = self.krx.get(c, {}), self.fut.get(self.futs[c]["code"], {})
             out.append(build_row(c, self.watch[c], self.futs[c], krx, self.nxt.get(c, {}), fut,
                                  status_of(self.status.get(c), krx.get("price")), phase, before_auction.get(c),
-                                 self.log["intraday"].get(c)))
+                                 self.log["intraday"].get(c), self.mktcap.get(c)))
         return out
 
 

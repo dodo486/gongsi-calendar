@@ -135,7 +135,7 @@
   #limitsView .li .kb{font-size:11px;padding:2px 7px}
   #limitsView .li .nm{font-size:13px}
   #limitsView .limsec{margin:10px 0 5px;padding-bottom:4px}
-  #divView{display:block;width:100%;height:calc(100vh - 62px);border:0}
+  #divView,#opsView{display:block;width:100%;height:calc(100vh - 62px);border:0}
 </style>
 </head>
 <body>
@@ -148,9 +148,9 @@
     <span class="tab" data-mode="div">💰 배당</span>
     <span class="tab" data-mode="industry">🏭 인더스트리 액션</span>
     <span class="tab" data-mode="closearb">⚖️ 종가 차익</span>
+    <span class="tab" data-mode="ops">🛰 관제탑</span>
     <span class="tab" data-mode="guide">📘 설명</span>
   </div>
-  <a class="chip" href="ops.html" target="ops">🛰 관제탑</a>
   <span class="meta" id="meta">불러오는 중…</span>
   <div class="controls">
     <input type="search" id="q" placeholder="회사명 검색">
@@ -162,6 +162,7 @@
   <div id="industryView" style="display:none"></div>
   <div id="closearbView" style="display:none"></div>
   <iframe id="divView" src="dividend/index.html" title="배당" style="display:none"></iframe>
+  <iframe id="opsView" src="ops.html" title="관제탑" style="display:none"></iframe>
   <div id="guideView" style="display:none">
     <h3>📘 기업 이벤트 — 지수(선물) vs 내 현물 바스켓, 날짜별로 뭘 하면 되나</h3>
     <p>거래소 지수와 내 계좌는 같은 이벤트를 <b class="f">서로 다른 날</b> 반영한다. 그 차이 나는 기간이 지수차익(예: 코스닥150) 리스크 구간이다. 표의 <b class="f">캘린더</b> 칸은 캘린더에 실제로 뜨는 이름이고, 맨 오른쪽 <b class="f">👉 할 일</b>만 따라가면 된다. 할 일은 <b class="f">매수차익(현물 바스켓 롱 + 선물 숏)</b> 기준이고, 매도차익(현물 숏 + 선물 롱)은 방향이 반대이며 대차 상환 수량(신주·배당 반환)과 리콜까지 같이 챙긴다. 늘 보는 건 하나 — <b class="f">내 바스켓의 종목 비중이 지수 안 비중과 같은가</b>. 다르면 그 차이만큼이 헤지 안 된 노출이다.</p>
@@ -555,7 +556,7 @@ document.getElementById("industryView").addEventListener("click", e=>{
   if(r){ IA_SEL = r.dataset.g; document.querySelectorAll(".ia-row.sel").forEach(x=>x.classList.remove("sel")); r.classList.add("sel"); renderIndustryDetail(); }
 });
 
-let CA = null, CA_SORT = "z";   // data/out/closearb.json
+let CA = null, CA_SORT = "cap";   // data/out/closearb.json
 async function loadClosearb(){
   try{ CA = await (await fetch("data/out/closearb.json?_="+Date.now())).json(); }catch(_){ CA = null; }
   document.getElementById("meta").textContent = CA
@@ -564,6 +565,7 @@ async function loadClosearb(){
   renderClosearb();
 }
 const CA_KEYS = {
+  cap: r=> r.mktcap ?? -1,
   z: r=> r.rank,
   dev: r=> r.dev_pct!=null ? Math.abs(r.dev_pct) : -1,
   chg10: r=> r.chg10_pct!=null ? r.chg10_pct : -99,
@@ -626,7 +628,7 @@ function renderClosearb(){
   box.innerHTML = `<div class="ca-cards">${basket("KOSPI","코스피200 바스켓")}${basket("KOSDAQ","코스닥150 바스켓")}</div>
     <div class="ca-hot-title">튄 종목 — 오늘 장중 베이시스 대비 z ${CA.z_hot} 이상 (${CA.phase})</div>
     <div class="ca-cards">${cards || `<div class="empty">지금 튄 종목 없음</div>`}</div>
-    <div class="ca-sort">정렬 ${chip("z","z")}${chip("chg10","10분 상승순")}${chip("dev","괴리")}${chip("won","원/계약")}${chip("jump","현물 튐")}${chip("imb","잔량 불균형")}</div>
+    <div class="ca-sort">정렬 ${chip("cap","시총")}${chip("z","z")}${chip("chg10","10분 상승순")}${chip("dev","괴리")}${chip("won","원/계약")}${chip("jump","현물 튐")}${chip("imb","잔량 불균형")}</div>
     <table class="ca-tab"><thead>
       <tr><th class="nm" colspan="2"></th><th class="grp" colspan="7">베이시스 (선물−현물)/현물</th><th class="grp sep" colspan="6">KRX 현물</th><th class="grp sep" colspan="2">주식선물</th></tr>
       <tr><th class="nm">종목</th><th class="nm">상태</th><th>오늘 추이 (점선 평균 · 점 지금)</th><th>장중 평균(표본)</th><th>지금</th><th>10분 전 대비</th><th>괴리</th><th>z</th><th>원/계약</th>
@@ -636,7 +638,9 @@ function renderClosearb(){
 }
 document.getElementById("closearbView").addEventListener("click", e=>{
   const s = e.target.closest("[data-casort]");
-  if(s){ CA_SORT = s.dataset.casort; renderClosearb(); return; }
+  if(s){ CA_SORT = s.dataset.casort; renderClosearb(); }
+});
+document.getElementById("closearbView").addEventListener("dblclick", e=>{   // 차트는 더블클릭
   const r = e.target.closest("[data-code]");
   if(r) openChart(r.dataset.code);
 });
@@ -644,7 +648,7 @@ document.getElementById("closearbView").addEventListener("click", e=>{
 async function loadData(){
   if(MODE==="industry") return loadIndustry();
   if(MODE==="closearb") return loadClosearb();
-  if(MODE==="guide" || MODE==="div") return;   // 배당은 dividend/index.html 이 스스로 불러옴
+  if(MODE==="guide" || EMBED[MODE]) return;   // 끼운 페이지(배당·관제탑)는 스스로 불러옴
   if(MODE==="board"){
     await loadActions();    // 최상단 KRX 시장조치(사이드카·서킷 등)
     await loadLimits();     // 상단 상하한가 밴드
@@ -662,12 +666,13 @@ async function loadData(){
 }
 const refresh = () => keepScroll(loadData);
 
+const EMBED = {div: "divView", ops: "opsView"};   // 탭: 그 안에 끼운 페이지 — 자체 검색·갱신을 가진다
 function applyModeView(){   // 현재 MODE에 맞춰 탭/컨트롤/상단밴드 표시 상태 세팅
-  const isBoard = MODE==="board", isDiv = MODE==="div";
+  const isBoard = MODE==="board";
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.mode===MODE));
-  document.querySelector(".controls").style.display = isDiv ? "none" : "";   // 배당 화면은 자체 검색·시장 필터
-  document.getElementById("meta").style.display = isDiv ? "none" : "";
-  document.getElementById("divView").style.display = isDiv ? "block" : "none";
+  document.querySelector(".controls").style.display = EMBED[MODE] ? "none" : "";
+  document.getElementById("meta").style.display = EMBED[MODE] ? "none" : "";
+  for(const [mode, id] of Object.entries(EMBED)) document.getElementById(id).style.display = MODE===mode ? "block" : "none";
   document.getElementById("limitsView").style.display = isBoard ? "block" : "none";
   document.querySelector(".cal-row").style.display = MODE==="disc" ? "" : "none";
   document.getElementById("industryView").style.display = MODE==="industry" ? "block" : "none";
@@ -680,7 +685,7 @@ function switchMode(mode){
   if(mode===MODE) return;
   MODE = mode;
   applyModeView();
-  if(MODE==="div") document.getElementById("divView").contentWindow.refresh?.();   // 숨겨져 있던 동안 쉰 갱신을 바로
+  if(EMBED[MODE]) document.getElementById(EMBED[MODE]).contentWindow.refresh?.();   // 숨겨져 있던 동안 쉰 갱신을 바로
   loadData().then(()=>{
     if(MODE!=="disc") return;
     calendar.updateSize();   // 숨김→표시 시 캘린더 크기 재계산
@@ -728,7 +733,7 @@ async function boot(){
 // openChart() 는 common.js 에서 제공 (알파스퀘어 차트를 'alphachart' 탭 재사용으로 열기)
 const evCode = p => (p && p.code) || "";   // 이벤트/행 → 종목코드
 let _es = null;
-const TAB_FILES = {closearb:["closearb.json"], industry:["industry_action.json"], guide:[], div:[]};   // div 는 dividend/index.html 이 스스로 갱신
+const TAB_FILES = {closearb:["closearb.json"], industry:["industry_action.json"], guide:[], div:[], ops:[]};   // 끼운 페이지는 스스로 갱신
 const OTHER_TAB_FILES = Object.values(TAB_FILES).flat();
 function connectSSE(){
   try{
