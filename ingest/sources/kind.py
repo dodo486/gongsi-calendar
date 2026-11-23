@@ -3,6 +3,7 @@
 (data.krx.co.kr 은 이 PC에서 차단되지만 kind 는 접근 가능)"""
 import re, time, datetime, threading, http.cookiejar, urllib.error, urllib.request, urllib.parse
 from ingest.sources.net import build_ssl_context
+from core.krx_cal import iso
 
 FEED_URL = "https://kind.krx.co.kr/disclosure/todaydisclosure.do"
 
@@ -43,7 +44,7 @@ def get(url, data=None, ref="https://kind.krx.co.kr/", ajax=False):
 
 def feed(sel_date, market_type, corp=""):
     """당일공시 목록 HTML. market_type: 1=유가, 2=코스닥, 3=파생상품시장. sel_date: YYYY-MM-DD. corp: 회사명 검색."""
-    today = datetime.date.today().strftime("%Y-%m-%d")
+    today = iso(datetime.date.today())
     data = {"method": "searchTodayDisclosureSub", "currentPageSize": "500", "pageIndex": "1",
             "orderMode": "0", "orderStat": "D", "forward": "todaydisclosure_sub", "chose": "all",
             "todayFlag": "Y" if sel_date == today else "N", "selDate": sel_date,
@@ -61,7 +62,7 @@ def rows(sel_date, market_type):
         tds = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
         if acpt and len(tds) >= 3:
             out.append({"acpt": acpt[1], "time": (re.search(r"([0-9]{1,2}:[0-9]{2})", tds[0]) or [None, ""])[1],
-                        "corp": attr(tds[1]), "title": attr(tds[2]) or txt(tds[2]),
+                        "name": attr(tds[1]), "title": attr(tds[2]) or txt(tds[2]),
                         "submitter": txt(tds[3]) if len(tds) > 3 else "", "indices": re.findall(r"alt='([^']+)'", row)})
     return "openDisclsViewer" in html, out
 

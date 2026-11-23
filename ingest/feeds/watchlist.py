@@ -5,8 +5,8 @@ watchlist.json 생성/갱신
 - KOSDAQ150: 임시 스냅샷(kosdaq150_snapshot.json) 사용
              ⚠️ TODO: KRX 자동화(실제 크롬 CDP) 또는 ETF 보유내역으로 교체 예정
 """
-import json, os, re, urllib.request
-from core.paths import BASE, save_json
+import os, re, urllib.request
+from core.paths import BASE, save_json, load_json
 from ingest.sources import net   # 사내망 TLS opener 세팅
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36"}
 
@@ -28,10 +28,10 @@ def kospi200_from_naver():
 
 def kosdaq150_from_snapshot():
     path = os.path.join(BASE, "kosdaq150_snapshot.json")
-    if not os.path.exists(path):
+    snap = load_json(path, None)
+    if not snap:
         print("  [!] kosdaq150_snapshot.json 없음 — 코스닥150 비어있음")
         return {}
-    snap = json.load(open(path, encoding="utf-8"))
     return {c: {"name": v["name"], "market": "KOSDAQ"} for c, v in snap["stocks"].items()}
 
 def main():

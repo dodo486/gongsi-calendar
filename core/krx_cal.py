@@ -40,15 +40,15 @@ def t_minus(record_iso, n):
     except Exception:
         return ""
 
-def prev_business_day(d, hol):
-    """d(date)가 주말·휴장일(hol)이면 직전 영업일로 당김."""
-    while d.weekday() >= 5 or d in hol:
-        d -= datetime.timedelta(days=1)
-    return d
-
 def is_business_day(d):
     """d(date) 가 주말·휴장일이 아닌가"""
     return bool(np.is_busday(np.datetime64(d), holidays=_HOL_ARR))
+
+def prev_business_day(d):
+    """d(date)가 주말·휴장일이면 직전 영업일로 당김."""
+    while not is_business_day(d):
+        d -= datetime.timedelta(days=1)
+    return d
 
 # 수능일 — KRX 개장·마감 1시간 늦춤(10:00~16:30). 교육부가 매년 발표하면 추가
 EXAM_DAYS = {datetime.date(2025, 11, 13), datetime.date(2026, 11, 19)}
@@ -66,14 +66,45 @@ def next_bday(iso):
     """iso 다음 영업일(주말·휴장일 제외) — 당일 거래정지의 재개일 등."""
     return str(np.busday_offset(np.datetime64(iso), 1, roll="forward", holidays=_HOL_ARR))
 
-def to_date(s):
-    """'YYYY-MM-DD'·'YYYYMMDD' → date, 못 읽으면 None"""
-    s = (s or "").replace("-", "")
+# 날짜 표기 — 계산 결과·내부는 iso('YYYY-MM-DD'), ymd('YYYYMMDD')는 DART 접수일·KIS 요청·파일 이름 같은 바깥 경계에서만
+def to_date(x):
+    """date·datetime·'YYYY-MM-DD'·'YYYYMMDD'(뒤에 시각이 붙어도) → date, 못 읽으면 None"""
+    if isinstance(x, datetime.date):
+        return x.date() if isinstance(x, datetime.datetime) else x
+    s = (x or "").replace("-", "")
     return datetime.date(int(s[:4]), int(s[4:6]), int(s[6:8])) if len(s) >= 8 and s[:8].isdigit() else None
 
-def iso(d):
+def iso(x):
+    """→ 'YYYY-MM-DD' / 못 읽으면 ''"""
+    d = to_date(x)
     return d.isoformat() if d else ""
 
+def ymd(x):
+    """→ 'YYYYMMDD' / 못 읽으면 ''"""
+    d = to_date(x)
+    return d.strftime("%Y%m%d") if d else ""
+
+def days_ago(n, base=None):
+    """base(기본 오늘)에서 n일 전 date"""
+    return (to_date(base) or datetime.date.today()) - datetime.timedelta(days=n)
+
+def kst(utc_iso):
+    """'2026-11-23T06:01:00Z'(UTC) → 한국시각 datetime(시간대 없음)"""
+    return datetime.datetime.strptime(utc_iso[:19], "%Y-%m-%dT%H:%M:%S") + datetime.timedelta(hours=9)
+
+def minutes(t):
+    """'HHMM'·'HH:MM' → 자정부터 분"""
+    s = t.replace(":", "")
+    return int(s[:2]) * 60 + int(s[2:4])
+
+def days_between(a, b):
+    """두 날짜 사이 날 수(절댓값)"""
+    return abs((to_date(a) - to_date(b)).days)
+
 def norm_date(s):
+    """'2026.3.5'·'2026년 3월 5일' 등 글 속 날짜 → 'YYYY-MM-DD' / 없거나 없는 날짜면 ''"""
     m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
-    return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}" if m else ""
+    try:
+        return datetime.date(*map(int, m.groups())).isoformat() if m else ""
+    except ValueError:
+        return ""

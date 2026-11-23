@@ -11,39 +11,26 @@
 
   python -m derive.dividend.points
 """
-import os, json, datetime
-from core.paths import save_json, OUT_DIR
+import datetime
+from core.paths import save_json, load_json, stamp, DIVPOINTS_PATH, EXPIRIES_PATH, DIV_BOOK_PATH
 from core.krx_cal import t_minus
+from core.fmt import num
 from core.universe import INDICES, PDF_PATH
-from core.paths import load_json
 
-OUT = os.path.join(OUT_DIR, "divpoints.json")
 FORMULA = "배당포인트 = 지수(전일종가) × Σ(PDF수량 × 주당배당금) ÷ Σ(PDF 주식평가액)"
 
-def _load(name, default):
-    try:
-        return json.load(open(os.path.join(OUT_DIR, name), encoding="utf-8"))
-    except Exception:
-        return default
-
-def _amt(s):
-    s = str(s or "").replace(",", "").strip()
-    try:
-        return float(s)
-    except ValueError:
-        return None
 
 def expiries(today_iso):
     """근월물·차월물 만기 = 오늘 이후 선·옵 동시만기(3·6·9·12월) 앞 두 개. 코스피200·코스닥150·KRX300 선물 공통."""
-    evs = _load("expiries.json", {}).get("events", [])
+    evs = load_json(EXPIRIES_PATH, {}).get("events", [])
     return sorted(e["date"] for e in evs if e.get("type") == "선·옵 동시만기" and e["date"] > today_iso)[:2]
 
 def book_dividends():
     """배당 장부(div_book.json) 회차 → 포인트 계산용 (금액·상태·월물 미정 여부는 장부 구분에서)"""
-    book = _load("div_book.json", {})
+    book = load_json(DIV_BOOK_PATH, {})
     grades = book.get("grades", {})
     status = lambda r: ("확정" if r["amount_src"] == "공시" else "금액예상" if r["kind"] == "div" else "예상") if r.get("per_share") else "금액미정"
-    return [{**r, "dps": _amt(r.get("per_share")), "status": status(r), "src": "공시" if r["kind"] == "div" else "예상",
+    return [{**r, "dps": num(r.get("per_share")), "status": status(r), "src": "공시" if r["kind"] == "div" else "예상",
              "firm": grades[r["grade"]]["firm"]} for r in book.get("rows", [])], grades
 
 def build():
@@ -75,17 +62,17 @@ def build():
                 continue
             by_day = {}
             for d in divs:
-                r = pos.get(d["stock"])
+                r = pos.get(d["code"])
                 if not (lo < d["ex_date"] <= exp) or not r or not r.get("qty"):
                     continue
                 if not d["dps"]:
-                    m["undetermined"].append({"id": d["id"], "corp": d["corp"], "stock": d["stock"], "ex_date": d["ex_date"],
+                    m["undetermined"].append({"id": d["id"], "name": d["name"], "code": d["code"], "ex_date": d["ex_date"],
                                               "div_type": d.get("div_type", ""), "url": d.get("url", ""), "undecided": d["undecided"]})
                     continue
                 price = r["value"] / r["qty"]
                 pt = lvl * r["qty"] * d["dps"] / den
                 by_day.setdefault(d["ex_date"], []).append({
-                    "id": d["id"], "corp": d["corp"], "stock": d["stock"], "div_type": d.get("div_type", ""), "status": d["status"],
+                    "id": d["id"], "name": d["name"], "code": d["code"], "div_type": d.get("div_type", ""), "status": d["status"],
                     "undecided": d["undecided"],
                     "dps": d["dps"], "qty": r["qty"], "price": round(price, 2), "weight": round(r["value"] / den * 100, 3),
                     "yield": round(d["dps"] / price * 100, 4), "points": round(pt, 4),
@@ -104,10 +91,10 @@ def build():
         if den:
             card["pdf_value"] = den
         indices.append(card)
-    payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    payload = {"generated_at": stamp(),
                "today": today.isoformat(), "expiries": exps, "earliest_ex": earliest_ex, "formula": FORMULA,
                "rule": "오늘 < 배당락일 ≤ 차월물 만기, 배당락일이 든 첫 만기로 월물 배정 (오늘 배당락분 제외)", "indices": indices}
-    save_json(OUT, payload)
+    save_json(DIVPOINTS_PATH, payload)
     return payload
 
 def refresh():

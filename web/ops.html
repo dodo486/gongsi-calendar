@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛰 관제탑</title>
+<link rel="stylesheet" href="common/common.css">
+<style>
+  body{padding:16px 20px}
+  .top{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .verdict{font-size:20px;font-weight:700;padding:6px 14px;border-radius:8px;background:var(--panel);border:1px solid var(--line)}
+  .counts span{margin-right:12px;color:var(--muted)}
+  .hint{color:var(--muted);font-size:12px;margin-bottom:16px}
+  .group{margin:18px 0 8px}
+  .group h2{font-size:15px;margin:0}
+  .group p{color:var(--muted);font-size:12px;margin:2px 0 0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--muted);border-radius:6px;padding:8px 10px}
+  .card .nm{font-weight:600}
+  .card .when{float:right;color:var(--muted);font-size:12px}
+  .card .dt{color:var(--muted);font-size:12px;margin-top:3px}
+  .card .err{color:var(--exp);font-size:12px;margin-top:3px;word-break:break-all}
+  .ok{border-left-color:var(--accent)} .late{border-left-color:var(--est)} .error{border-left-color:var(--exp)}
+  .rest,.wait{border-left-color:var(--muted)}
+  .verdict.ok{color:var(--accent)} .verdict.late{color:var(--est)} .verdict.error{color:var(--exp)}
+</style>
+</head>
+<body>
+<div class="top"><span class="verdict" id="verdict">불러오는 중…</span><span class="counts" id="counts"></span></div>
+<div class="hint" id="hint">2초마다 서버(/ops)에 물어봅니다. 왼쪽 띠 색: 초록 정상 · 노랑 지연(주기의 3배 넘게 소식 없음) · 빨강 오류 · 회색 쉬는 중·대기</div>
+<div id="body"></div>
+<script>
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ago = s => s == null ? "아직 없음" : s < 2 ? "방금" : s < 60 ? `${Math.round(s)}초 전` : s < 3600 ? `${Math.round(s/60)}분 전` : `${(s/3600).toFixed(1)}시간 전`;
+const every = s => s == null ? "" : s < 60 ? ` · ${Math.round(s)}초마다` : ` · ${Math.round(s/60)}분마다`;
+async function load(){
+  let d;
+  try{ d = await (await fetch("ops?_=" + Date.now())).json(); }
+  catch(_){
+    document.getElementById("verdict").className = "verdict error";
+    document.getElementById("verdict").textContent = "서버 응답 없음";
+    return;
+  }
+  document.getElementById("verdict").className = "verdict " + d.state;
+  document.getElementById("verdict").textContent = d.label === "정상" ? "모두 정상" : `${d.label} 있음`;
+  document.getElementById("counts").innerHTML = Object.entries(d.counts).filter(([, n]) => n).map(([k, n]) => `<span>${k} ${n}</span>`).join("") + `<span>${d.generated_at}</span>`;
+  document.getElementById("body").innerHTML = Object.entries(d.groups).map(([g, about]) => {
+    const items = d.items.filter(i => i.group === g);
+    if(!items.length) return "";
+    return `<div class="group"><h2>${esc(g)}</h2><p>${esc(about)}</p></div><div class="cards">` + items.map(i => `
+      <div class="card ${i.state}" title="${esc(i.label)}">
+        <span class="when">${i.label} · ${ago(i.ago)}${every(i.every)}</span><div class="nm">${esc(i.name)}</div>
+        <div class="dt">${esc(i.detail)}</div>
+        ${i.state === "error" ? `<div class="err">${esc(i.error)}</div>` : ""}
+      </div>`).join("") + "</div>";
+  }).join("");
+}
+load(); setInterval(load, 2000);
+</script>
+</body>
+</html>

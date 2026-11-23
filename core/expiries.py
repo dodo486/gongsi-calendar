@@ -6,14 +6,18 @@
 - 해당일이 휴장일(주말·공휴일)이면 직전 영업일로 조정
 → data/out/expiries.json
 """
-import os, datetime
-from core.paths import save_json, OUT_DIR
-from core.krx_cal import holiday_dates, default_years, prev_business_day
+import datetime
+from core.paths import save_json, stamp, EXPIRIES_PATH
+from core.krx_cal import holiday_dates, default_years, prev_business_day, iso
 
 def second_thursday(year, month):
     d = datetime.date(year, month, 1)
     first_thu = d + datetime.timedelta(days=(3 - d.weekday()) % 7)  # 목=3
     return first_thu + datetime.timedelta(days=7)
+
+def expiry_of(year, month):
+    """그 달 옵션·선물 만기일 — 둘째 목요일, 휴장이면 직전 영업일"""
+    return prev_business_day(second_thursday(year, month))
 
 def build(years=None):
     if years is None:
@@ -22,19 +26,18 @@ def build(years=None):
     events = []
     for y in years:
         for m in range(1, 13):
-            raw = second_thursday(y, m)
-            exp = prev_business_day(raw, hol)
+            exp = expiry_of(y, m)
             simul = m in (3, 6, 9, 12)
             events.append({
-                "date": exp.strftime("%Y-%m-%d"),
+                "date": iso(exp),
                 "type": "선·옵 동시만기" if simul else "옵션만기",
                 "label": ("선물·옵션 동시만기 (네 마녀의 날)" if simul else "옵션 만기일"),
-                "adjusted": exp != raw,
+                "adjusted": exp != second_thursday(y, m),
             })
-    payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    payload = {"generated_at": stamp(),
                "count": len(events), "events": events,
-               "holidays": sorted(d.strftime("%Y-%m-%d") for d in hol)}   # 웹 캘린더 휴일(빨간 글자) 표시용
-    save_json(os.path.join(OUT_DIR, "expiries.json"), payload)
+               "holidays": sorted(iso(d) for d in hol)}   # 웹 캘린더 휴일(빨간 글자) 표시용
+    save_json(EXPIRIES_PATH, payload)
     return payload
 
 if __name__ == "__main__":

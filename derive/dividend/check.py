@@ -11,11 +11,10 @@
 사용:
   python -m derive.dividend.check        # 오류 있으면 종료코드 1
 """
-import datetime, json, os, re, sys
-from core.paths import save_json, OUT_DIR
-from core.krx_cal import t_minus
+import datetime, re, sys
+from core.paths import save_json, load_json, stamp, DIVIDEND_CHECK_PATH, DIVIDENDS_PATH, DIV_ESTIMATES_PATH, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_VERIFY_PATH
+from core.krx_cal import t_minus, to_date
 
-OUT_PATH = os.path.join(OUT_DIR, "dividend_check.json")
 SEASON_DAYS = {"결산배당": 123, "중간배당": 92, "분기배당": 92}
 METHODS = {"고정", "유동", "유동 가능", "판별 불가", "확정 기준일"}
 JARGON = re.compile(r"\bA[12]\b|\bD1[34]\b|정관 [OX]\b|앵커")
@@ -45,16 +44,6 @@ GOLDEN = {
 }
 
 
-def _d(s):
-    try:
-        return datetime.date.fromisoformat(s)
-    except (TypeError, ValueError):
-        return None
-
-def _load(name):
-    path = os.path.join(OUT_DIR, name)
-    return json.load(open(path, encoding="utf-8")) if os.path.exists(path) else None
-
 def check():
     errors, warns = [], []
     err = lambda where, msg: errors.append(f"{where}: {msg}")
@@ -62,7 +51,7 @@ def check():
     today = datetime.date.today()
 
     def dates(where, e, buy_key):
-        rec, ex, buy = _d(e.get("record_date")), _d(e.get("ex_date")), _d(e.get(buy_key))
+        rec, ex, buy = to_date(e.get("record_date")), to_date(e.get("ex_date")), to_date(e.get(buy_key))
         if not rec:
             return err(where, f"기준일 형식 오류 {e.get('record_date')!r}")
         if e.get("ex_date") != t_minus(e["record_date"], 1):
@@ -71,31 +60,31 @@ def check():
             err(where, f"매수일 {e.get(buy_key)} ≠ 기준일 {rec} 의 T-2 영업일 {t_minus(e['record_date'], 2)}")
         if buy and ex and not (buy < ex <= rec):
             err(where, f"날짜 순서 오류 매수 {buy} · 락 {ex} · 기준 {rec}")
-        if not re.fullmatch(r"[0-9A-Z]{6}", e.get("stock", "")):
-            err(where, f"종목코드 형식 {e.get('stock')!r}")
+        if not re.fullmatch(r"[0-9A-Z]{6}", e.get("code", "")):
+            err(where, f"종목코드 형식 {e.get('code')!r}")
         if e.get("per_share") not in ("", None) and not str(e["per_share"]).isdigit():
             err(where, f"주당배당금 형식 {e.get('per_share')!r}")
 
     # ── 확정 배당 ──
-    div = _load("dividends.json") or {"events": []}
+    div = load_json(DIVIDENDS_PATH, None) or {"events": []}
     seen = set()
     for e in div["events"]:
-        w = f"확정 {e.get('corp')}({e.get('stock')}) {e.get('div_type')} {e.get('record_date')}"
+        w = f"확정 {e.get('name')}({e.get('code')}) {e.get('div_type')} {e.get('record_date')}"
         dates(w, e, "confirm_date")
-        key = (e.get("stock"), e.get("div_type"), e.get("record_date"))
+        key = (e.get("code"), e.get("div_type"), e.get("record_date"))
         if key in seen:
             err(w, "같은 종목·종류·기준일 중복")
         seen.add(key)
 
     # ── 예상 배당 ──
-    res = _load("div_estimates.json") or {"events": [], "companies": {}}
+    res = load_json(DIV_ESTIMATES_PATH, None) or {"events": [], "companies": {}}
     real = {}
     for e in div["events"]:
-        real.setdefault(e.get("stock"), []).append(_d(e.get("record_date")))
+        real.setdefault(e.get("code"), []).append(to_date(e.get("record_date")))
     for e in res["events"]:
-        w = f"예상 {e['corp']}({e['stock']}) {e['quarter']} {e['div_type']}"
+        w = f"예상 {e['name']}({e['code']}) {e['quarter']} {e['div_type']}"
         dates(w, e, "confirm_date")
-        rec, qe = _d(e["record_date"]), _d(e["quarter_end"])
+        rec, qe = to_date(e["record_date"]), to_date(e["quarter_end"])
         if e["method"] not in METHODS:
             err(w, f"알 수 없는 판정 {e['method']!r}")
         if e.get("grade") not in res.get("grades", {}):
@@ -112,35 +101,35 @@ def check():
         for txt in (e.get("reason", ""), e.get("why", ""), e.get("anchor", "")):
             if JARGON.search(txt):
                 err(w, f"화면 문구에 내부 용어: {txt}")
-        if any(r and rec and abs((r - rec).days) <= 30 for r in real.get(e["stock"], [])):
+        if any(r and rec and abs((r - rec).days) <= 30 for r in real.get(e["code"], [])):
             warn(w, "확정 배당과 기준일 ±30일 겹침 — 화면은 확정만 보여줌")
 
     # ── 회차·공시 짝 ──
     for s, c in res["companies"].items():
         for r in c["rounds"]:
             if r["fixed"] != (r["record_date"] == r["quarter_end"]):
-                err(f"회차 {c['corp']}({s}) {r['quarter']} {r['div_type']}",
+                err(f"회차 {c['name']}({s}) {r['quarter']} {r['div_type']}",
                     f"결산기말 여부 표시 {r['fixed']} 가 기준일 {r['record_date']} · 결산기말 {r['quarter_end']} 와 안 맞음")
         if not c.get("acc_known"):
-            warn(f"회사 {c['corp']}({s})", "결산월 조회 실패 — 12월 가정")
+            warn(f"회사 {c['name']}({s})", "결산월 조회 실패 — 12월 가정")
         for n in c.get("notices", []):
-            nd = _d(n["date"])
+            nd = to_date(n["date"])
             fy, q = map(int, re.findall(r"\d+", n["quarter"])[:2])
             qe_month = (c["acc_mt"] - 3 * (4 - q) - 1) % 12 + 1
             qe_year = fy if c["acc_mt"] - 3 * (4 - q) > 0 else fy - 1
             qe = datetime.date(qe_year, qe_month, 28)
             if nd and not (qe - datetime.timedelta(days=200) <= nd <= qe + datetime.timedelta(days=SEASON_DAYS[n["div_type"]])):
-                err(f"예고 {c['corp']}({s}) {n['date']}",
+                err(f"예고 {c['name']}({s}) {n['date']}",
                     f"{n['quarter']} {n['div_type']} 에 붙었는데 공시일과 결산기말·분기말({qe:%Y-%m})이 너무 멂: {n['title']}")
 
     # ── 배당 장부 ──
-    book = _load("div_book.json")
+    book = load_json(DIV_BOOK_PATH, None)
     if book:
         ids = [r["id"] for r in book["rows"]]
         if len(ids) != len(set(ids)):
             err("배당 장부", "같은 회차 id 중복")
         for r in book["rows"]:
-            w = f"장부 {r['corp']}({r['stock']}) {r.get('div_type', '')} {r['record_date']}"
+            w = f"장부 {r['name']}({r['code']}) {r.get('div_type', '')} {r['record_date']}"
             if r["grade"] not in book["grades"]:
                 err(w, f"알 수 없는 구분 {r['grade']!r}")
             if any(not m["date"] for m in r["marks"]):
@@ -149,10 +138,10 @@ def check():
             err("배당 장부", "오늘·다음 만기 목록에 장부에 없는 회차")
 
     # ── 지수배당포인트 ──
-    dp = _load("divpoints.json")
+    dp = load_json(DIVPOINTS_PATH, None)
     if dp:
-        exps = [_d(x) for x in dp.get("expiries", [])]
-        dp_today = _d(dp.get("today")) or today
+        exps = [to_date(x) for x in dp.get("expiries", [])]
+        dp_today = to_date(dp.get("today")) or today
         for c in dp.get("indices", []):
             lo = dp_today
             for m, hi in zip(c.get("months", []), exps):
@@ -164,7 +153,7 @@ def check():
                         abs(m["confirmed"] + m["estimated"] - m["total"]) > 0.01:
                     err(w, f"확정 {m['confirmed']} + 예상 {m['estimated']} (+ 월물미정 {m.get('undecided', 0)}) ≠ 합계 {m['total']}")
                 for d in m["days"]:
-                    ex = _d(d["ex_date"])
+                    ex = to_date(d["ex_date"])
                     if not (lo < ex <= hi):
                         err(w, f"배당락 {ex} 가 월물 구간({lo} 초과 ~ {hi}) 밖")
                 lo = hi
@@ -172,7 +161,7 @@ def check():
     # ── 정답표 ──
     ev_by = {}
     for e in res["events"]:
-        ev_by.setdefault(e["stock"], []).append(e)
+        ev_by.setdefault(e["code"], []).append(e)
     for s, (nm, cases) in GOLDEN.items():
         c = res["companies"].get(s)
         if not c:
@@ -187,7 +176,7 @@ def check():
                 err(f"정답표 {nm}({s})", f"기대와 다름 — {name}")
 
     # ── 적중률 ──
-    ver = _load("div_verify.json")
+    ver = load_json(DIV_VERIFY_PATH, None)
     if not ver:
         warn("적중률", "div_verify.json 없음 — python -m derive.dividend.verify")
     else:
@@ -201,7 +190,7 @@ def check():
 
 def main():
     errors, warns = check()
-    save_json(OUT_PATH, {"checked_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    save_json(DIVIDEND_CHECK_PATH, {"generated_at": stamp(),
                          "ok": not errors, "errors": errors, "warnings": warns})
     print(f"배당 점검: 오류 {len(errors)} · 경고 {len(warns)}")
     for x in errors:

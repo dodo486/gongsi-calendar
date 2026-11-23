@@ -4,6 +4,7 @@
   python -m derive.run        # 전부
 """
 import sys
+from core import ops
 from derive.registry import CALCS
 
 def run(changed=None, log=True):
@@ -15,11 +16,11 @@ def run(changed=None, log=True):
         if any(a in failed for a in c.after):
             failed.add(c.name)
             continue
-        try:
-            done[c.name] = c.run()
-        except Exception as ex:
+        result = ops.run(c.name, c.run, group="계산")
+        if result is ops.FAILED:
             failed.add(c.name)
-            print(f"  [계산] {c.name} 실패: {type(ex).__name__} {ex}")
+        else:
+            done[c.name] = result
     if log or failed:
         print(f"  [계산] {', '.join(done) or '없음'}" + (f" · 실패 {', '.join(sorted(failed))}" if failed else ""))
     return done

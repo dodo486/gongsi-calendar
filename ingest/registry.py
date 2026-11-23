@@ -55,9 +55,9 @@ DOCS = [
 ]
 
 def _index_pdf():
-    before = os.path.getmtime(index_pdf.OUT) if os.path.exists(index_pdf.OUT) else None
+    before = os.path.getmtime(universe.PDF_PATH) if os.path.exists(universe.PDF_PATH) else None
     index_pdf.ensure()
-    return os.path.exists(index_pdf.OUT) and os.path.getmtime(index_pdf.OUT) != before
+    return os.path.exists(universe.PDF_PATH) and os.path.getmtime(universe.PDF_PATH) != before
 
 FEEDS = [
     Feed("index_pdf", "pass", _index_pdf),       # 배당 대상 종목을 정하므로 맨 앞

@@ -8,41 +8,26 @@
 껐다 켜면 빈 시간대를 KIS 1분봉(선물 종가 vs 현물 종가)으로 채우고, 그 뒤로는 실시간 값으로 잇는다.
 괴리 = 지금 − 장중 평균, z = 괴리 / 장중 표준편차. 화면엔 장중 추이(5분 간격)를 같이 그린다.
 
-시간대별로 받는 것 (거래일만)
-  NXT 프리마켓   08:00~08:50  NXT 호가
-  정규장         09:00~15:20  KRX 호가 + 선물
-  마감 동시호가  15:20~15:31  KRX 호가(예상체결·잔량) + 선물  (랜덤엔드 30초까지)
-  선물 마감까지  15:31~15:46  KRX 종가(한 번) + NXT 호가 + 선물
-  NXT 애프터마켓 15:46~20:00  선물 종가(한 번) + NXT 호가
-그 밖 시간엔 받지 않고 마지막 값을 그대로 둔다 — 다음 장 첫 시세가 들어오면 바뀐다.
+시세는 시세 허브(core.market)를 구독한다 — 시간대별로 무엇을 받는지는 허브의 SCHEDULE 이 정하고,
+허브가 한 바퀴 받을 때마다 on_tick 으로 계산한다.
 
 기록 (data/closearb/YYYYMMDD.json)
   intraday    {종목: {HHMM: 베이시스 %}}   filled_until  장중 베이시스를 채운 마지막 HHMM
-  marks.1520  동시호가 직전   marks.1530  KRX 종가   marks.1545  선물 종가   marks.nxt  NXT 마지막
-  next.open / next.0930  다음 거래일 KRX 시가·09:30 가격 (종가가 얼마나 돌아왔나)
+  marks       MARKS 의 시점마다 {종목: 그때 값}
+  next        다음 거래일 KRX 시가(krx_open)·NEXT_CHECK_AT 가격(krx_check) — 종가가 얼마나 돌아왔나
 
   python -m derive.closearb   # 1회 받아서 data/out/closearb.json 갱신
 """
-import os, json, time, datetime, statistics
-from concurrent.futures import ThreadPoolExecutor
-from core import market as md_feed
-from core.paths import save_json, load_watchlist, OUT_DIR, CACHE_DIR
-from core.expiries import second_thursday
-from core.krx_cal import holiday_dates, prev_business_day, session_delay
+import os, datetime, statistics
+from core import market as md_feed, universe
+from core.paths import save_json, load_json, stamp, CACHE_DIR, CLOSEARB_PATH
+from core.expiries import expiry_of
+from core.krx_cal import session_delay, iso, ymd, minutes, kst
+from core.fmt import pct
 
-LIVE_PATH = os.path.join(OUT_DIR, "closearb.json")
 LOG_DIR = os.path.join(CACHE_DIR, "closearb")
 
-PHASES = [
-    ("NXT 프리마켓", "0800", "0850"),
-    ("정규장", "0900", "1520"),
-    ("마감 동시호가", "1520", "1531"),
-    ("선물 마감까지", "1531", "1546"),
-    ("NXT 애프터마켓", "1546", "2000"),
-]
-NXT_ONLY_SECONDS = 300   # NXT 호가만 받는 시간대의 주기
-STATUS_SECONDS = 300     # 거래정지·투자경고·상하한가 갱신 주기 (KRX 시간대만)
-IDLE_SECONDS = 30
+ND = 3                   # 베이시스·괴리 % 소수 자리
 MIN_SAMPLES = 20         # 장중 표본(분)이 이보다 적으면 z 를 내지 않는다
 TREND_MINUTES = 5        # 화면 추이 간격
 BASKET_MIN = 5           # 바스켓 추이 한 칸에 필요한 종목 수
@@ -50,27 +35,21 @@ BASKET_FLAT = 0.05       # 10분 변화가 이 %p 안이면 오름·내림에 �
 Z_HOT = 3                # |z| 이 이상 = 튄 종목
 Z_CALM = 2               # |z| 이 미만 = 잠잠
 HOT_MAX = 12             # 튄 종목 카드 수
-TREND_END = 390          # 추이 그래프 끝(09:00 기준 분, 15:20=380)
-
-
-def phase_of(now):
-    if now.weekday() >= 5 or now.date() in holiday_dates([now.year]):
-        return None
-    t = now.strftime("%H%M")
-    for name, start, end in PHASES:
-        if start <= t < end:
-            return name
-    return None
+TREND_END = minutes(md_feed.KRX_CLOSE) - minutes(md_feed.KRX_OPEN)   # 추이 그래프 끝(개장부터 분)
+NEXT_OPEN_AT = "0901"    # 다음 거래일 시가는 시가가 확정된 이 시각 뒤에 적는다
+NEXT_CHECK_AT = "0930"   # 다음 거래일 이 시각 가격으로 종가가 얼마나 돌아왔나 본다
+MARKS = {   # 기록 시점: 화면 이름
+    "before_auction": "동시호가 직전", "auction_last": "동시호가 마지막", "krx_close": "KRX 종가",
+    "fut_close": "선물 종가", "nxt_last": "NXT 마지막",
+}
 
 
 def front_futures(today):
     """{기초 종목코드: {code, month, multiplier}} — 만기일이 오늘 이후인 가장 가까운 월물.
     만기일 당일 월물은 15:20에 거래가 끝나 종가 차익에 못 쓰므로 다음 월물로 넘긴다."""
-    hol = holiday_dates([today.year, today.year + 1])
     out = {}
     for r in md_feed.stock_futures():
-        y, m = int(r["month"][:4]), int(r["month"][4:])
-        if prev_business_day(second_thursday(y, m), hol) <= today:
+        if expiry_of(int(r["month"][:4]), int(r["month"][4:])) <= today:
             continue
         if r["underlying"] not in out or r["month"] < out[r["underlying"]]["month"]:
             out[r["underlying"]] = r
@@ -78,14 +57,11 @@ def front_futures(today):
 
 
 def _log_path(d):
-    return os.path.join(LOG_DIR, d.strftime("%Y%m%d") + ".json")
+    return os.path.join(LOG_DIR, ymd(d) + ".json")
 
 
 def load_log(d):
-    try:
-        return json.load(open(_log_path(d), encoding="utf-8"))
-    except (OSError, ValueError):
-        return {"date": d.strftime("%Y-%m-%d"), "intraday": {}, "marks": {}, "next": {}}
+    return load_json(_log_path(d), {"date": iso(d), "intraday": {}, "marks": {}, "next": {}})
 
 
 def save_log(d, log):
@@ -96,7 +72,7 @@ def save_log(d, log):
 def previous_log(today):
     """오늘 전 가장 최근 기록 (날짜, 기록) / 없으면 (None, None)."""
     try:
-        names = sorted(n for n in os.listdir(LOG_DIR) if n.endswith(".json") and n[:8] < today.strftime("%Y%m%d"))
+        names = sorted(n for n in os.listdir(LOG_DIR) if n.endswith(".json") and n[:8] < ymd(today))
     except OSError:
         return None, None
     if not names:
@@ -105,48 +81,46 @@ def previous_log(today):
     return d, load_log(d)
 
 
-def _pct(a, b):
-    return round((a - b) / b * 100, 3) if a and b else None
-
-
 def _minute_of_day(hhmm):
-    return (int(hhmm[:2]) - 9) * 60 + int(hhmm[2:])
+    """개장부터 분"""
+    return minutes(hhmm) - minutes(md_feed.KRX_OPEN)
 
 
-def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, mark1520, series):
-    auction = phase == "마감 동시호가" and krx.get("expected_price")
+def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, before_auction, series):
+    auction = phase == md_feed.AUCTION and krx.get("expected_price")
     spot = krx.get("expected_price") if auction else krx.get("price")
     nxt_mid = (nxt["ask"] + nxt["bid"]) / 2 if nxt.get("ask") and nxt.get("bid") else nxt.get("price")
-    basis = _pct(fut.get("price"), spot)
+    basis = pct(fut.get("price"), spot, ND)
     series = series or {}
     vals = list(series.values())
     n = len(vals)
     mean = statistics.fmean(vals) if vals else None
     std = statistics.pstdev(vals) if vals else 0.0
-    dev = round(basis - mean, 3) if basis is not None and mean is not None else None
+    dev = round(basis - mean, ND) if basis is not None and mean is not None else None
     ago = (datetime.datetime.now() - datetime.timedelta(minutes=10)).strftime("%H%M")
     before = [hm for hm in series if hm <= ago]
     trend = {}
     for hm in sorted(series):
-        trend[_minute_of_day(hm) // TREND_MINUTES * TREND_MINUTES] = round(series[hm], 3)
-    vol1520 = (mark1520 or {}).get("fut_vol")
-    vol_after = fut["volume"] - vol1520 if fut.get("volume") is not None and vol1520 is not None else None
+        trend[_minute_of_day(hm) // TREND_MINUTES * TREND_MINUTES] = round(series[hm], ND)
+    vol_before = (before_auction or {}).get("fut_vol")
+    vol_after = fut["volume"] - vol_before if fut.get("volume") is not None and vol_before is not None else None
     z = round(dev / std, 1) if dev is not None and n >= MIN_SAMPLES and std > 0 else None
     bid_q, ask_q = krx.get("total_bid_qty"), krx.get("total_ask_qty")
     return {
         "code": code, "name": stock["name"], "market": stock["market"], "fut_code": fut_info["code"], "fut_month": fut_info["month"],
         "multiplier": fut_info["multiplier"],
         "status": status,
-        "spot": spot, "spot_kind": "예상" if auction else ("종가" if phase in ("NXT 프리마켓", "선물 마감까지", "NXT 애프터마켓") else "현재"),
-        "jump_pct": _pct(spot, (mark1520 or {}).get("spot")),
+        "spot": spot, "spot_kind": "예상" if auction else ("종가" if phase in (md_feed.PRE, md_feed.FUT_CLOSE, md_feed.AFTER) else "현재"),
+        "jump_pct": pct(spot, (before_auction or {}).get("spot"), ND),
         "imb_eok": round((bid_q - ask_q) * spot / 1e8, 1) if spot and bid_q is not None and ask_q is not None else None,
+        "expected_qty": krx.get("expected_qty") if auction else None, "bid_qty": bid_q, "ask_qty": ask_q,
         "nxt": nxt_mid,
-        "nxt_gap_pct": _pct(spot, nxt_mid),
+        "nxt_gap_pct": pct(spot, nxt_mid, ND),
         "fut": fut.get("price"), "fut_vol": fut.get("volume"),
-        "fut_vol_after1520": vol_after,
-        "basis_pct": basis, "mean_pct": round(mean, 3) if mean is not None else None, "n": n,
+        "fut_vol_after_auction": vol_after,
+        "basis_pct": basis, "mean_pct": round(mean, ND) if mean is not None else None, "n": n,
         "dev_pct": dev,
-        "chg10_pct": round(basis - series[max(before)], 3) if basis is not None and before else None,
+        "chg10_pct": round(basis - series[max(before)], ND) if basis is not None and before else None,
         "dev_won": round(dev / 100 * spot * fut_info["multiplier"]) if dev is not None else None,
         "z": z,
         "level": "hot" if z is not None and abs(z) >= Z_HOT else "calm" if z is None or abs(z) < Z_CALM else "",
@@ -174,124 +148,113 @@ def status_of(q, price):
 
 
 def _mark(rows):
-    keep = ("spot", "fut", "fut_vol", "basis_pct", "mean_pct", "dev_pct", "imb_eok", "nxt", "nxt_gap_pct")
+    keep = ("spot", "fut", "fut_vol", "basis_pct", "mean_pct", "dev_pct", "imb_eok", "expected_qty", "bid_qty", "ask_qty",
+            "nxt", "nxt_gap_pct")
     return {r["code"]: {k: r[k] for k in keep} for r in rows if r["spot"]}
 
 
 class Monitor:
     def __init__(self):
         self.day = None
-        self.krx, self.nxt, self.fut, self.status = {}, {}, {}, {}
-        self.status_at = self.nxt_at = 0.0
         self.special_day = None
 
-    def new_day(self, today):
-        self.day = today
+    def subscribe(self, today):
+        """오늘 쓸 월물로 시세 허브를 구독한다 — 현물·선물을 같은 순서로 넘겨 같은 종목끼리 같은 때 받게."""
         self.futs = front_futures(today)
-        watch = load_watchlist() or {}
+        watch = universe.stocks() or {}
         self.watch = {c: v for c, v in watch.items() if c in self.futs}
         self.codes = sorted(self.watch)
-        self.prev_day, self.prev = previous_log(today)
-        self.log = load_log(today)
+        self.feeds = {md_feed.KRX_STOCK: self.codes, md_feed.KRX_FUT: [self.futs[c]["code"] for c in self.codes],
+                      md_feed.KRX_STATUS: self.codes, md_feed.NXT_STOCK: self.codes}
+        md_feed.watch("종가 차익", self.on_tick, self.feeds)
+
+    def new_day(self, now):
+        self.day = now.date()
+        self.subscribe(self.day)
+        self.prev_day, self.prev = previous_log(self.day)
+        self.log = load_log(self.day)
         self.log.setdefault("intraday", {})
         self.sampled_vol = {}
-        self.fill_from_bars(datetime.datetime.now())
+        self.regular_rows = []
+        self.saved_minute = None
+        self.fill_from_bars(now)
 
     def fill_from_bars(self, now):
-        """filled_until 부터 지금(최대 15:20)까지 빈 분을 1분봉으로 채운다. 이미 있는 분은 그대로 둔다."""
-        since, until = self.log.get("filled_until", "0900"), min(now.strftime("%H%M"), "1520")
+        """filled_until 부터 지금(최대 마감 동시호가 시작)까지 빈 분을 1분봉으로 채운다. 이미 있는 분은 그대로 둔다."""
+        since, until = self.log.get("filled_until", md_feed.KRX_OPEN), min(now.strftime("%H%M"), md_feed.AUCTION_START)
         if until <= since:
             return
         fcode = {self.futs[c]["code"]: c for c in self.codes}
         spot = md_feed.minute_bars_since(self.codes, since)
         fut = md_feed.minute_bars_since(list(fcode), since, futures=True)
-        kst = lambda dt: f"{(int(dt[11:13]) + 9) % 24:02d}{dt[14:16]}"
         for fc, bars in fut.items():
             c = fcode[fc]
-            closes = {kst(b["dt"]): b["close"] for b in spot.get(c, [])}
+            closes = {f"{kst(b['dt']):%H%M}": b["close"] for b in spot.get(c, [])}
             series = self.log["intraday"].setdefault(c, {})
             for b in bars:
-                hm = kst(b["dt"])
+                hm = f"{kst(b['dt']):%H%M}"
                 if b["vol"] > 0 and closes.get(hm) and since <= hm < until:
-                    series.setdefault(hm, (b["close"] - closes[hm]) / closes[hm] * 100)
+                    series.setdefault(hm, pct(b["close"], closes[hm], ND))
         self.log["filled_until"] = until
         save_log(self.day, self.log)
 
-    def step(self, now):
-        """한 번 받고 기록·화면 파일을 갱신한다. 다음 호출까지 쉴 초를 돌려준다."""
-        phase = phase_of(now)
-        if phase is None:
-            return IDLE_SECONDS
+    def on_tick(self, phase, now):
+        """허브가 한 바퀴 받을 때마다 — 기록·화면 파일을 갱신한다."""
         open_late, close_late = session_delay(now.date())
-        if open_late or close_late:   # 장 시간이 다른 날 — 시간대 표(PHASES)가 평소 기준이라 기록하면 틀림 → 기록 안 하고 화면에 알림
+        if open_late or close_late:   # 장 시간이 다른 날 — 장중 기록(분 단위 HHMM)이 평소 장 시간 기준이라 기록하면 틀림 → 기록 안 하고 화면에 알림
             if self.special_day != now.date():
-                try:
-                    live = json.load(open(LIVE_PATH, encoding="utf-8"))
-                except (OSError, ValueError):
-                    live = {"rows": [], "marks": []}
+                live = load_json(CLOSEARB_PATH, {"rows": [], "marks": []})
                 live.update(phase=f"특별 장 시간(개장 {open_late}분·마감 {close_late}분 늦음) — 오늘은 기록 안 함",
-                            generated_at=now.strftime("%Y-%m-%d %H:%M:%S"))
-                save_json(LIVE_PATH, live)
+                            generated_at=stamp(now))
+                save_json(CLOSEARB_PATH, live)
                 self.special_day = now.date()
-            return IDLE_SECONDS
+            return
         if self.day != now.date():
-            self.new_day(now.date())
+            self.new_day(now)
+        self.krx, self.nxt = md_feed.latest(md_feed.KRX_STOCK), md_feed.latest(md_feed.NXT_STOCK)
+        self.fut, self.status = md_feed.latest(md_feed.KRX_FUT), md_feed.latest(md_feed.KRX_STATUS)
         marks = self.log["marks"]
-        nxt_only = phase in ("NXT 프리마켓", "NXT 애프터마켓") and "1545" in marks
 
-        if phase == "마감 동시호가" and "1520" not in marks and self.krx:
-            marks["1520"] = _mark(self.rows(phase="정규장"))
-        krx_due = phase in ("정규장", "마감 동시호가") or (phase == "선물 마감까지" and "1530" not in marks)
-        fut_due = phase in ("정규장", "마감 동시호가", "선물 마감까지") or (phase == "NXT 애프터마켓" and "1545" not in marks)
-        if krx_due and fut_due:
-            with ThreadPoolExecutor(max_workers=8) as pool:
-                pairs = pool.map(lambda c: (md_feed.orderbook([c], "KRX"), md_feed.futures_quote([self.futs[c]["code"]])), self.codes)
-                for k, f in pairs:
-                    self.krx.update(k)
-                    self.fut.update(f)
-        elif krx_due:
-            self.krx.update(md_feed.orderbook(self.codes, "KRX"))
-        elif fut_due:
-            self.fut.update(md_feed.futures_quote([self.futs[c]["code"] for c in self.codes]))
-        if phase in ("NXT 프리마켓", "선물 마감까지", "NXT 애프터마켓") and time.time() - self.nxt_at >= (NXT_ONLY_SECONDS if nxt_only else 0):
-            self.nxt.update(md_feed.orderbook(self.codes, "NXT"))
-            self.nxt_at = time.time()
-        if phase in ("정규장", "마감 동시호가") and time.time() - self.status_at >= STATUS_SECONDS:
-            self.status.update(md_feed.quote(self.codes))
-            self.status_at = time.time()
+        if phase == md_feed.AUCTION and "before_auction" not in marks and self.regular_rows:
+            marks["before_auction"] = _mark(self.regular_rows)
 
-        if phase == "정규장":
+        if phase == md_feed.REGULAR:
             for c in self.codes:
                 k, f = self.krx.get(c, {}), self.fut.get(self.futs[c]["code"], {})
                 if status_of(self.status.get(c), k.get("price")) or not k.get("price") or not f.get("price") \
                         or (f.get("volume") or 0) <= self.sampled_vol.get(c, 0):
                     continue
-                self.log["intraday"].setdefault(c, {})[now.strftime("%H%M")] = (f["price"] - k["price"]) / k["price"] * 100
+                self.log["intraday"].setdefault(c, {})[now.strftime("%H%M")] = pct(f["price"], k["price"], ND)
                 self.sampled_vol[c] = f["volume"]
             self.log["filled_until"] = now.strftime("%H%M")
 
-        if phase == "정규장" and self.prev is not None:
+        if phase == md_feed.REGULAR and self.prev is not None:
             nxt_rec = self.prev.setdefault("next", {})
-            if "open" not in nxt_rec and now.strftime("%H%M") >= "0901":
-                nxt_rec["open"] = {c: self.krx[c].get("open") for c in self.codes if c in self.krx}
+            if "krx_open" not in nxt_rec and now.strftime("%H%M") >= NEXT_OPEN_AT:
+                nxt_rec["krx_open"] = {c: self.krx[c].get("open") for c in self.codes if c in self.krx}
                 save_log(self.prev_day, self.prev)
-            if "0930" not in nxt_rec and now.strftime("%H%M") >= "0930":
-                nxt_rec["0930"] = {c: self.krx[c].get("price") for c in self.codes if c in self.krx}
+            if "krx_check" not in nxt_rec and now.strftime("%H%M") >= NEXT_CHECK_AT:
+                nxt_rec["krx_check"] = {c: self.krx[c].get("price") for c in self.codes if c in self.krx}
                 save_log(self.prev_day, self.prev)
 
         rows = self.rows(phase)
-        if phase == "선물 마감까지" and "1530" not in marks:
-            marks["1530"] = _mark(rows)
-        if phase == "NXT 애프터마켓" and "1545" not in marks:
-            marks["1545"] = _mark(rows)
-        if phase in ("선물 마감까지", "NXT 애프터마켓"):
-            marks["nxt"] = {c: self.nxt[c].get("price") for c in self.codes if c in self.nxt}
-        if phase in ("정규장", "마감 동시호가", "선물 마감까지", "NXT 애프터마켓"):
+        if phase == md_feed.REGULAR:
+            self.regular_rows = rows
+        if phase == md_feed.AUCTION:
+            marks["auction_last"] = _mark(rows)
+        if phase == md_feed.FUT_CLOSE and "krx_close" not in marks:
+            marks["krx_close"] = _mark(rows)
+        if phase == md_feed.AFTER and "fut_close" not in marks:
+            marks["fut_close"] = _mark(rows)
+        if phase in (md_feed.FUT_CLOSE, md_feed.AFTER):
+            marks["nxt_last"] = {c: self.nxt[c].get("price") for c in self.codes if c in self.nxt}
+        if phase != md_feed.PRE and self.saved_minute != now.strftime("%H%M"):
             save_log(self.day, self.log)
+            self.saved_minute = now.strftime("%H%M")
 
         if not self.krx:
-            return IDLE_SECONDS
-        band = lambda vs: [round(q, 3) for q in statistics.quantiles(vs, n=4, method="inclusive")]
+            return
+        band = lambda vs: [round(q, ND) for q in statistics.quantiles(vs, n=4, method="inclusive")]
         baskets = {}
         for mkt in ("KOSPI", "KOSDAQ"):
             rs = [r for r in rows if r["market"] == mkt and r["mean_pct"] is not None]
@@ -307,43 +270,40 @@ class Monitor:
                 "now": band(devs) if len(devs) >= BASKET_MIN else None,
                 "up10": sum(c >= BASKET_FLAT for c in chg), "down10": sum(c <= -BASKET_FLAT for c in chg),
             }
-        save_json(LIVE_PATH, {
-            "generated_at": now.strftime("%Y-%m-%d %H:%M:%S"),
+        save_json(CLOSEARB_PATH, {
+            "generated_at": stamp(now),
             "phase": phase,
-            "marks": sorted(k for k in marks if k != "nxt"),
-            "prev_date": self.prev_day.strftime("%Y-%m-%d") if self.prev_day else None,
+            "marks": [label for k, label in MARKS.items() if k in marks],
+            "prev_date": iso(self.prev_day) or None,
             "baskets": baskets,
             "z_hot": Z_HOT, "end_min": TREND_END, "now_min": min(TREND_END, _minute_of_day(now.strftime("%H%M"))),
             "hot_codes": [r["code"] for r in sorted((r for r in rows if r["level"] == "hot"), key=lambda r: -abs(r["z"]))[:HOT_MAX]],
             "rows": rows,
         })
-        return NXT_ONLY_SECONDS if nxt_only else 0
 
     def rows(self, phase):
-        mark1520 = self.log["marks"].get("1520", {})
+        before_auction = self.log["marks"].get("before_auction", {})
         out = []
         for c in self.codes:
             krx, fut = self.krx.get(c, {}), self.fut.get(self.futs[c]["code"], {})
             out.append(build_row(c, self.watch[c], self.futs[c], krx, self.nxt.get(c, {}), fut,
-                                 status_of(self.status.get(c), krx.get("price")), phase, mark1520.get(c),
+                                 status_of(self.status.get(c), krx.get("price")), phase, before_auction.get(c),
                                  self.log["intraday"].get(c)))
         return out
 
 
-def loop():
-    m = Monitor()
-    while True:
-        try:
-            wait = m.step(datetime.datetime.now())
-        except Exception as ex:
-            print(f"  [종가 차익] 갱신 실패: {ex}")
-            wait = IDLE_SECONDS
-        time.sleep(wait)
+def start():
+    Monitor().subscribe(datetime.date.today())
 
 
 if __name__ == "__main__":
-    m = Monitor()
-    print(f"phase={phase_of(datetime.datetime.now())}")
-    m.step(datetime.datetime.now())
-    d = json.load(open(LIVE_PATH, encoding="utf-8"))
+    now = datetime.datetime.now()
+    phase = md_feed.phase_of(now)
+    print(f"phase={phase}")
+    if phase:
+        m = Monitor()
+        m.subscribe(now.date())
+        md_feed.get("종가 차익(1회)", m.feeds)
+        m.on_tick(phase, now)
+    d = load_json(CLOSEARB_PATH, {})
     print(d["generated_at"], d["phase"], len(d["rows"]), "종목")

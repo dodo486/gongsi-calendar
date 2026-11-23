@@ -12,7 +12,8 @@
 import json, os, sys, time, datetime, platform, subprocess, threading
 from derive.disclosures import collect_events
 from ingest.sources.dart import live_rows
-from core.paths import load_watchlist, load_json, save_json, OUT_DIR, CACHE_DIR
+from core.paths import (load_json, save_json, stamp, CACHE_DIR, URL,
+                        DISCLOSURES_PATH, DIVIDENDS_PATH, EARNINGS_PATH, EARN_SCHED_PATH, HALTS_PATH)
 from ingest.sources.net import TLS_MODE
 from ingest import run as ingest
 from derive import run as derive
@@ -20,31 +21,31 @@ from derive import earnings
 from derive import closearb
 from derive import industry
 from core import market as md_feed
+from core import ops, universe
+from core.krx_cal import iso, ymd, days_ago
+from core.fmt import signed_pct
 
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
 SELF_HEAL_SECONDS = 600    # 배당·증자·실적 전체 재계산 주기 — 받기 실패로 빠진 원문 재시도(목록은 저장본이라 가벼움)
 RETENTION_DAYS = 365       # 공시 캘린더 이력 보관 기간 (오래된 이벤트 자동 정리)
 SEEN_KEEP_DAYS = 30        # 알림 중복방지 기록 보관 기간 (폴링 창은 2일이라 충분)
-DATA_PATH = os.path.join(OUT_DIR, "disclosures.json")
 SEEN_PATH = os.path.join(CACHE_DIR, "seen.json")   # 알림 중복방지용 (공시/배당/상하한가 공통)
 ALERT_MIN_STAGE = 1   # 상하한가 토스트 최소 단계 (1=전부 / 2=2·3단계 / 3=실질 상한하한만)
 
 def load_seen():
     if os.path.exists(SEEN_PATH):
-        return set(json.load(open(SEEN_PATH, encoding="utf-8")))
+        return set(load_json(SEEN_PATH, []))
     seen = set()   # 최초 실행: 기존 데이터의 접수번호로 시드
-    for f in ("disclosures.json", "dividends.json", "earnings.json", "earn_sched.json"):
-        p = os.path.join(OUT_DIR, f)
-        if os.path.exists(p):
-            for e in json.load(open(p, encoding="utf-8")).get("events", []):
-                if e.get("rcept_no"):
-                    seen.add(e["rcept_no"])
+    for p in (DISCLOSURES_PATH, DIVIDENDS_PATH, EARNINGS_PATH, EARN_SCHED_PATH):
+        for e in load_json(p, {}).get("events", []):
+            if e.get("rcept_no"):
+                seen.add(e["rcept_no"])
     return seen
 
 def save_seen(seen):
     # 오래된 접수번호(rcept_no 앞 8자리 = 접수일)는 정리 — 무한 성장 방지
-    cutoff = (datetime.date.today() - datetime.timedelta(days=SEEN_KEEP_DAYS)).strftime("%Y%m%d")
+    cutoff = ymd(days_ago(SEEN_KEEP_DAYS))
     save_json(SEEN_PATH, sorted(r for r in seen if r[:8] >= cutoff))
 
 _again = set()   # 갱신 중에 또 들어온 요청 — 끝난 뒤 한 번 더 돈다(요청 합침)
@@ -58,10 +59,7 @@ def _run_guarded(lock, work, name):
     def run():
         while True:
             _again.discard(name)
-            try:
-                work()
-            except Exception as ex:
-                print(f"  [{name}] 갱신 실패: {ex}")
+            ops.run(name, work)
             if name not in _again:
                 break
         lock.release()
@@ -76,8 +74,8 @@ def refresh(full=False, also=()):
         changed = ingest.run() | set(also)
         errors = derive.run(None if full else changed).get("dividend_check")
         if errors:
-            notify({"category": "점검", "corp": "배당 데이터", "market": "",
-                    "title": f"오류 {len(errors)}건 — {errors[0]}", "url": "http://127.0.0.1:8777/dividend/index.html"})
+            notify({"category": "점검", "name": "배당 데이터", "market": "",
+                    "title": f"오류 {len(errors)}건 — {errors[0]}", "url": URL + "dividend/index.html"})
     _run_guarded(_pipe_lock, work, "들여오기·계산")
 
 _earn_lock = threading.Lock()
@@ -86,45 +84,21 @@ def refresh_quotes():
     _run_guarded(_earn_lock, earnings.refresh_quotes, "실적 등락률")
 
 def load_payload():
-    if os.path.exists(DATA_PATH):
-        return json.load(open(DATA_PATH, encoding="utf-8"))
-    return {"range": {}, "count": 0, "events": []}
+    return load_json(DISCLOSURES_PATH, {"range": {}, "count": 0, "events": []})
 
 def save_payload(p):
-    cutoff = (datetime.date.today() - datetime.timedelta(days=RETENTION_DAYS)).strftime("%Y%m%d")
+    cutoff = iso(days_ago(RETENTION_DAYS))
     p["events"] = [e for e in p["events"] if (e.get("date") or "") >= cutoff]
     dates = [e["date"] for e in p["events"] if e.get("date")]
     p["range"] = {"bgn": min(dates), "end": max(dates)} if dates else {}
     p["count"] = len(p["events"])
-    p["generated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    save_json(DATA_PATH, p)
-
-def _rate_str(code):
-    """종목코드 → ' (+3.3%)' 등락률 문자열(부호 포함). 미상/실패면 ''."""
-    if not code:
-        return ""
-    try:
-        r = md_feed.stock_rate(code).get("rate")
-        if isinstance(r, (int, float)):
-            return f" ({'+' if r > 0 else ''}{r}%)"
-    except Exception:
-        pass
-    return ""
-
-def _code_of(name):
-    """종목명 → 종목코드 (watchlist 역인덱스). 없으면 ''. (시장조치는 코드 없이 회사명만 있음)"""
-    if not name:
-        return ""
-    key = name.strip()
-    for code, info in (load_watchlist() or {}).items():
-        if (info.get("name") or "").strip() == key:
-            return code
-    return ""
+    p["generated_at"] = stamp()
+    save_json(DISCLOSURES_PATH, p)
 
 def _chart_url(code):
     """토스트 클릭 → 로컬 서버(/chart)가 대시보드에 'alphachart' 탭으로 알파스퀘어 차트 열기 지시.
     대시보드가 열려 있으면 항상 같은 탭 재사용(종목만 교체), 없으면 새 탭 폴백."""
-    return f"http://127.0.0.1:8777/chart?code={code}" if code else ""
+    return f"{URL}chart?code={code}" if code else ""
 
 def _toast(title, msg, launch, buttons):
     """공용 OS 알림 — 윈도우(winotify, reminder 지속: 직접 닫기 전까지 화면·알림센터에 유지) / 맥 / 리눅스.
@@ -149,52 +123,44 @@ def _toast(title, msg, launch, buttons):
     except Exception as ex:
         print(f"  [알림실패] {ex}")
 
+def _alert(tag, e, msg, button, tail=""):
+    """종목 알림 하나 — 제목 '[tag] 회사명 (+등락률%) · 시장{tail}', 클릭하면 그 종목 차트(종목이 없으면 원문), 버튼은 원문.
+    등락률은 이벤트에 있으면 그 값, 없으면 시세 허브 최신값."""
+    code = e.get("code")
+    rate = e.get("rate")
+    if rate is None and code:
+        rate = md_feed.get("알림", {md_feed.KRX_STOCK: [code]})[md_feed.KRX_STOCK][code].get("rate")
+    who = f"{e['name']}{f' ({signed_pct(rate)})' if isinstance(rate, (int, float)) else ''} · " if e.get("name") else ""
+    _toast(f"[{tag}] {who}{e.get('market', '')}{tail}", msg, _chart_url(code) or e["url"], [(button, e["url"])])
+
 def notify(e):
-    """공시 알림 — 클릭 시 토스 종목 차트(종목 알면) / 버튼: DART 원문"""
-    title = f"[{e['category']}] {e['corp']}{_rate_str(e.get('stock'))} · {e['market']}"
-    msg = f"⏰{datetime.datetime.now().strftime('%H:%M')} · {e['title']}"
-    code = e.get("stock")
-    chart = _chart_url(code)
-    buttons = [("🔗 DART 원문", e["url"])]
-    _toast(title, msg, chart or e["url"], buttons)
+    """공시 알림"""
+    _alert(e["category"], e, f"⏰{datetime.datetime.now():%H:%M} · {e['title']}", "🔗 DART 원문")
 
 def notify_limit(e):
-    """선물 상하한가 알림 — 클릭 시 기초주식 토스 차트(주식선물) / 버튼: KRX 원문"""
-    arrow = "▲상한" if e["direction"] == "상승" else "▼하한"
-    r = e.get("rate")
-    rate_str = f"({'+' if r > 0 else ''}{r}%)" if isinstance(r, (int, float)) else ""
-    title = f"[선물 {arrow}] {e['name']}{rate_str} · {e['market']}"
-    tm = f"⏰{e['time']} · " if e.get("time") else ""
-    msg = f"{tm}{e['kind']} {e['stage']}단계 가격제한폭 도달"
-    code = e.get("code")   # 주식선물이면 기초주식 코드, 지수선물이면 빈값
-    chart = _chart_url(code)
-    buttons = [("🔗 KRX 공시", e["url"])]
-    _toast(title, msg, chart or e["url"], buttons)
+    """선물 상하한가 알림 — 주식선물이면 기초주식 차트"""
+    when = f"⏰{e['time']} · " if e.get("time") else ""
+    _alert(f"선물 {'▲상한' if e['direction'] == '상승' else '▼하한'}", e,
+           f"{when}{e['kind']} {e['stage']}단계 가격제한폭 도달", "🔗 KRX 공시")
 
 def notify_action(e):
-    """KRX 시장조치 알림 — 클릭 시 해당 종목 토스 차트(종목조치) / 버튼: KRX 원문"""
-    dirtag = " ▲매수" if e["direction"] == "매수" else (" ▼매도" if e["direction"] == "매도" else "")
-    corp = e.get("corp", "")
-    code = _code_of(corp)
-    who = f"{corp}{_rate_str(code)} · " if corp else ""   # 종목-특정 조치면 회사명+등락률
-    title = f"[{e['kind']}{(' ' + e['action']) if e['action'] else ''}] {who}{e['market']}{dirtag}"
-    tm = f"⏰{e['time']} · " if e.get("time") else ""
-    msg = f"{tm}{e['title']}"
-    chart = _chart_url(code)
-    buttons = [("🔗 KRX", e["url"])]
-    _toast(title, msg, chart or e["url"], buttons)
+    """KRX 시장조치 알림 — 종목 조치면 그 종목 차트"""
+    when = f"⏰{e['time']} · " if e.get("time") else ""
+    side = {"매수": " ▲매수", "매도": " ▼매도"}.get(e["direction"], "")
+    _alert(f"{e['kind']}{(' ' + e['action']) if e['action'] else ''}", e, f"{when}{e['title']}", "🔗 KRX", side)
 
 def notify_halt(e):
-    """매매거래정지 알림 — 클릭 시 해당 종목 차트 / 버튼: KIND 원문"""
-    code = e.get("code")
-    who = f"{e.get('corp','')}{_rate_str(code)} · " if e.get("corp") else ""
-    title = f"[🚫거래정지] {who}{e.get('market','')}"
-    rr = e.get("resume_date") or "미정"
+    """매매거래정지 알림"""
     tag = "" if e.get("resume_confirmed") else "(예정)"
-    msg = f"{e.get('reason','')} · 정지 {e.get('halt_date','')} → 재개 {rr}{tag}"
-    chart = _chart_url(code)
-    buttons = [("🔗 KIND 공시", e["url"])]
-    _toast(title, msg, chart or e["url"], buttons)
+    _alert("🚫거래정지", e, f"{e.get('reason', '')} · 정지 {e.get('halt_date', '')} → 재개 {e.get('resume_date') or '미정'}{tag}",
+           "🔗 KIND 공시")
+
+def _unseen(evs, seen):
+    """처음 보는 이벤트만 (보면서 seen 에 담는다)"""
+    for e in evs:
+        if e.get("rcept_no") and e["rcept_no"] not in seen:
+            seen.add(e["rcept_no"])
+            yield e
 
 def _active(e):
     """사이드카·서킷 자동해제 전, 선물 가격제한폭 확대 전 — 생산자가 정한 구간(active_from ~ active_to) 안인지"""
@@ -203,20 +169,14 @@ def _active(e):
 def alert_actions(evs, ac_seen, alert=True):
     """새 시장조치 토스트. ac_seen: 전용 in-memory 중복셋.
     사이드카·서킷브레이커는 재시작 baseline 이라도 '아직 안 풀렸으면' 무조건 토스트(놓침 방지)."""
-    for e in evs:
-        if e["rcept_no"] in ac_seen:
-            continue
-        ac_seen.add(e["rcept_no"])
+    for e in _unseen(evs, ac_seen):
         if alert or (e["critical"] and _active(e)):
             print(f"  🚨 시장조치 [{e['kind']}] {e['market']} {e['action']} {e['title'][:40]}")
             notify_action(e)
 
 def alert_limits(evs, lim_seen, alert=True):
     """새 선물 가격제한폭 도달 토스트 — 실시간 신규 + 재시작 baseline 이라도 아직 제한폭 확대 전이면(사이드카와 통일)"""
-    for e in evs:
-        if e["rcept_no"] in lim_seen:
-            continue
-        lim_seen.add(e["rcept_no"])
+    for e in _unseen(evs, lim_seen):
         if (alert or _active(e)) and (e.get("stage") or 0) >= ALERT_MIN_STAGE:
             print(f"  🚨 선물 {'상한' if e['direction']=='상승' else '하한'}: {e['name']} {e['stage']}단계 ({e['kind']})")
             notify_limit(e)
@@ -229,55 +189,33 @@ def live_pass(lim_seen, ac_seen, alert=True):
 
 INDUSTRY_POLL_SECONDS = 60  # 인더스트리 액션 — 전 종목 스냅샷 1회(수 초), 묶음 재구성은 30일마다
 
-def industry_loop():
-    """인더스트리 액션 전용 루프(별도 스레드) → data/out/industry_action.json."""
-    while True:
-        try:
-            industry.daily_upkeep()
-            industry.build_action()
-        except Exception as ex:
-            print(f"  [인더스트리] 갱신 실패: {ex}")
-        time.sleep(INDUSTRY_POLL_SECONDS)
+def industry_pass():
+    """인더스트리 액션 → data/out/industry_action.json."""
+    industry.daily_upkeep()
+    industry.build_action()
 
 HALT_POLL_SECONDS = 600   # 거래정지/재개 알림 확인 — halts.json 은 들여오기·계산이 갱신
 
-def halt_loop():
-    """거래정지 알림 전용 루프 — 계산이 만든 data/out/halts.json 에서 새 정지 종목 토스트(첫 주기는 시딩만, 폭주 방지)."""
-    halt_seen, first = set(), True
-    while True:
-        try:
-            for e in load_json(os.path.join(OUT_DIR, "halts.json"), {}).get("events", []):
-                rc = e.get("rcept_no")
-                if rc and rc not in halt_seen:
-                    halt_seen.add(rc)
-                    if not first:
-                        notify_halt(e)
-            first = False
-        except Exception as ex:
-            print(f"  [거래정지] 알림 확인 실패: {ex}")
-        time.sleep(HALT_POLL_SECONDS)
-
-def limits_loop(lim_seen, ac_seen):
-    """상하한가·시장조치 전용 고속 루프(별도 스레드) — LIMITS_POLL_SECONDS 마다"""
-    while True:
-        try:
-            live_pass(lim_seen, ac_seen)
-        except Exception as ex:
-            print(f"  [상하한가·시장조치 루프 오류] {ex}")
-        time.sleep(LIMITS_POLL_SECONDS)
+def halt_alerts():
+    """거래정지 알림 — 계산이 만든 data/out/halts.json 에서 새 정지 종목 토스트(첫 확인은 시딩만, 폭주 방지)."""
+    halt_seen, first = set(), [True]
+    def check():
+        for e in _unseen(load_json(HALTS_PATH, {}).get("events", []), halt_seen):
+            if not first[0]:
+                notify_halt(e)
+        first[0] = False
+    return check
 
 def poll_once(seen, alert=True):
     # 어제~오늘 조회: 자정 직전 접수분을 다음 폴링이 놓치지 않게 (중복은 seen이 걸러줌)
-    today = datetime.date.today()
-    bgn = (today - datetime.timedelta(days=1)).strftime("%Y%m%d")
-    end = today.strftime("%Y%m%d")
-    watch = load_watchlist()
+    bgn, end = ymd(days_ago(1)), ymd(days_ago(0))
+    watch = universe.stocks()
     events = collect_events(live_rows(bgn, end), watch=watch)
     new = [e for e in events if e["rcept_no"] not in seen]
     new_cal, new_div, new_earn, new_sched, new_cap = [], [], [], [], []
     for e in new:
         if alert:
-            print(f"  🔔 신규: [{e['category']}] {e['corp']} - {e['title']}")
+            print(f"  🔔 신규: [{e['category']}] {e['name']} - {e['title']}")
             notify(e)
         seen.add(e["rcept_no"])
         if e["category"] == "배당":           # 배당 → 배당 캘린더(dividends)
@@ -308,7 +246,7 @@ def main():
     print(f"공시캘린더 폴러 시작 | TLS={TLS_MODE} | seen {len(seen)}건 | 주기 {POLL_SECONDS}s")
 
     if "--test-toast" in sys.argv:
-        notify({"category": "테스트", "corp": "테스트기업", "market": "KOSPI",
+        notify({"category": "테스트", "name": "테스트기업", "market": "KOSPI",
                 "title": "이것은 알림 테스트입니다", "url": "https://dart.fss.or.kr"})
         print("테스트 알림 전송됨"); return
 
@@ -317,40 +255,32 @@ def main():
         live_pass(set(), set(), alert=False)
         print(f"1회 확인 완료 - 공시 신규 {n}건 (limits/krx_actions 갱신됨)"); return
 
+    md_feed.start()
+    print("  [시세 허브] 시작 (거래일 08:00~20:00)")
     refresh(full=True)            # 들여오기 + 전 계산 1회 (만기일·배당·실적·실적예고·증자·공시 탭·정지)
     lim_seen, ac_seen = set(), set()   # 상하한가·시장조치 전용 중복셋(공시 seen 과 분리)
-    try:
-        live_pass(lim_seen, ac_seen, alert=False)   # baseline: 현재분을 담고 알림 억제(재시작 스팸 방지, 아직 걸린 건 알림)
-        print("  [상하한가·시장조치] baseline 완료")
-    except Exception as ex:
-        print(f"  [상하한가·시장조치] baseline 실패: {ex}")
-    threading.Thread(target=limits_loop, args=(lim_seen, ac_seen), daemon=True).start()   # 5초 고속 갱신 스레드
-    print(f"  [상하한가·시장조치] 전용 루프 시작 ({LIMITS_POLL_SECONDS}초 주기)")
-    threading.Thread(target=halt_loop, daemon=True).start()   # 거래정지/재개 집계 스레드
-    print(f"  [거래정지] 전용 루프 시작 ({HALT_POLL_SECONDS}초 주기)")
-    threading.Thread(target=industry_loop, daemon=True).start()
-    print(f"  [인더스트리] 전용 루프 시작 ({INDUSTRY_POLL_SECONDS}초 주기)")
-    threading.Thread(target=closearb.loop, daemon=True).start()
-    print("  [종가 차익] 전용 루프 시작 (거래일 08:00~20:00)")
+    ops.run("상하한가·시장조치", lambda: live_pass(lim_seen, ac_seen, alert=False))   # baseline: 현재분을 담고 알림 억제(재시작 스팸 방지, 아직 걸린 건 알림)
+    for name, seconds, work in (("상하한가·시장조치", LIMITS_POLL_SECONDS, lambda: live_pass(lim_seen, ac_seen)),
+                                ("거래정지 알림", HALT_POLL_SECONDS, halt_alerts()),
+                                ("인더스트리", INDUSTRY_POLL_SECONDS, industry_pass)):
+        threading.Thread(target=ops.every, args=(name, seconds, work), daemon=True, name=name).start()
+        print(f"  [{name}] {seconds}초마다")
+    threading.Thread(target=closearb.start, daemon=True).start()
+    print("  [종가 차익] 시세 허브 구독")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)
         print("  최초 baseline 완료 (알림 억제)")
-    last_heal = time.time()
-    while True:
-        try:
-            n = poll_once(seen)   # 상하한가는 별도 스레드(limits_loop)가 5초마다 전담
-            refresh_quotes()      # 실적 등락률만 매 주기 갱신(가벼움; 신규 실적은 poll_once 가 refresh 트리거)
-            # 주기적 전체 재계산 — 받기 실패로 빠진 원문을 다시 시도
-            if time.time() - last_heal >= SELF_HEAL_SECONDS:
-                last_heal = time.time()
-                refresh(also={"quotes"})   # 들여오기 + 시세 쓰는 계산(증자) — 날이 바뀌었으면 오늘 기준 계산도
-                print("  [주기 재계산] 들여오기·시세 계산")
-            ts = datetime.datetime.now().strftime("%H:%M:%S")
-            print(f"[{ts}] 확인 완료 (공시 신규 {n} · seen {len(seen)})")
-        except Exception as ex:
-            print(f"[오류] {ex}")
-        time.sleep(POLL_SECONDS)
+    last_heal = [time.time()]
+    def poll():
+        n = poll_once(seen)   # 상하한가는 별도 스레드가 5초마다 전담
+        refresh_quotes()      # 실적 등락률만 매 주기 갱신(가벼움; 신규 실적은 poll_once 가 refresh 트리거)
+        if time.time() - last_heal[0] >= SELF_HEAL_SECONDS:   # 주기적 전체 재계산 — 받기 실패로 빠진 원문을 다시 시도
+            last_heal[0] = time.time()
+            refresh(also={"quotes"})   # 들여오기 + 시세 쓰는 계산(증자) — 날이 바뀌었으면 오늘 기준 계산도
+            print("  [주기 재계산] 들여오기·시세 계산")
+        print(f"[{datetime.datetime.now():%H:%M:%S}] 확인 완료 (공시 신규 {n} · seen {len(seen)})")
+    ops.every("공시 확인", POLL_SECONDS, poll)
 
 if __name__ == "__main__":
     main()

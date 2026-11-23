@@ -3,16 +3,15 @@
 
   python -m derive.dividend.date   → data/out/div_estimates.json (companies + events)
 """
-import os, datetime
+import datetime
 from core import universe
-from core.paths import DART_VIEW as DART, save_json, OUT_DIR
-from core.krx_cal import t_minus, to_date as _d, iso as _iso
+from core.paths import DART_VIEW, save_json, stamp, DIV_ESTIMATES_PATH
+from core.krx_cal import t_minus, to_date, iso
 from derive.dividend.confirmed import quarter_end
 from derive import earn_sched
 from derive.dividend import amount as div_amount
 from derive.dividend.facts import view, quarter_owner, pattern, medians, contexts
 
-OUT_PATH = os.path.join(OUT_DIR, "div_estimates.json")
 HORIZON_DAYS = 270
 MISS_GRACE_DAYS = 3
 NOTICE_MIN_DAYS = 14
@@ -64,11 +63,11 @@ def judge(ctx, t, fy, q):
     """§4.2 — {method 날짜 방식, why 근거, grade GRADES 키, case 사례 근거}. 사례 = 선진화 정관이 된 뒤 같은 종류 배당 회차"""
     g, end = GROUP[t], END_WORD[t]
     out = lambda method, why, grade, case="": {"method": method, "why": why, "grade": grade, "case": case}
-    on_round = lambda r, how: f"{r['fy']} Q{r['q']} 기준일 {r['record']}({how})" + (f" {DART}{r['rcept_no']}" if r["rcept_no"] else f" · {r['src']}")
+    on_round = lambda r, how: f"{r['fy']} Q{r['q']} 기준일 {r['record']}({how})" + (f" {DART_VIEW}{r['rcept_no']}" if r["rcept_no"] else f" · {r['src']}")
     notice = _notice(ctx, t, fy, q)
     if notice:
         return out("유동", f"이번 회차 '배당기준일 안내' 자율공시({notice['date']}) — 이사회가 기준일을 따로 정함", "사례지정",
-                   f"이번 회차 기준일 안내 자율공시 {notice['date']} {DART}{notice['rcept_no']}")
+                   f"이번 회차 기준일 안내 자율공시 {notice['date']} {DART_VIEW}{notice['rcept_no']}")
     past = [r for r in ctx["rounds"] if r["type"] == t]
     ch = (ctx["charter"].get(g) or {}).get("v")
     since = ctx["charter_since"].get(g)
@@ -107,10 +106,10 @@ def cond_signals(ctx, qe, today):
     return {"D13": (agm_rec and not div_rec) if done else None, "D14": (not div_rec) if done else None}
 
 def announce_date(earn, qe):
-    pre = [_d(e["expected_date"]) for e in earn if e.get("period_end") == qe.isoformat()]
+    pre = [to_date(e["expected_date"]) for e in earn if e.get("period_end") == qe.isoformat()]
     if pre:
         return min(pre)
-    ir = [_d(e["expected_date"]) for e in earn if e.get("src") == "IR" and qe < _d(e["expected_date"]) <= qe + datetime.timedelta(days=100)]
+    ir = [to_date(e["expected_date"]) for e in earn if e.get("src") == "IR" and qe < to_date(e["expected_date"]) <= qe + datetime.timedelta(days=100)]
     return min(ir) if ir else None
 
 def ladder(ctx, t, fy, q, confirmed):
@@ -219,10 +218,10 @@ def predict_round(ctx, t, fy, q, today, earn, med):
     if (pay - rec).days > PAY_LIMIT_DAYS:
         warn.append(f"기준일→지급 {(pay - rec).days}일 — 3개월 한도(상법 §354③) 초과")
 
-    return {"div_type": t, "fy": fy, "q": q, "quarter": f"{fy} Q{q}", "quarter_end": _iso(qe),
-            "record_date": _iso(rec), "pay_date": _iso(pay), "method": "확정 기준일" if ann_rec else method,
+    return {"div_type": t, "fy": fy, "q": q, "quarter": f"{fy} Q{q}", "quarter_end": iso(qe),
+            "record_date": iso(rec), "pay_date": iso(pay), "method": "확정 기준일" if ann_rec else method,
             **grade_out("공고" if ann_rec else grade, t), "case": j["case"], "why": why, "anchor": anchor, "reason": reason,
-            "alt": {k: _iso(v) for k, v in alt.items()}, "warn": warn,
+            "alt": {k: iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
             **div_amount.estimate(ctx, t, fy, rec),
             "ladder": ladder(ctx, t, fy, q, bool(ann_rec))}, None
@@ -240,7 +239,7 @@ def forecast(ctx, today, earn, med):
             p, miss = predict_round(ctx, t, fy, q, today, earn, med)
             if miss:
                 missed.append(miss)
-            elif today < _d(p["record_date"]) <= today + datetime.timedelta(days=HORIZON_DAYS):
+            elif today < to_date(p["record_date"]) <= today + datetime.timedelta(days=HORIZON_DAYS):
                 out.append(p)
     return out, missed
 
@@ -259,21 +258,21 @@ def company_out(ctx, missed):
         fy, q = (rs[-1]["fy"], nq) if nq else (rs[-1]["fy"] + 1, qs[0])
         j = judge(ctx, t, fy, q)
         judgments[t] = {"method": j["method"], "why": j["why"], **grade_out(j["grade"], t), "case": j["case"], "quarter": f"{fy} Q{q}"}
-    ladders = {f"{r['type']}|{_iso(r['record'])}": ladder(view(ctx, r["decided"] or r["record"]), r["type"], r["fy"], r["q"], True)
+    ladders = {f"{r['type']}|{iso(r['record'])}": ladder(view(ctx, r["decided"] or r["record"]), r["type"], r["fy"], r["q"], True)
                for r in ctx["rounds"][-12:]}
-    return {"corp": ctx["corp"], "market": ctx["market"], "acc_mt": ctx["acc"], "acc_known": ctx["acc_known"],
-            "charter": {g: {"v": c["v"], "src": c["src"], "date": _iso(c["date"])} for g, c in ctx["charter"].items()},
+    return {"name": ctx["name"], "market": ctx["market"], "acc_mt": ctx["acc"], "acc_known": ctx["acc_known"],
+            "charter": {g: {"v": c["v"], "src": c["src"], "date": iso(c["date"])} for g, c in ctx["charter"].items()},
             "charter_pending": ctx["charter_pending"], "organ": ctx["organ"], "policy_report": ctx["policy_report"],
             "pattern": pattern(owner) if owner else "", "judgments": judgments, "ladders": ladders,
-            "rounds": [{"quarter": f"{r['fy']} Q{r['q']}", "div_type": r["type"], "decided": _iso(r["decided"]),
-                        "record_date": _iso(r["record"]), "quarter_end": _iso(r["qe"]), "fixed": r["fixed"],
+            "rounds": [{"quarter": f"{r['fy']} Q{r['q']}", "div_type": r["type"], "decided": iso(r["decided"]),
+                        "record_date": iso(r["record"]), "quarter_end": iso(r["qe"]), "fixed": r["fixed"],
                         "amount_first": r["amount_first"], "per_share": r["dps"], "special": r["special"], "src": r["src"]}
                        for r in reversed(ctx["rounds"])],
-            "notices": [{"date": _iso(n["date"]), "div_type": n["div_type"], "quarter": f"{n['fy']} Q{n['q']}",
+            "notices": [{"date": iso(n["date"]), "div_type": n["div_type"], "quarter": f"{n['fy']} Q{n['q']}",
                          "hint": n["hint"], "title": n["title"]} for n in ctx["notices"]][-4:],
-            "agms": [{"date": _iso(a["date"]), "kind": a["kind"], "regular": a["regular"], "charter": a["charter"]}
+            "agms": [{"date": iso(a["date"]), "kind": a["kind"], "regular": a["regular"], "charter": a["charter"]}
                      for a in ctx["agms"]][-4:],
-            "plans": [{"date": _iso(p["date"]), "title": p["title"], "lines": p["lines"]} for p in ctx["plans"]][-2:],
+            "plans": [{"date": iso(p["date"]), "title": p["title"], "lines": p["lines"]} for p in ctx["plans"]][-2:],
             "evidence": ev}
 
 def build(ctxs=None):
@@ -281,22 +280,22 @@ def build(ctxs=None):
     ctxs = ctxs or contexts()
     earn = {}
     for e in earn_sched.collect(watch=universe.div()):
-        earn.setdefault(e["stock"], []).append(e)
+        earn.setdefault(e["code"], []).append(e)
     med = medians(ctxs)
     companies, events = {}, []
     for c in ctxs:
-        if not c["corp"] and not c["charter"]:
+        if not c["name"] and not c["charter"]:
             continue
-        preds, missed = forecast(c, today, earn.get(c["stock"], []), med)
-        companies[c["stock"]] = company_out(c, missed)
+        preds, missed = forecast(c, today, earn.get(c["code"], []), med)
+        companies[c["code"]] = company_out(c, missed)
         for p in preds:
-            events.append({"corp": c["corp"], "stock": c["stock"], "market": c["market"], **p,
+            events.append({"name": c["name"], "code": c["code"], "market": c["market"], **p,
                            "confirm_date": t_minus(p["record_date"], 2), "ex_date": t_minus(p["record_date"], 1),
                            "basis": f"{p['quarter']} {p['div_type']} · {p['method']} — {p['why']} · {p['anchor']} · 금액 {p['amount_basis']}"})
     events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
-    payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    payload = {"generated_at": stamp(),
                "medians": med, "grades": GRADES, "companies": companies, "count": len(events), "events": events}
-    save_json(OUT_PATH, payload)
+    save_json(DIV_ESTIMATES_PATH, payload)
     n = lambda m: sum(1 for e in events if e["method"] == m)
     print(f"저장: div_estimates.json — 종목 {len(companies)} · 예상 {len(events)}건 (고정 {n('고정')} · 유동 {n('유동')} · 기준일공고 {n('확정 기준일')})")
     return payload

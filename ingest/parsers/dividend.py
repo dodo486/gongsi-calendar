@@ -1,15 +1,9 @@
 # -*- coding: utf-8 -*-
 """배당 공시 파서 — 원문 → 값 (접속 없음). 어떤 공시에 쓰는지는 ingest/registry.py"""
-import re, datetime
-from core.krx_cal import norm_date, iso
+import re
+from core.krx_cal import norm_date
 
 
-def _norm(s):
-    m = re.search(r"(\d{4})\D+(\d{1,2})\D+(\d{1,2})", s or "")
-    try:
-        return datetime.date(*map(int, m.groups())) if m else None
-    except ValueError:
-        return None
 
 DATE = r"(\d{4}[-.]\d{1,2}[-.]\d{1,2}|\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일)"
 
@@ -94,7 +88,7 @@ def parse_policy(t):
     """정기보고서 「배당관련 예측가능성 제공에 관한 사항」 표1(정관·결정기관)·표2(회차) — 표가 없으면 정관 전문(결산만)"""
     m = TABLE.search(t)
     if m:
-        rows = [[x[1], iso(_norm(x[4])), iso(_norm(x[5]))] for x in ROW.finditer(t[m.end(): m.end() + 5000]) if x[3] == "O"]
+        rows = [[x[1], norm_date(x[4]), norm_date(x[5])] for x in ROW.finditer(t[m.end(): m.end() + 5000]) if x[3] == "O"]
         return {"organ": {"결산": m[1], "분기중간": m[2]}, "charter": {"결산": m[3], "분기중간": m[4]}, "rows": rows}
     if re.search(r"이사회\s*결의로\s*[^.]{0,30}?배당을\s*받을\s*주주를\s*확정하기\s*위한\s*기준일", t):
         return {"charter_text": "O"}

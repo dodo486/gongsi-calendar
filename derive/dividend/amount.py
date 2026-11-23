@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """배당 3단계 금액 — 신호마다 후보 하나({signal, value 원, basis}) 또는 None, estimate 가 PRIORITY 순으로 고른다. 날짜는 div_date"""
-from core.krx_cal import iso as _iso
+from core.krx_cal import iso
 from derive.dividend.facts import share_factor
 
 
@@ -24,7 +24,7 @@ def consensus_left(ctx, t, fy, rec):
     left = max(sum(1 for r in ctx["rounds"] if r["fy"] == fy - 1) - len(done), 1)
     v = round((c["dps"] - paid) / left)
     return {"signal": "consensus_left", "name": "컨센", "value": v,
-            "basis": f"{_iso(c['date'])} 네이버 연간 주당배당금 컨센 {c['dps']:,}원" + (f" − 올해 이미 정한 {paid:,}원" if paid else "")
+            "basis": f"{iso(c['date'])} 네이버 연간 주당배당금 컨센 {c['dps']:,}원" + (f" − 올해 이미 정한 {paid:,}원" if paid else "")
                      + (f" ÷ 남은 {left}회" if left > 1 else "")} if v > 0 else None
 
 SIGNALS = [repeat_last, consensus_left]

@@ -5,7 +5,8 @@
 """
 import io, json, os, re, sys, time, datetime, threading, zipfile, urllib.request, urllib.error, ssl
 from core import store
-from core.paths import BASE, save_json, CACHE_DIR
+from core.krx_cal import ymd, days_ago
+from core.paths import BASE, save_json, load_json, CACHE_DIR
 from ingest.sources import net   # import 시 TLS opener 세팅
 
 _KEY_PATH = os.path.join(BASE, "dart_key.txt")
@@ -92,7 +93,6 @@ def listing(ty, days):
     assert days <= LIST_RETAIN[ty], f"{ty} 목록은 {LIST_RETAIN[ty]}일까지만 보관"
     today = datetime.date.today()
     want = today - datetime.timedelta(days=days)
-    ymd = lambda d: d.strftime("%Y%m%d")
     day = lambda s: datetime.datetime.strptime(s, "%Y%m%d").date()
     with _list_lock:
         store = _list_store()
@@ -153,13 +153,10 @@ _corp = None
 def corp_code(stock):
     """종목코드 → DART 고유번호 (corpCode.xml, 7일 캐시)"""
     global _corp
-    if _corp is None and os.path.exists(CORP_PATH):
-        try:
-            j = json.load(open(CORP_PATH, encoding="utf-8"))
-            if j.get("_ts", "") >= (datetime.date.today() - datetime.timedelta(days=7)).strftime("%Y%m%d"):
-                _corp = j
-        except Exception:
-            pass
+    if _corp is None:
+        cached = load_json(CORP_PATH, {})
+        if cached.get("_ts", "") >= ymd(days_ago(7)):
+            _corp = cached
     if _corp is None:
         try:
             with urllib.request.urlopen(f"https://opendart.fss.or.kr/api/corpCode.xml?crtfc_key={KEY}", timeout=60) as r:
@@ -167,10 +164,10 @@ def corp_code(stock):
         except Exception:
             if not os.path.exists(CORP_PATH):
                 raise   # 표가 없음 — '고유번호 없음'("")과 구분해 호출부가 실패로 다루게
-            _corp = json.load(open(CORP_PATH, encoding="utf-8"))
+            _corp = load_json(CORP_PATH, {})
             return _corp.get(stock, "")
         xml = zf.read(zf.namelist()[0]).decode("utf-8")
-        _corp = {"_ts": datetime.date.today().strftime("%Y%m%d")}
+        _corp = {"_ts": ymd(datetime.date.today())}
         for m in re.finditer(r"<list>(.*?)</list>", xml, re.S):
             sc = re.search(r"<stock_code>\s*(\S+?)\s*</stock_code>", m.group(1))
             cc = re.search(r"<corp_code>\s*(\d+)\s*</corp_code>", m.group(1))

@@ -5,9 +5,10 @@
 사용:
   python -m derive.disclosures 90   # 과거 90일 백필 (기존 파일과 병합)
 """
-import json, os, sys, datetime
-from core import store
-from core.paths import DART_VIEW, save_json, load_watchlist, OUT_DIR
+import sys
+from core import store, universe
+from core.krx_cal import iso, ymd, days_ago
+from core.paths import DART_VIEW, save_json, load_json, stamp, DISCLOSURES_PATH
 
 # 관심 공시 종류: (제목 키워드, 표시 카테고리). 순서 = 매칭 우선순위.
 CATEGORIES = [
@@ -36,14 +37,14 @@ def categorize(title):
 
 def stored_rows(days):
     """저장소의 DART 목록(들여오기가 채움) 중 최근 days 일 접수분"""
-    since = (datetime.date.today() - datetime.timedelta(days=days)).strftime("%Y%m%d")
+    since = ymd(days_ago(days))
     lst = store.load("dart_listing")
     return [r for ty in PBLNTF_TYPES for r in lst.get(ty, {}).get("rows", {}).values() if r["rcept_dt"] >= since]
 
 def collect_events(rows, watch="__load__"):
     """DART 목록 행 → 감시대상+관심종류 공시만 캘린더용 이벤트로 (백필·monitor·earnings 공용)"""
     if watch == "__load__":
-        watch = load_watchlist()
+        watch = universe.stocks()
     events, seen = [], set()
     for r in rows:
         rno = r.get("rcept_no", "")
@@ -52,12 +53,12 @@ def collect_events(rows, watch="__load__"):
             continue
         seen.add(rno)
         events.append({
-            "corp": r.get("corp_name", ""),
-            "stock": r.get("stock_code", ""),
-            "market": "KOSPI" if r.get("corp_cls") == "Y" else "KOSDAQ",
+            "name": r.get("corp_name", ""),
+            "code": r.get("stock_code", ""),
+            "market": universe.DART_MARKETS.get(r.get("corp_cls"), "KOSDAQ"),
             "title": title,
             "category": categorize(title),
-            "date": r.get("rcept_dt", ""),   # YYYYMMDD
+            "date": iso(r.get("rcept_dt")),
             "rcept_no": rno,
             "url": DART_VIEW + rno,
             "flr": r.get("flr_nm", ""),
@@ -68,22 +69,19 @@ def main(days=7):
     events = [e for e in collect_events(stored_rows(days)) if e["category"] not in CAL_EXCLUDE]
 
     # 기존 파일과 병합 — 짧은 기간 백필이 기존 이력을 지우지 않게 (rcept_no 기준 중복 제거)
-    out_path = os.path.join(OUT_DIR, "disclosures.json")
-    if os.path.exists(out_path):
-        have = {e["rcept_no"] for e in events}
-        old = json.load(open(out_path, encoding="utf-8")).get("events", [])
-        events += [e for e in old if e.get("rcept_no") not in have]
+    have = {e["rcept_no"] for e in events}
+    events += [e for e in load_json(DISCLOSURES_PATH, {}).get("events", []) if e.get("rcept_no") not in have]
     events.sort(key=lambda e: e.get("date", ""), reverse=True)
 
     dates = [e["date"] for e in events if e.get("date")]
     payload = {
-        "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "generated_at": stamp(),
         "range": {"bgn": min(dates), "end": max(dates)} if dates else {},
         "count": len(events),
         "events": events,
     }
-    save_json(out_path, payload)
-    print(f"저장: {out_path} ({len(events)}건)")
+    save_json(DISCLOSURES_PATH, payload)
+    print(f"저장: {DISCLOSURES_PATH} ({len(events)}건)")
 
 if __name__ == "__main__":
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 7

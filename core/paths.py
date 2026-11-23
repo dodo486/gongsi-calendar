@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """공용 기반 — 경로·json 원자 저장·감시종목·콘솔 UTF-8. API 키·네트워크 없이 import 된다."""
-import json, os, sys, time, threading
+import json, os, sys, time, datetime, threading
 
 # 콘솔 UTF-8 출력 — base 를 import 하는 모든 모듈이 공유(각자 재선언 불필요)
 try:
@@ -15,6 +15,22 @@ CACHE_DIR = os.path.join(DATA_DIR, "cache")   # 토큰·고유번호·시세 DB�
 for _d in (OUT_DIR, CACHE_DIR):
     os.makedirs(_d, exist_ok=True)
 
+# 계산 결과 파일 — 상수 이름 = 파일 이름. 쓰는 모듈·읽는 모듈 모두 여기서 가져간다
+(CAPITAL_PATH, CLOSEARB_PATH, DISCLOSURES_PATH, DIV_BOOK_PATH, DIV_ESTIMATES_PATH, DIV_SOURCES_PATH, DIV_VERIFY_PATH,
+ DIVIDEND_CHECK_PATH, DIVIDENDS_PATH, DIVPOINTS_PATH, EARN_SCHED_PATH, EARNINGS_PATH, EXPIRIES_PATH, HALTS_PATH,
+ INDUSTRY_ACTION_PATH, KRX_ACTIONS_PATH, LIMITS_PATH) = (os.path.join(OUT_DIR, f"{n}.json") for n in (
+    "capital", "closearb", "disclosures", "div_book", "div_estimates", "div_sources", "div_verify",
+    "dividend_check", "dividends", "divpoints", "earn_sched", "earnings", "expiries", "halts",
+    "industry_action", "krx_actions", "limits"))
+
+PORT = 8777
+URL = f"http://127.0.0.1:{PORT}/"   # 로컬 웹서버(app.serve)
+
+
+def stamp(t=None):
+    """결과 파일의 갱신 시각 'YYYY-MM-DD HH:MM:SS' (t 기본 지금)"""
+    return (t or datetime.datetime.now()).strftime("%Y-%m-%d %H:%M:%S")
+
 def save_json(path, obj, indent=1):
     """원자적 저장 — 쓰다 만 파일을 웹이 읽는 사고 방지 (tmp에 쓰고 교체). 큰 캐시는 indent=None 으로 작게."""
     tmp = f"{path}.{os.getpid()}.{threading.get_ident()}.tmp"   # 스레드·프로세스마다 다른 임시파일 — 동시에 써도 안 섞임
@@ -28,6 +44,7 @@ def save_json(path, obj, indent=1):
     os.replace(tmp, path)
 
 def load_json(path, default):
+    """없거나 못 읽으면 default. 저장소(core.store)처럼 깨진 파일을 빈 값으로 삼키면 안 되는 곳은 쓰지 않는다."""
     try:
         return json.load(open(path, encoding="utf-8"))
     except Exception:
@@ -36,16 +53,4 @@ def load_json(path, default):
 DART_VIEW = "https://dart.fss.or.kr/dsaf001/main.do?rcpNo="
 KIND_VIEW = "https://kind.krx.co.kr/common/disclsviewer.do?method=searchInitInfo&acptNo={}&docno="
 
-_wl_cache = {"mtime": None, "data": None}
-def load_watchlist():
-    """감시종목(코스피200+코스닥150) {종목코드: {name, market, ...}}. 없으면 None(필터 없음)."""
-    path = os.path.join(BASE, "watchlist.json")
-    if not os.path.exists(path):
-        print("  [!] watchlist.json 없음 — 전체 공시 표시(필터 없음)")
-        return None
-    mtime = os.path.getmtime(path)   # 파일이 바뀔 때만 다시 파싱 — 폴링마다(20초) 재파싱 방지
-    if _wl_cache["mtime"] != mtime:
-        data = json.load(open(path, encoding="utf-8")).get("stocks", {})
-        _wl_cache["data"] = data      # data 를 먼저 세팅하고
-        _wl_cache["mtime"] = mtime     # mtime 은 마지막 — 동시 호출 스레드가 None data 를 보는 race 방지
-    return _wl_cache["data"]
+

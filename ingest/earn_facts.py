@@ -7,11 +7,12 @@
 """
 import html as _html
 import json, os, re, sys, time
-from core.paths import save_json, CACHE_DIR
+from core.paths import save_json, load_json, CACHE_DIR
 from ingest.sources.naver import get as _get
 from ingest.sources.dart import doc_text
 from ingest.parsers.earnings import parse_actual
-from core import market as md_feed  # 시세(일별 price·trend)는 jhts 시세수집팀 위임
+from core.krx_cal import iso
+from core import market as md_feed
 
 FACT_DIR = os.path.join(CACHE_DIR, "facts")
 os.makedirs(FACT_DIR, exist_ok=True)
@@ -56,47 +57,26 @@ def naver_news(code, n=10):
             for it in grp.get("items", []):
                 dt = it.get("datetime", "")
                 out.append({"title": _clean(it.get("title", "")), "press": it.get("officeName", ""),
-                            "date": f"{dt[:4]}-{dt[4:6]}-{dt[6:8]}" if len(dt) >= 8 else "",
+                            "date": iso(dt),
                             "url": f"https://n.news.naver.com/mnews/article/{it.get('officeId')}/{it.get('articleId')}"})
         return out[:n]
     except Exception:
         return []
 
-def _ymd_dash(d):
-    d = (d or "").replace("-", "")
-    return f"{d[:4]}-{d[4:6]}-{d[6:8]}" if len(d) == 8 else d
-
-
-def naver_prices(code, n=30):
-    """일별 시세 (최신순) — 발표 전 선반영 체크용. (jhts 시세수집팀 위임)"""
-    return [{"date": _ymd_dash(r["date"]), "close": int(r["close"] or 0)}
-            for r in md_feed.daily_price(code, n)]
-
-
-def naver_trend(code, n=20):
-    """투자자별 매매동향 (최신순) — 외국인/기관 순매수 수량 + 종가. (jhts 위임)"""
-    return [{"date": _ymd_dash(r["date"]), "frgn": r["frgn"], "org": r["org"], "close": r["close"]}
-            for r in md_feed.investor_trend(code, n)]
-
-
 def facts(code, rcept_no=""):
     """종목 실적 팩트 (캐시 30분, rcept가 달라지면 재생성)"""
     path = os.path.join(FACT_DIR, f"{code}.json")
-    if os.path.exists(path):
-        try:
-            c = json.load(open(path, encoding="utf-8"))
-            if time.time() - c.get("_ts", 0) < TTL and c.get("_rcept", "") == rcept_no:
-                return c
-        except Exception:
-            pass
+    c = load_json(path, {})
+    if time.time() - c.get("_ts", 0) < TTL and c.get("_rcept", "") == rcept_no:
+        return c
     out = naver_facts(code)
     try:
         out["actual"] = parse_actual(doc_text(rcept_no)) if rcept_no else {}
     except Exception:
         out["actual"] = {}
     out["news"] = naver_news(code)         # 실적발표 이후 반응 (뉴스 헤드라인)
-    out["prices"] = naver_prices(code)     # 일별 시세 — 선반영(발표 전 급등) 체크
-    out["trend"] = naver_trend(code)       # 외국인/기관 순매수 — 수급 판독
+    out["prices"] = [{"date": r["date"], "close": int(r["close"] or 0)} for r in md_feed.daily_price(code, 30)]   # 선반영(발표 전 급등) 체크
+    out["trend"] = [{k: r[k] for k in ("date", "frgn", "org", "close")} for r in md_feed.investor_trend(code, 20)]   # 외국인/기관 순매수
     out["_ts"] = time.time()
     out["_rcept"] = rcept_no
     save_json(path, out)

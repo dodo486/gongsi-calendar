@@ -8,10 +8,11 @@
   python -m derive.limits            # 오늘 선물 가격제한폭 도달 공시 → data/out/limits.json
   python -m derive.limits 2026-05-06 # 특정일자
 """
-import os, sys, re, datetime
+import sys, re, datetime
 from core import store, universe
-from core.paths import KIND_VIEW, save_json, OUT_DIR
+from core.paths import KIND_VIEW, save_json, stamp, LIMITS_PATH
 from core import market as md_feed
+from core.krx_cal import iso, ymd
 
 
 def parse(rows, watch_only=True):
@@ -22,8 +23,8 @@ def parse(rows, watch_only=True):
         title, markets = r["title"], r["indices"]   # 지수 범례(KOSPI200/KOSDAQ150/KRX300…)
         stage = int(re.search(r"(\d)단계", title).group(1)) if re.search(r"(\d)단계", title) else 0
         direction = "상승" if "상승" in title else ("하락" if "하락" in title else "")
-        if r["corp"]:                                  # 주식선물 (개별종목)
-            name = r["corp"]
+        if r["name"]:                                  # 주식선물 (개별종목)
+            name = r["name"]
             in_k200 = "KOSPI200" in markets
             in_kq150 = "KOSDAQ150" in markets
             if watch_only and not (in_k200 or in_kq150):
@@ -43,37 +44,28 @@ def parse(rows, watch_only=True):
     events.sort(key=lambda e: (e["time"], e["rcept_no"]), reverse=True)   # 최신 먼저, 동시간이면 접수번호 큰 순
     return events
 
-RATE_CAP = 40   # 한 번의 collect에서 등락률 조회할 최대 종목수(주식선물+지수선물)
-
 def _index_code(name):
-    """지수선물 종목명 → 네이버 지수코드. 코스피200=KPI200 / 코스닥150=KQI150 (그 외 미지원)."""
+    """지수선물 종목명 → 시세 허브 지수 코드(universe.INDICES 의 quote_code). 없으면 ''"""
     n = (name or "").replace(" ", "").upper()
-    if "코스피200" in n or "KOSPI200" in n:
-        return "KPI200"
-    if "코스닥150" in n or "KOSDAQ150" in n:
-        return "KQI150"
-    return ""
+    return next((ix["quote_code"] for ix in universe.INDICES
+                 if ix.get("quote_code") and (ix["name"].upper() in n or ix["key"].upper() in n)), "")
 
-def _attach_rates(events, cap=RATE_CAP):
-    """가격제한폭 이벤트에 기초자산 현재 등락률(부호 %) 부착.
-    주식선물 → 기초주식 등락률 / 지수선물 → 해당 지수(코스피200·코스닥150) 등락률."""
-    n = 0
+def _attach_rates(events):
+    """가격제한폭 이벤트에 기초자산 현재 등락률(부호 %) 부착 — 시세 허브 최신값.
+    주식선물 → 기초주식 등락률 / 지수선물 → 해당 지수(코스피200·코스닥150) 등락률. KRX300선물 등 그 밖 지수는 없음."""
+    live = md_feed.get("상하한가", {
+        md_feed.KRX_STOCK: [e["code"] for e in events if e["kind"] == "주식선물" and e["code"]],
+        md_feed.KRX_INDEX: [_index_code(e["name"]) for e in events if e["kind"] == "지수선물" and _index_code(e["name"])],
+    })
     for e in events:
-        if n >= cap:
-            break
-        if e.get("kind") == "주식선물" and e.get("code"):
-            q = md_feed.stock_rate(e["code"]); n += 1
-        elif e.get("kind") == "지수선물" and _index_code(e.get("name", "")):
-            q = md_feed.index_rate(_index_code(e["name"])); n += 1
-        else:
-            continue   # KRX300선물 등 지원 지수 외 → 등락률 없음
+        q = live[md_feed.KRX_STOCK].get(e["code"]) if e["kind"] == "주식선물" else live[md_feed.KRX_INDEX].get(_index_code(e["name"]))
         if q and q.get("rate") is not None:
             e["rate"] = q["rate"]
 
 def collect(sel_date=None, watch_only=True):
     """저장소의 오늘 가격제한폭 도달 공시(본문 확대 예정시각 포함) + 기초자산 실시간 등락률 + '지금 걸림' 구간"""
-    ymd = (sel_date or datetime.date.today().isoformat()).replace("-", "")
-    events = parse(((no, r) for no, r in store.load("kind_limit").items() if r["rcept_dt"] == ymd), watch_only)
+    day = ymd(sel_date or datetime.date.today())
+    events = parse(((no, r) for no, r in store.load("kind_limit").items() if r["rcept_dt"] == day), watch_only)
     _attach_rates(events)   # 주식선물 → 기초주식 실시간 등락률(매 주기 갱신)
     for e in events:
         e["emphasis"] = e["stage"] >= 3
@@ -92,12 +84,11 @@ def _hot_window(tm, expand):
     t = h * 60 + m + HOT_NO_EXPAND_MIN
     return tm[:5], f"{t // 60 % 24:02d}:{t % 60:02d}"
 
-LIMITS_PATH = os.path.join(OUT_DIR, "limits.json")
 
 def build(sel=None):
     evs = collect(sel)
-    save_json(LIMITS_PATH, {"date": sel or datetime.date.today().strftime("%Y-%m-%d"),
-                            "generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "count": len(evs), "events": evs})
+    save_json(LIMITS_PATH, {"date": sel or iso(datetime.date.today()),
+                            "generated_at": stamp(), "count": len(evs), "events": evs})
     return evs
 
 def main():

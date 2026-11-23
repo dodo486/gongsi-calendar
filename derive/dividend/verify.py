@@ -3,17 +3,14 @@
 
   python -m derive.dividend.verify   → data/out/div_verify.json
 """
-import os, json, datetime, statistics
-from core.paths import save_json, OUT_DIR
+import json, datetime, statistics
+from core.paths import save_json, load_json, stamp, DIV_VERIFY_PATH, EXPIRIES_PATH
 from core.krx_cal import t_minus
-from core.paths import load_json as _load
-from core.krx_cal import to_date as _d, iso as _iso
+from core.krx_cal import to_date, iso
 from derive.dividend.facts import view, medians, contexts
 from derive.dividend.date import GRADES, GROUP, predict_round
 from derive.dividend import amount as div_amount
 
-VERIFY_PATH = os.path.join(OUT_DIR, "div_verify.json")
-EXP_PATH = os.path.join(OUT_DIR, "expiries.json")
 
 
 def amount_hits(xs):
@@ -30,7 +27,7 @@ def verify(ctxs=None):
     today = datetime.date.today()
     ctxs = ctxs or contexts()
     med = medians(ctxs)
-    exps = sorted(_d(e["date"]) for e in _load(EXP_PATH, {}).get("events", []) if e.get("type") == "선·옵 동시만기")
+    exps = sorted(to_date(e["date"]) for e in load_json(EXPIRIES_PATH, {}).get("events", []) if e.get("type") == "선·옵 동시만기")
     month = lambda ex: next((x for x in exps if x >= ex), None)
     rows = []
     for c in ctxs:
@@ -40,16 +37,16 @@ def verify(ctxs=None):
             cut = min([r["decided"]] + [n["date"] for n in c["rec_notices"] if n["record"] == r["record"]])
             v = view(c, cut)
             p, miss = predict_round(v, r["type"], r["fy"], r["q"], cut, [], med)
-            base = {"stock": c["stock"], "corp": c["corp"], "type": r["type"], "quarter": f"{r['fy']} Q{r['q']}",
-                    "actual_record": _iso(r["record"]), "actual_fixed": r["fixed"]}
+            base = {"code": c["code"], "name": c["name"], "type": r["type"], "quarter": f"{r['fy']} Q{r['q']}",
+                    "actual_record": iso(r["record"]), "actual_fixed": r["fixed"]}
             if p is None:
                 rows.append({**base, "pred": "미실시 판정", "note": miss})
                 continue
-            prec = _d(p["record_date"])
-            pex, aex = _d(t_minus(_iso(prec), 1)), _d(t_minus(_iso(r["record"]), 1))
+            prec = to_date(p["record_date"])
+            pex, aex = to_date(t_minus(iso(prec), 1)), to_date(t_minus(iso(r["record"]), 1))
             rows.append({**base, "pred": p["method"], "grade": p["grade"], "pred_record": p["record_date"], "alt": p["alt"],
                          "err": abs((prec - r["record"]).days),
-                         "err_alt": {k: abs((_d(x) - r["record"]).days) for k, x in p["alt"].items()},
+                         "err_alt": {k: abs((to_date(x) - r["record"]).days) for k, x in p["alt"].items()},
                          "month_ok": month(pex) == month(aex), "cond": p["cond"],
                          "pred_dps": int(p["per_share"]) if p["per_share"] else None, "actual_dps": int(r["dps"]) if r["dps"] else None,
                          "actual_special": r["special"], "sig_dps": {c["signal"]: c["value"] for c in p["amount_signals"]},
@@ -83,12 +80,12 @@ def verify(ctxs=None):
                                                  if sg.__name__ in x.get("sig_dps", {}) and x.get("actual_dps")]) for sg in div_amount.SIGNALS},
         "한계": "정관(정기보고서 표)은 최신값 사용 — 과거 시점 값이 아님. 실적발표 예정일 과거분 없음 → 백테스트에서 A2 이사회형 미사용",
     }
-    save_json(VERIFY_PATH, {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "summary": summary, "rows": rows})
+    save_json(DIV_VERIFY_PATH, {"generated_at": stamp(), "summary": summary, "rows": rows})
     print(json.dumps(summary, ensure_ascii=False, indent=1))
     wrong = [x for x in judged if (x["pred"] == "고정") != x["actual_fixed"]]
     print(f"\n판정 틀린 회차 {len(wrong)}건 (앞 20):")
     for x in wrong[:20]:
-        print(f"  {x['corp']} {x['quarter']} {x['type']} 예측 {x['pred']} · 실제 기준일 {x['actual_record']}")
+        print(f"  {x['name']} {x['quarter']} {x['type']} 예측 {x['pred']} · 실제 기준일 {x['actual_record']}")
     return summary
 
 

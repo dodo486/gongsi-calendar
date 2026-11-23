@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """잠정실적(공정공시) 원문 파서 — 당기 실적(억원)·증감률·투자판단 중요사항 (접속 없음)"""
 import re
+from core.fmt import num
 
 _UNIT = {"백만원": 0.01, "억원": 1.0, "천원": 1e-5, "원": 1e-8}
 
@@ -22,22 +23,17 @@ def parse_actual(t):
             if q:
                 label = f"{pe.group(1)}.{q}Q"
 
-    def _f(s):
-        try:
-            return float(s.replace(",", ""))
-        except Exception:
-            return None
 
     def row(name):
         m = re.search(name + r"\s*당해실적((?:\s+\S+){7})", t)
         if not m:
             return None
         tok = m.group(1).split()
-        amt = lambda v: (None if _f(v) is None else round(_f(v) * mul))
+        amt = lambda v: (None if num(v) is None else round(num(v) * mul))
         flag = lambda v: ("" if v in ("-", "") else v)
         return {"cur": amt(tok[0]), "prev": amt(tok[1]), "prev_yr": amt(tok[4]),
-                "qoq": _f(tok[2]), "qoq_flag": flag(tok[3]),
-                "yoy": _f(tok[5]), "yoy_flag": flag(tok[6])}
+                "qoq": num(tok[2]), "qoq_flag": flag(tok[3]),
+                "yoy": num(tok[5]), "yoy_flag": flag(tok[6])}
 
     rs, ro, rn = row("매출액"), row("영업이익"), row("당기순이익")
     if rs is None and ro is None:

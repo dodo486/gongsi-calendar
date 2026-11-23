@@ -17,16 +17,16 @@
   python -m derive.industry          # 오늘 집계 1회 (묶음 파일이 없거나 오래됐으면 먼저 다시 묶음)
   python -m derive.industry rebuild  # 묶음 강제 재구성
 """
-import os, re, sys, json, datetime
+import os, re, sys, datetime
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
 from core import market as md_feed
-from core.paths import save_json, OUT_DIR, CACHE_DIR
+from core.krx_cal import ymd, days_ago
+from core.paths import save_json, load_json, stamp, CACHE_DIR, INDUSTRY_ACTION_PATH
 
 GROUPS_PATH = os.path.join(CACHE_DIR, "industry_groups.json")
-ACTION_PATH = os.path.join(OUT_DIR, "industry_action.json")
 SNAP_DIR = os.path.join(CACHE_DIR, "theme_snapshots")
 
 LOOKBACK = 250      # 묶을 때 쓰는 거래일 수
@@ -45,7 +45,7 @@ def _residual(R):
 
 def snapshot_themes(themes):
     os.makedirs(SNAP_DIR, exist_ok=True)
-    path = os.path.join(SNAP_DIR, datetime.date.today().strftime("%Y%m%d") + ".json")
+    path = os.path.join(SNAP_DIR, ymd(datetime.date.today()) + ".json")
     if themes and not os.path.exists(path):
         save_json(path, themes)
 
@@ -55,7 +55,7 @@ def build_groups():
     if not themes:
         return None
     codes = [r["code"] for r in md_feed.market_snapshot() if r.get("kind") == "stock" and r["code"].isdigit()]
-    start = (datetime.date.today() - datetime.timedelta(days=int(LOOKBACK * 1.5))).strftime("%Y%m%d")
+    start = ymd(days_ago(int(LOOKBACK * 1.5)))
     rows = md_feed.closes_values(codes, start)
     close = pd.DataFrame({c: {d: px for d, px, _ in r} for c, r in rows.items() if r}).sort_index()
     R = (close.pct_change(fill_method=None) * 100).iloc[1:].tail(LOOKBACK)
@@ -105,7 +105,7 @@ def build_groups():
         label = list(dict.fromkeys(re.sub(r"\(.*?\)", "", n).strip() for n in ns))[:2]
         groups.append({"name": " · ".join(label), "themes": ns,
                        "subs": [s for s in subs if len(s["codes"]) >= 2], "codes": sorted(mem)})
-    payload = {"built_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    payload = {"generated_at": stamp(),
                "window": [str(R.index[0]), str(R.index[-1])],
                "params": {"lookback": LOOKBACK, "prune": PRUNE, "merge": MERGE},
                "theme_count": len(themes), "pruned_count": len(pruned), "groups": groups}
@@ -114,13 +114,10 @@ def build_groups():
 
 
 def _load_groups():
-    try:
-        with open(GROUPS_PATH, encoding="utf-8") as f:
-            g = json.load(f)
-        age = datetime.datetime.now() - datetime.datetime.strptime(g["built_at"], "%Y-%m-%d %H:%M:%S")
-        return g, age.days >= REBUILD_DAYS
-    except Exception:
+    g = load_json(GROUPS_PATH, {})
+    if not g.get("generated_at"):
         return None, True
+    return g, (datetime.datetime.now() - datetime.datetime.strptime(g["generated_at"], "%Y-%m-%d %H:%M:%S")).days >= REBUILD_DAYS
 
 
 def _agg(codes, snap):
@@ -157,11 +154,11 @@ def build_action():
                         for m in sorted(ms, key=lambda m: -(m.get("value") or 0))]
         out.append(a)
     out.sort(key=lambda a: -a["value"])
-    payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-               "groups_built_at": g["built_at"], "window": g["window"],
+    payload = {"generated_at": stamp(),
+               "groups_built_at": g["generated_at"], "window": g["window"],
                "total_value": sum(r.get("value") or 0 for r in snap.values() if r.get("kind") == "stock"),
                "groups": out}
-    save_json(ACTION_PATH, payload)
+    save_json(INDUSTRY_ACTION_PATH, payload)
     return payload
 
 
@@ -182,7 +179,7 @@ def daily_upkeep():
 if __name__ == "__main__":
     if sys.argv[1:] == ["rebuild"]:
         g = build_groups()
-        print(f"{g['built_at']} 테마 {g['theme_count']} → 정제 {g['pruned_count']} → 묶음 {len(g['groups'])} "
+        print(f"{g['generated_at']} 테마 {g['theme_count']} → 정제 {g['pruned_count']} → 묶음 {len(g['groups'])} "
               f"(일봉 {g['window'][0]}~{g['window'][1]})")
     p = build_action()
     print(f"{p['generated_at']} 묶음 {len(p['groups'])}개 (묶은 날 {p['groups_built_at']})")

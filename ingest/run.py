@@ -7,14 +7,13 @@
 """
 import os, re, time, datetime, threading
 from concurrent.futures import ThreadPoolExecutor
-from core import store
-from core.krx_cal import is_business_day
+from core import store, ops, universe
+from core.krx_cal import is_business_day, ymd, days_ago
 from ingest.registry import DOCS, FEEDS
 from ingest.sources import dart, kind
 
 RETRY_MIN = 10
 KIND_RECHECK_DAYS = 2      # KIND 목록은 오늘·어제만 늦은 공시 대비 다시, 지난 날짜는 저장본
-KIND_MARKET = {"K1": "KOSPI", "K2": "KOSDAQ", "K3": "파생"}
 _lock = threading.Lock()
 
 def _feeds(today):
@@ -24,20 +23,19 @@ def _feeds(today):
     for f in FEEDS:
         if f.every == "day" and done.get(f.name) == today:
             continue
-        try:
-            if f.run():
-                changed.add(f.name)
+        result = ops.run(f.name, f.run, group="들여오기")   # 실패하면 다음 바퀴에 다시
+        if result is not ops.FAILED:
             done[f.name] = today
-        except Exception as ex:
-            print(f"  [들여오기] {f.name} 실패 — 다음 바퀴에 다시: {type(ex).__name__} {ex}")
+            if result:
+                changed.add(f.name)
     store.save("_feeds", done)
     return changed
 
 def _dart_rows(ty, days):
     for r in dart.listing(ty, days):
         if dart.has_body(r["report_nm"]):
-            yield {"no": r["rcept_no"], "title": re.sub(r"\s+", " ", r["report_nm"]).strip(), "stock": r["stock_code"],
-                   "corp": r["corp_name"], "market": "KOSPI" if r["corp_cls"] == "Y" else "KOSDAQ", "rcept_dt": r["rcept_dt"]}
+            yield {"no": r["rcept_no"], "title": re.sub(r"\s+", " ", r["report_nm"]).strip(), "code": r["stock_code"],
+                   "name": r["corp_name"], "market": universe.DART_MARKETS.get(r["corp_cls"], "KOSDAQ"), "rcept_dt": r["rcept_dt"]}
 
 def _kind_rows(ty, days, today, fast, changed):
     """KIND 당일공시 목록 — 날짜·시장마다 한 번 받아 저장(지난 날짜는 안 바뀜). 목록이 비정상이면 저장 안 함"""
@@ -55,8 +53,8 @@ def _kind_rows(ty, days, today, fast, changed):
             if ok or not is_business_day(d):
                 pages[key] = rows
         for r in pages.get(key, []):
-            yield {"no": r["acpt"], "title": r["title"], "stock": "", "corp": r["corp"], "market": KIND_MARKET[ty],
-                   "rcept_dt": d.strftime("%Y%m%d"), "time": r["time"], "submitter": r["submitter"], "indices": r["indices"]}
+            yield {"no": r["acpt"], "title": r["title"], "code": "", "name": r["name"], "market": universe.KIND_MARKETS[ty],
+                   "rcept_dt": ymd(d), "time": r["time"], "submitter": r["submitter"], "indices": r["indices"]}
     oldest = (d0 - datetime.timedelta(days=max(d.days for d in DOCS if ty in d.lists))).isoformat()
     pages = {k: v for k, v in pages.items() if not k.endswith(ty) or k[:10] >= oldest}
     if pages != before:
@@ -73,7 +71,7 @@ def _docs(today, fast):
         rows = list(_kind_rows(ty, days, today, fast, changed) if ty.startswith("K") else _dart_rows(ty, days))
         if not ty.startswith("K") and os.path.getmtime(dart.LIST_PATH) != listed:
             changed.add("dart_listing")
-        since = {d.kind: (datetime.date.fromisoformat(today) - datetime.timedelta(days=d.days)).strftime("%Y%m%d") for d in docs}
+        since = {d.kind: ymd(days_ago(d.days, today)) for d in docs}
         stored = {d.kind: store.load(d.kind) for d in docs}
         stocks, jobs = {}, []
         for r in rows:
@@ -84,7 +82,7 @@ def _docs(today, fast):
             if d.stocks:
                 if d.kind not in stocks:
                     stocks[d.kind] = d.stocks()
-                if r["stock"] not in stocks[d.kind]:
+                if r["code"] not in stocks[d.kind]:
                     continue
             have = stored[d.kind].get(r["no"])
             if (have and have.get("v", 1) >= d.version) or now - failed.get(r["no"], 0) < RETRY_MIN * 60:

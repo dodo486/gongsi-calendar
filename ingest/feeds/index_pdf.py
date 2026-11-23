@@ -13,12 +13,14 @@
 
   python -m ingest.feeds.index_pdf          # 오늘분이 없을 때만 수집 (--force: 무조건 재수집)
 """
-import sys, re, json, datetime
+import sys, re, datetime
 from ingest.sources import net  # 사내망 TLS opener 세팅
 import requests
-from core.paths import save_json
+from core.paths import save_json, load_json
+from core.krx_cal import iso, ymd, days_ago
+from core.fmt import num
 
-from core.universe import INDICES, PDF_PATH as OUT
+from core.universe import INDICES, PDF_PATH
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128 Safari/537.36"}
 TIGER = "https://investments.miraeasset.com/tigeretf/ko/product/search/detail"
 KODEX = "https://www.samsungfund.com/api/v1/kodex/product-pdf/{fid}.do?gijunYMD={ymd}"
@@ -26,23 +28,15 @@ PUBLISH_HHMM = "0830"   # 이 시각 전에 받은 PDF는 전일분일 수 있�
 RETRY_MIN = 30
 
 
-def _num(s):
-    s = str(s or "").replace(",", "").strip()
-    try:
-        return float(s)
-    except ValueError:
-        return None
-
 def _is_stock(code):
     """PDF 행 중 주식만 — 6자리 단축코드(신규 영숫자 코드 0126Z0 포함). 원화예금(KRD...)·선물 등 제외."""
     return len(code) == 6 and code[:2] != "KR"
 
 def _kodex_pdf(fid):
-    ymd = datetime.date.today().strftime("%Y.%m.%d")
-    r = requests.get(KODEX.format(fid=fid, ymd=ymd), headers={**UA, "Referer": "https://www.samsungfund.com/etf/product/view.do?id=" + fid}, timeout=20)
+    r = requests.get(KODEX.format(fid=fid, ymd=datetime.date.today().strftime("%Y.%m.%d")), headers={**UA, "Referer": "https://www.samsungfund.com/etf/product/view.do?id=" + fid}, timeout=20)
     r.raise_for_status()
     d = r.json()["pdf"]
-    rows = [{"code": x["itmNo"], "name": x["secNm"], "qty": _num(x["applyQ"]), "value": _num(x["evalA"])}
+    rows = [{"code": x["itmNo"], "name": x["secNm"], "qty": num(x["applyQ"]), "value": num(x["evalA"])}
             for x in d["list"] if _is_stock(x.get("itmNo") or "")]
     return d["gijunYMD"], rows
 
@@ -63,38 +57,35 @@ def _tiger_pdf(fund):
     out = []
     for c in rows:   # No, 종목코드, 종목명, 수량, 평가금액, 비중, 1주수익률
         if len(c) >= 5 and c[0].isdigit() and _is_stock(c[1]):
-            out.append({"code": c[1], "name": c[2], "qty": _num(c[3]), "value": _num(c[4])})
-    return datetime.date.today().strftime("%Y%m%d"), out   # TIGER 엑셀엔 기준일 표기 없음 → 수집일
+            out.append({"code": c[1], "name": c[2], "qty": num(c[3]), "value": num(c[4])})
+    return ymd(datetime.date.today()), out   # TIGER 엑셀엔 기준일 표기 없음 → 수집일
 
 def _tiger_index_close(fund):
     """TIGER 기준가 표 → 오늘 이전 가장 최근 영업일의 기초지수 종가 (PDF 평가가격과 같은 날)."""
     today = datetime.date.today()
     rows = _tiger_html_table(TIGER + "/price/excel.do",
-                             {"ksdFund": fund, "startDate": (today - datetime.timedelta(days=14)).strftime("%Y%m%d"),
-                              "endDate": today.strftime("%Y%m%d"), "period": "", "fixDate": "", "order": ""})
+                             {"ksdFund": fund, "startDate": ymd(days_ago(14, today)),
+                              "endDate": ymd(today), "period": "", "fixDate": "", "order": ""})
     best = None
     for c in rows:   # 날짜, 시장가, 등락, 기준가, 등락, 과세기준가, 지수종가, 등락
         m = re.match(r"(\d{4})\.(\d{2})\.(\d{2})$", c[0]) if c else None
         if not m or len(c) < 7:
             continue
-        iso = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
-        if iso < today.isoformat() and _num(c[6]) and (best is None or iso > best[0]):
-            best = (iso, _num(c[6]))
+        day = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+        if day < iso(today) and num(c[6]) and (best is None or day > best[0]):
+            best = (day, num(c[6]))
     if not best:
         raise RuntimeError("기초지수 종가 없음")
     return best
 
 def load():
-    try:
-        return json.load(open(OUT, encoding="utf-8"))
-    except Exception:
-        return {"indices": {}}
+    return load_json(PDF_PATH, {"indices": {}})
 
 def _stale(ix, now):
     """오늘 PUBLISH_HHMM 이후에 성공한 적 없으면 재수집 대상 (단 직전 실패 후 RETRY_MIN 분은 쉼)."""
     ok, tried = ix.get("fetched_at", ""), ix.get("tried_at", "")
     pub = now.strftime("%Y-%m-%d ") + PUBLISH_HHMM[:2] + ":" + PUBLISH_HHMM[2:]
-    if ok >= pub or (now.strftime("%H%M") < PUBLISH_HHMM and ok[:10] == now.strftime("%Y-%m-%d")):
+    if ok >= pub or (now.strftime("%H%M") < PUBLISH_HHMM and ok[:10] == iso(now)):
         return False
     if tried and tried > ok:
         last = datetime.datetime.strptime(tried, "%Y-%m-%d %H:%M:%S")
@@ -130,7 +121,7 @@ def ensure(force=False):
         changed = True
     if changed:
         payload["generated_at"] = stamp
-        save_json(OUT, payload)
+        save_json(PDF_PATH, payload)
     return payload
 
 def codes():

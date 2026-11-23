@@ -3,10 +3,10 @@
 
   python -m derive.dividend.confirmed [일수=90]
 """
-import sys, os, datetime, calendar
+import sys, datetime, calendar
 from core import store, universe
-from core.paths import DART_VIEW, save_json, OUT_DIR
-from core.krx_cal import t_minus
+from core.paths import DART_VIEW, save_json, stamp, DIVIDENDS_PATH
+from core.krx_cal import t_minus, iso, ymd, days_ago, days_between
 
 # ── 회차 — 배당 하나 = 종목 · 배당종류 · 사업연도 · 분기 ──
 TYPE_QUARTERS = {"분기배당": (1, 2, 3), "중간배당": (2,), "결산배당": (4,)}
@@ -39,25 +39,24 @@ def assemble(entries, acc):
     entries: {kind decision|record, stock, corp, market, rcept_no, rcept_dt(YYYYMMDD), div_type, per_share, record_date, pay_date}
     acc: {종목: 결산월}. 반환: 회차마다 {stock, corp, market, div_type, record_date, per_share, pay_date,
     decided(첫 배당결정 접수일 ISO, 없으면 ""), rcept_no(최근 배당결정, 없으면 기준일 공고), rcept_dt(최근 접수일)}"""
-    ymd = lambda s: f"{s[:4]}-{s[4:6]}-{s[6:8]}"
     merged = {}
     def key_of(e, decided):
         if e["div_type"] not in TYPE_QUARTERS:   # 배당종류를 못 읽은 공시 → 같은 종목·같은 기준일 회차에 붙임
-            same = [k for k, r in merged.items() if r["stock"] == e["stock"] and r["record_date"] == e["record_date"]]
+            same = [k for k, r in merged.items() if r["code"] == e["code"] and r["record_date"] == e["record_date"]]
             if len(same) == 1:
                 return same[0]
-        k = _round_key(e["stock"], e["div_type"], e["record_date"], decided, acc.get(e["stock"], 12))
+        k = _round_key(e["code"], e["div_type"], e["record_date"], decided, acc.get(e["code"], 12))
         old = merged.get(k, {}).get("record_date")
-        if old and e.get("record_date") and abs((datetime.date.fromisoformat(old) - datetime.date.fromisoformat(e["record_date"])).days) > SAME_ROUND_GAP:
-            return (e["stock"], e["div_type"], e["record_date"])   # 배당종류를 잘못 읽은 다른 회차 — 정정은 기준일을 한 달 넘게 옮기지 않음
+        if old and e.get("record_date") and days_between(old, e["record_date"]) > SAME_ROUND_GAP:
+            return (e["code"], e["div_type"], e["record_date"])   # 배당종류를 잘못 읽은 다른 회차 — 정정은 기준일을 한 달 넘게 옮기지 않음
         return k
     order = sorted(entries, key=lambda e: (e["kind"] != "decision", e["rcept_dt"], e["rcept_no"]))
     for e in order:
         if e["kind"] == "record" and not e.get("record_date"):
             continue
         dec = e["kind"] == "decision"
-        r = merged.setdefault(key_of(e, ymd(e["rcept_dt"]) if dec else None),
-                              {"stock": e["stock"], "corp": e["corp"], "market": e["market"], "div_type": "",
+        r = merged.setdefault(key_of(e, iso(e["rcept_dt"]) if dec else None),
+                              {"code": e["code"], "name": e["name"], "market": e["market"], "div_type": "",
                                "per_share": "", "record_date": "", "pay_date": "", "decided": "", "rcept_no": e["rcept_no"], "rcept_dt": ""})
         r["div_type"] = e["div_type"] if e.get("div_type") in TYPE_QUARTERS else r["div_type"] or e.get("div_type") or ""
         r["rcept_dt"] = max(r["rcept_dt"], e["rcept_dt"])
@@ -66,15 +65,15 @@ def assemble(entries, acc):
         if dec:
             r["per_share"] = e.get("per_share") or r["per_share"]
             r["pay_date"] = e.get("pay_date") or r["pay_date"]
-            r["decided"] = r["decided"] or ymd(e["rcept_dt"])
+            r["decided"] = r["decided"] or iso(e["rcept_dt"])
             r["rcept_no"] = e["rcept_no"]
     return [r for r in merged.values() if r["record_date"]]
 
 def main(days=90):
-    since = (datetime.date.today() - datetime.timedelta(days=days)).strftime("%Y%m%d")
+    since = ymd(days_ago(days))
     stocks = universe.div()
     entries = [{**e, "rcept_no": no} for k in ("decision", "record") for no, e in store.load(k).items()
-               if e["stock"] in stocks and e["rcept_dt"] >= since]
+               if e["code"] in stocks and e["rcept_dt"] >= since]
     acc = {s: int(m) for s, m in store.load("acc_mt").items() if str(m).isdigit()}
     events = []
     for e in assemble(entries, acc):
@@ -84,8 +83,8 @@ def main(days=90):
         e["ex_date"] = t_minus(e["record_date"], 1)       # 배당락일 (기준일 T-1 영업일)
         events.append(e)
     events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
-    save_json(os.path.join(OUT_DIR, "dividends.json"),
-              {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "count": len(events), "events": events})
+    save_json(DIVIDENDS_PATH,
+              {"generated_at": stamp(), "count": len(events), "events": events})
     print(f"저장: dividends.json ({len(events)}건, 배당금有 {sum(1 for e in events if e['per_share'])}건)")
 
 if __name__ == "__main__":

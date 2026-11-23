@@ -3,21 +3,22 @@
 + /events (SSE): data/out/*.json 이 바뀌는 즉시 브라우저로 '변경' 이벤트를 밀어줌
   → 브라우저가 새로고침 없이 즉시 다시 로드 (배당·실적·상하한가 실시간 반영)
 + /api/earnfacts?code=XXXXXX[&rcept=접수번호]: 실적 상세(시총·컨센서스·분기 추이) JSON
++ /ops: 관제탑 — 서버에서 도는 일·시세 허브 상태 JSON (core.ops.snapshot, 화면 web/ops.html)
 """
 import http.server, os, time, json, re, threading
 import urllib.parse
 
-from core.paths import BASE, OUT_DIR
+from core.paths import BASE, OUT_DIR, PORT, EARNINGS_PATH, load_json
+from core import ops
 WEB = os.path.join(BASE, "web")
-HTML_PAGES = [os.path.join(WEB, n) for n in ("index.html", os.path.join("dividend", "index.html"))]
-PORT = 8777
+HTML_PAGES = [os.path.join(WEB, n) for n in ("index.html", "ops.html", os.path.join("dividend", "index.html"))]
 
 # 토스트 클릭 → 차트 열기 브로드캐스트용
 _chart_lock = threading.Lock()
 _chart_events = []      # /chart 요청으로 쌓이는 종목코드 (index+1 = seq)
 _sse_count = 0          # 현재 연결된 대시보드(SSE) 수 — 0이면 폴백으로 이 탭에서 직접 오픈
 
-def _chart_url(code):
+def _alphasquare_url(code):
     """알파스퀘어 종목 차트 URL — 6자리 코드 그대로(코스피·코스닥 공통)."""
     return f"https://alphasquare.co.kr/home/stock-summary?code={code}"
 
@@ -76,7 +77,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._serve_earnfacts()
         if route == "/chart":
             return self._serve_chart()
+        if route == "/ops":
+            return self._send(json.dumps(ops.snapshot(), ensure_ascii=False), "application/json")
         return super().do_GET()
+
+    def _send(self, text, ctype):
+        body = text.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", f"{ctype}; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def _serve_chart(self):
         """토스트 클릭 진입점 — 대시보드(SSE)가 떠 있으면 그쪽에 신호를 보내
@@ -99,13 +110,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         else:
             # 대시보드가 없으니 이 탭을 그대로 차트로 이동(폴백, 재사용은 안 됨)
             page = ("<!doctype html><meta charset=utf-8><title>차트</title>"
-                    f"<script>location.replace({json.dumps(_chart_url(code))});</script>")
-        body = page.encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+                    f"<script>location.replace({json.dumps(_alphasquare_url(code))});</script>")
+        self._send(page, "text/html")
 
     def _serve_earnfacts(self):
         """실적 상세 — earn_detail.view (판정·수치·경고·수급·추이·뉴스, 원자료는 네이버+DART 캐시 30분)"""
@@ -120,16 +126,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             from ingest import earn_facts
             ev = None
             if rcept:
-                earn = json.load(open(os.path.join(OUT_DIR, "earnings.json"), encoding="utf-8")).get("events", [])
+                earn = load_json(EARNINGS_PATH, {}).get("events", [])
                 ev = next((e for e in earn if e.get("rcept_no") == rcept), {"date": ""})
-            body = json.dumps(earn_detail.view(earn_facts.facts(code, rcept), ev), ensure_ascii=False).encode("utf-8")
+            body = json.dumps(earn_detail.view(earn_facts.facts(code, rcept), ev), ensure_ascii=False)
         except Exception as ex:
-            body = json.dumps({"error": str(ex)}).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+            body = json.dumps({"error": str(ex)})
+        self._send(body, "application/json")
 
     def _serve_sse(self):
         """Server-Sent Events — data/ 변경을 감지해 즉시 push. 클라이언트는 EventSource로 수신."""
@@ -192,20 +194,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             with _chart_lock:
                 _sse_count -= 1
 
-def _warm_quotes():
-    """네이버 연결(keep-alive)을 미리 데워 첫 종목 클릭의 콜드 핸드셰이크(수 초) 제거."""
-    try:
-        from core import market as md_feed
-        md_feed.daily_price("005930", 1)      # m.stock 핸드셰이크
-        md_feed.investor_trend("005930", 1)
-    except Exception:
-        pass
-
 def run():
     """웹서버 기동(블로킹). 기동·창 열기는 launch.py 만 한다 — 여기서는 monitor 와 한 프로세스로 스레드에서 호출된다."""
     os.chdir(BASE)
     print(f"공시캘린더 웹서버 → http://127.0.0.1:{PORT}/")
-    threading.Thread(target=_warm_quotes, daemon=True).start()   # 백그라운드 연결 워밍업
     # 127.0.0.1 바인딩 — 같은 네트워크의 다른 기기에서 접속 못 하게 (개인 도구)
     with http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler) as httpd:
         httpd.serve_forever()

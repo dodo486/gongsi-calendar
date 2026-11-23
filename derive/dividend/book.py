@@ -7,28 +7,18 @@
 
   python -m derive.dividend.book
 """
-import os, json, datetime
-from core.paths import save_json, OUT_DIR
+import datetime
+from core.paths import save_json, load_json, stamp, DIV_BOOK_PATH, DIV_SOURCES_PATH, DIVIDENDS_PATH, DIV_ESTIMATES_PATH, EXPIRIES_PATH
 from derive.dividend.date import GRADES, TAGS, END_WORD
 from core import store
-from core.paths import DART_VIEW as DART
+from core.paths import DART_VIEW
+from core.krx_cal import iso, ymd, days_between
 
-OUT = os.path.join(OUT_DIR, "div_book.json")
-SOURCES = os.path.join(OUT_DIR, "div_sources.json")
 SAME_ROUND_DAYS = 45
 
 
-def _load(name, default):
-    try:
-        return json.load(open(os.path.join(OUT_DIR, name), encoding="utf-8"))
-    except Exception:
-        return default
-
-def _days(a, b):
-    return abs((datetime.date.fromisoformat(a) - datetime.date.fromisoformat(b)).days)
-
-def _md(iso):
-    return f"{int(iso[5:7])}/{int(iso[8:10])}" if iso else ""
+def _md(d):
+    return f"{int(d[5:7])}/{int(d[8:10])}" if d else ""
 
 def _won(s):
     return f"{int(float(s)):,}"
@@ -39,9 +29,9 @@ def _label(key, t):
 
 def build():
     today = datetime.date.today().isoformat()
-    conf = _load("dividends.json", {}).get("events", [])
-    pred = _load("div_estimates.json", {}).get("events", [])
-    exps = sorted(e["date"] for e in _load("expiries.json", {}).get("events", []))
+    conf = load_json(DIVIDENDS_PATH, {}).get("events", [])
+    pred = load_json(DIV_ESTIMATES_PATH, {}).get("events", [])
+    exps = sorted(e["date"] for e in load_json(EXPIRIES_PATH, {}).get("events", []))
 
     rows = []
     for e in conf:
@@ -51,12 +41,12 @@ def build():
         rows.append({**e, "kind": "div", "grade": "확정" if e.get("per_share") else "공고",
                      "amount_src": "공시" if e.get("per_share") else "",
                      "amount_basis": "공시 금액" if e.get("per_share") else "",
-                     "basis_text": f"DART 공시 {dt[:4]}-{dt[4:6]}-{dt[6:8]} {e.get('url', '')}".strip() if dt else e.get("url", "")})
+                     "basis_text": f"DART 공시 {iso(dt)} {e.get('url', '')}".strip() if dt else e.get("url", "")})
     for p in pred:
         if not p.get("record_date"):
             continue
-        same = [c for c in rows if c["stock"] == p["stock"] and (c.get("div_type") or "") in ("", p.get("div_type") or "")
-                and _days(c["record_date"], p["record_date"]) <= SAME_ROUND_DAYS]
+        same = [c for c in rows if c["code"] == p["code"] and (c.get("div_type") or "") in ("", p.get("div_type") or "")
+                and days_between(c["record_date"], p["record_date"]) <= SAME_ROUND_DAYS]
         if same:
             for c in same:
                 if not c.get("per_share") and p.get("per_share"):
@@ -68,7 +58,7 @@ def build():
 
     for r in rows:
         t, g = r.get("div_type", ""), GRADES[r["grade"]]
-        r["id"] = f"{r['stock']}|{t}|{r['record_date']}"
+        r["id"] = f"{r['code']}|{t}|{r['record_date']}"
         r["grade_label"] = _label(r["grade"], t)
         r["rank"] = g["rank"]
         after = [d for d in exps if d <= r["confirm_date"]]
@@ -83,19 +73,19 @@ def build():
             money = f"({'예상 ' if r['amount_src'] == '예상' else ''}{_won(amt)}원)" if amt else "(금액 미정)"
             names = {"buy": "[배당매수일]", "ex": "[배당권리락]"}
         r["marks"] = [{"type": k, "date": r["confirm_date" if k == "buy" else "ex_date"], "group": n,
-                       "title": f"{n} {r['corp']} {money} {r['grade_label']}"} for k, n in names.items()]
-    rows.sort(key=lambda r: (r["ex_date"], r["corp"]))
+                       "title": f"{n} {r['name']} {money} {r['grade_label']}"} for k, n in names.items()]
+    rows.sort(key=lambda r: (r["ex_date"], r["name"]))
 
     nxt = next((d for d in exps if d > today), "")
-    payload = {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "today": today,
+    payload = {"generated_at": stamp(), "today": today,
                "tags": TAGS,
                "grades": {k: {**g, **{f: g[f].format(end="기말") for f in ("label", "desc", "rule")}} for k, g in GRADES.items()}, "next_expiry": nxt,
-               "today_ids": [r["id"] for r in rows if r["kind"] == "div" and r.get("rcept_dt") == today.replace("-", "")],
+               "today_ids": [r["id"] for r in rows if r["kind"] == "div" and r.get("rcept_dt") == ymd(today)],
                "upcoming_ids": [r["id"] for r in rows if r["kind"] == "div" and today < r["ex_date"] and (not nxt or r["ex_date"] <= nxt)],
                "count": {"div": sum(r["kind"] == "div" for r in rows), "est": sum(r["kind"] == "est" for r in rows)},
                "rows": rows}
-    save_json(OUT, payload)
-    build_sources({r["stock"] for r in rows})
+    save_json(DIV_BOOK_PATH, payload)
+    build_sources({r["code"] for r in rows})
     return payload
 
 
@@ -122,23 +112,23 @@ READ = {
 def build_sources(stocks):
     """엑셀 참고 공시 탭 — 장부 종목에 대해 배당 산출이 읽은 DART 공시(2년치)와 정기보고서 배당 표"""
     hist = {no: h for k in KIND for no, h in store.load(k).items()}
-    companies = _load("div_estimates.json", {}).get("companies", {})
-    rows = [{"stock": h["stock"], "종목코드": "A" + h["stock"], "종목명": h.get("corp", ""), "공시일": f"{h['rcept_dt'][:4]}-{h['rcept_dt'][4:6]}-{h['rcept_dt'][6:8]}",
-             "공시 종류": KIND[h["kind"]], "공시 제목": h.get("title") or KIND[h["kind"]], "읽은 내용": READ[h["kind"]](h), "DART": DART + no}
-            for no, h in hist.items() if h.get("stock") in stocks and h.get("kind") in KIND]
+    companies = load_json(DIV_ESTIMATES_PATH, {}).get("companies", {})
+    rows = [{"code": h["code"], "종목코드": "A" + h["code"], "종목명": h.get("name", ""), "공시일": iso(h["rcept_dt"]),
+             "공시 종류": KIND[h["kind"]], "공시 제목": h.get("title") or KIND[h["kind"]], "읽은 내용": READ[h["kind"]](h), "DART": DART_VIEW + no}
+            for no, h in hist.items() if h.get("code") in stocks and h.get("kind") in KIND]
     for st in stocks:
         c = companies.get(st) or {}
         if not c.get("policy_report"):
             continue
         read = [c.get("organ") and "배당액 결정기관 " + ", ".join(f"{k} {v}" for k, v in c["organ"].items()),
                 c.get("charter") and "정관: " + ", ".join(f"{k} {'이사회가 정할 수 있음' if v['v'] == 'O' else '결산기말 고정'}" for k, v in c["charter"].items())]
-        rows.append({"stock": st, "종목코드": "A" + st, "종목명": c.get("corp", ""), "공시일": "", "공시 종류": "정기보고서 배당 표",
+        rows.append({"code": st, "종목코드": "A" + st, "종목명": c.get("name", ""), "공시일": "", "공시 종류": "정기보고서 배당 표",
                      "공시 제목": c["policy_report"], "읽은 내용": " · ".join(x for x in read if x), "DART": ""})
     by = {}
     for r in rows:
         by.setdefault(r["종목명"], []).append(r)
     rows = [r for nm in sorted(by) for r in sorted(by[nm], key=lambda r: r["공시일"], reverse=True)]
-    save_json(SOURCES, {"generated_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "rows": rows})
+    save_json(DIV_SOURCES_PATH, {"generated_at": stamp(), "rows": rows})
 
 
 if __name__ == "__main__":
