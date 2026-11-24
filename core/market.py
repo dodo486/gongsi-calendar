@@ -46,7 +46,7 @@ except Exception:
 #   stats()                             관제탑용 — 피드별·구독자별로 언제 몇 개 받았나
 # 피드 이름 = 거래소 상품 자료. 관제탑도 이 이름을 그대로 쓴다.
 KRX_STOCK, KRX_FUT, NXT_STOCK = "KRX 주식 시세", "KRX 주식선물 시세", "NXT 주식 시세"
-KRX_STATUS, KRX_INDEX = "KRX 주식 상태", "KRX 지수 시세"
+KRX_STATUS, KRX_INDEX, KRX_BOOK = "KRX 주식 상태", "KRX 지수 시세", "KRX 주식 호가"
 PRE, REGULAR, AUCTION, FUT_CLOSE, AFTER = "NXT 프리마켓", "정규장", "마감 동시호가", "선물 마감까지", "NXT 애프터마켓"
 KRX_OPEN, AUCTION_START, KRX_CLOSE = "0900", "1520", "1530"   # 평소 KRX 개장·마감 동시호가 시작·마감
 PHASES = [
@@ -60,7 +60,7 @@ ONCE = float("inf")
 SCHEDULE = {   # 시간대: {피드: 받는 주기(초)} — 0 매 바퀴, ONCE 시간대에 들어와서 한 번
     PRE: {NXT_STOCK: 300},
     REGULAR: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300},
-    AUCTION: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300},
+    AUCTION: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300, KRX_BOOK: 10},
     FUT_CLOSE: {KRX_STOCK: ONCE, KRX_INDEX: ONCE, KRX_FUT: 0, NXT_STOCK: 0},
     AFTER: {KRX_FUT: ONCE, NXT_STOCK: 300},
 }
@@ -79,6 +79,7 @@ _FETCH = {   # 피드: 받는 법({피드: 코드들} → {피드: {코드: 값}
     KRX_FUT: _krx_multi,
     NXT_STOCK: lambda due: {NXT_STOCK: md.orderbook(due[NXT_STOCK], "NXT")},
     KRX_STATUS: lambda due: {KRX_STATUS: md.quote(due[KRX_STATUS])},
+    KRX_BOOK: lambda due: {KRX_BOOK: md.orderbook(due[KRX_BOOK], "KRX")},
     KRX_INDEX: lambda due: {KRX_INDEX: {c: md.index_rate(c) for c in due[KRX_INDEX]}},
 }
 FEEDS = tuple(_FETCH)
@@ -89,6 +90,7 @@ _got = {}                           # 피드: {at, secs, asked, got} 마지막�
 _subs = {}                          # 구독자 이름: {피드: [코드]}
 _watchers = {}                      # 구독자 이름: on_tick
 _served = {}                        # 구독자 이름: 마지막으로 시세를 건넨 시각
+_busy = set()                       # 지금 받고 있는 피드
 _state = {"phase": None, "round": None, "round_at": None}
 
 
@@ -143,6 +145,8 @@ def _fetch(due):
     if not (due and AVAILABLE and _REALTIME_OK):
         return
     t0, got, errors = time.time(), {}, {}
+    with _lock:
+        _busy.update(due)
     for fetch in dict.fromkeys(_FETCH[f] for f in due):
         try:
             got.update(fetch(due))
@@ -150,6 +154,7 @@ def _fetch(due):
             errors.update(dict.fromkeys((f for f in due if _FETCH[f] is fetch), f"{type(ex).__name__} {ex}"))
     t1 = time.time()
     with _lock:
+        _busy.difference_update(due)
         for f, codes in due.items():
             rec = _got.setdefault(f, {})
             if f in errors:
@@ -173,12 +178,13 @@ def _loop():
             phase, since = phase_of(now), t0
         with _lock:
             wanted = _wanted()
+            busy = set(_busy)
             watchers = list(_watchers.items())
             _state["phase"] = phase
         plan = SCHEDULE.get(phase, {})
         due = {f: wanted[f] for f, every in plan.items()
-               if wanted[f] and (last.get(f, 0) < since or t0 - last[f] >= every)}
-        behind = {f: codes for f, codes in due.items() if 0 < plan[f] < ONCE}   # 주기가 긴 것은 바퀴를 붙잡지 않게 뒤에서
+               if wanted[f] and f not in busy and (last.get(f, 0) < since or t0 - last[f] >= every)}
+        behind = {f: codes for f, codes in due.items() if 0 < plan[f] < ONCE}   # 종목마다 묻는 느린 것은 바퀴를 붙잡지 않게 뒤에서
         if behind:
             threading.Thread(target=_fetch, args=(behind,), daemon=True).start()
         _fetch({f: codes for f, codes in due.items() if f not in behind})
@@ -202,14 +208,15 @@ def stats():
     with _lock:
         phase, rnd, plan, wanted = _state["phase"], _state["round"], SCHEDULE.get(_state["phase"], {}), _wanted()
         live = {f for f in plan if wanted[f]}   # 지금 시간대에 받는 피드
+        every = {f: plan[f] or rnd or ROUND_SECONDS for f in live if plan[f] != ONCE}   # 피드: 받는 주기(초)
         join = lambda *parts: " · ".join(p for p in parts if p)
-        items = [{"group": "시세 허브", "name": "허브", "at": _state["round_at"], "every": rnd if live else None,
+        items = [{"group": "시세 허브", "name": "허브", "at": _state["round_at"], "every": min(every.values(), default=None),
                   "rest": not live, "detail": join(phase or "장 밖", rnd and f"한 바퀴 {rnd:.1f}초")}]
         for f in FEEDS:
             g = _got.get(f, {})
             items.append({
                 "group": "시세 허브", "name": f, "at": g.get("at"), "error": g.get("error"), "error_at": g.get("error_at"),
-                "rest": f not in live, "every": None if f not in live or plan[f] == ONCE else plan[f] or rnd,
+                "rest": f not in live, "every": every.get(f),
                 "detail": join(f"구독 {len(wanted[f])}개" if wanted[f] else "구독 없음",
                                "at" in g and f"마지막에 {g['got']}/{g['asked']}개 받음 · {g['secs']:.1f}초 걸림",
                                wanted[f] and f not in live and "이 시간대엔 안 받음"),

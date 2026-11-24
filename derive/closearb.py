@@ -86,9 +86,9 @@ def _minute_of_day(hhmm):
     return minutes(hhmm) - minutes(md_feed.KRX_OPEN)
 
 
-def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, before_auction, series, mktcap):
-    auction = phase == md_feed.AUCTION and krx.get("expected_price")
-    spot = krx.get("expected_price") if auction else krx.get("price")
+def build_row(code, stock, fut_info, krx, book, nxt, fut, status, phase, before_auction, series, mktcap):
+    auction = phase == md_feed.AUCTION
+    spot = krx.get("price")   # 동시호가 중엔 예상체결가
     nxt_mid = (nxt["ask"] + nxt["bid"]) / 2 if nxt.get("ask") and nxt.get("bid") else nxt.get("price")
     basis = pct(fut.get("price"), spot, ND)
     series = series or {}
@@ -113,7 +113,7 @@ def build_row(code, stock, fut_info, krx, nxt, fut, status, phase, before_auctio
         "spot": spot, "spot_kind": "예상" if auction else ("종가" if phase in (md_feed.PRE, md_feed.FUT_CLOSE, md_feed.AFTER) else "현재"),
         "jump_pct": pct(spot, (before_auction or {}).get("spot"), ND),
         "imb_eok": round((bid_q - ask_q) * spot / 1e8, 1) if spot and bid_q is not None and ask_q is not None else None,
-        "expected_qty": krx.get("expected_qty") if auction else None, "bid_qty": bid_q, "ask_qty": ask_q,
+        "expected_qty": book.get("expected_qty") if auction else None, "bid_qty": bid_q, "ask_qty": ask_q,
         "nxt": nxt_mid,
         "nxt_gap_pct": pct(spot, nxt_mid, ND),
         "fut": fut.get("price"), "fut_vol": fut.get("volume"),
@@ -166,7 +166,7 @@ class Monitor:
         self.codes = sorted(self.watch)
         self.mktcap = {r["code"]: r.get("mktcap") for r in md_feed.market_snapshot() if r["code"] in self.watch}   # 하루 한 번 — 정렬용
         self.feeds = {md_feed.KRX_STOCK: self.codes, md_feed.KRX_FUT: [self.futs[c]["code"] for c in self.codes],
-                      md_feed.KRX_STATUS: self.codes, md_feed.NXT_STOCK: self.codes}
+                      md_feed.KRX_STATUS: self.codes, md_feed.NXT_STOCK: self.codes, md_feed.KRX_BOOK: self.codes}
         md_feed.watch("종가 차익", self.on_tick, self.feeds)
 
     def new_day(self, now):
@@ -213,7 +213,7 @@ class Monitor:
         if self.day != now.date():
             self.new_day(now)
         self.krx, self.nxt = md_feed.latest(md_feed.KRX_STOCK), md_feed.latest(md_feed.NXT_STOCK)
-        self.fut, self.status = md_feed.latest(md_feed.KRX_FUT), md_feed.latest(md_feed.KRX_STATUS)
+        self.fut, self.status, self.book = (md_feed.latest(f) for f in (md_feed.KRX_FUT, md_feed.KRX_STATUS, md_feed.KRX_BOOK))
         marks = self.log["marks"]
 
         if phase == md_feed.AUCTION and "before_auction" not in marks and self.regular_rows:
@@ -287,7 +287,7 @@ class Monitor:
         out = []
         for c in self.codes:
             krx, fut = self.krx.get(c, {}), self.fut.get(self.futs[c]["code"], {})
-            out.append(build_row(c, self.watch[c], self.futs[c], krx, self.nxt.get(c, {}), fut,
+            out.append(build_row(c, self.watch[c], self.futs[c], krx, self.book.get(c, {}), self.nxt.get(c, {}), fut,
                                  status_of(self.status.get(c), krx.get("price")), phase, before_auction.get(c),
                                  self.log["intraday"].get(c), self.mktcap.get(c)))
         return out
