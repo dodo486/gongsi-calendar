@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""배당 사실 — 저장소 → 종목별 사실(공시 회차·분할·정관 이력·주총·예고·계획). view(ctx, cut) = cut 전까지 알던 것만. 추정 없음"""
+"""배당 사실 — 저장소 → 종목별 사실(공시 회차·분할·정관 이력·주총·예고·계획·사업연도별 EPS·배당). view(ctx, cut) = cut 전까지 알던 것만. 추정 없음"""
 import datetime, calendar, statistics
 from core import store, universe
 from core.krx_cal import to_date, iso, ymd, days_ago, days_between
@@ -65,6 +65,8 @@ POLICY_DAYS = 400
 
 NOTICE_LOOKBACK_DAYS = 45
 SPECIAL_MULT = 2
+EARN_UP, MIN_SAMPLES = 1.1, 20   # 이익 증가 회사 배당 증가율 — 그 사업연도 전 해들에서 배움
+ANNUAL_REPORT_DAYS, Q3_REPORT_DAYS = 90, 45   # 사업보고서 · 3분기보고서 제출 기한 — 그 뒤부터 안 값
 
 def share_factor(splits, a, b):
     """a 날짜 주식 1주가 b 날짜에 몇 주인지 — 그 사이 효력이 난 분할·병합 배수의 곱"""
@@ -100,8 +102,8 @@ def context(stock, entries, policy, acc, agm_records):
         elif k in ("agm_call", "agm_result") and e.get("agm_date"):
             agms.append({"date": to_date(e["agm_date"]), "kind": k, "rcept": rd, "charter": e.get("charter"),
                          "regular": e.get("regular", False), "rejected": e.get("rejected", False)})
-        elif k == "plan" and e.get("lines"):
-            plans.append({"date": rd, "title": e.get("title", ""), "lines": e["lines"]})
+        elif k == "plan" and (e.get("lines") or e.get("min_dps") or e.get("payout")):
+            plans.append({"date": rd, "title": e.get("title", ""), "lines": e.get("lines", []), "min_dps": e.get("min_dps"), "payout": e.get("payout"), "payout_sep": e.get("payout_sep")})
 
     filings = assemble([{**e, "div_type": e.get("div_type") or ""} for e in entries if e["kind"] in ("decision", "record")], acc)
     rounds = []
@@ -181,6 +183,13 @@ def view(ctx, cut):
     v["charter_since"] = {g: d for g, d in ctx["charter_since"].items() if d < cut}
     v["splits"] = [x for x in ctx["splits"] if x["date"] < cut]
     v["dps_cons"] = [x for x in ctx["dps_cons"] if x["date"] < cut]
+    v["plans"] = [p for p in ctx["plans"] if p["date"] < cut]
+    v["years"] = {}
+    for fy, d in ctx["years"].items():
+        for k, x in d.items():
+            q, days = (3, Q3_REPORT_DAYS) if k.startswith("q3_") else (4, ANNUAL_REPORT_DAYS)
+            if quarter_end(fy, q, ctx["acc"]) + datetime.timedelta(days=days) < cut:
+                v["years"].setdefault(fy, {})[k] = x
     return v
 
 def quarter_owner(rounds):
@@ -205,7 +214,7 @@ def pattern(owner):
     return " + ".join(f"{t} {'·'.join(qs)}" for t, qs in by_t.items()) + f" (연 {len(owner)}회)"
 
 def medians(ctxs):
-    """이력 없는 회사용 기본 오프셋 — 수집대상 전체 실측 중앙값"""
+    """수집대상 전체 실측 중앙값 — 이력 없는 회사용 기본 오프셋, 이익 증가 회사의 결산 배당 증가율(사업연도별, 그 전 해들만)"""
     acc = {"qe": {}, "dec": {}, "pay": {}, "agm": []}
     for c in ctxs:
         agm_by_fy = {a["fy"]: a["date"] for a in c["agms"] if a["regular"]}
@@ -221,10 +230,21 @@ def medians(ctxs):
             if t == "결산배당" and r["fy"] in agm_by_fy:
                 acc["agm"].append((r["record"] - agm_by_fy[r["fy"]]).days)
     md = lambda xs, dflt: int(statistics.median(xs)) if xs else dflt
+    up = []   # (사업연도, 결산 몫 ÷ 작년 결산 몫) — 3분기 누적 EPS 가 작년보다 EARN_UP 배 이상 늘었던 회사
+    for c in ctxs:
+        y = c["years"]
+        for fy, d in y.items():
+            p = y.get(fy - 1, {})
+            fin, pfin = d.get("dps", 0) - d.get("q3_dps", 0), p.get("dps", 0) - p.get("q3_dps", 0)
+            if fin > 0 and pfin > 0 and d.get("q3_eps", 0) > 0 and p.get("q3_eps", 0) > 0 and d["q3_eps"] >= EARN_UP * p["q3_eps"]:
+                up.append((fy, fin / pfin))
+    fys = {fy for fy, _ in up}
     return {"qe": {t: md(acc["qe"].get(t), 60 if t == "결산배당" else 45) for t in TYPE_QUARTERS},
             "dec": {t: md(acc["dec"].get(t), 21) for t in TYPE_QUARTERS},
             "pay": {t: md(acc["pay"].get(t), 30) for t in TYPE_QUARTERS},
-            "agm": md(acc["agm"], 7)}
+            "agm": md(acc["agm"], 7),
+            "dps_up": {fy: statistics.median(xs) for fy in range(min(fys, default=0) + 1, max(fys, default=0) + 2)
+                       if len(xs := [r for f, r in up if f < fy]) >= MIN_SAMPLES}}
 
 def contexts():
     """저장소 → 배당 대상 종목마다 사실 묶음"""
@@ -246,6 +266,7 @@ def contexts():
         pol[st] = latest and {**latest, "charter_hist": [{"date": p["rcept_dt"], "charter": p.get("charter") or {"결산": p["charter_text"]}}
                                                          for p in got if p.get("charter") or p.get("charter_text")]}
     acc = {s: int(m) for s, m in store.load("acc_mt").items() if str(m).isdigit()}
-    cons = store.load("dps_consensus")
+    cons, alot = store.load("dps_consensus"), store.load("alot")
     return [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)),
-             "dps_cons": [{**x, "date": to_date(x["date"])} for x in cons.get(s, [])]} for s in sorted(stocks)]
+             "dps_cons": [{**x, "date": to_date(x["date"])} for x in cons.get(s, [])],
+             "years": {int(fy): d for fy, d in alot.get(s, {}).get("years", {}).items()}} for s in sorted(stocks)]

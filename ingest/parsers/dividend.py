@@ -65,7 +65,11 @@ def parse_split(t):
     before, after = (int(x.replace(",", "")) for x in m.groups())
     return {"factor": before / after, "effective": eff.group(1)} if before and after else {}
 
+MIN_DPS = re.compile(r"최소[^.\d]{0,15}?(?:배당금?|DPS)[^.\d]{0,15}?([\d,]{3,7})\s*원|(?:DPS|주당\s*배당금?)\s*([\d,]{3,7})\s*원\s*이상|연\s*([\d,]{3,7})\s*원의\s*최소\s*배당금")
+PAYOUT = re.compile(r"배당\s*성향[^.%\d]{0,20}?(\d{1,2}(?:\.\d+)?)\s*%\s*(?:~\s*\d+\s*%\s*)?(?:이상|까지|수준|목표|유지|지향)|순이익[^.%\d]{0,25}?(\d{1,2})\s*%\s*이상[^.]{0,5}배당")
+
 def parse_plan(t):
+    """밸류업·지배구조보고서 — 배당 절차 문장(날짜용), 연간 최소 주당배당금(min_dps 원)·목표 배당성향(payout %, payout_sep = 별도 순이익 기준)(금액용)"""
     lines = []
     for m in re.finditer(r"배당\s*기준일|배당\s*절차|선\s*배당|배당액을?\s*먼저", t):
         s = t[max(0, m.start() - 80): m.end() + 120].strip()
@@ -73,7 +77,10 @@ def parse_plan(t):
             lines.append(s)
         if len(lines) >= 3:
             break
-    return {"lines": lines}
+    mn, po = MIN_DPS.search(t), PAYOUT.search(t)
+    return {"lines": lines, **({"min_dps": int(next(g for g in mn.groups() if g).replace(",", ""))} if mn else {}),
+            **({"payout": float(next(g for g in po.groups() if g)), "payout_sep": bool(re.search(r"별도|개별", t[max(0, po.start() - 40): po.end() + 40]))}
+               if po else {})}
 
 YM = r"(\d{4}\s*(?:\.|년)\s*\d{1,2}\s*월?|-)"
 DT = r"(\d{4}\s*(?:\.|년)\s*\d{1,2}\s*(?:\.|월)\s*\d{1,2}\s*일?|-)"

@@ -9,7 +9,7 @@
 """
 import datetime
 from core import store, universe
-from core.paths import save_json, load_json, stamp, DIV_BOOK_PATH, DIV_SOURCES_PATH, EXPIRIES_PATH, DART_VIEW
+from core.paths import save_json, load_json, stamp, DIV_BOOK_PATH, DIV_SOURCES_PATH, DIV_VERIFY_PATH, EXPIRIES_PATH, DART_VIEW
 from core.krx_cal import iso, ymd, days_ago, t_minus
 from derive import earn_sched
 from derive.dividend.facts import medians, contexts
@@ -33,7 +33,7 @@ def build():
     since = ymd(days_ago(FILED_DAYS))
     exps = sorted(e["date"] for e in load_json(EXPIRIES_PATH, {}).get("events", []))
     ctxs = contexts()
-    med = medians(ctxs)
+    med = {**medians(ctxs), "priority": load_json(DIV_VERIFY_PATH, {}).get("priority", {})}
     earn = {}
     for e in earn_sched.collect(watch=universe.div()):
         earn.setdefault(e["code"], []).append(e)
@@ -56,7 +56,7 @@ def build():
             if f["per_share"]:
                 r.update(grade="확정", amount_src="공시", amount_basis="공시 금액")
             elif p and p["per_share"]:
-                r.update(grade="공고", per_share=p["per_share"], amount_src="예상", amount_basis=p["amount_basis"], amount_cands=p["amount_cands"])
+                r.update(grade="공고", per_share=p["per_share"], amount_src="예상", amount_basis=p["amount_basis"], amount_cands=p["amount_cands"], amount_special=p["amount_special"])
             else:
                 r.update(grade="공고", amount_src="", amount_basis="")
             rows.append(r)

@@ -8,7 +8,6 @@ import os, re, sys
 from core.paths import BASE
 
 SIGNALS = {"day", "live", "quotes", "dart_listing", "kind_feed"}   # 들여오기·monitor 가 내는 변화 신호
-UNREAD_OK = {"alot"}   # 배당 이력 — 배당성향×이익 금액 신호용으로 모아 둠, 신호를 붙이면 뺀다
 RULES = [("derive/", r"^\s*(from|import) ingest\b", "계산 층이 들여오기를 import"),
          ("ingest/parsers/", r"^\s*(from|import) (ingest\.sources|urllib|requests)\b", "파서가 접속")]
 
@@ -26,7 +25,7 @@ def main():
     made = {d.kind for d in DOCS} | {f.name for f in FEEDS} | SIGNALS
     read = set().union(*(c.reads for c in CALCS))
     bad += [f"등록표: 계산이 읽는데 채우는 곳 없음 — {k}" for k in sorted(read - made)]
-    bad += [f"등록표: 들여오는데 읽는 계산 없음 — {k}" for k in sorted(made - read - UNREAD_OK)]
+    bad += [f"등록표: 들여오는데 읽는 계산 없음 — {k}" for k in sorted(made - read)]
     for x in bad:
         print("  ✖", x)
     print(f"구조 검사: 위반 {len(bad)}")

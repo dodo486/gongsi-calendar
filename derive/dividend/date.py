@@ -217,7 +217,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
             **grade_out("공고" if ann_rec else grade, t), "case": j["case"], "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
-            **amount.estimate(ctx, t, fy, rec),
+            **amount.estimate(ctx, t, fy, rec, med),
             "ladder": ladder(ctx, t, fy, q, bool(ann_rec))}, None
 
 def forecast(ctx, today, earn, med):
@@ -266,5 +266,5 @@ def company_out(ctx, missed):
                          "hint": n["hint"], "title": n["title"]} for n in ctx["notices"]][-4:],
             "agms": [{"date": iso(a["date"]), "kind": a["kind"], "regular": a["regular"], "charter": a["charter"]}
                      for a in ctx["agms"]][-4:],
-            "plans": [{"date": iso(p["date"]), "title": p["title"], "lines": p["lines"]} for p in ctx["plans"]][-2:],
+            "plans": [{**p, "date": iso(p["date"])} for p in ctx["plans"]][-2:],
             "evidence": ev}

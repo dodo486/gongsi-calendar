@@ -25,9 +25,9 @@ CALCS = [
     Calc("disclosures", frozenset({"dart_listing", "day"}), (), lambda: disclosures.main(90)),
     Calc("earnings", frozenset({"dart_listing", "kind_feed", "day"}), (), earnings.main),
     Calc("earn_sched", frozenset({"earn_notice", "ir", "day"}), (), earn_sched.main),
-    Calc("div_verify", frozenset({"day"}), (), verify.verify),            # 백테스트 — 하루 한 번
-    Calc("div_book", frozenset({*facts.DOC_KINDS, "agm_record", "charter_table", "acc_mt", "dps_consensus", "index_pdf", "earn_notice", "ir", "day"}),
-         ("expiries",), book.build),
+    Calc("div_verify", frozenset({"alot", "day"}), (), verify.verify),    # 백테스트 — 하루 한 번, 신호 순서(priority)도 여기서
+    Calc("div_book", frozenset({*facts.DOC_KINDS, "agm_record", "charter_table", "acc_mt", "dps_consensus", "alot", "index_pdf", "earn_notice", "ir", "day"}),
+         ("expiries", "div_verify"), book.build),
     Calc("divpoints", frozenset({"index_pdf", "day"}), ("div_book",), points.refresh),
     Calc("dividend_check", frozenset(), ("div_book", "div_verify", "divpoints"), check.main),
 ]

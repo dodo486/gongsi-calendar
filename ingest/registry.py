@@ -41,7 +41,7 @@ DOCS = [
     Doc("split", ("I",), 800, _own("주식분할결정", "주식병합결정"), lambda t: {**dv.parse_split(t), **co.parse_relist(t)}, 2),
     Doc("agm_call", ("I",), 800, _own("주주총회소집결의"), dv.parse_agm, 2),
     Doc("agm_result", ("I",), 800, _own("주주총회결과"), dv.parse_agm, 2),
-    Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 2),
+    Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 3),
     Doc("earn_notice", ("I",), 45, _has("결산실적공시예고"), es.parse_sched),
     Doc("ir", ("I",), 14, _has("기업설명회"), es.parse_ir),
     Doc("cap_mixed", ("B",), 365, _has("유무상증자결정"), lambda t: cap.parse_cap(t, "유무상증자결정"), stocks=universe.watch),
