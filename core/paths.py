@@ -16,12 +16,12 @@ for _d in (OUT_DIR, CACHE_DIR):
     os.makedirs(_d, exist_ok=True)
 
 # 계산 결과 파일 — 상수 이름 = 파일 이름. 쓰는 모듈·읽는 모듈 모두 여기서 가져간다
-(CAPITAL_PATH, CLOSEARB_PATH, DISCLOSURES_PATH, DIV_BOOK_PATH, DIV_ESTIMATES_PATH, DIV_SOURCES_PATH, DIV_VERIFY_PATH,
- DIVIDEND_CHECK_PATH, DIVIDENDS_PATH, DIVPOINTS_PATH, EARN_SCHED_PATH, EARNINGS_PATH, EXPIRIES_PATH, HALTS_PATH,
- INDUSTRY_ACTION_PATH, KRX_ACTIONS_PATH, LIMITS_PATH) = (os.path.join(OUT_DIR, f"{n}.json") for n in (
-    "capital", "closearb", "disclosures", "div_book", "div_estimates", "div_sources", "div_verify",
-    "dividend_check", "dividends", "divpoints", "earn_sched", "earnings", "expiries", "halts",
-    "industry_action", "krx_actions", "limits"))
+(CAPITAL_PATH, DISCLOSURES_PATH, DIV_BOOK_PATH, DIV_SOURCES_PATH, DIV_VERIFY_PATH,
+ DIVIDEND_CHECK_PATH, DIVPOINTS_PATH, EARN_SCHED_PATH, EARNINGS_PATH, EXPIRIES_PATH, HALTS_PATH,
+ KRX_ACTIONS_PATH, LIMITS_PATH) = (os.path.join(OUT_DIR, f"{n}.json") for n in (
+    "capital", "disclosures", "div_book", "div_sources", "div_verify",
+    "dividend_check", "divpoints", "earn_sched", "earnings", "expiries", "halts",
+    "krx_actions", "limits"))
 
 PORT = 8777
 URL = f"http://127.0.0.1:{PORT}/"   # 로컬 웹서버(app.serve)

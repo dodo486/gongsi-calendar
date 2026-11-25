@@ -11,7 +11,6 @@ import urllib.parse
 from core.paths import BASE, OUT_DIR, PORT, EARNINGS_PATH, load_json
 from core import ops
 WEB = os.path.join(BASE, "web")
-HTML_PAGES = [os.path.join(WEB, n) for n in ("index.html", "ops.html", os.path.join("dividend", "index.html"))]
 
 # 토스트 클릭 → 차트 열기 브로드캐스트용
 _chart_lock = threading.Lock()
@@ -22,14 +21,17 @@ def _alphasquare_url(code):
     """알파스퀘어 종목 차트 URL — 6자리 코드 그대로(코스피·코스닥 공통)."""
     return f"https://alphasquare.co.kr/home/stock-summary?code={code}"
 
-def html_mtime():
-    """페이지 HTML 최신 수정 시각 — 바뀌면 SSE로 reload 신호(열린 탭 자동 새로고침)."""
+def web_mtime():
+    """화면 파일(web/ 아래 html·js·css, vendor 빼고) 최신 수정 시각 — 바뀌면 SSE로 reload 신호(열린 탭 자동 새로고침)."""
     latest = 0.0
-    for p in HTML_PAGES:
-        try:
-            latest = max(latest, os.path.getmtime(p))
-        except OSError:
-            pass
+    for root, dirs, files in os.walk(WEB):
+        dirs[:] = [d for d in dirs if d != "vendor"]
+        for n in files:
+            if n.endswith((".html", ".js", ".css")):
+                try:
+                    latest = max(latest, os.path.getmtime(os.path.join(root, n)))
+                except OSError:
+                    pass
     return latest
 
 def data_mtimes():
@@ -145,7 +147,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except Exception:
             return
         last = data_mtimes()
-        last_html = html_mtime()
+        last_html = web_mtime()
         # 접속 즉시 한 번 트리거 — 최신 상태로 맞춤
         try:
             self.wfile.write(b"retry: 3000\ndata: hello\n\n")
@@ -161,7 +163,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             while True:
                 time.sleep(1)
                 try:
-                    hm = html_mtime()
+                    hm = web_mtime()
                     if hm > last_html:   # index.html 이 바뀜 → 열린 탭에 새로고침 지시
                         last_html = hm
                         self.wfile.write(b"event: reload\ndata: 1\n\n")

@@ -14,33 +14,6 @@
   .tab{padding:7px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px;font-weight:600}
   .tab.on{background:var(--text);color:var(--bg)}
   .layout{display:flex;flex-direction:column}   /* 높이 고정 해제 — 페이지 스크롤 허용 */
-  #industryView{padding:14px 18px}
-  #closearbView{padding:14px 18px;overflow-x:auto}
-  .ca-tab{border-collapse:collapse;font-size:12px;width:100%}
-  .ca-tab th{color:var(--muted);font-size:11px;font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
-  .ca-tab th.grp{text-align:center;border-bottom:1px solid var(--line);color:var(--text)}
-  .ca-tab td{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
-  .ca-tab td.nm,.ca-tab th.nm{text-align:left}
-  .ca-tab td.nm{font-weight:600;cursor:pointer}
-  .ca-tab td.st{color:#fcd34d;text-align:left}
-  .ca-tab td.sep,.ca-tab th.sep{border-left:1px solid var(--line)}
-  .ca-tab tr.hot td{background:rgba(250,204,21,.08)}
-  .ca-tab td.dim{color:var(--muted)}
-  .ca-tab tr.calm td{opacity:.45}
-  .ca-hot-title{font-size:13px;font-weight:600;margin-bottom:8px}
-  .ca-cards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-  .ca-card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:244px;cursor:pointer;font-size:12px}
-  .ca-card-top{display:flex;gap:6px;align-items:baseline}
-  .ca-card-top .dim{margin-left:auto;color:var(--muted)}
-  .ca-card-top .st,.ca-card-act .st{color:#fcd34d}
-  .ca-card-dev{font-size:22px;font-weight:700;margin:4px 0}
-  .ca-card-dev span{font-size:12px;font-weight:400;color:var(--muted)}
-  .ca-card-act{margin-bottom:4px}
-  .ca-card .dim{color:var(--muted)}
-  .ca-basket{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:364px;font-size:12px}
-  .ca-basket .dim{color:var(--muted)}
-  .ca-basket .ca-card-top .dim{margin-left:auto}
-  .ca-sort{margin-bottom:8px;font-size:12px;color:var(--muted)}
   #guideView{padding:14px 18px;max-width:1100px}
   #guideView h3{margin:22px 0 8px;font-size:16px}
   #guideView p{font-size:13px;color:var(--muted);margin:6px 0}
@@ -49,27 +22,8 @@
   #guideView th{background:rgba(255,255,255,.04)}
   #guideView b.f{color:var(--text)}
   #guideView td.todo{color:var(--text)}
-  .ia-wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
-  .ia-sort{display:flex;gap:6px;margin-bottom:8px;font-size:12px;color:var(--muted);align-items:center}
-  .ia-sort .chip{cursor:pointer}
-  .ia-row{display:grid;grid-template-columns:minmax(0,1fr) 90px 70px 60px 150px;gap:8px;align-items:center;font-size:13px;padding:6px 8px;border-top:1px solid var(--line);cursor:pointer;position:relative}
-  .ia-row.head{cursor:default;color:var(--muted);font-size:12px;border-top:none}
-  .ia-row:not(.head):hover,.ia-row.sel{background:var(--panel)}
-  .ia-row .bar{position:absolute;left:0;top:0;bottom:0;background:var(--accent);opacity:.12;pointer-events:none}
-  .ia-row .num{text-align:right}
-  .ia-row .ld{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pos{color:#fca5a5}
   .neg{color:#93c5fd}
-  .ia-detail{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:12px;position:sticky;top:10px}
-  .ia-detail h3{margin:0 0 4px;font-size:15px}
-  .ia-sub{color:var(--muted);font-size:12px;margin-bottom:8px}
-  .ia-themes{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-  .ia-themes span{border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:12px;background:var(--bg)}
-  .ia-m{display:grid;grid-template-columns:minmax(0,1fr) 70px 80px;gap:6px;font-size:13px;padding:4px 0;border-top:1px solid var(--line);cursor:pointer}
-  .ia-m:hover{background:var(--bg)}
-  .ia-m .num{text-align:right}
-  .ia-m .v{color:var(--muted)}
-  @media (max-width:900px){ .ia-wrap{grid-template-columns:1fr} .ia-row{grid-template-columns:minmax(0,1fr) 70px 64px 46px} .ia-row .ld{display:none} }
   .fc-event.mk-KOSPI{background:var(--kospi);border-color:var(--kospi)}
   .fc-event.mk-KOSDAQ{background:var(--kosdaq);border-color:var(--kosdaq);color:#1a1200}
   .fc-event.ern{background:#06b6d4;border-color:#06b6d4;color:#00222a;font-weight:600}   /* 예상 실적발표(청록) */
@@ -135,22 +89,14 @@
   #limitsView .li .kb{font-size:11px;padding:2px 7px}
   #limitsView .li .nm{font-size:13px}
   #limitsView .limsec{margin:10px 0 5px;padding-bottom:4px}
-  #divView,#opsView{display:block;width:100%;height:calc(100vh - 62px);border:0}
+  .embed{display:block;width:100%;height:calc(100vh - 62px);border:0}
 </style>
 </head>
 <body>
 <header>
   <h1>📅 공시캘린더</h1>
   <span class="clock" id="clock">--:--:--</span>
-  <div class="tabs">
-    <span class="tab" data-mode="disc">공시</span>
-    <span class="tab on" data-mode="board">🚨 상하한가 · 📊 실적</span>
-    <span class="tab" data-mode="div">💰 배당</span>
-    <span class="tab" data-mode="industry">🏭 인더스트리 액션</span>
-    <span class="tab" data-mode="closearb">⚖️ 종가 차익</span>
-    <span class="tab" data-mode="ops">🛰 관제탑</span>
-    <span class="tab" data-mode="guide">📘 설명</span>
-  </div>
+  <div class="tabs" id="tabs"></div>
   <span class="meta" id="meta">불러오는 중…</span>
   <div class="controls">
     <input type="search" id="q" placeholder="회사명 검색">
@@ -159,10 +105,6 @@
   </div>
 </header>
 <div class="layout">
-  <div id="industryView" style="display:none"></div>
-  <div id="closearbView" style="display:none"></div>
-  <iframe id="divView" src="dividend/index.html" title="배당" style="display:none"></iframe>
-  <iframe id="opsView" src="ops.html" title="관제탑" style="display:none"></iframe>
   <div id="guideView" style="display:none">
     <h3>📘 기업 이벤트 — 지수(선물) vs 내 현물 바스켓, 날짜별로 뭘 하면 되나</h3>
     <p>거래소 지수와 내 계좌는 같은 이벤트를 <b class="f">서로 다른 날</b> 반영한다. 그 차이 나는 기간이 지수차익(예: 코스닥150) 리스크 구간이다. 표의 <b class="f">캘린더</b> 칸은 캘린더에 실제로 뜨는 이름이고, 맨 오른쪽 <b class="f">👉 할 일</b>만 따라가면 된다. 할 일은 <b class="f">매수차익(현물 바스켓 롱 + 선물 숏)</b> 기준이고, 매도차익(현물 숏 + 선물 롱)은 방향이 반대이며 대차 상환 수량(신주·배당 반환)과 리콜까지 같이 챙긴다. 늘 보는 건 하나 — <b class="f">내 바스켓의 종목 비중이 지수 안 비중과 같은가</b>. 다르면 그 차이만큼이 헤지 안 된 노출이다.</p>
@@ -255,7 +197,7 @@
   </div>
 </div>
 <script>
-let MODE = "board";         // 'board'(상하한가+실적, 기본) | 'disc'(공시) | 'div'(배당 — dividend/index.html 을 그대로 끼움)
+let MODE = "board";         // 지금 탭 — TABS 의 이름, 기본은 상하한가+실적
 let ALL = [], EXP = [], LIM = [], EARN = [], SCHED = [], ACT = [];
 let earnCal;   // 예상 실적발표 전용 캘린더 (실적 그리드 오른쪽)
 let LIMGEN = "";   // 상하한가(limits.json) 생성 시각 — 상단 '갱신 시각'에 표시(5초마다 갱신)
@@ -498,199 +440,62 @@ function renderEarnCal(){   // 실적 캘린더 갱신 — 실제 공시(보라)
   });
 }
 
-let IA = null, IA_SORT = "value", IA_SEL = null;   // data/out/industry_action.json
-async function loadIndustry(){
-  try{ IA = await (await fetch("data/out/industry_action.json?_="+Date.now())).json(); }catch(_){ IA = null; }
-  document.getElementById("meta").textContent = IA
-    ? `🏭 묶음 ${IA.groups.length}개 · 갱신 ${IA.generated_at} · 시세 ${IA.source} · 묶은 날 ${IA.groups_built_at.slice(0,10)} (일봉 ${IA.window[0]}~${IA.window[1]})`
-    : "인더스트리 데이터 없음";
-  renderIndustry();
+async function loadBoard(){
+  await loadActions();    // 최상단 KRX 시장조치(사이드카·서킷 등)
+  await loadLimits();     // 상단 상하한가 밴드
+  await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
+  await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예상 실적발표 캘린더)
+  renderEarnCal();
+  document.getElementById("meta").textContent =
+    `🏛️ 시장조치 ${ACT.length} · 🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · ⏱ 상하한가 갱신 ${LIMGEN}`;
 }
-const pct = r => r==null ? "-" : (r>0?"+":"")+r.toFixed(2)+"%";
-const sgn = r => r>0 ? "pos" : r<0 ? "neg" : "";
-function iaGroups(){
-  const q = (filters.q||"").trim();
-  let gs = IA.groups.filter(g=> !q || g.name.includes(q) || g.themes.some(t=>t.includes(q)) || g.members.some(m=>m.name.includes(q)));
-  const key = {value:g=>-g.value, up:g=>-g.rate, down:g=>g.rate}[IA_SORT];
-  return gs.slice().sort((a,b)=>key(a)-key(b));
+async function loadDisc(){
+  const d = await (await fetch("data/out/disclosures.json?_="+Date.now())).json();
+  ALL = d.events||[];
+  document.getElementById("meta").textContent = `공시 ${d.count}건 · 갱신 ${d.generated_at||""}`;
+  applyFilters();
 }
-function renderIndustry(){
-  const box = document.getElementById("industryView");
-  if(!IA){ box.innerHTML = `<div class="empty">인더스트리 데이터가 없습니다 — industry.py 실행 후 다시 여세요.</div>`; return; }
-  const gs = iaGroups();
-  if(!IA_SEL || !gs.some(g=>g.name===IA_SEL)) IA_SEL = gs.length ? gs[0].name : null;
-  const vmax = Math.max(1, ...IA.groups.map(g=>g.value));
-  const chip = (k,t)=>`<span class="chip${IA_SORT===k?" on":""}" data-sort="${k}">${t}</span>`;
-  const rows = gs.map(g=>`<div class="ia-row${g.name===IA_SEL?" sel":""}" data-g="${esc(g.name)}">
-      <span class="bar" style="width:${(g.value/vmax*100).toFixed(1)}%"></span>
-      <span title="${esc(g.themes.join(", "))}">${esc(g.name)}</span>
-      <span class="num">${won(Math.round(g.value/1e8))}억</span>
-      <span class="num ${sgn(g.rate)}">${pct(g.rate)}</span>
-      <span class="num">${g.up}/${g.n}</span>
-      <span class="ld">${esc(g.lead.name)} <span class="${sgn(g.lead.rate)}">${pct(g.lead.rate)}</span></span></div>`).join("");
-  box.innerHTML = `<div class="ia-wrap"><div>
-      <div class="ia-sort">정렬 ${chip("value","거래대금")}${chip("up","강한 순")}${chip("down","약한 순")}</div>
-      <div class="ia-row head"><span>묶음</span><span class="num">거래대금</span><span class="num">평균 등락</span><span class="num">상승</span><span class="ld">대장(거래대금 1위)</span></div>
-      ${rows || `<div class="empty">조건에 맞는 묶음이 없습니다.</div>`}</div>
-    <div class="ia-detail" id="iaDetail"></div></div>`;
-  renderIndustryDetail();
-}
-function renderIndustryDetail(){
-  const box = document.getElementById("iaDetail");
-  const g = IA && IA.groups.find(x=>x.name===IA_SEL);
-  if(!box) return;
-  if(!g){ box.innerHTML = `<div class="empty">묶음을 고르세요.</div>`; return; }
-  const ms = g.members.filter(m=>filters[m.market] !== false);
-  box.innerHTML = `<h3>${esc(g.name)}</h3>
-    <div class="ia-sub">${won(Math.round(g.value/1e8))}억 · 평균 ${pct(g.rate)} · 상승 ${g.up}/${g.n} · 합쳐진 테마 ${g.themes.length}개</div>
-    <div class="ia-themes">${g.subs.map(s=>`<span title="${s.n}종목 · 대장 ${esc(s.lead.name)}">${esc(s.name)} <b class="${sgn(s.rate)}">${pct(s.rate)}</b></span>`).join("")}</div>
-    ${ms.map(m=>`<div class="ia-m" data-code="${esc(m.code)}"><span>${esc(m.name)}</span>
-      <span class="num ${sgn(m.rate)}">${pct(m.rate)}</span><span class="num v">${won(Math.round((m.value||0)/1e8))}억</span></div>`).join("")}`;
-}
-document.getElementById("industryView").addEventListener("click", e=>{
-  const s = e.target.closest("[data-sort]");
-  if(s){ IA_SORT = s.dataset.sort; IA_SEL = null; renderIndustry(); return; }
-  const m = e.target.closest(".ia-m");
-  if(m){ openChart(m.dataset.code); return; }
-  const r = e.target.closest(".ia-row[data-g]");
-  if(r){ IA_SEL = r.dataset.g; document.querySelectorAll(".ia-row.sel").forEach(x=>x.classList.remove("sel")); r.classList.add("sel"); renderIndustryDetail(); }
-});
-
-let CA = null, CA_SORT = "cap";   // data/out/closearb.json
-async function loadClosearb(){
-  try{ CA = await (await fetch("data/out/closearb.json?_="+Date.now())).json(); }catch(_){ CA = null; }
-  document.getElementById("meta").textContent = CA
-    ? `⚖️ ${CA.phase} · 갱신 ${CA.generated_at} · 오늘 기록 ${CA.marks.join("·")||"없음"}`
-    : "종가 차익 데이터 없음";
-  renderClosearb();
-}
-const CA_KEYS = {
-  cap: r=> r.mktcap ?? -1,
-  z: r=> r.rank,
-  dev: r=> r.dev_pct!=null ? Math.abs(r.dev_pct) : -1,
-  chg10: r=> r.chg10_pct!=null ? r.chg10_pct : -99,
-  won: r=> r.dev_won!=null ? Math.abs(r.dev_won) : -1,
-  jump: r=> r.jump_pct!=null ? Math.abs(r.jump_pct) : -1,
-  imb: r=> r.imb_eok!=null ? Math.abs(r.imb_eok) : -1,
-};
-function renderClosearb(){
-  const box = document.getElementById("closearbView");
-  if(!CA){ box.innerHTML = `<div class="empty">종가 차익 데이터가 없습니다 — 거래일 08:00~20:00 에 폴러가 채웁니다.</div>`; return; }
-  const q = (filters.q||"").trim();
-  const rows = CA.rows.filter(r=> filters[r.market] !== false && (!q || r.name.includes(q) || r.code.includes(q)))
-    .sort((a,b)=> CA_KEYS[CA_SORT](b) - CA_KEYS[CA_SORT](a));
-  const chip = (k,t)=>`<span class="chip${CA_SORT===k?" on":""}" data-casort="${k}">${t}</span>`;
-  const p2 = r => r==null ? "-" : (r>0?"+":"")+r.toFixed(2)+"%";
-  const n0 = v => v==null ? "-" : won(Math.round(v));
-  const td = (v, txt, extra="") => `<td class="${sgn(v)} ${extra}">${txt}</td>`;
-  const END = CA.end_min, nowMin = CA.now_min;
-  const spark = (r, W=150, H=26) => {
-    if(!r.trend?.length) return "-";
-    const ys = r.trend.map(p=>p[1]).concat(r.mean_pct, r.basis_pct==null ? [] : [r.basis_pct]);
-    const lo = Math.min(...ys), hi = Math.max(...ys), Y = v => (H-2 - (v-lo)/((hi-lo)||1)*(H-4)).toFixed(1), X = m => (m/END*W).toFixed(1);
-    const now = r.basis_pct==null ? "" : `<circle cx="${X(nowMin)}" cy="${Y(r.basis_pct)}" r="2.5" class="${sgn(r.dev_pct)}" fill="currentColor"/>`;
-    return `<svg width="${W}" height="${H}" style="vertical-align:middle"><title>${p2(lo)} ~ ${p2(hi)}</title>
-      <line x1="0" x2="${W}" y1="${Y(r.mean_pct)}" y2="${Y(r.mean_pct)}" stroke="var(--muted)" stroke-dasharray="2 2"/>
-      <polyline points="${r.trend.map(p=>X(p[0])+","+Y(p[1])).join(" ")}" fill="none" stroke="var(--text)" stroke-width="1"/>${now}</svg>`;
-  };
-  const basket = (mkt, title) => {
-    const b = CA.baskets?.[mkt];
-    if(!b || !b.trend.length || filters[mkt] === false) return "";
-    const W = 340, H = 110, pts = b.trend.concat(b.now ? [[nowMin, ...b.now]] : []);
-    const ys = pts.flatMap(p=>p.slice(1)).concat(0);
-    const lo = Math.min(...ys), hi = Math.max(...ys), Y = v => (H-4 - (v-lo)/((hi-lo)||1)*(H-8)).toFixed(1), X = m => (m/END*W).toFixed(1);
-    const area = pts.map(p=>X(p[0])+","+Y(p[3])).concat(pts.slice().reverse().map(p=>X(p[0])+","+Y(p[1]))).join(" ");
-    const last = b.now ? b.now[1] : null;
-    return `<div class="ca-basket"><div class="ca-card-top"><b>${title}</b> <span class="dim">${b.n}종목</span></div>
-      <div class="ca-card-dev ${sgn(last)}">${last==null ? "-" : (last>0?"+":"")+last.toFixed(2)+"%p"} <span>지금 중앙값 · 10분 <b class="pos">▲${b.up10}</b> <b class="neg">▼${b.down10}</b></span></div>
-      <svg width="${W}" height="${H}"><polygon points="${area}" fill="var(--muted)" fill-opacity=".25"/>
-        <line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)" stroke-dasharray="3 3"/>
-        <polyline points="${pts.map(p=>X(p[0])+","+Y(p[2])).join(" ")}" fill="none" stroke="var(--text)" stroke-width="1.5"/>
-        ${b.now ? `<circle cx="${X(nowMin)}" cy="${Y(b.now[1])}" r="3" class="${sgn(last)}" fill="currentColor"/>` : ""}</svg>
-      <div class="dim">각 종목 베이시스 − 그 종목 오늘 평균 · 선 중앙값 · 띠 가운데 50% · 점선 평소</div></div>`;
-  };
-  const byCode = Object.fromEntries(rows.map(r=> [r.code, r]));
-  const hot = CA.hot_codes.map(c=> byCode[c]).filter(Boolean);
-  const cards = hot.map(r=>`<div class="ca-card" data-code="${esc(r.code)}">
-      <div class="ca-card-top"><b>${esc(r.name)}</b> <span class="st">${esc(r.status)}</span><span class="dim">z ${r.z.toFixed(1)}</span></div>
-      <div class="ca-card-dev ${sgn(r.dev_pct)}">${p2(r.dev_pct)} <span>${n0(r.dev_won)}원/계약</span></div>
-      <div class="ca-card-act">${esc(r.side)}${r.no_fut_trade ? ` <span class="st">선물 15:20 뒤 체결 없음</span>` : ""}</div>
-      ${spark(r, 220, 44)}
-      <div class="dim">평균 ${p2(r.mean_pct)} → 지금 ${p2(r.basis_pct)}</div></div>`).join("");
-  const body = rows.map(r=>`<tr class="${r.level}" data-code="${esc(r.code)}">
-      <td class="nm">${esc(r.name)}</td><td class="st">${esc(r.status)}</td>
-      <td>${spark(r)}</td><td class="dim">${r.mean_pct==null ? "-" : p2(r.mean_pct)+` (${r.n}분)`}</td>${td(r.basis_pct, p2(r.basis_pct))}
-      ${td(r.chg10_pct, p2(r.chg10_pct))}${td(r.dev_pct, p2(r.dev_pct))}${td(r.z, r.z==null ? "-" : r.z.toFixed(1))}${td(r.dev_won, n0(r.dev_won))}
-      <td class="sep">${n0(r.spot)} <span class="dim">${r.spot_kind}</span></td>${td(r.jump_pct, p2(r.jump_pct))}
-      ${td(r.imb_eok, r.imb_eok==null ? "-" : won(r.imb_eok))}<td>${n0(r.expected_qty)}</td><td>${n0(r.ask_qty)}</td><td>${n0(r.bid_qty)}</td>
-      <td class="sep">${n0(r.fut)} <span class="dim">${r.fut_month.slice(4)}월</span></td>
-      <td>${r.fut_vol_after_auction==null ? "-" : won(r.fut_vol_after_auction)}</td></tr>`).join("");
-  box.innerHTML = `<div class="ca-cards">${basket("KOSPI","코스피200 바스켓")}${basket("KOSDAQ","코스닥150 바스켓")}</div>
-    <div class="ca-hot-title">튄 종목 — 오늘 장중 베이시스 대비 z ${CA.z_hot} 이상 (${CA.phase})</div>
-    <div class="ca-cards">${cards || `<div class="empty">지금 튄 종목 없음</div>`}</div>
-    <div class="ca-sort">정렬 ${chip("cap","시총")}${chip("z","z")}${chip("chg10","10분 상승순")}${chip("dev","괴리")}${chip("won","원/계약")}${chip("jump","현물 튐")}${chip("imb","잔량 불균형")}</div>
-    <table class="ca-tab"><thead>
-      <tr><th class="nm" colspan="2"></th><th class="grp" colspan="7">베이시스 (선물−현물)/현물</th><th class="grp sep" colspan="6">KRX 현물</th><th class="grp sep" colspan="2">주식선물</th></tr>
-      <tr><th class="nm">종목</th><th class="nm">상태</th><th>오늘 추이 (점선 평균 · 점 지금)</th><th>장중 평균(표본)</th><th>지금</th><th>10분 전 대비</th><th>괴리</th><th>z</th><th>원/계약</th>
-        <th class="sep">기준가</th><th>15:20 대비</th><th>잔량 불균형(억)</th><th>예상체결량</th><th>매도잔량</th><th>매수잔량</th>
-        <th class="sep">현재가</th><th>15:20 뒤 체결</th></tr></thead>
-    <tbody>${body || `<tr><td colspan="17" class="empty">조건에 맞는 종목이 없습니다.</td></tr>`}</tbody></table>`;
-}
-document.getElementById("closearbView").addEventListener("click", e=>{
-  const s = e.target.closest("[data-casort]");
-  if(s){ CA_SORT = s.dataset.casort; renderClosearb(); }
-});
-document.getElementById("closearbView").addEventListener("dblclick", e=>{   // 차트는 더블클릭
-  const r = e.target.closest("[data-code]");
-  if(r) openChart(r.dataset.code);
-});
-
-async function loadData(){
-  if(MODE==="industry") return loadIndustry();
-  if(MODE==="closearb") return loadClosearb();
-  if(MODE==="guide" || EMBED[MODE]) return;   // 끼운 페이지(배당·관제탑)는 스스로 불러옴
-  if(MODE==="board"){
-    await loadActions();    // 최상단 KRX 시장조치(사이드카·서킷 등)
-    await loadLimits();     // 상단 상하한가 밴드
-    await loadEarnings();   // 중간 실적 그리드 왼쪽 (+등락률)
-    await loadEarnSched();  // 중간 실적 그리드 오른쪽 (예상 실적발표 캘린더)
-    renderEarnCal();
-    document.getElementById("meta").textContent =
-      `🏛️ 시장조치 ${ACT.length} · 🚨 상하한가 ${LIM.length} · 📊 실적 ${EARN.length} · 🗓️ 예정 ${SCHED.length} · ⏱ 상하한가 갱신 ${LIMGEN}`;
-  } else {
-    const d = await (await fetch("data/out/disclosures.json?_="+Date.now())).json();
-    ALL = d.events||[];
-    document.getElementById("meta").textContent = `공시 ${d.count}건 · 갱신 ${d.generated_at||""}`;
-    applyFilters();
-  }
-}
+const loadData = async () => TABS[MODE].load?.();
 const refresh = () => keepScroll(loadData);
 
-const EMBED = {div: "divView", ops: "opsView"};   // 탭: 그 안에 끼운 페이지 — 자체 검색·갱신을 가진다
-function applyModeView(){   // 현재 MODE에 맞춰 탭/컨트롤/상단밴드 표시 상태 세팅
-  const isBoard = MODE==="board";
+// 탭 등록표 — tab(이름, {label, show: 보일 요소들, files: 쓰는 data/out 파일, load, render, shown, embed: 끼울 페이지, css})
+// show 를 안 주면 화면 칸(<이름>View)을 만든다. 기능 탭은 web/tabs/<이름>.js 가 스스로 등록 — 빼려면 그 파일과 script 한 줄.
+const TABS = {};
+function tab(mode, spec){
+  const t = document.createElement("span");
+  t.className = "tab"; t.dataset.mode = mode; t.textContent = spec.label;
+  t.addEventListener("click", ()=>switchMode(mode));
+  document.getElementById("tabs").append(t);
+  if(spec.css) document.head.insertAdjacentHTML("beforeend", `<link rel="stylesheet" href="tabs/${mode}.css">`);
+  if(!spec.show){
+    const el = Object.assign(document.createElement(spec.embed ? "iframe" : "div"), {id: mode + "View", title: spec.label});
+    if(spec.embed) Object.assign(el, {src: spec.embed, className: "embed"});
+    el.style.display = "none";
+    document.querySelector(".layout").append(el);
+    spec.show = [el];
+  }
+  if(spec.embed) spec.files = [];   // 끼운 페이지는 스스로 불러오고 갱신
+  TABS[mode] = spec;
+}
+tab("disc", {label: "공시", show: [document.querySelector(".cal-row")], load: loadDisc, render: applyFilters,
+             shown: ()=>{ calendar.updateSize(); if(ALL.length) calendar.gotoDate(toISO(ALL[0].date)); }});
+tab("board", {label: "🚨 상하한가 · 📊 실적", show: ["limitsView", "earnView"].map(id=>document.getElementById(id)), load: loadBoard,
+              render: ()=>{ renderLimits(); renderEarnCal(); }, shown: ()=> earnCal && earnCal.updateSize()});
+tab("div", {label: "💰 배당", embed: "dividend/index.html"});
+
+function applyModeView(){   // 현재 MODE 탭만 보이게
+  const spec = TABS[MODE];
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.mode===MODE));
-  document.querySelector(".controls").style.display = EMBED[MODE] ? "none" : "";
-  document.getElementById("meta").style.display = EMBED[MODE] ? "none" : "";
-  for(const [mode, id] of Object.entries(EMBED)) document.getElementById(id).style.display = MODE===mode ? "block" : "none";
-  document.getElementById("limitsView").style.display = isBoard ? "block" : "none";
-  document.querySelector(".cal-row").style.display = MODE==="disc" ? "" : "none";
-  document.getElementById("industryView").style.display = MODE==="industry" ? "block" : "none";
-  document.getElementById("closearbView").style.display = MODE==="closearb" ? "block" : "none";
-  document.getElementById("guideView").style.display = MODE==="guide" ? "block" : "none";
-  document.getElementById("earnView").style.display = isBoard ? "block" : "none";   // 중간 실적 그리드  // 상단 상하한가 밴드
-  if(isBoard && earnCal) setTimeout(()=>earnCal.updateSize(), 0);   // 숨김→표시 시 캘린더 크기 재계산
+  document.querySelector(".controls").style.display = spec.embed ? "none" : "";   // 끼운 페이지는 자체 검색·필터
+  document.getElementById("meta").style.display = spec.embed ? "none" : "";
+  for(const [mode, s] of Object.entries(TABS)) s.show.forEach(el=> el.style.display = mode===MODE ? "" : "none");
 }
 function switchMode(mode){
   if(mode===MODE) return;
   MODE = mode;
   applyModeView();
-  if(EMBED[MODE]) document.getElementById(EMBED[MODE]).contentWindow.refresh?.();   // 숨겨져 있던 동안 쉰 갱신을 바로
-  loadData().then(()=>{
-    if(MODE!=="disc") return;
-    calendar.updateSize();   // 숨김→표시 시 캘린더 크기 재계산
-    if(ALL.length) calendar.gotoDate(toISO(ALL[0].date));
-  });
+  if(TABS[MODE].embed) TABS[MODE].show[0].contentWindow.refresh?.();   // 숨겨져 있던 동안 쉰 갱신을 바로
+  loadData().then(()=> TABS[MODE].shown?.());   // 숨김→표시 뒤 크기 재계산 등
 }
 
 async function boot(){
@@ -733,15 +538,13 @@ async function boot(){
 // openChart() 는 common.js 에서 제공 (알파스퀘어 차트를 'alphachart' 탭 재사용으로 열기)
 const evCode = p => (p && p.code) || "";   // 이벤트/행 → 종목코드
 let _es = null;
-const TAB_FILES = {closearb:["closearb.json"], industry:["industry_action.json"], guide:[], div:[], ops:[]};   // 끼운 페이지는 스스로 갱신
-const OTHER_TAB_FILES = Object.values(TAB_FILES).flat();
 function connectSSE(){
   try{
     if(_es) _es.close();
     _es = new EventSource("events");
     _es.onmessage = ev=>{   // 바뀐 data 파일 이름들 → 지금 탭이 쓰는 파일이 바뀌었을 때만 다시 로드
-      const changed = ev.data.split(","), own = TAB_FILES[MODE];
-      if(ev.data !== "hello" && !changed.some(n=> own ? own.includes(n) : !OTHER_TAB_FILES.includes(n))) return;
+      const changed = ev.data.split(","), own = TABS[MODE].files, others = Object.values(TABS).flatMap(t=> t.files || []);
+      if(ev.data !== "hello" && !changed.some(n=> own ? own.includes(n) : !others.includes(n))) return;   // files 없는 탭은 남의 파일 빼고 전부
       refresh();
       if(MODE==="board") renderLimits();
     };
@@ -752,21 +555,17 @@ function connectSSE(){
 }
 
 // 컨트롤
-document.querySelectorAll(".tab").forEach(t=> t.addEventListener("click",()=>switchMode(t.dataset.mode)) );
 document.getElementById("q").addEventListener("input",e=>{
   filters.q=e.target.value;
-  applyFilters();
-  if(MODE==="board"){ renderLimits(); renderEarnCal(); }
-  if(MODE==="industry") renderIndustry();
-  if(MODE==="closearb") renderClosearb();
+  if(MODE!=="disc") applyFilters();   // 공시 캘린더는 숨어 있어도 같은 필터
+  TABS[MODE].render?.();
 });
 document.querySelectorAll(".chip[data-market]").forEach(c=>{
   c.addEventListener("click",()=>{
     const mk=c.dataset.market; filters[mk]=!filters[mk];
-    c.classList.toggle("on",filters[mk]); applyFilters();
-    if(MODE==="board") renderEarnCal();
-    if(MODE==="industry") renderIndustryDetail();
-    if(MODE==="closearb") renderClosearb();
+    c.classList.toggle("on",filters[mk]);
+    if(MODE!=="disc") applyFilters();
+    TABS[MODE].render?.();
   });
 });
 
@@ -777,8 +576,14 @@ function tickClock(){
 }
 setInterval(tickClock, 1000); tickClock();
 
+</script>
+<script src="tabs/industry.js"></script>
+<script src="tabs/closearb.js"></script>
+<script>
+tab("ops", {label: "🛰 관제탑", embed: "ops.html"});
+tab("guide", {label: "📘 설명", show: [document.getElementById("guideView")], files: []});
 boot().catch(err=>{
-  document.getElementById("meta").textContent="데이터 로드 실패 — fetch.py/dividends.py 실행 후 serve.py로 여세요.";
+  document.getElementById("meta").textContent="데이터 로드 실패 — python -m app.launch 로 여세요.";
   console.error(err);
 });
 </script>

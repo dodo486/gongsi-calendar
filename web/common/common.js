@@ -6,6 +6,8 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g,
 
 const won = n => Number(n).toLocaleString("ko-KR");
 const pctTxt = v => (v===null||v===undefined) ? "-" : `${v>0?"+":""}${v}%`;
+const signedPct = v => v==null ? "-" : (v>0?"+":"")+v.toFixed(2)+"%";   // +1.23% (core.fmt.signed_pct 와 같은 모양)
+const sgn = v => v>0 ? "pos" : v<0 ? "neg" : "";   // 등락 색 클래스
 function toISO(d){ return d.includes("-") ? d : `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`; }
 const dISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 

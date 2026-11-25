@@ -13,18 +13,18 @@ import json, os, sys, time, datetime, platform, subprocess, threading
 from derive.disclosures import collect_events
 from ingest.sources.dart import live_rows
 from core.paths import (load_json, save_json, stamp, CACHE_DIR, URL,
-                        DISCLOSURES_PATH, DIVIDENDS_PATH, EARNINGS_PATH, EARN_SCHED_PATH, HALTS_PATH)
+                        DISCLOSURES_PATH, EARNINGS_PATH, EARN_SCHED_PATH, HALTS_PATH)
 from ingest.sources.net import TLS_MODE
 from ingest import run as ingest
 from derive import run as derive
 from derive import earnings
-from derive import closearb
-from derive import industry
+from derive import closearb, industry
 from core import market as md_feed
 from core import ops, universe
 from core.krx_cal import iso, ymd, days_ago
 from core.fmt import signed_pct
 
+FEATURES = (closearb, industry)   # 기능 — 저마다 start() 로 시세 구독·자기 주기 일을 챙긴다. 화면은 web/tabs/<기능>.js
 POLL_SECONDS = 20          # 공시/실적 폴링 주기 (DART·네이버는 무거워 20초)
 LIMITS_POLL_SECONDS = 5    # 상하한가는 별도 스레드로 빠르게 — collect 0.1초라 장중 실시간(5초) 갱신
 SELF_HEAL_SECONDS = 600    # 배당·증자·실적 전체 재계산 주기 — 받기 실패로 빠진 원문 재시도(목록은 저장본이라 가벼움)
@@ -37,7 +37,7 @@ def load_seen():
     if os.path.exists(SEEN_PATH):
         return set(load_json(SEEN_PATH, []))
     seen = set()   # 최초 실행: 기존 데이터의 접수번호로 시드
-    for p in (DISCLOSURES_PATH, DIVIDENDS_PATH, EARNINGS_PATH, EARN_SCHED_PATH):
+    for p in (DISCLOSURES_PATH, EARNINGS_PATH, EARN_SCHED_PATH):
         for e in load_json(p, {}).get("events", []):
             if e.get("rcept_no"):
                 seen.add(e["rcept_no"])
@@ -187,8 +187,6 @@ def live_pass(lim_seen, ac_seen, alert=True):
     alert_limits(out.get("limits") or [], lim_seen, alert)
     alert_actions(out.get("actions") or [], ac_seen, alert)
 
-INDUSTRY_POLL_SECONDS = 60  # 인더스트리 묶음 — 시세 구독·소속표·일봉은 하루 한 번, 묶음 재구성은 30일마다
-
 HALT_POLL_SECONDS = 600   # 거래정지/재개 알림 확인 — halts.json 은 들여오기·계산이 갱신
 
 def halt_alerts():
@@ -213,7 +211,7 @@ def poll_once(seen, alert=True):
             print(f"  🔔 신규: [{e['category']}] {e['name']} - {e['title']}")
             notify(e)
         seen.add(e["rcept_no"])
-        if e["category"] == "배당":           # 배당 → 배당 캘린더(dividends)
+        if e["category"] == "배당":           # 배당 → 배당 장부(div_book)
             new_div.append(e)
         elif e["category"] == "실적":          # 실적 → 실적 그리드 왼쪽(earnings)
             new_earn.append(e)
@@ -256,12 +254,12 @@ def main():
     lim_seen, ac_seen = set(), set()   # 상하한가·시장조치 전용 중복셋(공시 seen 과 분리)
     ops.run("상하한가·시장조치", lambda: live_pass(lim_seen, ac_seen, alert=False))   # baseline: 현재분을 담고 알림 억제(재시작 스팸 방지, 아직 걸린 건 알림)
     for name, seconds, work in (("상하한가·시장조치", LIMITS_POLL_SECONDS, lambda: live_pass(lim_seen, ac_seen)),
-                                ("거래정지 알림", HALT_POLL_SECONDS, halt_alerts()),
-                                ("인더스트리 묶음", INDUSTRY_POLL_SECONDS, industry.daily_upkeep)):
+                                ("거래정지 알림", HALT_POLL_SECONDS, halt_alerts())):
         threading.Thread(target=ops.every, args=(name, seconds, work), daemon=True, name=name).start()
         print(f"  [{name}] {seconds}초마다")
-    threading.Thread(target=closearb.start, daemon=True).start()
-    print("  [종가 차익] 시세 허브 구독")
+    for feature in FEATURES:
+        threading.Thread(target=feature.start, daemon=True, name=feature.__name__).start()
+        print(f"  [{feature.__name__}] 시작")
     if first_run:
         poll_once(seen, alert=False)   # 최초 baseline: 현재 공시를 seen에 담고 알림 억제
         save_seen(seen)

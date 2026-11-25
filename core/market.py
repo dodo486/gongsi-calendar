@@ -40,7 +40,7 @@ except Exception:
 
 # ── 실시간 시세 허브 ──────────────────────────────────────────
 # 실시간 시세는 허브 스레드 한 곳만 KIS 에 요청한다. 소비자는 직접 요청하지 않는다.
-#   watch(이름, on_tick, {피드: 코드들})  구독 — 허브가 한 바퀴 받을 때마다 on_tick(시간대, 시각)
+#   watch(이름, on_tick, {피드: 코드들})  구독 — 허브가 한 바퀴 받을 때마다 구독자 자기 스레드에서 on_tick(시간대, 시각)
 #   latest(피드)                        구독한 피드의 최신값 {코드: 값}
 #   get(이름, {피드: 코드들})            최신값 — 처음 묻는 종목만 그 자리에서 받고, 그 뒤로는 허브가 갱신
 #   stats()                             관제탑용 — 피드별·구독자별로 언제 몇 개 받았나
@@ -91,9 +91,10 @@ _at = {f: {} for f in FEEDS}        # 피드: {코드: 받은 시각}
 _got = {}                           # 피드: {at, secs, asked, got} 마지막으로 받은 결과
 _subs = {}                          # 구독자 이름: {피드: [코드]}
 _watchers = {}                      # 구독자 이름: on_tick
+_wake = {}                          # 구독자 이름: 새 바퀴 알림 — 구독자마다 자기 스레드에서 받는다
 _served = {}                        # 구독자 이름: 마지막으로 시세를 건넨 시각
 _busy = set()                       # 지금 받고 있는 피드
-_state = {"phase": None, "round": None, "round_at": None}
+_state = {"phase": None, "round": None, "round_at": None, "tick": None}
 
 
 def _minute(hhmm, d):
@@ -120,6 +121,22 @@ def watch(name, on_tick, feeds):
     with _lock:
         _subs[name] = {f: list(codes) for f, codes in feeds.items()}
         _watchers[name] = on_tick
+        fresh = name not in _wake
+        _wake.setdefault(name, threading.Event())
+    if fresh:
+        threading.Thread(target=_serve, args=(name,), daemon=True, name=name).start()
+
+
+def _serve(name):
+    """구독자 하나의 스레드 — 깨면 가장 최근 바퀴로 on_tick. 느린 구독자는 밀린 바퀴를 건너뛸 뿐 허브와 다른 구독자를 막지 않는다."""
+    while True:
+        _wake[name].wait()
+        _wake[name].clear()
+        with _lock:
+            on_tick, (phase, now) = _watchers[name], _state["tick"]
+        ops.run(name, lambda: on_tick(phase, now), group="구독자")
+        with _lock:
+            _served[name] = time.time()
 
 
 def latest(feed):
@@ -181,7 +198,6 @@ def _loop():
         with _lock:
             wanted = _wanted()
             busy = set(_busy)
-            watchers = list(_watchers.items())
             _state["phase"] = phase
         plan = SCHEDULE.get(phase, {})
         due = {f: wanted[f] for f, every in plan.items()
@@ -192,11 +208,10 @@ def _loop():
         _fetch({f: codes for f, codes in due.items() if f not in behind})
         last.update(dict.fromkeys(due, t0))
         if due:
-            for name, on_tick in watchers:
-                ops.run(name, lambda: on_tick(phase, now), group="구독자")
             with _lock:
-                _served.update(dict.fromkeys(_watchers, time.time()))
-                _state.update(round=time.time() - t0, round_at=time.time())
+                _state.update(round=time.time() - t0, round_at=time.time(), tick=(phase, now))
+                for wake in _wake.values():
+                    wake.set()
         time.sleep(max(ROUND_SECONDS - (time.time() - t0), 0) if due else IDLE_SECONDS)
 
 

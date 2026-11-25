@@ -20,11 +20,12 @@
 """
 import os, datetime, statistics
 from core import market as md_feed, universe
-from core.paths import save_json, load_json, stamp, CACHE_DIR, CLOSEARB_PATH
+from core.paths import save_json, load_json, stamp, CACHE_DIR, OUT_DIR
 from core.expiries import expiry_of
 from core.krx_cal import session_delay, iso, ymd, minutes, kst
 from core.fmt import pct
 
+CLOSEARB_PATH = os.path.join(OUT_DIR, "closearb.json")   # 화면 web/tabs/closearb.js
 LOG_DIR = os.path.join(CACHE_DIR, "closearb")
 
 ND = 3                   # 베이시스·괴리 % 소수 자리
@@ -294,6 +295,7 @@ class Monitor:
 
 
 def start():
+    """앱이 부른다 — 시세 허브 구독(허브가 받을 때마다 계산)."""
     Monitor().subscribe(datetime.date.today())
 
 

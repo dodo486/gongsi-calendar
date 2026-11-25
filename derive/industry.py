@@ -22,11 +22,12 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
-from core import market as md_feed
+from core import market as md_feed, ops
 from core.krx_cal import ymd, days_ago
 from core.fmt import pct
-from core.paths import save_json, load_json, stamp, CACHE_DIR, INDUSTRY_ACTION_PATH
+from core.paths import save_json, load_json, stamp, CACHE_DIR, OUT_DIR
 
+INDUSTRY_ACTION_PATH = os.path.join(OUT_DIR, "industry_action.json")   # 화면 web/tabs/industry.js
 GROUPS_PATH = os.path.join(CACHE_DIR, "industry_groups.json")
 SNAP_DIR = os.path.join(CACHE_DIR, "theme_snapshots")
 
@@ -36,6 +37,7 @@ PRUNE = 0.25        # 테마 정제: 나머지 평균과의 잔차 상관 하한
 MERGE = 0.6         # 테마 합치기: 테마 지수 상관 하한
 MIN_SIZE = 3
 CANDLE_HOUR = 18    # 이 시각 이후 하루 한 번 일봉 증분 수집
+UPKEEP_SECONDS = 60  # 하루 한 번 일(구독·소속표·일봉)을 챙기는 주기
 SOURCE = {md_feed.PRE: md_feed.NXT_STOCK}   # 시간대: 등락률을 재는 시세 — 그 밖엔 KRX(개장 동시호가엔 예상체결가)
 
 
@@ -178,6 +180,11 @@ def build_action(phase):
 
 
 _candle_day = None
+
+
+def start():
+    """앱이 부른다 — 하루 한 번 일을 챙기며 계속 돈다(시세는 허브 구독으로 들어온다)."""
+    ops.every("인더스트리 묶음", UPKEEP_SECONDS, daily_upkeep)
 
 
 def daily_upkeep():
