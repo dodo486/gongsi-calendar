@@ -33,7 +33,7 @@ def _has(*words):
     return lambda c, r=None: any(w in c for w in words)
 
 DOCS = [
-    Doc("decision", ("I",), 800, _own("현금ㆍ현물배당결정"), dv.parse_decision, 2),
+    Doc("decision", ("I",), 800, _own("현금ㆍ현물배당결정"), dv.parse_decision, 3),
     Doc("record", ("I",), 800, lambda c, r: _own("주주명부폐쇄")(c) and "배당" in c, dv.parse_record),
     Doc("agm_record", ("I",), 800, _own("주주명부폐쇄"), None),
     Doc("notice", ("I",), 800, lambda c, r: _own("기타경영사항")(c) and ("배당" in c or "기준일" in c or c.endswith("기타경영사항(자율공시)")),
@@ -42,6 +42,7 @@ DOCS = [
     Doc("agm_call", ("I",), 800, _own("주주총회소집결의"), dv.parse_agm, 2),
     Doc("agm_result", ("I",), 800, _own("주주총회결과"), dv.parse_agm, 2),
     Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 3),
+    Doc("return_plan", ("I",), 800, _own("수시공시의무관련사항"), dv.parse_return),
     Doc("earn_notice", ("I",), 45, _has("결산실적공시예고"), es.parse_sched),
     Doc("ir", ("I",), 14, _has("기업설명회"), es.parse_ir),
     Doc("cap_mixed", ("B",), 365, _has("유무상증자결정"), lambda t: cap.parse_cap(t, "유무상증자결정"), stocks=universe.watch),

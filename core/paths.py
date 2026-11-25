@@ -23,6 +23,8 @@ for _d in (OUT_DIR, CACHE_DIR):
     "dividend_check", "divpoints", "earn_sched", "earnings", "expiries", "halts",
     "krx_actions", "limits"))
 
+DIV_POLICY_PATH = os.path.join(BASE, "div_policy.json")   # 회사별 배당정책 장부 — 사람이 출처 보고 고치는 입력, 저장소에 커밋
+
 PORT = 8777
 URL = f"http://127.0.0.1:{PORT}/"   # 로컬 웹서버(app.serve)
 

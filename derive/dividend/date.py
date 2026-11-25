@@ -268,4 +268,6 @@ def company_out(ctx, missed):
             "agms": [{"date": iso(a["date"]), "kind": a["kind"], "regular": a["regular"], "charter": a["charter"]}
                      for a in ctx["agms"]][-4:],
             "plans": [{**p, "date": iso(p["date"])} for p in ctx["plans"]][-2:],
+            "policies": [{**p, "date": iso(p["date"])} for p in ctx["policies"]],
+            "returns": [{**x, "date": iso(x["date"])} for x in ctx["returns"]][-3:],
             "evidence": ev}

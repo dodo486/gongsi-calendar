@@ -135,8 +135,27 @@ def tax_rule(ctx, t, fy, rec, med):
                        f"{last['fy']} 결산 공시에서 고배당기업 과세특례 요건 충족 밝힘 → 배당성향 40%, 또는 25% + 전년 대비 10% 증가의 최소"
                        f" (작년 연간 {prev:,}원, 올해 EPS {eps:,.0f}원) → 연간 {annual:,}원")
 
-SIGNALS = [repeat_last, consensus_left, trend, payout_eps, no_cut, earn_up, policy, tax_rule]
-LAW = ["tax_rule"]   # 법이 정한 공식 + 회사가 공시로 밝힌 대상 — 과거 적중순 경쟁 밖, 있으면 맨 앞
+def announced(ctx, t, fy, rec, med):
+    """회사가 공시로 밝힌 이 사업연도 현금배당 총액(정책 장부 div_policy.json) — 하한 = max(공시 하한, 올해 이미 준 총액 + 분기 정규), 상한 = 공시 상한.
+    그 안에서 컨센(연간 컨센 × 주식 수)을 쓰고 벗어나면 경계, 컨센 없으면 하한. 이미 준 총액을 빼고 최근 배당결정의 주식 수(총액 ÷ 주당)로 나눔"""
+    pol = next((p for p in reversed(ctx["policies"]) if p["fy"] == fy), None)
+    last = next((r for r in reversed(ctx["rounds"]) if r["total"] and r["dps"] and int(r["dps"])), None)
+    if t != "결산배당" or not pol or not last:
+        return None
+    shares = last["total"] / int(last["dps"])
+    paid_total = sum(r["total"] for r in ctx["rounds"] if r["fy"] == fy and r["type"] != t)
+    lo = max(pol["cash_total"][0] or 0, paid_total + (pol["regular_q"] or 0))
+    hi = pol["cash_total"][1] or math.inf
+    c = next((x for x in reversed(ctx["dps_cons"]) if x["fy"] == str(fy)), None)
+    target = min(max(c["dps"] * shares, lo), hi) if c else lo
+    jo = lambda x: f"{x / 1e12:,.1f}조원"
+    return {"signal": "announced", "name": "회사 공시 총액", "value": round((target - paid_total) / shares),
+            "basis": f"{iso(pol['date'])} 회사 공시 — {fy} 현금배당 총액 {jo(lo)}~{jo(hi) if hi < math.inf else '상한 없음'} 중 "
+                     + (f"컨센 {c['dps']:,}원×{shares / 1e8:,.2f}억주 = {jo(c['dps'] * shares)}" + (" (범위 밖 → 경계)" if target != c["dps"] * shares else "") if c else "하한")
+                     + f" → 올해 이미 준 {jo(paid_total)} 빼고 {shares / 1e8:,.2f}억주로 나눔"}
+
+SIGNALS = [repeat_last, consensus_left, trend, payout_eps, no_cut, earn_up, policy, tax_rule, announced]
+LAW = ["announced", "tax_rule"]   # 회사가 공시로 밝힌 총액 · 법이 정한 공식(대상은 회사가 공시로 밝힘) — 과거 적중순 경쟁 밖, 있으면 맨 앞
 
 def rank(xs):
     """신호 순서 — 과거 회차(xs: sig_dps·actual_dps)에 이 순서로 처음 있는 신호를 썼다면의 평균 오차(회차마다 100%에서 자름)가

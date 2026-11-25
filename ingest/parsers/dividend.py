@@ -21,7 +21,7 @@ def pick(pattern, t):
 NOTE_SKIP = re.compile(r"종류주식|시가배당|지급\s*예정|제464조|제165조|감사위원|사외이사|독립이사|감사결과|감사\s*결과|승인\s*(?:과정|결과)|주식수|자기주식|자사주|우선주를\s*의미|미정|참석|변경될\s*수|변동될\s*수")
 
 def parse_decision(t):
-    """배당결정 — 금액·기준일·지급일·배당구분 + 「기타 투자판단」 정책 문장(note)·고배당기업 과세특례 요건 충족을 밝혔나(tax_rule)"""
+    """배당결정 — 금액·기준일·지급일·배당구분·배당금총액(원, 보통+종류) + 「기타 투자판단」 정책 문장(note)·고배당기업 과세특례 요건 충족을 밝혔나(tax_rule)"""
     ps = pick(r"1주당\s*배당금\(원\)\s*보통주식\s*([\d,]+)", t).replace(",", "")
     i = t.rfind("기타 투자판단")
     other = t[i: i + 1500].split("※")[0] if i >= 0 else ""
@@ -29,6 +29,7 @@ def parse_decision(t):
             "record_date": norm_date(pick(r"배당기준일\s*" + DATE, t)),
             "pay_date": norm_date(pick(r"배당금지급\s*예정일자\s*" + DATE, t)),
             "div_type": norm_div_type(pick(r"배당구분\s*(\S+)", t)),
+            "total": int(pick(r"배당금총액\s*\(원\)\s*([\d,]+)", t).replace(",", "") or 0),
             "note": [x.strip() for x in re.split(r"\s-\s|\s\d\.\s", other)[1:] if len(x.strip()) > 15 and not NOTE_SKIP.search(x)][:4],
             "tax_rule": bool(re.search(r"과세\s*특례|분리\s*과세|고배당\s*기업", other))}
 
@@ -71,6 +72,13 @@ def parse_split(t):
         return {}
     before, after = (int(x.replace(",", "")) for x in m.groups())
     return {"factor": before / after, "effective": eff.group(1)} if before and after else {}
+
+def parse_return(t):
+    """수시공시의무관련사항(공정공시) — 공시제목, 주주환원·배당 관련이면 내용(정책 장부 div_policy.json 을 채우는 근거)"""
+    m = re.search(r"공시제목\s*(.+?)\s*수시공시내용", t)
+    subject = m[1].strip() if m else ""
+    return {"subject": subject,
+            "text": t[m.end(): m.end() + 2500].split("예정 공시 일시")[0].strip() if m and re.search(r"주주환원|배당", subject) else ""}
 
 MIN_DPS = re.compile(r"최소[^.\d]{0,15}?(?:배당금?|DPS)[^.\d]{0,15}?([\d,]{3,7})\s*원|(?:DPS|주당\s*배당금?)\s*([\d,]{3,7})\s*원\s*이상|연\s*([\d,]{3,7})\s*원의\s*최소\s*배당금")
 PAYOUT = re.compile(r"배당\s*성향[^.%\d]{0,20}?(\d{1,2}(?:\.\d+)?)\s*%\s*(?:~\s*\d+\s*%\s*)?(?:이상|까지|수준|목표|유지|지향)|순이익[^.%\d]{0,25}?(\d{1,2})\s*%\s*이상[^.]{0,5}배당")
