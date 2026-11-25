@@ -17,8 +17,9 @@ jhts.marketdata 미설치 시 AVAILABLE=False, 함수는 빈 값을 돌려준다
 KIS 키가 없으면(mock 모드) 실시간은 가짜값 대신 '없음'을 돌려준다(데이터 정직성).
 """
 import os, time, datetime, threading
-from core.paths import CACHE_DIR
-from core.krx_cal import is_business_day, session_delay, iso, minutes
+from core.paths import CACHE_DIR, load_json, save_json
+from core.krx_cal import is_business_day, session_delay, iso, ymd, minutes, default_years, CALENDAR_PATH
+from core import krx_cal
 from core.fmt import pct
 from core import ops
 
@@ -67,6 +68,7 @@ SCHEDULE = {   # 시간대: {피드: 받는 주기(초)} — 0 매 바퀴, ONCE 
     AFTER: {KRX_FUT: ONCE, NXT_STOCK: 300},
 }
 ROUND_SECONDS = 1   # 한 바퀴 최소 간격
+CALENDAR_SECONDS = 86400   # KIS 휴장일 달력 — KIS 권장 하루 1회
 IDLE_SECONDS = 5    # 받을 게 없을 때 쉬는 초
 
 
@@ -250,9 +252,24 @@ def stats():
     return items
 
 
+def refresh_calendar():
+    """KIS 휴장일 달력을 받아 CALENDAR_PATH 에 합치고 휴장일 달력을 다시 읽는다.
+    달력 범위에서 아직 없는 첫날과 오늘 중 이른 날부터 받는다 — 지난 날은 남기고, 받다 끊긴 구간은 다음에 채운다."""
+    have = load_json(CALENDAR_PATH, {})
+    years = default_years()
+    first, today = datetime.date(years[0], 1, 1), datetime.date.today()
+    missing = next((d for d in (first + datetime.timedelta(n) for n in range((today - first).days)) if ymd(d) not in have), today)
+    got = _call({}, lambda: md.market_calendar(ymd(missing), f"{years[-1]}1231"), realtime=True)
+    if got:
+        save_json(CALENDAR_PATH, dict(sorted({**have, **got}.items())))
+        krx_cal.load()
+    return len(got)
+
+
 def start():
     ops.source(stats)
     threading.Thread(target=_loop, daemon=True, name="시세 허브").start()
+    threading.Thread(target=ops.every, args=("휴장일 달력", CALENDAR_SECONDS, refresh_calendar), daemon=True, name="휴장일 달력").start()
 
 
 def _call(default, fetch, realtime=False):

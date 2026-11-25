@@ -1,31 +1,38 @@
 # -*- coding: utf-8 -*-
 """한국 증시 휴장일 달력·영업일 계산 — 배당·증자·만기 등 여러 모듈이 공유해 중복 제거.
-fetch(=API 키) 의존이 없어 단독으로도 import 가능."""
-import datetime, re
+fetch(=API 키) 의존이 없어 단독으로도 import 가능 — KIS 달력은 market.refresh_calendar 가 받아 둔 파일을 읽기만 한다."""
+import datetime, os, re
 import numpy as np
 import holidays as _hol
+from core.paths import CACHE_DIR, load_json
+
+CALENDAR_PATH = os.path.join(CACHE_DIR, "krx_calendar.json")   # KIS 개장 여부 {YYYYMMDD: bool} — market.refresh_calendar 가 하루 한 번 받는다
 
 def holiday_dates(years):
-    """주어진 연도들의 증시 휴장일 집합 — 공휴일 + 근로자의날(5/1) + 연말폐장(12/31).
-    (주말은 포함하지 않음 — 호출부에서 weekday로 따로 처리)"""
+    """주어진 연도들의 증시 휴장일 집합 — 주말은 호출부에서 weekday로 따로 처리.
+    규칙(공휴일 + 근로자의날(5/1) + 연말폐장(그해 마지막 평일)) + KIS 달력이 휴장이라는 날(임시공휴일 등).
+    KIS 의 '개장'으로 규칙의 휴장을 지우지는 않는다 — 먼 날은 KIS 에 선거일·대체공휴일이 아직 안 들어 있다(2028-04-12 등)."""
     years = list(years)
-    # 제헌절(7/17)은 2008년부터 공휴일이 아니라 KRX 정상 개장 → holidays 라이브러리가
-    # 국경일로 포함시키는 것을 제외한다.
-    days = {d for d, name in _hol.SouthKorea(years=years).items() if "제헌절" not in name}
+    # 제헌절(7/17)은 2008~2025년엔 공휴일이 아니라 KRX 정상 개장 (2026년부터 다시 공휴일)
+    days = {d for d, name in _hol.SouthKorea(years=years).items() if not ("제헌절" in name and 2008 <= d.year <= 2025)}
     for y in years:
         days.add(datetime.date(y, 5, 1))     # 근로자의날 (증시 휴장)
         last = datetime.date(y, 12, 31)       # 연말 휴장 = 그해 마지막 평일 (12/31 이 주말이면 그 전 금요일)
         while last.weekday() >= 5 or last in days:
             last -= datetime.timedelta(days=1)
         days.add(last)
-    return days
+    closed = {to_date(d) for d, is_open in load_json(CALENDAR_PATH, {}).items() if not is_open}
+    return days | {d for d in closed if d.year in years and d.weekday() < 5}
 
 def default_years():
     """오늘 기준 3년 전~2년 뒤 — 과거 회차 검증(2년+)·내후년 기준일·만기일까지 휴장일이 빠지지 않게."""
     y = datetime.date.today().year
     return list(range(y - 3, y + 3))
 
-_HOL_ARR = np.array(sorted(str(d) for d in holiday_dates(default_years())), dtype="datetime64[D]")
+def load():
+    """휴장일 배열을 다시 만든다 — KIS 달력을 새로 받으면 market 이 부른다"""
+    global _HOL_ARR
+    _HOL_ARR = np.array(sorted(str(d) for d in holiday_dates(default_years())), dtype="datetime64[D]")
 
 def t_minus(record_iso, n):
     """기준일(배당기준일·신주배정기준일) 기준 n번째 직전 영업일. n=1 → 락일, n=2 → 권리부 마지막 매수일.
@@ -108,3 +115,6 @@ def norm_date(s):
         return datetime.date(*map(int, m.groups())).isoformat() if m else ""
     except ValueError:
         return ""
+
+
+load()
