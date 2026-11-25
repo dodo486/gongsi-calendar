@@ -187,12 +187,7 @@ def live_pass(lim_seen, ac_seen, alert=True):
     alert_limits(out.get("limits") or [], lim_seen, alert)
     alert_actions(out.get("actions") or [], ac_seen, alert)
 
-INDUSTRY_POLL_SECONDS = 60  # 인더스트리 액션 — 전 종목 스냅샷 1회(수 초), 묶음 재구성은 30일마다
-
-def industry_pass():
-    """인더스트리 액션 → data/out/industry_action.json."""
-    industry.daily_upkeep()
-    industry.build_action()
+INDUSTRY_POLL_SECONDS = 60  # 인더스트리 묶음 — 시세 구독·소속표·일봉은 하루 한 번, 묶음 재구성은 30일마다
 
 HALT_POLL_SECONDS = 600   # 거래정지/재개 알림 확인 — halts.json 은 들여오기·계산이 갱신
 
@@ -262,7 +257,7 @@ def main():
     ops.run("상하한가·시장조치", lambda: live_pass(lim_seen, ac_seen, alert=False))   # baseline: 현재분을 담고 알림 억제(재시작 스팸 방지, 아직 걸린 건 알림)
     for name, seconds, work in (("상하한가·시장조치", LIMITS_POLL_SECONDS, lambda: live_pass(lim_seen, ac_seen)),
                                 ("거래정지 알림", HALT_POLL_SECONDS, halt_alerts()),
-                                ("인더스트리", INDUSTRY_POLL_SECONDS, industry_pass)):
+                                ("인더스트리 묶음", INDUSTRY_POLL_SECONDS, industry.daily_upkeep)):
         threading.Thread(target=ops.every, args=(name, seconds, work), daemon=True, name=name).start()
         print(f"  [{name}] {seconds}초마다")
     threading.Thread(target=closearb.start, daemon=True).start()

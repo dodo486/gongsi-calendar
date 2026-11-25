@@ -502,7 +502,7 @@ let IA = null, IA_SORT = "value", IA_SEL = null;   // data/out/industry_action.j
 async function loadIndustry(){
   try{ IA = await (await fetch("data/out/industry_action.json?_="+Date.now())).json(); }catch(_){ IA = null; }
   document.getElementById("meta").textContent = IA
-    ? `🏭 묶음 ${IA.groups.length}개 · 갱신 ${IA.generated_at} · 묶은 날 ${IA.groups_built_at.slice(0,10)} (일봉 ${IA.window[0]}~${IA.window[1]})`
+    ? `🏭 묶음 ${IA.groups.length}개 · 갱신 ${IA.generated_at} · 시세 ${IA.source} · 묶은 날 ${IA.groups_built_at.slice(0,10)} (일봉 ${IA.window[0]}~${IA.window[1]})`
     : "인더스트리 데이터 없음";
   renderIndustry();
 }

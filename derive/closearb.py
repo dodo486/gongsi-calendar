@@ -87,7 +87,7 @@ def _minute_of_day(hhmm):
 
 
 def build_row(code, stock, fut_info, krx, book, nxt, fut, status, phase, before_auction, series, mktcap):
-    auction = phase == md_feed.AUCTION
+    auction = phase in (md_feed.OPEN_AUCTION, md_feed.AUCTION)
     spot = krx.get("price")   # 동시호가 중엔 예상체결가
     nxt_mid = (nxt["ask"] + nxt["bid"]) / 2 if nxt.get("ask") and nxt.get("bid") else nxt.get("price")
     basis = pct(fut.get("price"), spot, ND)
@@ -113,7 +113,7 @@ def build_row(code, stock, fut_info, krx, book, nxt, fut, status, phase, before_
         "spot": spot, "spot_kind": "예상" if auction else ("종가" if phase in (md_feed.PRE, md_feed.FUT_CLOSE, md_feed.AFTER) else "현재"),
         "jump_pct": pct(spot, (before_auction or {}).get("spot"), ND),
         "imb_eok": round((bid_q - ask_q) * spot / 1e8, 1) if spot and bid_q is not None and ask_q is not None else None,
-        "expected_qty": book.get("expected_qty") if auction else None, "bid_qty": bid_q, "ask_qty": ask_q,
+        "expected_qty": book.get("expected_qty") if phase == md_feed.AUCTION else None, "bid_qty": bid_q, "ask_qty": ask_q,
         "nxt": nxt_mid,
         "nxt_gap_pct": pct(spot, nxt_mid, ND),
         "fut": fut.get("price"), "fut_vol": fut.get("volume"),

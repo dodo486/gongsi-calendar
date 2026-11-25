@@ -10,8 +10,8 @@
 묶음 품질 기준(2026-11 측정, 앞 1년으로 묶고 뒤 1년): 묶음 안 잔차 상관 0.25 / 밖 0.00,
 한 묶음 2종목+ +5% 날 덜 오른 멤버의 다음 날 시장 대비 +0.08% (무작위 묶음 -0.04%).
 
-오늘 (data/out/industry_action.json, 60초): 전 종목 스냅샷으로 묶음·세부 테마별 거래대금 합, 평균 등락,
-상승 비율, 대장주(거래대금 1위).
+오늘 (data/out/industry_action.json): 묶음 종목을 시세 허브에 구독해 허브가 받을 때마다 묶음·세부 테마별
+거래대금 합, 평균 등락, 상승 비율, 대장주(거래대금 1위). 등락률은 전일 종가 대비 — 시세는 SOURCE.
 네이버 소속표 원본은 날마다 data/cache/theme_snapshots/YYYYMMDD.json 으로 남긴다(사후 편입 없는 재검증용).
 
   python -m derive.industry          # 오늘 집계 1회 (묶음 파일이 없거나 오래됐으면 먼저 다시 묶음)
@@ -24,6 +24,7 @@ from scipy.cluster.hierarchy import linkage, fcluster
 from scipy.spatial.distance import squareform
 from core import market as md_feed
 from core.krx_cal import ymd, days_ago
+from core.fmt import pct
 from core.paths import save_json, load_json, stamp, CACHE_DIR, INDUSTRY_ACTION_PATH
 
 GROUPS_PATH = os.path.join(CACHE_DIR, "industry_groups.json")
@@ -35,6 +36,7 @@ PRUNE = 0.25        # 테마 정제: 나머지 평균과의 잔차 상관 하한
 MERGE = 0.6         # 테마 합치기: 테마 지수 상관 하한
 MIN_SIZE = 3
 CANDLE_HOUR = 18    # 이 시각 이후 하루 한 번 일봉 증분 수집
+SOURCE = {md_feed.PRE: md_feed.NXT_STOCK}   # 시간대: 등락률을 재는 시세 — 그 밖엔 KRX(개장 동시호가엔 예상체결가)
 
 
 def _residual(R):
@@ -132,13 +134,30 @@ def _agg(codes, snap):
             "lead": {"code": lead["code"], "name": lead["name"], "rate": lead.get("rate"), "value": lead.get("value")}}
 
 
-def build_action():
+_now = {"groups": None, "names": {}, "day": None}   # 구독한 묶음, 종목 이름·시장, 구독한 날
+
+
+def subscribe():
+    """묶음 종목을 시세 허브에 구독한다 — 묶음 파일이 없거나 오래됐으면 먼저 다시 묶는다. 구독한 {피드: 코드들}."""
     g, stale = _load_groups()
     if stale:
         g = build_groups() or g
     if not g:
-        return None
-    snap = {r["code"]: r for r in md_feed.market_snapshot()}
+        return {}
+    codes = sorted({c for grp in g["groups"] for c in grp["codes"]})
+    names = {r["code"]: {"code": r["code"], "name": r["name"], "market": r.get("market", "")}
+             for r in md_feed.market_snapshot() if r["code"] in set(codes)}
+    _now.update(groups=g, names=names, day=datetime.date.today())
+    feeds = {md_feed.KRX_STOCK: codes, md_feed.NXT_STOCK: codes}
+    md_feed.watch("인더스트리", lambda phase, now: build_action(phase), feeds)
+    return feeds
+
+
+def build_action(phase):
+    g, names = _now["groups"], _now["names"]
+    feed = SOURCE.get(phase, md_feed.KRX_STOCK)
+    snap = {c: {**names[c], "rate": pct(q["price"], q.get("prev_close")), "value": q.get("value")}
+            for c, q in md_feed.latest(feed).items() if c in names and q.get("price")}
     out = []
     for grp in g["groups"]:
         a = _agg(grp["codes"], snap)
@@ -149,15 +168,11 @@ def build_action():
         a["subs"] = sorted(({"name": s["name"], **_agg(s["codes"], snap)} for s in grp["subs"]
                             if _agg(s["codes"], snap)), key=lambda s: -s["value"])
         ms = [snap[c] for c in grp["codes"] if c in snap]
-        a["members"] = [{"code": m["code"], "name": m["name"], "market": m.get("market", ""),
-                         "rate": m.get("rate"), "value": m.get("value")}
-                        for m in sorted(ms, key=lambda m: -(m.get("value") or 0))]
+        a["members"] = sorted(ms, key=lambda m: -(m.get("value") or 0))
         out.append(a)
     out.sort(key=lambda a: -a["value"])
-    payload = {"generated_at": stamp(),
-               "groups_built_at": g["generated_at"], "window": g["window"],
-               "total_value": sum(r.get("value") or 0 for r in snap.values() if r.get("kind") == "stock"),
-               "groups": out}
+    payload = {"generated_at": stamp(), "source": f"{phase or '장 밖'} · {feed}",
+               "groups_built_at": g["generated_at"], "window": g["window"], "groups": out}
     save_json(INDUSTRY_ACTION_PATH, payload)
     return payload
 
@@ -166,8 +181,10 @@ _candle_day = None
 
 
 def daily_upkeep():
-    """하루 한 번: 소속표 스냅샷, 장 마감 뒤 일봉 증분 수집."""
+    """하루 한 번: 시세 허브 구독(묶음이 오래됐으면 다시 묶고), 소속표 스냅샷, 장 마감 뒤 일봉 증분 수집."""
     global _candle_day
+    if _now["day"] != datetime.date.today():
+        subscribe()
     snapshot_themes(md_feed.themes())
     now = datetime.datetime.now()
     if now.hour >= CANDLE_HOUR and now.weekday() < 5 and _candle_day != now.date():
@@ -181,7 +198,8 @@ if __name__ == "__main__":
         g = build_groups()
         print(f"{g['generated_at']} 테마 {g['theme_count']} → 정제 {g['pruned_count']} → 묶음 {len(g['groups'])} "
               f"(일봉 {g['window'][0]}~{g['window'][1]})")
-    p = build_action()
+    md_feed.get("인더스트리(1회)", subscribe())
+    p = build_action(md_feed.phase_of(datetime.datetime.now()))
     print(f"{p['generated_at']} 묶음 {len(p['groups'])}개 (묶은 날 {p['groups_built_at']})")
     for a in p["groups"][:10]:
         print(f"  {a['name']:<20} {a['value'] / 1e8:>9,.0f}억 {a['rate']:+.2f}% 상승 {a['up']}/{a['n']} 대장 {a['lead']['name']}")

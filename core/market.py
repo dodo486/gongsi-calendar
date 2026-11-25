@@ -47,10 +47,11 @@ except Exception:
 # 피드 이름 = 거래소 상품 자료. 관제탑도 이 이름을 그대로 쓴다.
 KRX_STOCK, KRX_FUT, NXT_STOCK = "KRX 주식 시세", "KRX 주식선물 시세", "NXT 주식 시세"
 KRX_STATUS, KRX_INDEX, KRX_BOOK = "KRX 주식 상태", "KRX 지수 시세", "KRX 주식 호가"
-PRE, REGULAR, AUCTION, FUT_CLOSE, AFTER = "NXT 프리마켓", "정규장", "마감 동시호가", "선물 마감까지", "NXT 애프터마켓"
+PRE, OPEN_AUCTION, REGULAR, AUCTION, FUT_CLOSE, AFTER = "NXT 프리마켓", "개장 동시호가", "정규장", "마감 동시호가", "선물 마감까지", "NXT 애프터마켓"
 KRX_OPEN, AUCTION_START, KRX_CLOSE = "0900", "1520", "1530"   # 평소 KRX 개장·마감 동시호가 시작·마감
 PHASES = [
-    (PRE, "0800", "0850"),
+    (PRE, "0800", "0830"),
+    (OPEN_AUCTION, "0830", KRX_OPEN),   # NXT 프리마켓은 0850 까지 겹침
     (REGULAR, KRX_OPEN, AUCTION_START),
     (AUCTION, AUCTION_START, "1531"),   # 랜덤엔드까지
     (FUT_CLOSE, "1531", "1546"),
@@ -58,7 +59,8 @@ PHASES = [
 ]
 ONCE = float("inf")
 SCHEDULE = {   # 시간대: {피드: 받는 주기(초)} — 0 매 바퀴, ONCE 시간대에 들어와서 한 번
-    PRE: {NXT_STOCK: 300},
+    PRE: {NXT_STOCK: 0},
+    OPEN_AUCTION: {KRX_STOCK: 0, KRX_FUT: 0, NXT_STOCK: 0},
     REGULAR: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300},
     AUCTION: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300, KRX_BOOK: 10},
     FUT_CLOSE: {KRX_STOCK: ONCE, KRX_INDEX: ONCE, KRX_FUT: 0, NXT_STOCK: 0},
@@ -77,7 +79,7 @@ def _krx_multi(due):
 _FETCH = {   # 피드: 받는 법({피드: 코드들} → {피드: {코드: 값}}). 같은 받는 법을 쓰는 피드는 한 번에 받는다
     KRX_STOCK: _krx_multi,
     KRX_FUT: _krx_multi,
-    NXT_STOCK: lambda due: {NXT_STOCK: md.orderbook(due[NXT_STOCK], "NXT")},
+    NXT_STOCK: lambda due: {NXT_STOCK: md.multi_quote(due[NXT_STOCK], venue="NXT")["stock"]},
     KRX_STATUS: lambda due: {KRX_STATUS: md.quote(due[KRX_STATUS])},
     KRX_BOOK: lambda due: {KRX_BOOK: md.orderbook(due[KRX_BOOK], "KRX")},
     KRX_INDEX: lambda due: {KRX_INDEX: {c: md.index_rate(c) for c in due[KRX_INDEX]}},
