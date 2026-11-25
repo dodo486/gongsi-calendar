@@ -26,7 +26,8 @@ def assemble(entries, acc):
     """배당결정·기준일 공고 → 공시 회차. 접수 순으로 돌아 같은 회차는 나중 공시(정정)가 이긴다.
     같은 회차 = 같은 배당종류·사업연도·분기(정정으로 기준일이 바뀌어도 한 건). 배당종류를 못 읽은 공시는 같은 기준일 회차에 붙인다.
     반환: 회차마다 {code, name, market, div_type, record_date, per_share, pay_date,
-    decided(첫 배당결정 접수일 ISO, 없으면 ""), rcept_no(최근 배당결정, 없으면 기준일 공고), rcept_dt(최근 접수일)}"""
+    decided(첫 배당결정 접수일 ISO, 없으면 ""), rcept_no(최근 배당결정, 없으면 기준일 공고), rcept_dt(최근 접수일),
+    note(「기타 투자판단」 정책 문장), tax_rule(고배당기업 과세특례 요건 충족을 밝힘)}"""
     merged = {}
     def key_of(e, decided):
         t, rec = e["div_type"], e["record_date"]
@@ -48,7 +49,8 @@ def assemble(entries, acc):
         dec = e["kind"] == "decision"
         r = merged.setdefault(key_of(e, iso(e["rcept_dt"]) if dec else None),
                               {"code": e["code"], "name": e["name"], "market": e["market"], "div_type": "",
-                               "per_share": "", "record_date": "", "pay_date": "", "decided": "", "rcept_no": e["rcept_no"], "rcept_dt": ""})
+                               "per_share": "", "record_date": "", "pay_date": "", "decided": "", "rcept_no": e["rcept_no"], "rcept_dt": "",
+                               "note": [], "tax_rule": False})
         r["div_type"] = e["div_type"] if e.get("div_type") in TYPE_QUARTERS else r["div_type"] or e.get("div_type") or ""
         r["rcept_dt"] = max(r["rcept_dt"], e["rcept_dt"])
         if e.get("record_date"):
@@ -56,6 +58,7 @@ def assemble(entries, acc):
         if dec:
             r["per_share"] = e.get("per_share") or r["per_share"]
             r["pay_date"] = e.get("pay_date") or r["pay_date"]
+            r["note"], r["tax_rule"] = e.get("note") or r["note"], e.get("tax_rule", False) or r["tax_rule"]
             r["decided"] = r["decided"] or iso(e["rcept_dt"])
             r["rcept_no"] = e["rcept_no"]
     return [r for r in merged.values() if r["record_date"]]
@@ -113,7 +116,8 @@ def context(stock, entries, policy, acc, agm_records):
         t, record, decided = r["div_type"], to_date(r["record_date"]), to_date(r["decided"])
         fy, q, qe = round_of(t, record, decided, acc)
         rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
-                       "dps": r["per_share"], "pay": to_date(r["pay_date"]), "src": "공시", "rcept_no": r["rcept_no"]})
+                       "dps": r["per_share"], "pay": to_date(r["pay_date"]), "src": "공시", "rcept_no": r["rcept_no"],
+                       "note": r["note"], "tax_rule": r["tax_rule"]})
     seen = {(r["type"], r["record"]) for r in rounds}
     for t, decided, record in (policy or {}).get("rows", []):
         record, decided = to_date(record), to_date(decided)
@@ -122,7 +126,7 @@ def context(stock, entries, policy, acc, agm_records):
         if record and (t, record) not in seen:
             fy, q, qe = round_of(t, record, decided, acc)
             rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
-                           "dps": "", "pay": None, "src": "정기보고서 표", "rcept_no": ""})
+                           "dps": "", "pay": None, "src": "정기보고서 표", "rcept_no": "", "note": [], "tax_rule": False})
             seen.add((t, record))
     rounds.sort(key=lambda r: r["record"])
     for r in rounds:

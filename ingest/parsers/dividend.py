@@ -18,12 +18,19 @@ def pick(pattern, t):
     m = re.findall(pattern, t)
     return (m[-1] if "정정후" in t else m[0]) if m else ""
 
+NOTE_SKIP = re.compile(r"종류주식|시가배당|지급\s*예정|제464조|제165조|감사위원|사외이사|독립이사|감사결과|감사\s*결과|승인\s*(?:과정|결과)|주식수|자기주식|자사주|우선주를\s*의미|미정|참석|변경될\s*수|변동될\s*수")
+
 def parse_decision(t):
+    """배당결정 — 금액·기준일·지급일·배당구분 + 「기타 투자판단」 정책 문장(note)·고배당기업 과세특례 요건 충족을 밝혔나(tax_rule)"""
     ps = pick(r"1주당\s*배당금\(원\)\s*보통주식\s*([\d,]+)", t).replace(",", "")
+    i = t.rfind("기타 투자판단")
+    other = t[i: i + 1500].split("※")[0] if i >= 0 else ""
     return {"per_share": ps if ps not in ("", "-") else "",
             "record_date": norm_date(pick(r"배당기준일\s*" + DATE, t)),
             "pay_date": norm_date(pick(r"배당금지급\s*예정일자\s*" + DATE, t)),
-            "div_type": norm_div_type(pick(r"배당구분\s*(\S+)", t))}
+            "div_type": norm_div_type(pick(r"배당구분\s*(\S+)", t)),
+            "note": [x.strip() for x in re.split(r"\s-\s|\s\d\.\s", other)[1:] if len(x.strip()) > 15 and not NOTE_SKIP.search(x)][:4],
+            "tax_rule": bool(re.search(r"과세\s*특례|분리\s*과세|고배당\s*기업", other))}
 
 def parse_record(t):
     return {"record_date": norm_date(pick(r"기준일\s*" + DATE, t)),   # "(기준일) 시작일" 은 날짜 아니라 자동 skip

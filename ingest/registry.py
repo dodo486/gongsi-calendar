@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 from core import universe
 from ingest.parsers import dividend as dv, earn_sched as es, capital as cap, corporate as co, kind as kd
-from ingest.feeds import acc_mt, naver_dps, dart_alot, index_pdf
+from ingest.feeds import acc_mt, naver_dps, dart_alot, dart_fin, index_pdf
 
 
 @dataclass(frozen=True)
@@ -33,7 +33,7 @@ def _has(*words):
     return lambda c, r=None: any(w in c for w in words)
 
 DOCS = [
-    Doc("decision", ("I",), 800, _own("현금ㆍ현물배당결정"), dv.parse_decision),
+    Doc("decision", ("I",), 800, _own("현금ㆍ현물배당결정"), dv.parse_decision, 2),
     Doc("record", ("I",), 800, lambda c, r: _own("주주명부폐쇄")(c) and "배당" in c, dv.parse_record),
     Doc("agm_record", ("I",), 800, _own("주주명부폐쇄"), None),
     Doc("notice", ("I",), 800, lambda c, r: _own("기타경영사항")(c) and ("배당" in c or "기준일" in c or c.endswith("기타경영사항(자율공시)")),
@@ -64,6 +64,7 @@ FEEDS = [
     Feed("acc_mt", "pass", acc_mt.run),
     Feed("dps_consensus", "day", naver_dps.run),
     Feed("alot", "day", dart_alot.run),
+    Feed("fin", "day", dart_fin.run),
 ]
 
 KINDS = [d.kind for d in DOCS] + [f.name for f in FEEDS]

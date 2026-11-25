@@ -73,7 +73,7 @@ def verify():
     ahead = {(s, fy): amount.rank([y for y in finals if y["style"] == s and y["fy"] < fy]) for s in styles[1:] for fy in {x["fy"] for x in finals}}
     for x in rows + finals:   # 결산은 그 사업연도 전 해들로만 정한 순서(앞을 안 봄), 분기·중간은 표본이 한 해뿐이라 전체 순서
         if "sig_dps" in x:
-            order = ahead[x["style"], x["fy"]] if x in finals else priority[f"{x['type']}|{x['style']}"]
+            order = amount.LAW + (ahead[x["style"], x["fy"]] if x in finals else priority[f"{x['type']}|{x['style']}"])
             x["pred_dps"] = next((x["sig_dps"][k] for k in order if k in x["sig_dps"]), None)
     judged = [x for x in rows if x["pred"] in ("고정", "유동")]
     ok = [x for x in judged if (x["pred"] == "고정") == x["actual_fixed"]]
