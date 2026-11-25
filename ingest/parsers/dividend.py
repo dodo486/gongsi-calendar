@@ -83,8 +83,14 @@ def parse_return(t):
 MIN_DPS = re.compile(r"최소[^.\d]{0,15}?(?:배당금?|DPS)[^.\d]{0,15}?([\d,]{3,7})\s*원|(?:DPS|주당\s*배당금?)\s*([\d,]{3,7})\s*원\s*이상|연\s*([\d,]{3,7})\s*원의\s*최소\s*배당금")
 PAYOUT = re.compile(r"배당\s*성향[^.%\d]{0,20}?(\d{1,2}(?:\.\d+)?)\s*%\s*(?:~\s*\d+\s*%\s*)?(?:이상|까지|수준|목표|유지|지향)|순이익[^.%\d]{0,25}?(\d{1,2})\s*%\s*이상[^.]{0,5}배당")
 
+HIGH_DIV = re.compile(r"고배당기업\s*여부\s*(미해당|해당)")
+HD_PAYOUT = re.compile(r"직전\s*사업연도\s*\((\d{4})\)\s*배당성향\s*\(%\)\s*(-?[\d.]+)")
+HD_TOTAL = re.compile(r"직전\s*사업연도\s*\(\d{4}\)\s*이익배당금액\s*\(원\)\s*([\d,]+)")
+Q_DPS = re.compile(r"분기\s*(?:균등\s*)?(?:배당금?|DPS)\s*[:：]?\s*(?:주당\s*)?([\d,]{2,7})\s*원")
+
 def parse_plan(t):
-    """밸류업·지배구조보고서 — 배당 절차 문장(날짜용), 연간 최소 주당배당금(min_dps 원)·목표 배당성향(payout %, payout_sep = 별도 순이익 기준)(금액용)"""
+    """밸류업·지배구조보고서 — 배당 절차 문장(날짜용), 금액용: 연간 최소 주당배당금(min_dps 원)·목표 배당성향(payout %, payout_sep = 별도 순이익 기준)·
+    분기 정규 DPS(q_dps 원), 새 양식 고배당기업 표(high_div 해당 여부·hd_fy 직전 사업연도·hd_payout %·hd_total 이익배당금액 원)"""
     lines = []
     for m in re.finditer(r"배당\s*기준일|배당\s*절차|선\s*배당|배당액을?\s*먼저", t):
         s = t[max(0, m.start() - 80): m.end() + 120].strip()
@@ -92,8 +98,11 @@ def parse_plan(t):
             lines.append(s)
         if len(lines) >= 3:
             break
-    mn, po = MIN_DPS.search(t), PAYOUT.search(t)
-    return {"lines": lines, **({"min_dps": int(next(g for g in mn.groups() if g).replace(",", ""))} if mn else {}),
+    mn, po, q = MIN_DPS.search(t), PAYOUT.search(t), Q_DPS.search(t)
+    hd, hp, ht = HIGH_DIV.search(t), HD_PAYOUT.search(t), HD_TOTAL.search(t)
+    return {"lines": lines, **({"high_div": hd[1] == "해당"} if hd else {}),
+            **({"hd_fy": int(hp[1]), "hd_payout": float(hp[2])} if hp else {}), **({"hd_total": int(ht[1].replace(",", ""))} if ht else {}),
+            **({"q_dps": int(q[1].replace(",", ""))} if q else {}), **({"min_dps": int(next(g for g in mn.groups() if g).replace(",", ""))} if mn else {}),
             **({"payout": float(next(g for g in po.groups() if g)), "payout_sep": bool(re.search(r"별도|개별", t[max(0, po.start() - 40): po.end() + 40]))}
                if po else {})}
 

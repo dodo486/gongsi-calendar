@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """배당 사실 — 저장소 → 종목별 사실(공시 회차·분할·정관 이력·주총·예고·계획·사업연도별 EPS·배당·정책 장부). view(ctx, cut) = cut 전까지 알던 것만. 추정 없음"""
-import datetime, calendar, statistics
+import datetime, calendar, re, statistics
 from core import store, universe
 from core.paths import load_json, DIV_POLICY_PATH
 from core.krx_cal import to_date, iso, ymd, days_ago, days_between
@@ -69,6 +69,7 @@ DOC_KINDS = ("decision", "record", "notice", "split", "agm_call", "agm_result", 
 POLICY_DAYS = 400
 
 NOTICE_LOOKBACK_DAYS = 45
+RETURN_CASH = re.compile(r"현금\s*배당\s*(?:총액\s*)?(?:약\s*)?([\d.,]+)\s*조\s*원?\s*(이상|내외|이하)?")
 SPECIAL_MULT = 2
 EARN_UP, MIN_SAMPLES = 1.1, 20   # 이익 증가 회사 배당 증가율 — 그 사업연도 전 해들에서 배움
 ANNUAL_REPORT_DAYS, Q3_REPORT_DAYS = 90, 45   # 사업보고서 · 3분기보고서 제출 기한 — 그 뒤부터 안 값
@@ -89,7 +90,7 @@ def context(stock, entries, policy, acc, agm_records):
     acc_known = acc is not None
     acc = acc or 12
     corp = market = ""
-    rec_notices, notices, agms, plans, splits, returns = [], [], [], [], [], []
+    rec_notices, notices, agms, plans, splits, returns, auto = [], [], [], [], [], [], []
     for e in sorted(entries, key=lambda x: (x["rcept_dt"], x["rcept_no"])):
         corp, market = e.get("name") or corp, e.get("market") or market
         k, rd = e["kind"], to_date(e["rcept_dt"])
@@ -107,10 +108,16 @@ def context(stock, entries, policy, acc, agm_records):
         elif k in ("agm_call", "agm_result") and e.get("agm_date"):
             agms.append({"date": to_date(e["agm_date"]), "kind": k, "rcept": rd, "charter": e.get("charter"),
                          "regular": e.get("regular", False), "rejected": e.get("rejected", False)})
-        elif k == "plan" and (e.get("lines") or e.get("min_dps") or e.get("payout")):
-            plans.append({"date": rd, "title": e.get("title", ""), "lines": e.get("lines", []), "min_dps": e.get("min_dps"), "payout": e.get("payout"), "payout_sep": e.get("payout_sep")})
+        elif k == "plan":
+            plans.append({"date": rd, "title": e.get("title", ""), "lines": e.get("lines", []),
+                          **{k: e.get(k) for k in ("min_dps", "payout", "payout_sep", "q_dps", "high_div", "hd_fy", "hd_payout", "hd_total")}})
         elif k == "return_plan" and e.get("text"):
             returns.append({"date": rd, "subject": e["subject"], "text": e["text"], "rcept_no": e["rcept_no"]})
+            fy, cash = re.search(r"(20\d\d)\s*년", e["subject"]), RETURN_CASH.search(e["text"])
+            if fy and cash:   # 정책 장부 자동 줄 — 같은 사업연도 사람 줄이 있으면 contexts 에서 사람 줄이 이김
+                v = float(cash[1].replace(",", "")) * 1e12
+                auto.append({"code": stock, "fy": int(fy[1]), "cash_total": [v if cash[2] != "이하" else None, v if cash[2] in ("이하", "내외") else None],
+                             "regular_q": None, "date": rd, "src": e["rcept_no"], "text": cash[0], "by": "공시 자동"})
 
     filings = assemble([{**e, "div_type": e.get("div_type") or ""} for e in entries if e["kind"] in ("decision", "record")], acc)
     rounds = []
@@ -176,7 +183,7 @@ def context(stock, entries, policy, acc, agm_records):
         if o:
             since[g] = max((d for d in agm_days if d <= o and (last_x is None or d > last_x)), default=o)
     return {"code": stock, "name": corp, "market": market, "acc": acc, "acc_known": acc_known,
-            "filings": filings, "rounds": rounds, "rec_notices": rec_notices, "notices": notices, "agms": agms, "plans": plans, "returns": returns,
+            "filings": filings, "rounds": rounds, "rec_notices": rec_notices, "notices": notices, "agms": agms, "plans": plans, "returns": returns, "auto_policies": auto,
             "agm_records": sorted(agm_records or []), "charter": charter, "charter_since": since, "charter_pending": pending, "splits": splits,
             "organ": (policy or {}).get("organ") or {}, "policy_report": (policy or {}).get("title", "")}
 
@@ -190,7 +197,7 @@ def view(ctx, cut):
     v["agm_records"] = [d for d in ctx["agm_records"] if d < cut]
     v["charter_since"] = {g: d for g, d in ctx["charter_since"].items() if d < cut}
     v["splits"] = [x for x in ctx["splits"] if x["date"] < cut]
-    v["dps_cons"] = [x for x in ctx["dps_cons"] if x["date"] < cut]
+    v["cons"] = [x for x in ctx["cons"] if x["date"] < cut]
     v["plans"] = [p for p in ctx["plans"] if p["date"] < cut]
     v["policies"] = [p for p in ctx["policies"] if p["date"] < cut]
     v["years"] = {}
@@ -275,11 +282,15 @@ def contexts():
         pol[st] = latest and {**latest, "charter_hist": [{"date": p["rcept_dt"], "charter": p.get("charter") or {"결산": p["charter_text"]}}
                                                          for p in got if p.get("charter") or p.get("charter_text")]}
     acc = {s: int(m) for s, m in store.load("acc_mt").items() if str(m).isdigit()}
-    cons, alot = store.load("dps_consensus"), store.load("alot")
+    cons, alot = store.load("consensus"), store.load("alot")
     policies = {}
     for p in load_json(DIV_POLICY_PATH, {}).get("rows", []):
         policies.setdefault(p["code"], []).append({**p, "date": to_date(p["date"])})
-    return [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)),
-             "dps_cons": [{**x, "date": to_date(x["date"])} for x in cons.get(s, [])],
+    out = [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)),
+             "cons": [{**x, "date": to_date(x["date"])} for x in cons.get(s, [])],
              "years": {int(fy): d for fy, d in alot.get(s, {}).get("years", {}).items()},
-             "policies": sorted(policies.get(s, []), key=lambda p: p["date"])} for s in sorted(stocks)]
+             "policies": policies.get(s, [])} for s in sorted(stocks)]
+    for c in out:   # 정책 장부 = 사람 줄 + 공시 자동 줄(같은 사업연도 사람 줄이 없을 때만)
+        human = {p["fy"] for p in c["policies"]}
+        c["policies"] = sorted(c["policies"] + [p for p in c.pop("auto_policies") if p["fy"] not in human], key=lambda p: p["date"])
+    return out

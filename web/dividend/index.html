@@ -399,6 +399,7 @@ function showDetail(e){
           <div class="ev" style="margin-top:8px">🧮 금액: ${esc(e.amount_basis||"")}</div>
           ${e.amount_cands?`<div class="ev" style="margin-top:4px">🧮 후보: ${esc(e.amount_cands)}</div>`:""}
           ${e.amount_special?`<div class="ev" style="margin-top:4px">⭐ ${esc(e.amount_special)}</div>`:""}
+          ${e.amount_surprise?`<div class="ev" style="margin-top:4px">📈 ${esc(e.amount_surprise)}</div>`:""}
           <div class="ev" style="margin-top:4px">※ 공시 기반 자동 추정 (설계: docs/배당예측-워크플로우.md). 실제 공시(④)가 나오면 빨간색(확정) 이벤트로 대체됩니다.</div>
         </div>
         ${companyBlock(e.code)}
@@ -491,7 +492,7 @@ function exportXlsx(){
     "종목코드": "A" + e.code, "종목명": e.name, "시장": {KOSPI:"KP", KOSDAQ:"KQ"}[e.market] || e.market,
     "구분": e.grade_label, "사례": e.case || "", "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
     "기준일": e.record_date, "배당매수일(T-2)": e.confirm_date, "배당락일(T-1)": e.ex_date,
-    "몇월 만기 후": e.after_expiry, "배당락 월물": e.ex_month, "근거": e.basis_text, "금액 근거": e.amount_basis || "", "금액 후보": e.amount_cands || "", "특별배당 가능성": e.amount_special || "",
+    "몇월 만기 후": e.after_expiry, "배당락 월물": e.ex_month, "근거": e.basis_text, "금액 근거": e.amount_basis || "", "금액 후보": e.amount_cands || "", "특별배당 가능성": e.amount_special || "", "실적 서프라이즈 가능성": e.amount_surprise || "",
   }));
   if(!rows.length){ alert(`${from} 이후 배당이 없습니다.`); return; }
   // 서식 — 머리줄 남색, 구분은 화면 범례처럼 진함(확실)→회색(근거 약함)

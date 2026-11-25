@@ -51,7 +51,7 @@ def repeat_last(ctx, t, fy, rec, med):
 
 def consensus_left(ctx, t, fy, rec, med):
     """연간 주당배당금 컨센서스 − 같은 사업연도에 이미 정한 배당, 남은 회차 수로 나눔. 12월 결산만(네이버 연도 = 사업연도)"""
-    c = next((x for x in reversed(ctx["dps_cons"]) if x["fy"] == str(fy)), None)
+    c = next((x for x in reversed(ctx["cons"]) if x.get("fy") == str(fy) and "dps" in x), None)
     if not c or int(ctx["acc"]) != 12:
         return None
     done = [r for r in ctx["rounds"] if r["fy"] == fy and r["dps"]]
@@ -100,44 +100,53 @@ def earn_up(ctx, t, fy, rec, med):
     return {"signal": "earn_up", "name": "이익 반영", "value": round(rl["value"] * k),
             "basis": f"3분기 누적 EPS 작년 {lq3:,.0f}원 → 올해 {q3:,.0f}원" + (f", 이렇게 늘었던 회사들 배당 {k:.2f}배 × " if k != 1 else " (크게 늘지 않음) · ") + rl["basis"]}
 
-def policy(ctx, t, fy, rec, med):
-    """밸류업·지배구조보고서의 배당정책 — 직전 반복을 바닥으로, 연간 최소 주당배당금 · 목표 배당성향×올해 EPS(3분기 누적×4/3, 별도 기준이면 별도÷연결 순이익 비율로) 중 큰 값"""
-    mn = next((p for p in reversed(ctx["plans"]) if p["min_dps"]), None)
-    po = next((p for p in reversed(ctx["plans"]) if p["payout"]), None)
-    y = ctx["years"].get(fy, {})
-    sep = po and po["payout_sep"] and y.get("q3_ni", 0) > 0 and y.get("q3_ni_sep", 0) > 0
-    eps = y.get("q3_eps", 0) * 4 / 3 * (y["q3_ni_sep"] / y["q3_ni"] if sep else 1)
-    if t != "결산배당" or not (mn or po):
-        return None
-    cands = [c for c in (repeat_last(ctx, t, fy, rec, med),
-                         mn and from_annual(ctx, t, fy, "policy", "정책", mn["min_dps"], f"{iso(mn['date'])} {mn['title']} 연간 최소 {mn['min_dps']:,}원"),
-                         po and eps > 0 and from_annual(ctx, t, fy, "policy", "정책", po["payout"] / 100 * eps,
-                                                        f"{iso(po['date'])} {po['title']} 목표 배당성향 {po['payout']:g}% × 올해 {'별도 ' if sep else ''}EPS {eps:,.0f}원")) if c]
-    return {**max(cands, key=lambda c: c["value"]), "signal": "policy", "name": "정책"} if cands else None
-
 TAX_PAYOUT_HIGH, TAX_PAYOUT_LOW, TAX_GROWTH = 0.40, 0.25, 0.10   # 조특법 §104의27 고배당기업: 배당성향 40% 이상, 또는 25% 이상 + 배당 전년 대비 10% 증가
 TAX_MAX_JUMP = 2   # 요건 맞추는 데 작년의 이 배수 넘게 필요하면(일회성 이익) 포기한다고 봄 — 2025 요건 충족 회사들의 필요 인상은 최대 1.48배
 
-def tax_rule(ctx, t, fy, rec, med):
-    """고배당기업 과세특례 요건을 맞추는 최소 연간 DPS — 40% 경로와 25%+10% 경로 중 싼 쪽, 작년보다 적게는 안 줌, 딱 떨어지는 단위로 올림.
-    결산 공시에서 요건 충족을 밝힌 회사만(그 공시 회차 이후). 연간 EPS 모르면 3분기 누적×4/3. 작년의 TAX_MAX_JUMP 배 넘게 필요하면 없음"""
-    last = next((r for r in reversed(ctx["rounds"]) if r["type"] == "결산배당" and r["tax_rule"]), None)
+def valueup(ctx, t, fy, rec, med):
+    """밸류업 정책(트레이더 단계 2). 결산: 다음 중 큰 연간 DPS(작년 연간이 바닥) − 올해 이미 정한 배당 —
+    고배당기업이면 요건 최소(배당성향 40%, 또는 25% + 전년 대비 10% 증가 중 싼 쪽, 작년 이상, 작년의 TAX_MAX_JUMP 배 넘게 필요하면 포기 —
+    그해 환원 규모를 공시한 회사는 빼고),
+    목표 배당성향 × 올해 EPS(작년의 SPECIAL_MULT 배 넘으면 일회성 이익이라 뺌), 최소 DPS. 딱 떨어지는 단위로 올림.
+    분기·중간: 정책의 분기 정규 DPS. 올해 EPS = 컨센, 없으면 3분기 누적×4/3.
+    고배당기업 = 최신 밸류업 표 '해당'(없으면 결산 배당결정에서 요건 충족을 밝힘)"""
+    plans = ctx["plans"]
+    if t != "결산배당":
+        q = next((p for p in reversed(plans) if p["q_dps"]), None)
+        return q and {"signal": "valueup", "name": "밸류업 정책", "value": q["q_dps"], "basis": f"{iso(q['date'])} {q['title']} 분기 정규 {q['q_dps']:,}원"}
+    hd = next((p for p in reversed(plans) if p["high_div"] is not None), None)
+    tax = hd["high_div"] if hd else any(r["tax_rule"] for r in ctx["rounds"] if r["type"] == t and r["fy"] < fy)
+    po = next((p for p in reversed(plans) if p["payout"]), None)
+    mn = next((p for p in reversed(plans) if p["min_dps"]), None)
     y = ctx["years"].get(fy, {})
+    c = next((x for x in reversed(ctx["cons"]) if x.get("fy") == str(fy) and x.get("eps")), None)
+    eps, eps_txt = (c["eps"], f"컨센 EPS {c['eps']:,}원") if c else (y.get("q3_eps", 0) * 4 / 3, f"3분기 누적 EPS×4/3 {y.get('q3_eps', 0) * 4 / 3:,.0f}원")
     prev = int(ctx["years"].get(fy - 1, {}).get("dps") or sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy - 1 and r["dps"]))
-    eps = y.get("eps") or y.get("q3_eps", 0) * 4 / 3
-    if t != "결산배당" or not last or last["fy"] >= fy or not prev or eps <= 0:
+    cands = []
+    if tax and prev and eps > 0:
+        need = max(prev, min(TAX_PAYOUT_HIGH * eps, max(TAX_PAYOUT_LOW * eps, (1 + TAX_GROWTH) * prev)))
+        if need <= TAX_MAX_JUMP * prev or any(p["fy"] == fy for p in ctx["policies"]):   # 그해 환원 규모를 공시한 회사는 공시 범위가 상한
+            cands.append((need, f"고배당기업({iso(hd['date']) + ' 밸류업 표' if hd else '배당결정 공시'}) 요건 최소 — 작년 연간 {prev:,}원, {eps_txt}"))
+    if po and eps > 0:
+        sep = po["payout_sep"] and y.get("q3_ni", 0) > 0 and y.get("q3_ni_sep", 0) > 0
+        v = po["payout"] / 100 * eps * (y["q3_ni_sep"] / y["q3_ni"] if sep else 1)
+        if not prev or v <= SPECIAL_MULT * prev:
+            cands.append((v, f"{iso(po['date'])} 목표 배당성향 {po['payout']:g}% × {'별도 ' if sep else ''}{eps_txt}"))
+    if mn:
+        cands.append((mn["min_dps"], f"{iso(mn['date'])} 최소 DPS {mn['min_dps']:,}원"))
+    if not cands:
         return None
+    annual, why = max(cands)
+    if annual < prev:   # 정책 숫자는 최소치 — 회사는 그보다 많이 줌(2025: 최소치 그대로면 오차 28%, 작년 바닥이면 14.5%)
+        annual, why = prev, f"정책 최소({why})가 작년보다 낮음 → 작년 연간 {prev:,}원 유지"
     unit = next((u for u in (1000, 500, 100, 50, 10, 5) if prev % u == 0 and prev >= 2 * u), 1)
-    annual = math.ceil(max(prev, min(TAX_PAYOUT_HIGH * eps, max(TAX_PAYOUT_LOW * eps, (1 + TAX_GROWTH) * prev))) / unit) * unit
-    if annual > TAX_MAX_JUMP * prev:
-        return None
-    return from_annual(ctx, t, fy, "tax_rule", "고배당 요건", annual,
-                       f"{last['fy']} 결산 공시에서 고배당기업 과세특례 요건 충족 밝힘 → 배당성향 40%, 또는 25% + 전년 대비 10% 증가의 최소"
-                       f" (작년 연간 {prev:,}원, 올해 EPS {eps:,.0f}원) → 연간 {annual:,}원")
+    annual = math.ceil(annual / unit) * unit
+    return from_annual(ctx, t, fy, "valueup", "밸류업 정책", annual, f"{why} → 연간 {annual:,}원")
 
 def announced(ctx, t, fy, rec, med):
     """회사가 공시로 밝힌 이 사업연도 현금배당 총액(정책 장부 div_policy.json) — 하한 = max(공시 하한, 올해 이미 준 총액 + 분기 정규), 상한 = 공시 상한.
-    그 안에서 컨센(연간 컨센 × 주식 수)을 쓰고 벗어나면 경계, 컨센 없으면 하한. 이미 준 총액을 빼고 최근 배당결정의 주식 수(총액 ÷ 주당)로 나눔"""
+    그 안에서 컨센(연간 컨센 × 주식 수)·밸류업 정책(고배당 요건 등) 중 큰 값을 쓰고 벗어나면 경계, 둘 다 없으면 하한.
+    이미 준 총액을 빼고 최근 배당결정의 주식 수(총액 ÷ 주당)로 나눔"""
     pol = next((p for p in reversed(ctx["policies"]) if p["fy"] == fy), None)
     last = next((r for r in reversed(ctx["rounds"]) if r["total"] and r["dps"] and int(r["dps"])), None)
     if t != "결산배당" or not pol or not last:
@@ -146,16 +155,19 @@ def announced(ctx, t, fy, rec, med):
     paid_total = sum(r["total"] for r in ctx["rounds"] if r["fy"] == fy and r["type"] != t)
     lo = max(pol["cash_total"][0] or 0, paid_total + (pol["regular_q"] or 0))
     hi = pol["cash_total"][1] or math.inf
-    c = next((x for x in reversed(ctx["dps_cons"]) if x["fy"] == str(fy)), None)
-    target = min(max(c["dps"] * shares, lo), hi) if c else lo
+    c = next((x for x in reversed(ctx["cons"]) if x.get("fy") == str(fy) and "dps" in x), None)
+    vu = valueup(ctx, t, fy, rec, med)
+    want = {k: v for k, v in (("컨센", c and c["dps"] * shares), ("밸류업 정책", vu and vu["value"] * shares + paid_total)) if v}
+    pick = max(want, key=want.get) if want else None
+    target = min(max(want[pick], lo), hi) if pick else lo
     jo = lambda x: f"{x / 1e12:,.1f}조원"
     return {"signal": "announced", "name": "회사 공시 총액", "value": round((target - paid_total) / shares),
             "basis": f"{iso(pol['date'])} 회사 공시 — {fy} 현금배당 총액 {jo(lo)}~{jo(hi) if hi < math.inf else '상한 없음'} 중 "
-                     + (f"컨센 {c['dps']:,}원×{shares / 1e8:,.2f}억주 = {jo(c['dps'] * shares)}" + (" (범위 밖 → 경계)" if target != c["dps"] * shares else "") if c else "하한")
+                     + (" · ".join(f"{k} {jo(v)}" for k, v in want.items()) + f" 중 큰 {pick}" + (" (범위 밖 → 경계)" if target != want[pick] else "") if pick else "하한")
                      + f" → 올해 이미 준 {jo(paid_total)} 빼고 {shares / 1e8:,.2f}억주로 나눔"}
 
-SIGNALS = [repeat_last, consensus_left, trend, payout_eps, no_cut, earn_up, policy, tax_rule, announced]
-LAW = ["announced", "tax_rule"]   # 회사가 공시로 밝힌 총액 · 법이 정한 공식(대상은 회사가 공시로 밝힘) — 과거 적중순 경쟁 밖, 있으면 맨 앞
+SIGNALS = [repeat_last, consensus_left, trend, payout_eps, no_cut, earn_up, valueup, announced]
+LAW = ["announced", "valueup"]   # 트레이더 순서: 회사가 밝힌 배당 총액(단계 3) > 밸류업 정책(단계 2) — 과거 적중순 경쟁 밖, 있으면 앞
 
 def rank(xs):
     """신호 순서 — 과거 회차(xs: sig_dps·actual_dps)에 이 순서로 처음 있는 신호를 썼다면의 평균 오차(회차마다 100%에서 자름)가
@@ -167,8 +179,8 @@ def rank(xs):
     return list(best) + [s.__name__ for s in SIGNALS if s.__name__ not in best and s.__name__ not in LAW]
 
 def estimate(ctx, t, fy, rec, med):
-    """금액 하나(신호 순서대로 처음 있는 것) + 특별배당 가능성 표시 — 결산에서 특별배당 이력(M17)과 올해 이익 튐(M15)이 같이 켜지면.
-    특별 몫 금액은 과거 검증에서 오차를 키워 금액에 더하지 않음"""
+    """금액 하나(LAW → 신호 순서대로 처음 있는 것) + 표시 둘 — 특별배당 가능성(결산에서 특별배당 이력 M17과 올해 이익 튐 M15가 같이 켜지면,
+    특별 몫 금액은 과거 검증에서 오차를 키워 더하지 않음), 실적 서프라이즈 가능성(트레이더 단계 1: 직전 2개 분기 순이익이 발표 전 컨센 상회)"""
     st = style(ctx, fy)
     y = ctx["years"]
     fin = [round(d["dps"] - d.get("q3_dps", 0)) for f, d in sorted(y.items()) if f < fy and d.get("dps") and "q3_eps" in d]
@@ -176,6 +188,15 @@ def estimate(ctx, t, fy, rec, med):
     q3 = y.get(fy, {}).get("q3_eps", 0)
     hist = any(r["special"] for r in ctx["rounds"]) or has_special(fin)
     spike = bool(prev) and q3 > SPECIAL_MULT * statistics.median(prev)
+    beat = []
+    for q in sorted({x["quarter"] for x in ctx["cons"] if "quarter" in x}):
+        act = next((x["ni_act"] for x in ctx["cons"] if x.get("quarter") == q and "ni_act" in x), None)
+        est = next((x["ni"] for x in reversed(ctx["cons"]) if x.get("quarter") == q and "ni" in x), None)
+        if act is not None and est:
+            beat.append((q, act, est))
+    surprise = (f"실적 서프라이즈 가능성 — 직전 2개 분기 순이익이 컨센 상회 ("
+                + ", ".join(f"{q[:4]}.{q[4:]} {a:,}억 vs 컨센 {e:,}억" for q, a, e in beat[-2:]) + ")"
+                if len(beat) >= 2 and all(a > e for _, a, e in beat[-2:]) else "")
     special = (f"특별배당 가능성 — 특별배당 준 적 있음 + 올해 3분기 누적 EPS {q3:,.0f}원이 평소({statistics.median(prev):,.0f}원)의 {SPECIAL_MULT}배 넘음"
                if t == "결산배당" and hist and spike else "")
     cands = {c["signal"]: c for c in (s(ctx, t, fy, rec, med) for s in SIGNALS) if c}
@@ -184,5 +205,5 @@ def estimate(ctx, t, fy, rec, med):
     cands = {k: {**c, "value": round(c["value"] / unit) * unit} for k, c in cands.items() if round(c["value"] / unit) * unit > 0}
     pick = next((cands[k] for k in LAW + med.get("priority", {}).get(f"{t}|{st}", [s.__name__ for s in SIGNALS]) if k in cands), None)
     return {"per_share": str(pick["value"]) if pick else "", "amount_basis": pick["basis"] if pick else "금액 이력 없음",
-            "amount_style": st, "amount_special": special, "amount_signals": list(cands.values()),
+            "amount_style": st, "amount_special": special, "amount_surprise": surprise, "amount_signals": list(cands.values()),
             "amount_cands": " · ".join(f"{c['name']} {c['value']:,}원" for c in cands.values())}

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 from core import universe
 from ingest.parsers import dividend as dv, earn_sched as es, capital as cap, corporate as co, kind as kd
-from ingest.feeds import acc_mt, naver_dps, dart_alot, dart_fin, index_pdf
+from ingest.feeds import acc_mt, naver_cons, dart_alot, dart_fin, index_pdf
 
 
 @dataclass(frozen=True)
@@ -41,7 +41,7 @@ DOCS = [
     Doc("split", ("I",), 800, _own("주식분할결정", "주식병합결정"), lambda t: {**dv.parse_split(t), **co.parse_relist(t)}, 2),
     Doc("agm_call", ("I",), 800, _own("주주총회소집결의"), dv.parse_agm, 2),
     Doc("agm_result", ("I",), 800, _own("주주총회결과"), dv.parse_agm, 2),
-    Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 3),
+    Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 4),
     Doc("return_plan", ("I",), 800, _own("수시공시의무관련사항"), dv.parse_return),
     Doc("earn_notice", ("I",), 45, _has("결산실적공시예고"), es.parse_sched),
     Doc("ir", ("I",), 14, _has("기업설명회"), es.parse_ir),
@@ -63,7 +63,7 @@ def _index_pdf():
 FEEDS = [
     Feed("index_pdf", "pass", _index_pdf),       # 배당 대상 종목을 정하므로 맨 앞
     Feed("acc_mt", "pass", acc_mt.run),
-    Feed("dps_consensus", "day", naver_dps.run),
+    Feed("consensus", "day", naver_cons.run),
     Feed("alot", "day", dart_alot.run),
     Feed("fin", "day", dart_fin.run),
 ]

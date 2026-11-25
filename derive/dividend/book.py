@@ -56,7 +56,7 @@ def build():
             if f["per_share"]:
                 r.update(grade="확정", amount_src="공시", amount_basis="공시 금액")
             elif p and p["per_share"]:
-                r.update(grade="공고", per_share=p["per_share"], amount_src="예상", amount_basis=p["amount_basis"], amount_cands=p["amount_cands"], amount_special=p["amount_special"])
+                r.update(grade="공고", per_share=p["per_share"], amount_src="예상", amount_basis=p["amount_basis"], amount_cands=p["amount_cands"], amount_special=p["amount_special"], amount_surprise=p["amount_surprise"])
             else:
                 r.update(grade="공고", amount_src="", amount_basis="")
             rows.append(r)
