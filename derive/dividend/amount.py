@@ -14,7 +14,7 @@ def run_dps(ctx, fy):
     return ys
 
 def has_special(vals):
-    """금액 이력(오래된 것부터)에 특별배당 낀 값이 있나 — 그 전 값들 중앙의 SPECIAL_MULT 배 넘음. 연간 이력은 특별을 못 떼어내 정기 추정에 쓰지 않음"""
+    """금액 이력(오래된 것부터)에 튄 값이 있나 — 그 전 값들 중앙의 SPECIAL_MULT 배 넘음. 추세·안 깎음은 튄 해를 이어 그리면 폭주해 안 씀"""
     return any(v > SPECIAL_MULT * statistics.median(vals[:i]) for i, v in enumerate(vals) if i)
 
 def style(ctx, fy):
@@ -34,18 +34,19 @@ def from_annual(ctx, t, fy, signal, name, annual, basis):
     return {"signal": signal, "name": name, "value": v, "basis": basis + (f" − 올해 이미 정한 {p:,.0f}원" if p else "")} if v > 0 else None
 
 def repeat_last(ctx, t, fy, rec, med):
-    """직전 정기 회차 금액 반복 — 그 뒤 분할·병합은 예상 기준일 주식 기준으로 보정. 결산 공시 회차가 없으면 작년 연간 − 3분기 누적"""
-    reg = next((r for r in reversed(ctx["rounds"]) if r["type"] == t and not r["special"] and r["dps"]), None)
+    """직전 같은 종류 회차 금액 반복 — 그 뒤 분할·병합은 예상 기준일 주식 기준으로 보정. 결산 공시 회차가 없으면 작년 연간 − 3분기 누적.
+    2배 넘게 뛴 회차도 건너뛰지 않음 — 6년 이력에서 그런 해 40번 중 26번은 다음 해도 유지(실제 인상), 뛴 금액 반복이 오차 37% vs 63%"""
+    reg = next((r for r in reversed(ctx["rounds"]) if r["type"] == t and r["dps"]), None)
     if not reg:
         y = ctx["years"].get(fy - 1, {})
-        if t != "결산배당" or not y.get("dps") or "q3_eps" not in y or has_special(run_dps(ctx, fy)):
+        if t != "결산배당" or not y.get("dps") or "q3_eps" not in y:
             return None
         v = round(y["dps"] - y.get("q3_dps", 0))
         return {"signal": "repeat_last", "name": "직전 반복", "value": v,
                 "basis": f"작년({fy - 1}) 연간 {y['dps']:,.0f}원" + (f" − 3분기까지 {y['q3_dps']:,.0f}원" if y.get("q3_dps") else "") + " 결산 몫 반복"} if v > 0 else None
     adj = share_factor(ctx["splits"], reg["record"], rec)
     return {"signal": "repeat_last", "name": "직전 반복", "value": round(int(reg["dps"]) / adj),
-            "basis": f"직전 정기 회차({reg['fy']} Q{reg['q']}) {int(reg['dps']):,}원 반복"
+            "basis": f"직전 회차({reg['fy']} Q{reg['q']}) {int(reg['dps']):,}원 반복"
                      + (f" · 그 뒤 {'분할' if adj > 1 else '병합'} 1주→{adj:g}주 보정" if adj != 1 else "")}
 
 def consensus_left(ctx, t, fy, rec, med):
@@ -117,10 +118,9 @@ def policy(ctx, t, fy, rec, med):
 SIGNALS = [repeat_last, consensus_left, trend, payout_eps, no_cut, earn_up, policy]
 
 def rank(xs):
-    """신호 순서 — 과거 회차(xs: sig_dps·actual_dps·actual_special)에 이 순서로 처음 있는 신호를 썼다면의 평균 오차(회차마다 100%에서 자름)가
-    가장 작은 순서 — 중앙값은 가운데 몇 회차만 봐서 소수 회차로 순서가 우연히 뒤집힘. 특별배당 섞인 회차는 뺌(정기 몫만 채점).
+    """신호 순서 — 과거 회차(xs: sig_dps·actual_dps)에 이 순서로 처음 있는 신호를 썼다면의 평균 오차(회차마다 100%에서 자름)가
+    가장 작은 순서 — 중앙값은 가운데 몇 회차만 봐서 소수 회차로 순서가 우연히 뒤집힘. 튄 회차도 넣음(대부분 실제 인상).
     표본 MIN_SAMPLES 미만 신호는 검증 전이라 SIGNALS 순으로 뒤에"""
-    xs = [x for x in xs if not x["actual_special"]]
     tested = [s.__name__ for s in SIGNALS if sum(s.__name__ in x["sig_dps"] for x in xs) >= MIN_SAMPLES]
     errs = lambda order: [abs(x["sig_dps"][k] - x["actual_dps"]) / x["actual_dps"] for x in xs if (k := next((k for k in order if k in x["sig_dps"]), None))]
     best = min(itertools.permutations(tested), key=lambda o: statistics.mean(min(v, 1) for v in errs(o))) if tested else ()

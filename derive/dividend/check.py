@@ -19,6 +19,7 @@ from derive.dividend.date import SEASON_DAYS
 
 METHODS = {"고정", "유동", "유동 가능", "판별 불가", "확정 기준일"}
 JARGON = re.compile(r"\bA[12]\b|\bD1[34]\b|정관 [OX]\b|앵커")
+CONS_GAP = 0.5   # 예상 금액이 컨센과 이만큼 넘게 다르면 경고 — 컨센은 과거 검증 전이라 순서엔 못 넣고 사람 눈으로
 MIN_HIT = {"판정 적중(고정/유동)": 93, "월물 적중": 93, "유동 기준일 ±7일 이내": 85}
 
 # 사례 정답표 (설계 §5.1) — 종목코드: [(검사 이름, 함수(회사, 예상들) → bool)]
@@ -101,6 +102,9 @@ def check():
                 err(w, f"화면 문구에 내부 용어: {txt}")
         if any(r and rec and abs((r - rec).days) <= 30 for r in real.get(e["code"], [])):
             warn(w, "확정 배당과 기준일 ±30일 겹침")
+        cons = next((x["value"] for x in e.get("amount_signals", []) if x["signal"] == "consensus_left"), None)
+        if cons and e["per_share"] and abs(int(e["per_share"]) - cons) > CONS_GAP * cons:
+            warn(w, f"예상 {int(e['per_share']):,}원이 컨센 {cons:,}원과 {CONS_GAP:.0%} 넘게 다름 — {e['amount_basis']}")
 
     # ── 회차·공시 짝 ──
     for s, c in book["companies"].items():
