@@ -139,6 +139,9 @@ def estimate(ctx, t, fy, rec, med):
     special = (f"특별배당 가능성 — 특별배당 준 적 있음 + 올해 3분기 누적 EPS {q3:,.0f}원이 평소({statistics.median(prev):,.0f}원)의 {SPECIAL_MULT}배 넘음"
                if t == "결산배당" and hist and spike else "")
     cands = {c["signal"]: c for c in (s(ctx, t, fy, rec, med) for s in SIGNALS) if c}
+    last = cands.get("repeat_last", {}).get("value", 0)   # 회사는 딱 떨어지게 줌 — 후보를 직전 금액의 단위로
+    unit = next((u for u in (1000, 500, 100, 50, 10, 5) if last and last % u == 0 and last >= 2 * u), 1)
+    cands = {k: {**c, "value": round(c["value"] / unit) * unit} for k, c in cands.items() if round(c["value"] / unit) * unit > 0}
     pick = next((cands[k] for k in med.get("priority", {}).get(f"{t}|{st}", [s.__name__ for s in SIGNALS]) if k in cands), None)
     return {"per_share": str(pick["value"]) if pick else "", "amount_basis": pick["basis"] if pick else "금액 이력 없음",
             "amount_style": st, "amount_special": special, "amount_signals": list(cands.values()),
