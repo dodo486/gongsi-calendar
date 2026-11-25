@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Callable
 from core import expiries
 from derive import earn_sched, capital, actions, limits, halts, disclosures, earnings
-from derive.dividend import confirmed, facts, date, verify, book, points, check
+from derive.dividend import facts, verify, book, points, check
 
 
 @dataclass(frozen=True)
@@ -16,11 +16,8 @@ class Calc:
     run: Callable
 
 
-DIV_FACTS = frozenset(facts.DOC_KINDS) | {"agm_record", "charter_table", "acc_mt", "dps_consensus", "index_pdf"}
-
 CALCS = [
     Calc("expiries", frozenset({"day"}), (), expiries.build),
-    Calc("dividends", frozenset({"decision", "record", "acc_mt", "index_pdf", "day"}), (), confirmed.main),
     Calc("capital", frozenset({*capital.CAP_KINDS, "quotes", "day"}), (), capital.main),   # quotes = 시세 갱신 주기
     Calc("actions", frozenset({"kind_action", "kind_halt", "day"}), (), actions.build),
     Calc("limits", frozenset({"kind_limit", "live", "day"}), (), limits.build),          # live = 장중 고속 바퀴(등락률)
@@ -28,9 +25,9 @@ CALCS = [
     Calc("disclosures", frozenset({"dart_listing", "day"}), (), lambda: disclosures.main(90)),
     Calc("earnings", frozenset({"dart_listing", "kind_feed", "day"}), (), earnings.main),
     Calc("earn_sched", frozenset({"earn_notice", "ir", "day"}), (), earn_sched.main),
-    Calc("div_estimates", DIV_FACTS | {"earn_notice", "ir", "day"}, (), date.build),
     Calc("div_verify", frozenset({"day"}), (), verify.verify),            # 백테스트 — 하루 한 번
-    Calc("div_book", frozenset(), ("expiries", "dividends", "div_estimates"), book.build),
+    Calc("div_book", frozenset({*facts.DOC_KINDS, "agm_record", "charter_table", "acc_mt", "dps_consensus", "index_pdf", "earn_notice", "ir", "day"}),
+         ("expiries",), book.build),
     Calc("divpoints", frozenset({"index_pdf", "day"}), ("div_book",), points.refresh),
     Calc("dividend_check", frozenset(), ("div_book", "div_verify", "divpoints"), check.main),
 ]

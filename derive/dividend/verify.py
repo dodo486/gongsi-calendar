@@ -5,13 +5,10 @@
 """
 import json, datetime, statistics
 from core.paths import save_json, load_json, stamp, DIV_VERIFY_PATH, EXPIRIES_PATH
-from core.krx_cal import t_minus
-from core.krx_cal import to_date, iso
+from core.krx_cal import t_minus, to_date, iso
 from derive.dividend.facts import view, medians, contexts
 from derive.dividend.date import GRADES, GROUP, predict_round
-from derive.dividend import amount as div_amount
-
-
+from derive.dividend import amount
 
 def amount_hits(xs):
     """예상 금액 적중 — 정확히 같음 · ±5% · ±20% · 오차 중앙값 (특별배당 섞인 실제 회차는 따로 셈)"""
@@ -23,9 +20,9 @@ def amount_hits(xs):
             "±20%": pct(sum(e <= 20 for e in err)), "오차 중앙값(%)": round(statistics.median(err), 1),
             "특별배당 섞인 회차": sum(x["actual_special"] for x in xs)}
 
-def verify(ctxs=None):
+def verify():
     today = datetime.date.today()
-    ctxs = ctxs or contexts()
+    ctxs = contexts()
     med = medians(ctxs)
     exps = sorted(to_date(e["date"]) for e in load_json(EXPIRIES_PATH, {}).get("events", []) if e.get("type") == "선·옵 동시만기")
     month = lambda ex: next((x for x in exps if x >= ex), None)
@@ -77,7 +74,7 @@ def verify(ctxs=None):
         "금액": {t or "전체": amount_hits([x for x in rows if x.get("pred_dps") and x.get("actual_dps") and (not t or x["type"] == t)])
                  for t in ("", "결산배당", "분기배당", "중간배당")},
         "신호별 금액": {sg.__name__: amount_hits([{**x, "pred_dps": x["sig_dps"][sg.__name__]} for x in rows
-                                                 if sg.__name__ in x.get("sig_dps", {}) and x.get("actual_dps")]) for sg in div_amount.SIGNALS},
+                                                 if sg.__name__ in x.get("sig_dps", {}) and x.get("actual_dps")]) for sg in amount.SIGNALS},
         "한계": "정관(정기보고서 표)은 최신값 사용 — 과거 시점 값이 아님. 실적발표 예정일 과거분 없음 → 백테스트에서 A2 이사회형 미사용",
     }
     save_json(DIV_VERIFY_PATH, {"generated_at": stamp(), "summary": summary, "rows": rows})

@@ -1,16 +1,10 @@
 # -*- coding: utf-8 -*-
-"""배당 3단계 날짜 — 사실 → 회차별 구분(GRADES)과 예상 기준일. 금액은 div_amount. 설계 정본 docs/배당예측-워크플로우.md §4
-
-  python -m derive.dividend.date   → data/out/div_estimates.json (companies + events)
-"""
+"""배당 날짜 — 사실 → 회차별 구분(GRADES)과 예상 기준일. 금액은 amount. 설계 정본 docs/배당예측-워크플로우.md §4"""
 import datetime
-from core import universe
-from core.paths import DART_VIEW, save_json, stamp, DIV_ESTIMATES_PATH
-from core.krx_cal import t_minus, to_date, iso
-from derive.dividend.confirmed import quarter_end
-from derive import earn_sched
-from derive.dividend import amount as div_amount
-from derive.dividend.facts import view, quarter_owner, pattern, medians, contexts
+from core.paths import DART_VIEW
+from core.krx_cal import to_date, iso
+from derive.dividend import amount
+from derive.dividend.facts import quarter_end, view, quarter_owner, pattern
 
 HORIZON_DAYS = 270
 MISS_GRACE_DAYS = 3
@@ -223,7 +217,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
             **grade_out("공고" if ann_rec else grade, t), "case": j["case"], "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
-            **div_amount.estimate(ctx, t, fy, rec),
+            **amount.estimate(ctx, t, fy, rec),
             "ladder": ladder(ctx, t, fy, q, bool(ann_rec))}, None
 
 def forecast(ctx, today, earn, med):
@@ -274,33 +268,3 @@ def company_out(ctx, missed):
                      for a in ctx["agms"]][-4:],
             "plans": [{"date": iso(p["date"]), "title": p["title"], "lines": p["lines"]} for p in ctx["plans"]][-2:],
             "evidence": ev}
-
-def build(ctxs=None):
-    today = datetime.date.today()
-    ctxs = ctxs or contexts()
-    earn = {}
-    for e in earn_sched.collect(watch=universe.div()):
-        earn.setdefault(e["code"], []).append(e)
-    med = medians(ctxs)
-    companies, events = {}, []
-    for c in ctxs:
-        if not c["name"] and not c["charter"]:
-            continue
-        preds, missed = forecast(c, today, earn.get(c["code"], []), med)
-        companies[c["code"]] = company_out(c, missed)
-        for p in preds:
-            events.append({"name": c["name"], "code": c["code"], "market": c["market"], **p,
-                           "confirm_date": t_minus(p["record_date"], 2), "ex_date": t_minus(p["record_date"], 1),
-                           "basis": f"{p['quarter']} {p['div_type']} · {p['method']} — {p['why']} · {p['anchor']} · 금액 {p['amount_basis']}"})
-    events.sort(key=lambda x: x["confirm_date"] or x["record_date"])
-    payload = {"generated_at": stamp(),
-               "medians": med, "grades": GRADES, "companies": companies, "count": len(events), "events": events}
-    save_json(DIV_ESTIMATES_PATH, payload)
-    n = lambda m: sum(1 for e in events if e["method"] == m)
-    print(f"저장: div_estimates.json — 종목 {len(companies)} · 예상 {len(events)}건 (고정 {n('고정')} · 유동 {n('유동')} · 기준일공고 {n('확정 기준일')})")
-    return payload
-
-
-
-if __name__ == "__main__":
-    build()

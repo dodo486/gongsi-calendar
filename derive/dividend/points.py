@@ -5,7 +5,7 @@
         = 지수 × (배당 때문에 지수가 빠지는 비율)   ← 지수를 곱하는 건 '비율 → 포인트' 환산
 대상:  오늘 < 배당락일 ≤ 차월물 만기일, 배당락일이 든 첫 만기로 월물 배정 (오늘 배당락분은 이미 가격에 반영돼 제외)
 
-배당 출처: 배당 장부 div_book.json (확정·예상을 회차마다 한 줄로 합친 것 — divbook.py).
+배당 출처: 배당 장부 div_book.json (book.py).
 월물 미정: 날짜가 확실하지 않은 구분(GRADES firm=False) 회차 중, 오늘+14일 기준일(상법 §354 2주 공고)로도
 근월물 만기 전에 배당락이 올 수 있는 것 — 예상 배당락 월물에 넣되 따로 합산 (설계 §4.6).
 
@@ -25,23 +25,15 @@ def expiries(today_iso):
     evs = load_json(EXPIRIES_PATH, {}).get("events", [])
     return sorted(e["date"] for e in evs if e.get("type") == "선·옵 동시만기" and e["date"] > today_iso)[:2]
 
-def book_dividends():
-    """배당 장부(div_book.json) 회차 → 포인트 계산용 (금액·상태·월물 미정 여부는 장부 구분에서)"""
-    book = load_json(DIV_BOOK_PATH, {})
-    grades = book.get("grades", {})
-    status = lambda r: ("확정" if r["amount_src"] == "공시" else "금액예상" if r["kind"] == "div" else "예상") if r.get("per_share") else "금액미정"
-    return [{**r, "dps": num(r.get("per_share")), "status": status(r), "src": "공시" if r["kind"] == "div" else "예상",
-             "firm": grades[r["grade"]]["firm"]} for r in book.get("rows", [])], grades
-
 def build():
     pdfs = load_json(PDF_PATH, {}).get("indices", {})
     today = datetime.date.today()
     exps = expiries(today.isoformat())
     earliest_ex = t_minus((today + datetime.timedelta(days=14)).isoformat(), 1)
-    rows, _ = book_dividends()
-    divs = [d for d in rows if exps and today.isoformat() < d["ex_date"] <= exps[-1]]
-    for d in divs:
-        d["undecided"] = not d["firm"] and earliest_ex <= exps[0]
+    book = load_json(DIV_BOOK_PATH, {})
+    status = lambda r: ("확정" if r["amount_src"] == "공시" else "금액예상" if r["kind"] == "div" else "예상") if r.get("per_share") else "금액미정"
+    divs = [{**r, "dps": num(r.get("per_share")), "status": status(r), "undecided": not book["grades"][r["grade"]]["firm"] and earliest_ex <= exps[0]}
+            for r in book.get("rows", []) if exps and today.isoformat() < r["ex_date"] <= exps[-1]]
     indices = []
     for cfg in INDICES:
         ix = pdfs.get(cfg["key"]) or {}

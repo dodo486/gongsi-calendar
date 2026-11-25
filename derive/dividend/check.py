@@ -6,16 +6,17 @@
 - 회차·공시 짝: 회차의 결산기말 여부, 기준일 안내 자율공시가 붙은 회차가 그럴듯한가
 - 지수배당포인트: 월물 합계, 배당락일이 그 월물 구간 안인가
 - 정답표: docs/배당예측-워크플로우.md §5.1 사례 8종목
-- 적중률: div_verify.py 결과가 기준 아래로 떨어지지 않았나
-결과는 data/out/dividend_check.json — 오류가 있으면 monitor 가 알림.
+- 적중률: verify 결과가 기준 아래로 떨어지지 않았나
+읽는 것은 배당 장부(div_book.json)·지수배당포인트·검증 결과뿐. 결과는 data/out/dividend_check.json — 오류가 있으면 monitor 가 알림.
 사용:
   python -m derive.dividend.check        # 오류 있으면 종료코드 1
 """
 import datetime, re, sys
-from core.paths import save_json, load_json, stamp, DIVIDEND_CHECK_PATH, DIVIDENDS_PATH, DIV_ESTIMATES_PATH, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_VERIFY_PATH
+from core.paths import save_json, load_json, stamp, DIVIDEND_CHECK_PATH, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_VERIFY_PATH
 from core.krx_cal import t_minus, to_date
+from derive.dividend.facts import quarter_end
+from derive.dividend.date import SEASON_DAYS
 
-SEASON_DAYS = {"결산배당": 123, "중간배당": 92, "분기배당": 92}
 METHODS = {"고정", "유동", "유동 가능", "판별 불가", "확정 기준일"}
 JARGON = re.compile(r"\bA[12]\b|\bD1[34]\b|정관 [OX]\b|앵커")
 MIN_HIT = {"판정 적중(고정/유동)": 93, "월물 적중": 93, "유동 기준일 ±7일 이내": 85}
@@ -50,14 +51,14 @@ def check():
     warn = lambda where, msg: warns.append(f"{where}: {msg}")
     today = datetime.date.today()
 
-    def dates(where, e, buy_key):
-        rec, ex, buy = to_date(e.get("record_date")), to_date(e.get("ex_date")), to_date(e.get(buy_key))
+    def dates(where, e):
+        rec, ex, buy = to_date(e.get("record_date")), to_date(e.get("ex_date")), to_date(e.get("confirm_date"))
         if not rec:
             return err(where, f"기준일 형식 오류 {e.get('record_date')!r}")
         if e.get("ex_date") != t_minus(e["record_date"], 1):
             err(where, f"배당락일 {e.get('ex_date')} ≠ 기준일 {rec} 의 T-1 영업일 {t_minus(e['record_date'], 1)}")
-        if e.get(buy_key) != t_minus(e["record_date"], 2):
-            err(where, f"매수일 {e.get(buy_key)} ≠ 기준일 {rec} 의 T-2 영업일 {t_minus(e['record_date'], 2)}")
+        if e.get("confirm_date") != t_minus(e["record_date"], 2):
+            err(where, f"매수일 {e.get('confirm_date')} ≠ 기준일 {rec} 의 T-2 영업일 {t_minus(e['record_date'], 2)}")
         if buy and ex and not (buy < ex <= rec):
             err(where, f"날짜 순서 오류 매수 {buy} · 락 {ex} · 기준 {rec}")
         if not re.fullmatch(r"[0-9A-Z]{6}", e.get("code", "")):
@@ -65,34 +66,31 @@ def check():
         if e.get("per_share") not in ("", None) and not str(e["per_share"]).isdigit():
             err(where, f"주당배당금 형식 {e.get('per_share')!r}")
 
-    # ── 확정 배당 ──
-    div = load_json(DIVIDENDS_PATH, None) or {"events": []}
-    seen = set()
-    for e in div["events"]:
-        w = f"확정 {e.get('name')}({e.get('code')}) {e.get('div_type')} {e.get('record_date')}"
-        dates(w, e, "confirm_date")
-        key = (e.get("code"), e.get("div_type"), e.get("record_date"))
-        if key in seen:
-            err(w, "같은 종목·종류·기준일 중복")
-        seen.add(key)
-
-    # ── 예상 배당 ──
-    res = load_json(DIV_ESTIMATES_PATH, None) or {"events": [], "companies": {}}
+    book = load_json(DIV_BOOK_PATH, None) or {"rows": [], "companies": {}, "grades": {}, "today_ids": [], "upcoming_ids": []}
+    ids = [r["id"] for r in book["rows"]]
+    if len(ids) != len(set(ids)):
+        err("배당 장부", "같은 회차 id 중복")
+    if not set(book["today_ids"]) | set(book["upcoming_ids"]) <= set(ids):
+        err("배당 장부", "오늘·다음 만기 목록에 장부에 없는 회차")
     real = {}
-    for e in div["events"]:
-        real.setdefault(e.get("code"), []).append(to_date(e.get("record_date")))
-    for e in res["events"]:
-        w = f"예상 {e['name']}({e['code']}) {e['quarter']} {e['div_type']}"
-        dates(w, e, "confirm_date")
+    for r in book["rows"]:
+        if r["kind"] == "div":
+            real.setdefault(r["code"], []).append(to_date(r["record_date"]))
+    for e in book["rows"]:
+        w = f"{'확정' if e['kind'] == 'div' else '예상'} {e['name']}({e['code']}) {e.get('div_type', '')} {e['record_date']}"
+        dates(w, e)
+        if e["grade"] not in book["grades"]:
+            err(w, f"알 수 없는 구분 {e['grade']!r}")
+        if any(not m["date"] for m in e["marks"]):
+            err(w, "캘린더 표시 날짜 없음")
+        if e["kind"] != "est":
+            continue
         rec, qe = to_date(e["record_date"]), to_date(e["quarter_end"])
         if e["method"] not in METHODS:
             err(w, f"알 수 없는 판정 {e['method']!r}")
-        if e.get("grade") not in res.get("grades", {}):
-            err(w, f"알 수 없는 구분 {e.get('grade')!r}")
         if e["method"] == "고정" and rec != qe:
             err(w, f"결산기말 고정인데 기준일 {rec} ≠ 결산기말·분기말 {qe}")
-        if rec and qe and not (qe <= rec <= qe + datetime.timedelta(days=SEASON_DAYS[e["div_type"]])) \
-                and not any("시즌 창 밖" in x for x in e.get("warn", [])):
+        if rec and qe and not (qe <= rec <= qe + datetime.timedelta(days=SEASON_DAYS[e["div_type"]]))                 and not any("시즌 창 밖" in x for x in e.get("warn", [])):
             err(w, f"기준일 {rec} 이 시즌 창(결산기말·분기말 {qe} ~ +{SEASON_DAYS[e['div_type']]}일) 밖인데 경고 없음")
         if rec and rec < today:
             err(w, f"예상 기준일 {rec} 이 이미 지남 — 지난 회차는 확정이거나 미실시여야 함")
@@ -102,10 +100,10 @@ def check():
             if JARGON.search(txt):
                 err(w, f"화면 문구에 내부 용어: {txt}")
         if any(r and rec and abs((r - rec).days) <= 30 for r in real.get(e["code"], [])):
-            warn(w, "확정 배당과 기준일 ±30일 겹침 — 화면은 확정만 보여줌")
+            warn(w, "확정 배당과 기준일 ±30일 겹침")
 
     # ── 회차·공시 짝 ──
-    for s, c in res["companies"].items():
+    for s, c in book["companies"].items():
         for r in c["rounds"]:
             if r["fixed"] != (r["record_date"] == r["quarter_end"]):
                 err(f"회차 {c['name']}({s}) {r['quarter']} {r['div_type']}",
@@ -114,28 +112,10 @@ def check():
             warn(f"회사 {c['name']}({s})", "결산월 조회 실패 — 12월 가정")
         for n in c.get("notices", []):
             nd = to_date(n["date"])
-            fy, q = map(int, re.findall(r"\d+", n["quarter"])[:2])
-            qe_month = (c["acc_mt"] - 3 * (4 - q) - 1) % 12 + 1
-            qe_year = fy if c["acc_mt"] - 3 * (4 - q) > 0 else fy - 1
-            qe = datetime.date(qe_year, qe_month, 28)
+            qe = quarter_end(*map(int, re.findall(r"\d+", n["quarter"])[:2]), c["acc_mt"])
             if nd and not (qe - datetime.timedelta(days=200) <= nd <= qe + datetime.timedelta(days=SEASON_DAYS[n["div_type"]])):
                 err(f"예고 {c['name']}({s}) {n['date']}",
                     f"{n['quarter']} {n['div_type']} 에 붙었는데 공시일과 결산기말·분기말({qe:%Y-%m})이 너무 멂: {n['title']}")
-
-    # ── 배당 장부 ──
-    book = load_json(DIV_BOOK_PATH, None)
-    if book:
-        ids = [r["id"] for r in book["rows"]]
-        if len(ids) != len(set(ids)):
-            err("배당 장부", "같은 회차 id 중복")
-        for r in book["rows"]:
-            w = f"장부 {r['name']}({r['code']}) {r.get('div_type', '')} {r['record_date']}"
-            if r["grade"] not in book["grades"]:
-                err(w, f"알 수 없는 구분 {r['grade']!r}")
-            if any(not m["date"] for m in r["marks"]):
-                err(w, "캘린더 표시 날짜 없음")
-        if not set(book["today_ids"]) | set(book["upcoming_ids"]) <= set(ids):
-            err("배당 장부", "오늘·다음 만기 목록에 장부에 없는 회차")
 
     # ── 지수배당포인트 ──
     dp = load_json(DIVPOINTS_PATH, None)
@@ -160,12 +140,13 @@ def check():
 
     # ── 정답표 ──
     ev_by = {}
-    for e in res["events"]:
-        ev_by.setdefault(e["code"], []).append(e)
+    for e in book["rows"]:
+        if e["kind"] == "est":
+            ev_by.setdefault(e["code"], []).append(e)
     for s, (nm, cases) in GOLDEN.items():
-        c = res["companies"].get(s)
+        c = book["companies"].get(s)
         if not c:
-            err(f"정답표 {nm}({s})", "div_estimates.json 에 없음")
+            err(f"정답표 {nm}({s})", "배당 장부 companies 에 없음")
             continue
         for name, ok in cases:
             try:

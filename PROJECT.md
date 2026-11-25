@@ -102,14 +102,16 @@ python -m app.monitor --once       # 폴러 1회 확인 (상주·웹은 launch.p
 python -m app.monitor --test-toast # 알림 테스트
 python -m ingest.feeds.watchlist        # 감시대상 갱신 (코스피200 네이버 + 코스닥150 스냅샷)
 python -m derive.disclosures 90       # 과거 N일 공시 백필 (증자·자사주 등 8종, 배당 제외)
-python -m derive.dividend.confirmed 90         # 배당 추출 (배당금+기준일 원문 파싱) → data/dividends.json
-python -m core.expiries             # 선물·옵션 만기일 생성(규칙 계산) → data/expiries.json
-python -m derive.limits          # 선물 상하한가(가격제한폭 도달) KIND 공시 → data/limits.json
-python -m derive.halts            # 매매거래정지/재개 KIND 공시 → data/halts.json
+python -m derive.dividend.book     # 배당 장부(공시 회차 + 예상 날짜·금액 + 회사 판정) → data/out/div_book.json
+python -m derive.dividend.verify   # 배당 적중률(과거 회차 백테스트) → data/out/div_verify.json
+python -m derive.dividend.check    # 배당 자가 점검 → data/out/dividend_check.json
+python -m core.expiries             # 선물·옵션 만기일 생성(규칙 계산) → data/out/expiries.json
+python -m derive.limits          # 선물 상하한가(가격제한폭 도달) KIND 공시 → data/out/limits.json
+python -m derive.halts            # 매매거래정지/재개 KIND 공시 → data/out/halts.json
 python -m derive.actions          # 시장조치(사이드카·서킷·투자경고)
-python -m ingest.feeds.index_pdf            # 지수배당포인트용 ETF PDF(KODEX200·KODEX코스닥150·TIGER KRX300)+지수종가 → data/index_pdf.json (하루 1회, --force)
-python -m derive.dividend.points            # 지수배당포인트(근월물) 계산 → data/divpoints.json
-python -m derive.industry [rebuild]   # 인더스트리 액션 → data/industry_action.json (rebuild = 굵은 묶음 강제 재구성)
+python -m ingest.feeds.index_pdf            # 지수배당포인트용 ETF PDF(KODEX200·KODEX코스닥150·TIGER KRX300)+지수종가 → data/store/index_pdf.json (하루 1회, --force)
+python -m derive.dividend.points            # 지수배당포인트(근월물·차월물) 계산 → data/out/divpoints.json
+python -m derive.industry [rebuild]   # 인더스트리 액션 → data/out/industry_action.json (rebuild = 굵은 묶음 강제 재구성)
 python -m app.launch               # 폴러+웹 동시 기동 + 크롬 앱창 (바탕화면 '공시캘린더' 아이콘이 이걸 호출)
 ```
 

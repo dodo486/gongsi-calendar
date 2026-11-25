@@ -3,8 +3,6 @@
 import re
 from core.krx_cal import norm_date
 
-
-
 DATE = r"(\d{4}[-.]\d{1,2}[-.]\d{1,2}|\d{4}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일)"
 
 def norm_div_type(s):
@@ -15,22 +13,21 @@ def norm_div_type(s):
             return kw + "배당"
     return s
 
+def pick(pattern, t):
+    """첫 그룹 — 정정 공시는 앞의 정정사항 표에 정정 전 값이 먼저 나오고 본문(정정 후)이 뒤에 오므로 마지막 일치"""
+    m = re.findall(pattern, t)
+    return (m[-1] if "정정후" in t else m[0]) if m else ""
+
 def parse_decision(t):
-    per = re.search(r"1주당\s*배당금\(원\)\s*보통주식\s*([\d,]+)", t)
-    rec = re.search(r"배당기준일\s*" + DATE, t)
-    pay = re.search(r"배당금지급\s*예정일자\s*" + DATE, t)
-    div = re.search(r"배당구분\s*(\S+)", t)
-    ps = per.group(1).replace(",", "") if per else ""
+    ps = pick(r"1주당\s*배당금\(원\)\s*보통주식\s*([\d,]+)", t).replace(",", "")
     return {"per_share": ps if ps not in ("", "-") else "",
-            "record_date": norm_date(rec.group(1)) if rec else "",
-            "pay_date": norm_date(pay.group(1)) if pay else "",
-            "div_type": norm_div_type(div.group(1) if div else "")}
+            "record_date": norm_date(pick(r"배당기준일\s*" + DATE, t)),
+            "pay_date": norm_date(pick(r"배당금지급\s*예정일자\s*" + DATE, t)),
+            "div_type": norm_div_type(pick(r"배당구분\s*(\S+)", t))}
 
 def parse_record(t):
-    rec = re.search(r"기준일\s*" + DATE, t)   # "(기준일) 시작일" 은 날짜 아니라 자동 skip
-    div = re.search(r"배당구분\s*(\S+)", t)
-    return {"record_date": norm_date(rec.group(1)) if rec else "",
-            "div_type": norm_div_type(div.group(1) if div else "")}
+    return {"record_date": norm_date(pick(r"기준일\s*" + DATE, t)),   # "(기준일) 시작일" 은 날짜 아니라 자동 skip
+            "div_type": norm_div_type(pick(r"배당구분\s*(\S+)", t))}
 
 def parse_charter(t):
     """주총 「정관상 기준일 설정 및 변경 세부내역」 — 이익배당 기준일 칸 '-' = 정관 고정일 없음(이사회 지정) → O"""
@@ -55,8 +52,7 @@ def parse_notice(t):
             "fyq": [int(fyq[1]), int(fyq[2])] if fyq else None}
 
 def parse_agm(t):
-    dt = re.search(r"주주총회일자\s*(\d{4}-\d{2}-\d{2})", t) or re.search(r"일시\s*(\d{4}-\d{2}-\d{2})", t)
-    return {"agm_date": dt[1] if dt else "", "charter": parse_charter(t),
+    return {"agm_date": pick(r"주주총회일자\s*(\d{4}-\d{2}-\d{2})", t) or pick(r"일시\s*(\d{4}-\d{2}-\d{2})", t), "charter": parse_charter(t),
             "regular": bool(re.search(r"구분\s*정기주주총회|정기주주총회\s*결과", t)),
             "rejected": bool(re.search(r"특별결의[^.]{0,100}?부결", t))}
 

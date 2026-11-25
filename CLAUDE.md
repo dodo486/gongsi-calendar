@@ -42,7 +42,7 @@
 고친 범위에 해당하는 것만 돌리고, **출력을 그대로 보고**한다.
 
 ```bash
-python -c "import fetch; print(len(fetch.KEY))"   # 40 이어야 함 (DART 키 정상)
+python -c "from ingest.sources.dart import KEY; print(len(KEY))"   # 40 이어야 함 (DART 키 정상)
 python -m derive.disclosures 3                           # data/out/disclosures.json 갱신되는지
 python -m app.launch                                  # 포트 8777 LISTENING + GET /index.html 200
 ```

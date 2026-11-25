@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""배당 3단계 금액 — 신호마다 후보 하나({signal, value 원, basis}) 또는 None, estimate 가 PRIORITY 순으로 고른다. 날짜는 div_date"""
+"""배당 금액 — 신호마다 후보 하나({signal, value 원, basis}) 또는 None, estimate 가 PRIORITY 순으로 고른다. 날짜는 date"""
 from core.krx_cal import iso
 from derive.dividend.facts import share_factor
 
@@ -28,7 +28,7 @@ def consensus_left(ctx, t, fy, rec):
                      + (f" ÷ 남은 {left}회" if left > 1 else "")} if v > 0 else None
 
 SIGNALS = [repeat_last, consensus_left]
-PRIORITY = {t: ["repeat_last", "consensus_left"] for t in ("결산배당", "분기배당", "중간배당")}   # 배당종류별 — div_verify 신호별 적중률로 정함
+PRIORITY = {t: ["repeat_last", "consensus_left"] for t in ("결산배당", "분기배당", "중간배당")}   # 배당종류별 — verify 신호별 적중률로 정함
 
 def estimate(ctx, t, fy, rec):
     cands = {c["signal"]: c for c in (s(ctx, t, fy, rec) for s in SIGNALS) if c}

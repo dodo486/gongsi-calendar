@@ -1,15 +1,71 @@
 # -*- coding: utf-8 -*-
-"""배당 2단계 사실 — 저장 파일 → 종목별 사실(회차·분할·정관 이력·주총·예고·계획). view(ctx, cut) = cut 전까지 알던 것만. 추정 없음"""
-import datetime, statistics
+"""배당 사실 — 저장소 → 종목별 사실(공시 회차·분할·정관 이력·주총·예고·계획). view(ctx, cut) = cut 전까지 알던 것만. 추정 없음"""
+import datetime, calendar, statistics
 from core import store, universe
-from core.krx_cal import to_date, iso, ymd, days_ago
-from derive.dividend.confirmed import TYPE_QUARTERS, quarter_end, round_of, assemble
+from core.krx_cal import to_date, iso, ymd, days_ago, days_between
+
+# ── 회차 — 배당 하나 = 종목 · 배당종류 · 사업연도 · 분기 ──
+TYPE_QUARTERS = {"분기배당": (1, 2, 3), "중간배당": (2,), "결산배당": (4,)}
+
+def quarter_end(fy, q, acc):
+    m, y = acc - 3 * (4 - q), fy
+    if m <= 0:
+        m, y = m + 12, y - 1
+    return datetime.date(y, m, calendar.monthrange(y, m)[1])
+
+def round_of(t, record, decided, acc):
+    """회차가 몇 사업연도 몇 분기 몫인지 — 기준일이 그 종류의 분기말이면 그 분기, 아니면 결정(또는 기준일) 직전 분기말"""
+    ref = decided if decided and decided < record else record
+    cands = [(fy, q, quarter_end(fy, q, acc)) for fy in range(record.year - 1, record.year + 2) for q in TYPE_QUARTERS[t]]
+    same = [c for c in cands if c[2] == record]
+    return same[0] if same else max((c for c in cands if c[2] < ref), key=lambda c: c[2])
+
+SAME_ROUND_GAP = 31
+
+def assemble(entries, acc):
+    """배당결정·기준일 공고 → 공시 회차. 접수 순으로 돌아 같은 회차는 나중 공시(정정)가 이긴다.
+    같은 회차 = 같은 배당종류·사업연도·분기(정정으로 기준일이 바뀌어도 한 건). 배당종류를 못 읽은 공시는 같은 기준일 회차에 붙인다.
+    반환: 회차마다 {code, name, market, div_type, record_date, per_share, pay_date,
+    decided(첫 배당결정 접수일 ISO, 없으면 ""), rcept_no(최근 배당결정, 없으면 기준일 공고), rcept_dt(최근 접수일)}"""
+    merged = {}
+    def key_of(e, decided):
+        t, rec = e["div_type"], e["record_date"]
+        if t not in TYPE_QUARTERS:
+            same = [k for k, r in merged.items() if r["record_date"] == rec]
+            if len(same) == 1:
+                return same[0]
+        if t not in TYPE_QUARTERS or not rec:
+            return (t, rec)
+        fy, q, _ = round_of(t, to_date(rec), to_date(decided), acc)
+        old = merged.get((t, fy, q), {}).get("record_date")
+        if old and days_between(old, rec) > SAME_ROUND_GAP:
+            return (t, rec)   # 배당종류를 잘못 읽은 다른 회차 — 정정은 기준일을 한 달 넘게 옮기지 않음
+        return (t, fy, q)
+    order = sorted(entries, key=lambda e: (e["kind"] != "decision", e["rcept_dt"], e["rcept_no"]))
+    for e in order:
+        if e["kind"] == "record" and not e.get("record_date"):
+            continue
+        dec = e["kind"] == "decision"
+        r = merged.setdefault(key_of(e, iso(e["rcept_dt"]) if dec else None),
+                              {"code": e["code"], "name": e["name"], "market": e["market"], "div_type": "",
+                               "per_share": "", "record_date": "", "pay_date": "", "decided": "", "rcept_no": e["rcept_no"], "rcept_dt": ""})
+        r["div_type"] = e["div_type"] if e.get("div_type") in TYPE_QUARTERS else r["div_type"] or e.get("div_type") or ""
+        r["rcept_dt"] = max(r["rcept_dt"], e["rcept_dt"])
+        if e.get("record_date"):
+            r["record_date"] = e["record_date"]
+        if dec:
+            r["per_share"] = e.get("per_share") or r["per_share"]
+            r["pay_date"] = e.get("pay_date") or r["pay_date"]
+            r["decided"] = r["decided"] or iso(e["rcept_dt"])
+            r["rcept_no"] = e["rcept_no"]
+    return [r for r in merged.values() if r["record_date"]]
 
 DOC_KINDS = ("decision", "record", "notice", "split", "agm_call", "agm_result", "plan")
 POLICY_DAYS = 400
 
 NOTICE_LOOKBACK_DAYS = 45
 SPECIAL_MULT = 2
+
 def share_factor(splits, a, b):
     """a 날짜 주식 1주가 b 날짜에 몇 주인지 — 그 사이 효력이 난 분할·병합 배수의 곱"""
     f = 1.0
@@ -47,8 +103,9 @@ def context(stock, entries, policy, acc, agm_records):
         elif k == "plan" and e.get("lines"):
             plans.append({"date": rd, "title": e.get("title", ""), "lines": e["lines"]})
 
+    filings = assemble([{**e, "div_type": e.get("div_type") or ""} for e in entries if e["kind"] in ("decision", "record")], acc)
     rounds = []
-    for r in assemble([{**e, "div_type": e.get("div_type") or ""} for e in entries if e["kind"] in ("decision", "record")], {stock: acc}):
+    for r in filings:
         if not r["decided"] or r["div_type"] not in TYPE_QUARTERS:
             continue
         t, record, decided = r["div_type"], to_date(r["record_date"]), to_date(r["decided"])
@@ -109,12 +166,12 @@ def context(stock, entries, policy, acc, agm_records):
         if o:
             since[g] = max((d for d in agm_days if d <= o and (last_x is None or d > last_x)), default=o)
     return {"code": stock, "name": corp, "market": market, "acc": acc, "acc_known": acc_known,
-            "rounds": rounds, "rec_notices": rec_notices, "notices": notices, "agms": agms, "plans": plans,
+            "filings": filings, "rounds": rounds, "rec_notices": rec_notices, "notices": notices, "agms": agms, "plans": plans,
             "agm_records": sorted(agm_records or []), "charter": charter, "charter_since": since, "charter_pending": pending, "splits": splits,
             "organ": (policy or {}).get("organ") or {}, "policy_report": (policy or {}).get("title", "")}
 
 def view(ctx, cut):
-    """cut 이전에 공시된 것만 남긴 ctx — 백테스트(§5.2)·확정 회차 사다리용"""
+    """cut 이전에 공시된 것만 남긴 ctx — 검증·확정 회차 사다리용"""
     v = dict(ctx)
     v["rounds"] = [r for r in ctx["rounds"] if (r["decided"] or r["record"]) < cut]
     v["rec_notices"] = [n for n in ctx["rec_notices"] if n["date"] < cut]
@@ -146,8 +203,6 @@ def pattern(owner):
     for q in sorted(owner):
         by_t.setdefault(owner[q], []).append(f"Q{q}")
     return " + ".join(f"{t} {'·'.join(qs)}" for t, qs in by_t.items()) + f" (연 {len(owner)}회)"
-
-
 
 def medians(ctxs):
     """이력 없는 회사용 기본 오프셋 — 수집대상 전체 실측 중앙값"""
