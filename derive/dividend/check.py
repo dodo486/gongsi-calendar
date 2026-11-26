@@ -4,6 +4,8 @@
 - 날짜 관계: 매수일(T-2) < 배당락일(T-1) ≤ 기준일, 영업일 계산이 krx_cal 과 같은가
 - 예상: 결산기말 고정이면 기준일 = 결산기말·분기말, 시즌 창 밖이면 경고가 붙었나, 이유 문장·내부 용어
 - 회차·공시 짝: 회차의 결산기말 여부, 기준일 안내 자율공시가 붙은 회차가 그럴듯한가
+- 장부·정책 대조(계산에 안 쓰는 출처와): 3분기보고서 누적 vs 공시 회차 합, 컨센 DPS 가 있는데 결산 예측 없음,
+  숫자를 못 읽은 주주환원 공시, 회사가 그해 현금 총액·주당 금액을 밝혔는데 금액이 정책을 안 씀(주식 수를 모르는 등)
 - 지수배당포인트: 월물 합계, 배당락일이 그 월물 구간 안인가
 - 정답표: docs/배당예측-워크플로우.md §5.1 사례 8종목
 - 적중률: verify 결과가 기준 아래로 떨어지지 않았나
@@ -120,6 +122,29 @@ def check():
             if nd and not (qe - datetime.timedelta(days=200) <= nd <= qe + datetime.timedelta(days=SEASON_DAYS[n["div_type"]])):
                 err(f"예고 {c['name']}({s}) {n['date']}",
                     f"{n['quarter']} {n['div_type']} 에 붙었는데 공시일과 결산기말·분기말({qe:%Y-%m})이 너무 멂: {n['title']}")
+
+    # ── 장부·정책 대조 ──
+    est_q = {(e["code"], e.get("quarter")) for e in book["rows"] if e["kind"] == "est" and e.get("div_type") == "결산배당"}
+    for s, c in book["companies"].items():
+        w = f"회사 {c['name']}({s})"
+        for fy, rep in c.get("reports", {}).items():
+            got = c.get("paid_rounds", {}).get(fy)
+            if "q3_dps" in rep and got and abs(rep["q3_dps"] - got) >= 1:
+                warn(w, f"{fy} 3분기보고서 누적 배당 {rep['q3_dps']:,.0f}원 ≠ 공시 회차 합 {got:,}원 — 회차 사업연도·금액 확인")
+        done = {r["quarter"] for r in c["rounds"] if r["div_type"] == "결산배당"}
+        for fy, dps in c.get("cons_dps", {}).items():
+            if f"{fy} Q4" not in done and (s, f"{fy} Q4") not in est_q:
+                warn(w, f"{fy} 연간 컨센 DPS {dps:,}원이 있는데 결산 예측 없음")
+        for st in c.get("statements", []):
+            if st["kind"] == "return_plan" and not st["rows"] and re.search(r"\d+\s*%|[\d,]{3,}\s*원|\d\s*[조억]\s*원", st["text"]):
+                warn(w, f"주주환원 공시 숫자 못 읽음 — {st['date']} {st['title']} https://dart.fss.or.kr/dsaf001/main.do?rcpNo={st['rcept_no']}")
+    for e in book["rows"]:
+        if e["kind"] != "est" or e.get("div_type") != "결산배당":
+            continue
+        fy = int(e["quarter"][:4])
+        pol = [p for p in book["companies"].get(e["code"], {}).get("policies", []) if p["fy"][0] <= fy <= p["fy"][1] and (p["kind"] == "cash" or p["kind"] == "dps" and p["hi"])]
+        if pol and not any(x["signal"] == "stated" for x in e.get("amount_signals", [])):
+            warn(f"예상 {e['name']}({e['code']}) {e['quarter']}", f"회사 정책({pol[-1]['date']} {pol[-1]['title']})이 걸렸는데 금액에 못 씀 — {e['amount_basis']}")
 
     # ── 지수배당포인트 ──
     dp = load_json(DIVPOINTS_PATH, None)

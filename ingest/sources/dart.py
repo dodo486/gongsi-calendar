@@ -3,7 +3,7 @@
 - 키: dart_key.txt
 - TLS 는 net(사내망 대응), 저장·경로는 base 를 쓴다
 """
-import io, json, os, re, sys, time, datetime, threading, zipfile, urllib.request, urllib.error, ssl
+import io, json, os, re, sys, time, datetime, threading, zipfile, urllib.request, urllib.error, ssl, html, http.client
 from core import store
 from core.krx_cal import ymd, days_ago
 from core.paths import BASE, save_json, load_json, CACHE_DIR
@@ -137,16 +137,23 @@ def has_body(report_nm):
     return "[첨부정정]" not in (report_nm or "")
 
 def doc_text(rcept_no):
-    url = f"https://opendart.fss.or.kr/api/document.xml?crtfc_key={KEY}&rcept_no={rcept_no}"
-    with urllib.request.urlopen(url, timeout=30) as r:
-        raw = r.read()
-    zf = zipfile.ZipFile(io.BytesIO(raw))
-    name = max(zf.namelist(), key=lambda n: zf.getinfo(n).file_size)
-    data = zf.read(name)
+    """공시 원문 평문. OpenDART 원문 API, 그쪽이 막히면(IP 차단 등) DART 웹 뷰어 — 웹 뷰어는 목차 없는 한 장짜리 공시만(정기보고서는 첫 장만 와서 다음에 다시)"""
+    try:
+        url = f"https://opendart.fss.or.kr/api/document.xml?crtfc_key={KEY}&rcept_no={rcept_no}"
+        with urllib.request.urlopen(url, timeout=30) as r:
+            zf = zipfile.ZipFile(io.BytesIO(r.read()))
+        data = zf.read(max(zf.namelist(), key=lambda n: zf.getinfo(n).file_size))
+    except (urllib.error.URLError, http.client.HTTPException, ConnectionError, zipfile.BadZipFile):
+        get = lambda u: urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=30).read()
+        page = get(f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}").decode("utf-8", "replace")
+        doc = re.search(r'viewDoc\("(\d+)", "(\d+)", "(\d+)", "(\d+)", "(\d+)", "(\w+)"', page)
+        if not doc or re.search(r"node\d+\['eleId'\]", page):
+            raise
+        data = get("https://dart.fss.or.kr/report/viewer.do?rcpNo={}&dcmNo={}&eleId={}&offset={}&length={}&dtd={}".format(*doc.groups()))
     for enc in ("utf-8", "euc-kr", "cp949"):
         try: txt = data.decode(enc); break
         except Exception: txt = data.decode("utf-8", "replace")
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", txt))
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", txt)))
 
 CORP_PATH = os.path.join(CACHE_DIR, "corp_codes.json")
 _corp = None

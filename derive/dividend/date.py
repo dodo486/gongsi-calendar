@@ -4,7 +4,7 @@ import datetime
 from core.paths import DART_VIEW
 from core.krx_cal import to_date, iso
 from derive.dividend import amount
-from derive.dividend.facts import quarter_end, view, quarter_owner, pattern
+from derive.dividend.facts import quarter_end, view, quarter_owner, pattern, evidence, cons_of
 
 HORIZON_DAYS = 270
 MISS_GRACE_DAYS = 3
@@ -221,14 +221,16 @@ def predict_round(ctx, t, fy, q, today, earn, med):
             "ladder": ladder(ctx, t, fy, q, bool(ann_rec))}, None
 
 def forecast(ctx, today, earn, med):
+    """앞으로 올 배당 건 — 과거 회차가 맡은 분기마다, 그리고 결산 회차가 없어도 그 사업연도 결산 근거(작년 결산·회사 정책·컨센 DPS)가 있으면 결산.
+    결산기말·근거 날짜가 지났는데 공시가 없으면 미실시(missed)"""
     by_type, owner = quarter_owner(ctx["rounds"])
     observed = {(r["type"], r["fy"], r["q"]) for r in ctx["rounds"]}
     out, missed = [], []
-    for q, t in owner.items():
-        last_qe = max(r["qe"] for r in by_type[t])
+    for q, t in {**owner, 4: owner.get(4, "결산배당")}.items():
+        last_qe = max((r["qe"] for r in by_type.get(t, [])), default=datetime.date.min)
         for fy in (today.year - 1, today.year, today.year + 1):
             qe = quarter_end(fy, q, ctx["acc"])
-            if qe <= last_qe or (t, fy, q) in observed:
+            if qe <= last_qe or (t, fy, q) in observed or (t not in by_type and not evidence(ctx, fy)):
                 continue
             p, miss = predict_round(ctx, t, fy, q, today, earn, med)
             if miss:
@@ -237,7 +239,7 @@ def forecast(ctx, today, earn, med):
                 out.append(p)
     return out, missed
 
-def company_out(ctx, missed):
+def company_out(ctx, missed, today):
     by_type, owner = quarter_owner(ctx["rounds"])
     ev = list(missed)
     for r in ctx["rounds"]:
@@ -267,7 +269,10 @@ def company_out(ctx, missed):
                          "hint": n["hint"], "title": n["title"]} for n in ctx["notices"]][-4:],
             "agms": [{"date": iso(a["date"]), "kind": a["kind"], "regular": a["regular"], "charter": a["charter"]}
                      for a in ctx["agms"]][-4:],
-            "plans": [{**p, "date": iso(p["date"])} for p in ctx["plans"]][-2:],
-            "policies": [{**p, "date": iso(p["date"])} for p in ctx["policies"]],
-            "returns": [{**x, "date": iso(x["date"])} for x in ctx["returns"]][-3:],
+            "statements": [{**x, "date": iso(x["date"])} for x in ctx["statements"] if x["date"] >= today - datetime.timedelta(days=365)],
+            "policies": [{**p, "date": iso(p["date"])} for p in ctx["policies"] if p["fy"][1] >= today.year - 1],
+            "reports": {fy: {k: d[k] for k in ("dps", "q3_dps") if k in d} for fy, d in ctx["years"].items() if fy >= today.year - 1},
+            "paid_rounds": {fy: sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy and r["type"] != "결산배당" and r["dps"])
+                            for fy in (today.year - 1, today.year)},
+            "cons_dps": {fy: c["dps"] for fy in (today.year, today.year + 1) if (c := cons_of(ctx, fy, "dps"))},
             "evidence": ev}

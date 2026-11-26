@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 from core import universe
 from ingest.parsers import dividend as dv, earn_sched as es, capital as cap, corporate as co, kind as kd
-from ingest.feeds import acc_mt, naver_cons, dart_alot, dart_fin, index_pdf
+from ingest.feeds import acc_mt, naver_cons, dart_alot, dart_fin, dart_shares, index_pdf
 
 
 @dataclass(frozen=True)
@@ -41,8 +41,8 @@ DOCS = [
     Doc("split", ("I",), 800, _own("주식분할결정", "주식병합결정"), lambda t: {**dv.parse_split(t), **co.parse_relist(t)}, 2),
     Doc("agm_call", ("I",), 800, _own("주주총회소집결의"), dv.parse_agm, 2),
     Doc("agm_result", ("I",), 800, _own("주주총회결과"), dv.parse_agm, 2),
-    Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 4),
-    Doc("return_plan", ("I",), 800, _own("수시공시의무관련사항"), dv.parse_return),
+    Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 8),
+    Doc("return_plan", ("I",), 800, _own("수시공시의무관련사항"), dv.parse_return, 4),
     Doc("earn_notice", ("I",), 45, _has("결산실적공시예고"), es.parse_sched),
     Doc("ir", ("I",), 14, _has("기업설명회"), es.parse_ir),
     Doc("cap_mixed", ("B",), 365, _has("유무상증자결정"), lambda t: cap.parse_cap(t, "유무상증자결정"), stocks=universe.watch),
@@ -66,6 +66,7 @@ FEEDS = [
     Feed("consensus", "day", naver_cons.run),
     Feed("alot", "day", dart_alot.run),
     Feed("fin", "day", dart_fin.run),
+    Feed("shares", "day", dart_shares.run),
 ]
 
 KINDS = [d.kind for d in DOCS] + [f.name for f in FEEDS]

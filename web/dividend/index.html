@@ -333,7 +333,7 @@ function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월
     <div class="row">배당액 결정기관: ${og||"미상"} · 결산월 ${esc(String(c.acc_mt))}월${c.acc_known?"":" (조회 실패 — 12월 가정)"}</div>`;
   if(c.charter_pending && c.charter_pending.date) h += `<div class="row">주총(${esc(c.charter_pending.date)}) 정관 기준일 변경 안건 상정 — 결과 대기</div>`;
   (c.notices||[]).forEach(n=> h += `<div class="ev">📣 ${esc(n.date)} ${esc(n.title)} → ${esc(n.quarter)} ${esc(n.div_type)}${n.hint?` (${esc(n.hint)} 이후)`:""}</div>`);
-  (c.plans||[]).forEach(p=> h += `<div class="ev">📑 ${esc(p.date)} ${esc(p.title)}: ${p.lines.map(esc).join(" … ")}</div>`);
+  (c.statements||[]).forEach(p=> h += `<div class="ev">📑 ${esc(p.date)} ${esc(p.title)}: ${esc(p.read || p.lines.join(" … "))}</div>`);
   h += (c.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("");
   return h + `</div>`;
 }

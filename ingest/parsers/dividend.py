@@ -74,23 +74,18 @@ def parse_split(t):
     return {"factor": before / after, "effective": eff.group(1)} if before and after else {}
 
 def parse_return(t):
-    """수시공시의무관련사항(공정공시) — 공시제목, 주주환원·배당 관련이면 내용(정책 장부 div_policy.json 을 채우는 근거)"""
+    """수시공시의무관련사항(공정공시) — 공시제목, 주주환원·배당 관련이면 내용과 정책 줄(policy_rows)"""
     m = re.search(r"공시제목\s*(.+?)\s*수시공시내용", t)
     subject = m[1].strip() if m else ""
-    return {"subject": subject,
-            "text": t[m.end(): m.end() + 2500].split("예정 공시 일시")[0].strip() if m and re.search(r"주주환원|배당", subject) else ""}
-
-MIN_DPS = re.compile(r"최소[^.\d]{0,15}?(?:배당금?|DPS)[^.\d]{0,15}?([\d,]{3,7})\s*원|(?:DPS|주당\s*배당금?)\s*([\d,]{3,7})\s*원\s*이상|연\s*([\d,]{3,7})\s*원의\s*최소\s*배당금")
-PAYOUT = re.compile(r"배당\s*성향[^.%\d]{0,20}?(\d{1,2}(?:\.\d+)?)\s*%\s*(?:~\s*\d+\s*%\s*)?(?:이상|까지|수준|목표|유지|지향)|순이익[^.%\d]{0,25}?(\d{1,2})\s*%\s*이상[^.]{0,5}배당")
+    text = t[m.end(): m.end() + 2500].split("예정 공시 일시")[0].strip() if m and re.search(r"주주환원|배당", subject) else ""
+    return {"subject": subject, "text": text, "rows": policy_rows(subject + " " + text) if text else []}
 
 HIGH_DIV = re.compile(r"고배당기업\s*여부\s*(미해당|해당)")
 HD_PAYOUT = re.compile(r"직전\s*사업연도\s*\((\d{4})\)\s*배당성향\s*\(%\)\s*(-?[\d.]+)")
 HD_TOTAL = re.compile(r"직전\s*사업연도\s*\(\d{4}\)\s*이익배당금액\s*\(원\)\s*([\d,]+)")
-Q_DPS = re.compile(r"분기\s*(?:균등\s*)?(?:배당금?|DPS)\s*[:：]?\s*(?:주당\s*)?([\d,]{2,7})\s*원")
 
 def parse_plan(t):
-    """밸류업·지배구조보고서 — 배당 절차 문장(날짜용), 금액용: 연간 최소 주당배당금(min_dps 원)·목표 배당성향(payout %, payout_sep = 별도 순이익 기준)·
-    분기 정규 DPS(q_dps 원), 새 양식 고배당기업 표(high_div 해당 여부·hd_fy 직전 사업연도·hd_payout %·hd_total 이익배당금액 원)"""
+    """밸류업·지배구조보고서 — 배당 절차 문장(날짜용 lines), 정책 줄(policy_rows), 새 양식 고배당기업 표(정책 줄 high_div)"""
     lines = []
     for m in re.finditer(r"배당\s*기준일|배당\s*절차|선\s*배당|배당액을?\s*먼저", t):
         s = t[max(0, m.start() - 80): m.end() + 120].strip()
@@ -98,13 +93,110 @@ def parse_plan(t):
             lines.append(s)
         if len(lines) >= 3:
             break
-    mn, po, q = MIN_DPS.search(t), PAYOUT.search(t), Q_DPS.search(t)
+    rows = policy_rows(t)
     hd, hp, ht = HIGH_DIV.search(t), HD_PAYOUT.search(t), HD_TOTAL.search(t)
-    return {"lines": lines, **({"high_div": hd[1] == "해당"} if hd else {}),
-            **({"hd_fy": int(hp[1]), "hd_payout": float(hp[2])} if hp else {}), **({"hd_total": int(ht[1].replace(",", ""))} if ht else {}),
-            **({"q_dps": int(q[1].replace(",", ""))} if q else {}), **({"min_dps": int(next(g for g in mn.groups() if g).replace(",", ""))} if mn else {}),
-            **({"payout": float(next(g for g in po.groups() if g)), "payout_sep": bool(re.search(r"별도|개별", t[max(0, po.start() - 40): po.end() + 40]))}
-               if po else {})}
+    if hd:
+        fy = int(hp[1]) + 1 if hp else None
+        rows.append({"kind": "high_div", "slot": "연간", "on": hd[1] == "해당", "fy": [fy, fy],
+                     "prev_payout": float(hp[2]) if hp else None, "prev_total": int(ht[1].replace(",", "")) if ht else None, "text": hd[0]})
+    return {"lines": lines, "rows": rows}
+
+# ── 정책 줄 — 회사가 배당에 대해 밝힌 숫자 하나 = {kind, slot, lo, hi, fy [첫, 끝], base, text} ──
+# kind: dps 주당 금액(원) · cash 현금배당 총액(원) · payout 배당성향(%, 현금배당만) · return 총주주환원율(%, 자사주 포함)
+#       budget 총주주환원 금액(원, 자사주 포함 — "환원 가능 재원 약 4천억원", "배당수입 약 6.2조원 … 배당수입의 60% 환원") · buyback 자사주 매입 금액(원)
+# lo·hi: 하한·상한(같으면 그 값, 모르면 None) · slot: 연간·결산·중간·분기 · fy: 숫자 앞 가장 가까운 사업연도 표기(없으면 None = 공시한 해부터)
+YEAR = r"(?:FY\s*)?(20\d\d|['’‘]\d\d)"
+FY_RANGE = re.compile(YEAR + r"\s*년?\s*(?:사업\s*연도|사업년도|회계\s*연도|회계년도)?\s*[~∼\-–]\s*" + YEAR)
+FY_FROM = re.compile(r"(20\d\d)\s*(?:년|사업\s*연도|사업년도)\s*\S{0,6}\s*부터\s*(?:향후\s*(\d)\s*개년|(20\d\d)\s*년)")
+FY_ONE = re.compile(YEAR + r"\s*년?\s*(?:사업\s*연도|사업년도|회계\s*연도|회계년도|(?:주주환원|배당)\s*계획|(?=\s*(?:연간\s*)?(?:주당|DPS|배당\s*성향)))(\s*이후)?")
+FY_UNTIL = re.compile(r"(20\d\d)\s*년\s*까지")
+WON = r"(조|천억|억)"
+WON_UNIT = {"조": 1e12, "천억": 1e11, "억": 1e8}
+PCT = r"(\d{1,2}(?:\.\d+)?)\s*%(?:\s*[~∼\-–]\s*(\d{1,2}(?:\.\d+)?)\s*%)?\s*(?:\([^)]{0,30}\))?\s*"
+BOUND = r"(이상|이내|內|한도|수준|목표|내외|지향|유지)"
+VALUES = [   # (kind, slot, 정규식) — 금액·비율은 그룹 1(·2), 범위 말은 마지막 그룹
+    ("dps", "분기", re.compile(r"분기\s*(?:균등\s*)?(?:배당금?|DPS)\s*[:：]?\s*(?:주당\s*)?([\d,]{2,7})\s*원")),
+    ("dps", "", re.compile(r"(?:1주당|주당|DPS)[^\d원.]{0,25}?([\d,]{2,7})\s*원")),
+    ("dps", "", re.compile(r"(?:최소|최저)[^.\d]{0,15}?배당금?[^.\d]{0,15}?([\d,]{2,7})\s*원|연\s*([\d,]{3,7})\s*원의\s*최소\s*배당금")),
+    ("cash", "", re.compile(r"현금\s*배당(?:\s*총액)?\s*[:：]?\s*(?:매년\s*)?(?:약\s*)?([\d.,]+)\s*" + WON + r"\s*원?\s*(이상|내외|이하)?")),
+    ("buyback", "", re.compile(r"(?:자사주|자기\s*주식)\s*(?:매입|취득)[^.\d]{0,15}?(?:약\s*)?([\d.,]+)\s*" + WON + r"\s*원|([\d.,]+)\s*" + WON + r"\s*원은[^.\d]{0,25}?(?:자사주|자기\s*주식)\s*(?:매입|취득)")),
+    ("budget", "", re.compile(r"환원\s*(?:가능\s*)?재원\s*(?:규모)?[^.]{0,60}?(?:약\s*)?(\d[\d.,]*)\s*" + WON + r"\s*원\s*(이상)?")),
+    ("budget", "", re.compile(r"배당\s*수입은?\s*(?:약\s*)?(\d[\d.,]*)\s*" + WON + r"\s*원\s*(이상)?")),
+    ("payout", "", re.compile(r"배당\s*성향[^%\d.]{0,25}?" + PCT + BOUND)),
+    ("return", "", re.compile(r"주주\s*환원율[^%\d.]{0,40}?" + PCT + BOUND + "?")),
+    ("ni", "", re.compile(r"순이익(?:\([^)]{0,40}\))?[^%\d.]{0,30}?" + PCT + r"(이상|이내|內|한도|수준|목표|내외|지향|유지|를|을)?")),
+]
+SLOT = re.compile(r"(결산|중간|반기|분기)\s*배당")
+RETURN_WORDS = re.compile(r"자기\s*주식|자사주|주주\s*환원\s*(?:율|재원|규모|방법)|환원\s*재원|총\s*주주\s*환원")
+
+def policy_rows(t):
+    """배당 관련 공시 원문 → 정책 줄 목록(원문 순서). 같은 숫자를 두 식이 잡으면 앞 식. ni(순이익의 N%)는 그 문장·앞뒤가 자사주·주주환원율·환원 재원(규모)을 말하고 배당성향을 안 말하면 return, 아니면 payout
+    ("주주에게 환원"은 배당만 말할 때도 씀)"""
+    years = []   # (위치, 끝, [첫, 끝 사업연도], 뒤에 붙은 "적용·이후"인가)
+    for rx, span in ((FY_RANGE, lambda m: [_yy(m[1]), _yy(m[2])]), (FY_FROM, lambda m: [int(m[1]), int(m[1]) + int(m[2]) - 1 if m[2] else int(m[3])]),
+                     (FY_ONE, lambda m: [_yy(m[1]), None if m[2] else _yy(m[1])]), (FY_UNTIL, lambda m: [None, int(m[1])])):
+        for m in rx.finditer(t):
+            if any(a <= m.start() < b for a, b, _, _ in years) or re.match(r"\s*년?\s*\d[\d,]*(?:\.\d+)?\s*(?:억|조|원)", t[m.end(): m.end() + 14]):
+                continue   # 범위 안의 한 해, 금액 이름표("'27년 700억원")는 기간이 아님
+            years.append((m.start(), m.end(), span(m), bool(m.re is FY_ONE and m[2] or re.search(r"적용", t[max(0, m.start() - 12): m.start()]))))
+    years.sort(key=lambda x: x[0])
+    rows, taken = [], set()
+    for kind, slot, rx in VALUES:
+        for m in rx.finditer(t):
+            g = next(i for i in range(1, (rx.groups or 0) + 1) if m[i])
+            if m.span(g) in taken:
+                continue
+            before, after = t[max(0, m.start() - 60): m.start()], t[m.end(): m.end() + 12]
+            a, b = max(t.rfind(".", 0, m.start()), t.rfind("- ", 0, m.start()), m.start() - 150), t.find(".", m.end())
+            sentence = t[a + 1: b if 0 <= b < m.end() + 150 else m.end() + 150]
+            if kind == "dps" and (re.search(r"액면|주식\s*수|발행\s*(?:가능|주식)", t[max(0, m.start() - 40): m.end()]) or re.match(r"\s*(?:증액|인상|상향)", after)):
+                continue   # 액면가·주식 수 설명의 "1주당 500원", 인상 폭
+            taken.add(m.span(g))
+            v = float(m[g].replace(",", ""))
+            near = next((y for p, _, y, _ in reversed(years) if m.start() - 40 <= p < m.start()), None)   # 바로 앞 표기 > 뒤에 붙은 "적용·이후" > 가장 가까운 앞 표기
+            fy = near or next((y for p, _, y, apply in years if m.end() <= p < m.end() + 80 and apply), None) or next((y for p, _, y, _ in reversed(years) if p < m.start()), [None, None])
+            ahead = {tuple(y) for p, _, y, _ in years if p < m.start()}
+            exact_ok = bool(near or fy[0] and fy[0] == fy[1] and len(ahead) <= 1)   # 정확한 주당 금액은 연도가 분명해야 — 바로 앞 표기, 또는 문서에 한 해뿐 (멀리 앞 기간을 물려받으면 지난 실적일 수 있음)
+            row = {"kind": kind, "slot": slot or _slot(t[max(0, m.start() - 12): m.start()]), "fy": fy, "text": t[max(0, m.start() - 40): m.end() + 20].strip()}
+            if kind == "dps":
+                lo_only = re.search(r"최소(?!화)|최저|기본\s*배당", before + m[0]) or re.match(r"\s*(?:이상|\+|α|을?\s*기본)", after)
+                if not lo_only and not exact_ok:
+                    continue   # 사업연도 없는 정확한 주당 금액은 과거 표·예시일 수 있음 — 최소치만 기간 없이 받음
+                row.update(lo=v, hi=None if lo_only else v)
+            elif kind in ("cash", "buyback", "budget"):
+                v *= WON_UNIT[m[g + 1]]
+                word = m.groups()[-1] if kind != "buyback" else None
+                if kind != "cash" and re.search(r"년간|합산|누적", m[0]):
+                    continue   # 여러 해 합계는 한 사업연도 몫이 아님
+                if kind == "budget" and "수입" in m[0]:   # 배당수입 × 그 뒤 "배당수입의 N%" (여러 번이면 마지막 — 상향된 비율)
+                    rate = [x for x in re.finditer(r"(?<!특별)배당\s*수입의\s*(\d{1,3})\s*%\s*(이상)?", t[m.end(): m.end() + 400])]   # 특별배당 수입(일회성)은 다른 바탕
+                    if not rate:
+                        continue
+                    v *= float(rate[-1][1]) / 100
+                    word = "이상" if word or rate[-1][2] else None
+                row.update(lo=None if word == "이하" else v, hi=None if word == "이상" else v)
+            else:
+                hi2 = float(m[g + 1]) if m[g + 1] else None
+                word = m.groups()[-1]
+                cap = re.search(r"최대\s*$", t[max(0, m.start(g) - 6): m.start(g)])   # "최대 50%"
+                lo, hi = (v, hi2) if hi2 else (v, None) if word == "이상" else (None, v) if cap or word in ("이내", "內", "한도") else (v, v)
+                near_txt = sentence + t[max(0, m.start() - 40): m.end() + 40]
+                buyback = (RETURN_WORDS.search(near_txt) and not re.search(r"배당\s*성향", near_txt)
+                           and not re.match(r"\S{0,8}\s*(?:의\s*)?현금\s*배당", t[m.end(): m.end() + 20]))   # "50%~70% 수준의 현금배당"은 배당성향
+                row.update(kind="return" if kind == "return" or (kind == "ni" and buyback) else "payout", slot="연간", lo=lo, hi=hi,
+                           base="별도" if re.search(r"별도|개별", t[max(0, m.start() - 60): m.end() + 40]) else "연결")
+            rows.append((m.start(), row))
+    return [r for _, r in sorted(rows, key=lambda x: x[0])]
+
+def _yy(s):
+    return int(s) if s.startswith("20") else 2000 + int(s[1:])
+
+def _slot(s):
+    """금액 바로 앞(쉼표 없이 붙은) 배당 종류 — "결산배당 : 주당 1,000원". 여러 종류를 묶어 말하면("분기 및 결산배당을 포함한") 연간"""
+    m = list(SLOT.finditer(s))
+    if not m or "," in s[m[-1].end():] or re.search(r"(?:분기|중간|반기)\s*(?:및|과|와|·|\+)\s*(?:결산|분기|중간|반기)|포함", s):
+        return "연간"
+    return {"반기": "중간"}.get(m[-1][1], m[-1][1])
 
 YM = r"(\d{4}\s*(?:\.|년)\s*\d{1,2}\s*월?|-)"
 DT = r"(\d{4}\s*(?:\.|년)\s*\d{1,2}\s*(?:\.|월)\s*\d{1,2}\s*일?|-)"

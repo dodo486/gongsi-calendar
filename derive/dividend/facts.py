@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """배당 사실 — 저장소 → 종목별 사실(공시 회차·분할·정관 이력·주총·예고·계획·사업연도별 EPS·배당·정책 장부). view(ctx, cut) = cut 전까지 알던 것만. 추정 없음"""
-import datetime, calendar, re, statistics
+import datetime, calendar, statistics
 from core import store, universe
 from core.paths import load_json, DIV_POLICY_PATH
 from core.krx_cal import to_date, iso, ymd, days_ago, days_between
@@ -14,12 +14,21 @@ def quarter_end(fy, q, acc):
         m, y = m + 12, y - 1
     return datetime.date(y, m, calendar.monthrange(y, m)[1])
 
-def round_of(t, record, decided, acc):
-    """회차가 몇 사업연도 몇 분기 몫인지 — 기준일이 그 종류의 분기말이면 그 분기, 아니면 결정(또는 기준일) 직전 분기말"""
-    ref = decided if decided and decided < record else record
-    cands = [(fy, q, quarter_end(fy, q, acc)) for fy in range(record.year - 1, record.year + 2) for q in TYPE_QUARTERS[t]]
+def slot_of(t, ref, acc, record=None, upcoming=False):
+    """배당 한 건이 몇 사업연도 몇 분기 몫인지 — 기준일이 그 종류의 분기말이면 그 분기. 예고(upcoming)는 ref 뒤 첫 분기말.
+    아니면 결산은 ref 직전 결산기말(지난 사업연도 몫), 분기·중간은 ref 가 든 사업연도에서 ref 직전 분기말(아직 없으면 그 해 첫 분기 —
+    이사회가 반기말 전에 중간배당을 정하면 그 해 몫, 3분기보고서 누적도 그렇게 셈). ref = 결의일(없으면 기준일)·공고일 등"""
+    cands = [(fy, q, quarter_end(fy, q, acc)) for fy in range(ref.year - 1, ref.year + 2) for q in TYPE_QUARTERS[t]]
     same = [c for c in cands if c[2] == record]
-    return same[0] if same else max((c for c in cands if c[2] < ref), key=lambda c: c[2])
+    if same:
+        return same[0]
+    if upcoming:
+        return min((c for c in cands if c[2] >= ref), key=lambda c: c[2])
+    if t == "결산배당":
+        return max((c for c in cands if c[2] < ref), key=lambda c: c[2])
+    fy = next(fy for fy in range(ref.year - 1, ref.year + 2) if ref <= quarter_end(fy, 4, acc))
+    mine = [c for c in cands if c[0] == fy]
+    return max((c for c in mine if c[2] <= ref), key=lambda c: c[2], default=min(mine, key=lambda c: c[2]))
 
 SAME_ROUND_GAP = 31
 
@@ -38,7 +47,8 @@ def assemble(entries, acc):
                 return same[0]
         if t not in TYPE_QUARTERS or not rec:
             return (t, rec)
-        fy, q, _ = round_of(t, to_date(rec), to_date(decided), acc)
+        rd, dec = to_date(rec), to_date(decided)
+        fy, q, _ = slot_of(t, dec if dec and dec < rd else rd, acc, rd)
         old = merged.get((t, fy, q), {}).get("record_date")
         if old and days_between(old, rec) > SAME_ROUND_GAP:
             return (t, rec)   # 배당종류를 잘못 읽은 다른 회차 — 정정은 기준일을 한 달 넘게 옮기지 않음
@@ -67,12 +77,17 @@ def assemble(entries, acc):
 
 DOC_KINDS = ("decision", "record", "notice", "split", "agm_call", "agm_result", "plan", "return_plan")
 POLICY_DAYS = 400
+POLICY_YEARS = 3   # 사업연도를 안 밝힌 정책 줄 = 공시한 해부터 3개 사업연도 (밸류업·중기 정책 기간)
 
 NOTICE_LOOKBACK_DAYS = 45
-RETURN_CASH = re.compile(r"현금\s*배당\s*(?:총액\s*)?(?:약\s*)?([\d.,]+)\s*조\s*원?\s*(이상|내외|이하)?")
 SPECIAL_MULT = 2
 EARN_UP, MIN_SAMPLES = 1.1, 20   # 이익 증가 회사 배당 증가율 — 그 사업연도 전 해들에서 배움
-ANNUAL_REPORT_DAYS, Q3_REPORT_DAYS = 90, 45   # 사업보고서 · 3분기보고서 제출 기한 — 그 뒤부터 안 값
+ANNUAL_REPORT_DAYS, HALF_REPORT_DAYS, Q3_REPORT_DAYS = 90, 45, 45   # 사업보고서 · 반기보고서 · 3분기보고서 제출 기한 — 그 뒤부터 안 값
+CASH_SHARE_YEARS = 3   # 총환원 중 현금배당 비율 = 최근 이만큼 사업연도 현금흐름표 배당금 지급 ÷ (배당금 지급 + 자기주식 취득)
+
+def spiked(prior, v):
+    """튄 값인가 — 그 전 값들 중앙의 SPECIAL_MULT 배 넘음 (특별배당·일회성 이익 판정 한 곳)"""
+    return bool(prior) and v > SPECIAL_MULT * statistics.median(prior)
 
 def share_factor(splits, a, b):
     """a 날짜 주식 1주가 b 날짜에 몇 주인지 — 그 사이 효력이 난 분할·병합 배수의 곱"""
@@ -82,15 +97,12 @@ def share_factor(splits, a, b):
             f *= x["factor"]
     return f
 
-def _agm_fy(agm, acc):
-    return max(fy for fy in range(agm.year - 2, agm.year + 1) if quarter_end(fy, 4, acc) < agm)
-
 def context(stock, entries, policy, acc, agm_records):
     """한 종목의 회차·정관·결정기관·예고·주총·계획을 판정에 쓰는 모양으로"""
     acc_known = acc is not None
     acc = acc or 12
     corp = market = ""
-    rec_notices, notices, agms, plans, splits, returns, auto = [], [], [], [], [], [], []
+    rec_notices, notices, agms, statements, splits = [], [], [], [], []
     for e in sorted(entries, key=lambda x: (x["rcept_dt"], x["rcept_no"])):
         corp, market = e.get("name") or corp, e.get("market") or market
         k, rd = e["kind"], to_date(e["rcept_dt"])
@@ -101,23 +113,15 @@ def context(stock, entries, policy, acc, agm_records):
             rec_notices.append({"date": rd, "record": to_date(e["record_date"]), "div_type": e.get("div_type", "")})
         elif k == "notice" and e.get("is_div"):
             t = e["div_type"]
-            fy, q = e.get("fyq") or min(((fy, q, quarter_end(fy, q, acc)) for fy in range(rd.year - 1, rd.year + 2) for q in TYPE_QUARTERS[t]
-                                          if quarter_end(fy, q, acc) >= rd - datetime.timedelta(days=NOTICE_LOOKBACK_DAYS)), key=lambda c: c[2])[:2]
+            fy, q = e.get("fyq") or slot_of(t, rd - datetime.timedelta(days=NOTICE_LOOKBACK_DAYS), acc, upcoming=True)[:2]
             hint = next((m for m in e.get("months", []) if m > rd.strftime("%Y-%m")), "")
             notices.append({"date": rd, "div_type": t, "fy": fy, "q": q, "hint": hint, "title": e.get("title", ""), "rcept_no": e["rcept_no"]})
         elif k in ("agm_call", "agm_result") and e.get("agm_date"):
             agms.append({"date": to_date(e["agm_date"]), "kind": k, "rcept": rd, "charter": e.get("charter"),
                          "regular": e.get("regular", False), "rejected": e.get("rejected", False)})
-        elif k == "plan":
-            plans.append({"date": rd, "title": e.get("title", ""), "lines": e.get("lines", []),
-                          **{k: e.get(k) for k in ("min_dps", "payout", "payout_sep", "q_dps", "high_div", "hd_fy", "hd_payout", "hd_total")}})
-        elif k == "return_plan" and e.get("text"):
-            returns.append({"date": rd, "subject": e["subject"], "text": e["text"], "rcept_no": e["rcept_no"]})
-            fy, cash = re.search(r"(20\d\d)\s*년", e["subject"]), RETURN_CASH.search(e["text"])
-            if fy and cash:   # 정책 장부 자동 줄 — 같은 사업연도 사람 줄이 있으면 contexts 에서 사람 줄이 이김
-                v = float(cash[1].replace(",", "")) * 1e12
-                auto.append({"code": stock, "fy": int(fy[1]), "cash_total": [v if cash[2] != "이하" else None, v if cash[2] in ("이하", "내외") else None],
-                             "regular_q": None, "date": rd, "src": e["rcept_no"], "text": cash[0], "by": "공시 자동"})
+        elif k in ("plan", "return_plan") and (e.get("lines") or e.get("rows") or e.get("text")):
+            statements.append({"date": rd, "kind": k, "title": e.get("subject") or e.get("title", ""), "rcept_no": e["rcept_no"],
+                               "lines": e.get("lines", []), "text": e.get("text", ""), "rows": e.get("rows", [])})
 
     filings = assemble([{**e, "div_type": e.get("div_type") or ""} for e in entries if e["kind"] in ("decision", "record")], acc)
     rounds = []
@@ -125,7 +129,7 @@ def context(stock, entries, policy, acc, agm_records):
         if not r["decided"] or r["div_type"] not in TYPE_QUARTERS:
             continue
         t, record, decided = r["div_type"], to_date(r["record_date"]), to_date(r["decided"])
-        fy, q, qe = round_of(t, record, decided, acc)
+        fy, q, qe = slot_of(t, decided if decided < record else record, acc, record)
         rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
                        "dps": r["per_share"], "pay": to_date(r["pay_date"]), "src": "공시", "rcept_no": r["rcept_no"],
                        "note": r["note"], "tax_rule": r["tax_rule"], "total": r["total"]})
@@ -135,7 +139,7 @@ def context(stock, entries, policy, acc, agm_records):
         if decided and record and decided < record - datetime.timedelta(days=180):
             decided = None   # 회사 표 오기(확정일이 기준일보다 반년 넘게 앞섬 — 예: 2025-02-06 → 2026-02-28)
         if record and (t, record) not in seen:
-            fy, q, qe = round_of(t, record, decided, acc)
+            fy, q, qe = slot_of(t, decided if decided and decided < record else record, acc, record)
             rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
                            "dps": "", "pay": None, "src": "정기보고서 표", "rcept_no": "", "note": [], "tax_rule": False, "total": 0})
             seen.add((t, record))
@@ -143,12 +147,11 @@ def context(stock, entries, policy, acc, agm_records):
     for r in rounds:
         r["fixed"] = r["record"] == r["qe"]
         r["amount_first"] = bool(r["decided"] and r["decided"] < r["record"])
-        prior = sorted(int(x["dps"]) / share_factor(splits, x["record"], r["record"]) for x in rounds
+        prior = list(int(x["dps"]) / share_factor(splits, x["record"], r["record"]) for x in rounds
                        if x["type"] == r["type"] and x["record"] < r["record"] and x["dps"])
-        med = prior[len(prior) // 2] if prior else 0
-        r["special"] = bool(med and r["dps"] and int(r["dps"]) > SPECIAL_MULT * med)
+        r["special"] = bool(r["dps"]) and spiked(prior, int(r["dps"]))
     for a in agms:
-        a["fy"] = _agm_fy(a["date"], acc)
+        a["fy"] = slot_of("결산배당", a["date"], acc)[0]
 
     charter_cands = {"결산": [], "분기중간": []}
     seen_v = {"결산": [], "분기중간": []}
@@ -183,7 +186,7 @@ def context(stock, entries, policy, acc, agm_records):
         if o:
             since[g] = max((d for d in agm_days if d <= o and (last_x is None or d > last_x)), default=o)
     return {"code": stock, "name": corp, "market": market, "acc": acc, "acc_known": acc_known,
-            "filings": filings, "rounds": rounds, "rec_notices": rec_notices, "notices": notices, "agms": agms, "plans": plans, "returns": returns, "auto_policies": auto,
+            "filings": filings, "rounds": rounds, "rec_notices": rec_notices, "notices": notices, "agms": agms, "statements": statements,
             "agm_records": sorted(agm_records or []), "charter": charter, "charter_since": since, "charter_pending": pending, "splits": splits,
             "organ": (policy or {}).get("organ") or {}, "policy_report": (policy or {}).get("title", "")}
 
@@ -198,8 +201,10 @@ def view(ctx, cut):
     v["charter_since"] = {g: d for g, d in ctx["charter_since"].items() if d < cut}
     v["splits"] = [x for x in ctx["splits"] if x["date"] < cut]
     v["cons"] = [x for x in ctx["cons"] if x["date"] < cut]
-    v["plans"] = [p for p in ctx["plans"] if p["date"] < cut]
+    v["statements"] = [p for p in ctx["statements"] if p["date"] < cut]
     v["policies"] = [p for p in ctx["policies"] if p["date"] < cut]
+    v["share_counts"] = {d: n for d, n in ctx["share_counts"].items() if d + datetime.timedelta(days=ANNUAL_REPORT_DAYS if d.month == 12 else HALF_REPORT_DAYS) < cut}
+    v["cash_flow"] = {fy: d for fy, d in ctx["cash_flow"].items() if quarter_end(fy, 4, ctx["acc"]) + datetime.timedelta(days=ANNUAL_REPORT_DAYS) < cut}
     v["years"] = {}
     for fy, d in ctx["years"].items():
         for k, x in d.items():
@@ -229,8 +234,19 @@ def pattern(owner):
         by_t.setdefault(owner[q], []).append(f"Q{q}")
     return " + ".join(f"{t} {'·'.join(qs)}" for t, qs in by_t.items()) + f" (연 {len(owner)}회)"
 
+def year_steps(ctx):
+    """분기배당 새해 인상 — [(사업연도, 그해 첫 분기배당 ÷ 작년 마지막 분기배당)] (특별배당 회차 빼고, 분할·병합 보정)"""
+    q = [r for r in ctx["rounds"] if r["type"] == "분기배당" and r["dps"] and not r["special"]]
+    out = []
+    for r in q:
+        first = min((x for x in q if x["fy"] == r["fy"]), key=lambda x: x["q"])
+        last = max((x for x in q if x["fy"] == r["fy"] - 1), key=lambda x: x["q"], default=None)
+        if r is first and last:
+            out.append((r["fy"], int(r["dps"]) * share_factor(ctx["splits"], last["record"], r["record"]) / int(last["dps"])))
+    return out
+
 def medians(ctxs):
-    """수집대상 전체 실측 중앙값 — 이력 없는 회사용 기본 오프셋, 이익 증가 회사의 결산 배당 증가율(사업연도별, 그 전 해들만)"""
+    """수집대상 전체 실측 중앙값 — 이력 없는 회사용 기본 오프셋, 이익 증가 회사의 결산 배당 증가율·분기배당 새해 인상(사업연도별, 그 전 해들만)"""
     acc = {"qe": {}, "dec": {}, "pay": {}, "agm": []}
     for c in ctxs:
         agm_by_fy = {a["fy"]: a["date"] for a in c["agms"] if a["regular"]}
@@ -251,16 +267,20 @@ def medians(ctxs):
         y = c["years"]
         for fy, d in y.items():
             p = y.get(fy - 1, {})
-            fin, pfin = d.get("dps", 0) - d.get("q3_dps", 0), p.get("dps", 0) - p.get("q3_dps", 0)
-            if fin > 0 and pfin > 0 and d.get("q3_eps", 0) > 0 and p.get("q3_eps", 0) > 0 and d["q3_eps"] >= EARN_UP * p["q3_eps"]:
+            fin, pfin = final_of(c, fy), final_of(c, fy - 1)
+            if fin and pfin and d.get("q3_eps", 0) > 0 and p.get("q3_eps", 0) > 0 and d["q3_eps"] >= EARN_UP * p["q3_eps"]:
                 up.append((fy, fin / pfin))
     fys = {fy for fy, _ in up}
+    steps = [s for c in ctxs for s in year_steps(c)]
+    sfys = {fy for fy, _ in steps}
     return {"qe": {t: md(acc["qe"].get(t), 60 if t == "결산배당" else 45) for t in TYPE_QUARTERS},
             "dec": {t: md(acc["dec"].get(t), 21) for t in TYPE_QUARTERS},
             "pay": {t: md(acc["pay"].get(t), 30) for t in TYPE_QUARTERS},
             "agm": md(acc["agm"], 7),
             "dps_up": {fy: statistics.median(xs) for fy in range(min(fys, default=0) + 1, max(fys, default=0) + 2)
-                       if len(xs := [r for f, r in up if f < fy]) >= MIN_SAMPLES}}
+                       if len(xs := [r for f, r in up if f < fy]) >= MIN_SAMPLES},
+            "q_step": {fy: statistics.median(xs) for fy in range(min(sfys, default=0) + 1, max(sfys, default=0) + 2)
+                       if len(xs := [r for f, r in steps if f < fy]) >= MIN_SAMPLES}}
 
 def contexts():
     """저장소 → 배당 대상 종목마다 사실 묶음"""
@@ -282,15 +302,108 @@ def contexts():
         pol[st] = latest and {**latest, "charter_hist": [{"date": p["rcept_dt"], "charter": p.get("charter") or {"결산": p["charter_text"]}}
                                                          for p in got if p.get("charter") or p.get("charter_text")]}
     acc = {s: int(m) for s, m in store.load("acc_mt").items() if str(m).isdigit()}
-    cons, alot = store.load("consensus"), store.load("alot")
-    policies = {}
+    cons, alot, fin, counts = store.load("consensus"), store.load("alot"), store.load("fin"), store.load("shares")
+    human = {}
     for p in load_json(DIV_POLICY_PATH, {}).get("rows", []):
-        policies.setdefault(p["code"], []).append({**p, "date": to_date(p["date"])})
-    out = [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)),
+        human.setdefault(p["code"], []).append({**p, "date": to_date(p["date"])})
+    since = to_date(min((e["rcept_dt"] for e in store.load("decision").values()), default="99991231"))
+    out = [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)), "filed_since": since,
              "cons": [{**x, "date": to_date(x["date"])} for x in cons.get(s, [])],
              "years": {int(fy): d for fy, d in alot.get(s, {}).get("years", {}).items()},
-             "policies": policies.get(s, [])} for s in sorted(stocks)]
-    for c in out:   # 정책 장부 = 사람 줄 + 공시 자동 줄(같은 사업연도 사람 줄이 없을 때만)
-        human = {p["fy"] for p in c["policies"]}
-        c["policies"] = sorted(c["policies"] + [p for p in c.pop("auto_policies") if p["fy"] not in human], key=lambda p: p["date"])
+             "cash_flow": {int(fy): d for fy, d in fin.get(s, {}).get("years", {}).items()},
+             "share_counts": {to_date(d): n for d, n in counts.get(s, {}).get("dates", {}).items()}} for s in sorted(stocks)]
+    for c in out:   # 정책 목록 = 공시에서 읽은 줄 + 사람 줄(policy() 에서 같은 사업연도면 사람 줄만)
+        auto = [{**r, "fy": _fys(r["fy"], st["date"]), "date": st["date"], "src": st["rcept_no"], "title": st["title"], "by": "공시 자동"}
+                for st in c["statements"] for r in st["rows"]]
+        c["policies"] = sorted(auto + human.get(c["code"], []), key=lambda p: p["date"])
     return out
+
+def _fys(fy, date):
+    """정책 줄의 사업연도 [첫, 끝] — 안 밝힌 첫 해는 공시한 해, 안 밝힌 끝은 첫 해부터 POLICY_YEARS 개"""
+    a = fy[0] or date.year
+    return [a, fy[1] or a + POLICY_YEARS - 1]
+
+# ── 사실 조회 — 계산(amount·date·verify)은 장부·정책·시장 사실을 여기서만 읽는다 ──
+def seen(ctx, fy, q):
+    """사업연도 fy 의 q 분기 배당 결정 시기를 공시로 다 봤나 — 공시 수집 시작일(filed_since) 뒤면 회차가 없으면 정말 안 한 것"""
+    return quarter_end(fy, q, ctx["acc"]) >= ctx["filed_since"]
+
+def paid(ctx, fy):
+    """이 사업연도에 이미 정한 결산 말고의 배당(주당) — 공시로 다 본 해는 공시 회차, 그 전 해는 3분기보고서 누적"""
+    y = ctx["years"].get(fy, {})
+    rounds = sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy and r["type"] != "결산배당" and r["dps"])
+    return y.get("q3_dps", 0) if "q3_eps" in y and not seen(ctx, fy, 1) else rounds
+
+def annual_dps(ctx, fy):
+    """사업연도 연간 주당배당금 — 사업보고서, 없으면 공시 회차 합 (없으면 0)"""
+    return ctx["years"].get(fy, {}).get("dps") or sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy and r["dps"])
+
+def last_annual(ctx, fy, rec):
+    """작년 연간 주당배당금을 기준일 rec 주식 기준으로(그 사이 분할·병합 보정)"""
+    return annual_dps(ctx, fy - 1) / share_factor(ctx["splits"], quarter_end(fy - 1, 4, ctx["acc"]), rec)
+
+def final_of(ctx, fy):
+    """사업연도 결산배당(주당) — 결산 공시 회차, 없으면 사업보고서 연간 − 3분기 누적.
+    0 = 안 함(결산 결정 시기를 공시로 다 봤는데 회차 없음), None = 모름(보고서 전, 또는 보고서 배당금 칸이 비어 공시로도 못 봄)"""
+    r = next((r for r in ctx["rounds"] if r["type"] == "결산배당" and r["fy"] == fy and r["dps"]), None)
+    if r:
+        return int(r["dps"])
+    y = ctx["years"].get(fy, {})
+    if y.get("dps") and "q3_eps" in y and y["dps"] > y.get("q3_dps", 0):
+        return round(y["dps"] - y.get("q3_dps", 0))
+    return 0 if "eps" in y and seen(ctx, fy + 1, 1) else None
+
+def shares(ctx, rec):
+    """기준일 rec 의 배당 받는 주식 수(자사주 빠짐, 보통+종류) — 최근 배당결정(배당금총액 ÷ 주당)과 반기·사업보고서 유통주식 수 중 더 최근 것,
+    그 뒤 분할·병합 보정. 모르면 0. 그 뒤 자사주 매입·소각은 못 봄"""
+    last = next((r for r in reversed(ctx["rounds"]) if r["total"] and r["dps"] and int(r["dps"])), None)
+    known = ([(last["record"], last["total"] / int(last["dps"]))] if last else []) + list(ctx["share_counts"].items())
+    if not known:
+        return 0
+    d, n = max(known)
+    return n * share_factor(ctx["splits"], d, rec)
+
+def cash_share(ctx, fy):
+    """총주주환원(배당 + 자사주) 중 현금배당 비율 → (비율, 근거). 한 공시 안에서 그해 현금·자사주(또는 총환원·자사주) 금액을 나눠 밝혔으면
+    그 비율(가장 최근 공시, 자사주는 처음 나온 금액 — 뒤 금액은 그 안의 나눔일 수 있음), 아니면 최근 CASH_SHARE_YEARS 사업연도
+    현금흐름표(배당금 지급 ÷ (배당금 지급 + 자기주식 취득)). 모르면 (None, "")"""
+    by_src = {}
+    for p in ctx["policies"]:
+        if p["fy"][0] <= fy <= p["fy"][1] and p["kind"] in ("cash", "budget", "buyback") and p["slot"] == "연간" and p["lo"]:
+            by_src.setdefault(p["src"], {}).setdefault(p["kind"], p)
+    for g in sorted(by_src.values(), key=lambda g: max(p["date"] for p in g.values()), reverse=True):
+        bb = g.get("buyback")
+        if bb and g.get("cash"):
+            return g["cash"]["lo"] / (g["cash"]["lo"] + bb["lo"]), f"{iso(bb['date'])} 회사가 밝힌 {fy} 현금 {g['cash']['lo'] / 1e8:,.0f}억·자사주 {bb['lo'] / 1e8:,.0f}억"
+        if bb and g.get("budget") and g["budget"]["lo"] > bb["lo"]:
+            b = g["budget"]["lo"]
+            return (b - bb["lo"]) / b, f"{iso(bb['date'])} 회사가 밝힌 총환원 {b / 1e8:,.0f}억 중 자사주 {bb['lo'] / 1e8:,.0f}억"
+    ys = [ctx["cash_flow"][y] for y in range(fy - CASH_SHARE_YEARS, fy) if y in ctx["cash_flow"]]
+    if not any("buyback" in y for y in ys):
+        return None, ""   # 자기주식 취득 계정이 없는 회사(금융업 계정 등) — 0원으로 보면 현금 100%로 틀림
+    div, bb = sum(abs(y.get("div_paid", 0)) for y in ys), sum(abs(y.get("buyback", 0)) for y in ys)
+    return (div / (div + bb), f"최근 {len(ys)}년 현금흐름표 배당 {div / 1e8:,.0f}억·자사주 {bb / 1e8:,.0f}억") if div + bb else (None, "")
+
+def cons_of(ctx, fy, key):
+    """사업연도 fy 의 최신 네이버 연간 컨센(key: dps·eps) — 네이버 연도 = 사업연도인 12월 결산만"""
+    return next((x for x in reversed(ctx["cons"]) if x.get("fy") == str(fy) and x.get(key)), None) if int(ctx["acc"]) == 12 else None
+
+def eps_of(ctx, fy):
+    """사업연도 EPS — 실적 발표(네이버 연간 실제, 1~2월 잠정 실적 뒤), 없으면 연간 컨센, 없으면 3분기 누적 × 4/3 → (원, 근거)"""
+    a, c, q3 = cons_of(ctx, fy, "eps_act"), cons_of(ctx, fy, "eps"), ctx["years"].get(fy, {}).get("q3_eps", 0)
+    return ((a["eps_act"], f"{iso(a['date'])} 실적 발표 EPS {a['eps_act']:,}원") if a else (c["eps"], f"컨센 EPS {c['eps']:,}원") if c
+            else (q3 * 4 / 3, f"3분기 누적 EPS×4/3 {q3 * 4 / 3:,.0f}원") if q3 > 0 else (0, ""))
+
+def policy(ctx, fy):
+    """사업연도 fy 에 걸린 정책 줄 {(kind, slot): 줄} — 같은 칸은 사람 줄이 이기고, 그다음 최근 공시(같은 날이면 원문 뒤쪽)"""
+    rows = sorted((p for p in ctx["policies"] if p["fy"][0] <= fy <= p["fy"][1]), key=lambda p: (p["by"].startswith("사람"), p["date"]))
+    return {(p["kind"], p["slot"]): p for p in rows}
+
+def evidence(ctx, fy):
+    """이 사업연도에 결산배당이 있다고 볼 근거(문장) — 작년 결산배당, 회사 정책, 연간 컨센 DPS. 없으면 """""
+    last, pol, c = final_of(ctx, fy - 1), policy(ctx, fy), cons_of(ctx, fy, "dps")
+    p = max(pol.values(), key=lambda p: p["date"]) if pol else None
+    po = ctx["years"].get(fy - 1, {}).get("payout", 0)
+    return (f"작년({fy - 1}) 결산배당 {last:,}원" if last else f"작년({fy - 1}) 배당함(연간 {annual_dps(ctx, fy - 1):,.0f}원 · 배당성향 {po:g}%)"
+            if last is None and (annual_dps(ctx, fy - 1) or po > 0)
+            else f"{iso(p['date'])} {p['title']}" if p else f"{iso(c['date'])} 연간 컨센 DPS {c['dps']:,}원" if c else "")

@@ -43,7 +43,9 @@ def build():
         if not c["name"] and not c["charter"]:
             continue
         preds, missed = forecast(c, today, earn.get(c["code"], []), med)
-        companies[c["code"]] = company_out(c, missed)
+        companies[c["code"]] = company_out(c, missed, today)
+        for st in companies[c["code"]]["statements"]:
+            st["read"] = policy_text(st["rows"])
         noticed = {p["record_date"]: p for p in preds if p["grade"] == "공고"}
         for f in c["filings"]:
             if f["rcept_dt"] < since:
@@ -106,7 +108,7 @@ def build():
 
 KIND = {"decision": "현금배당결정", "record": "배당 기준일(주주명부폐쇄) 공고", "notice": "기타경영사항(자율공시)",
         "agm_call": "주주총회소집결의", "agm_result": "주주총회결과", "plan": "기업가치제고계획·지배구조보고서",
-        "split": "주식분할·병합결정"}
+        "return_plan": "주주환원 공정공시", "split": "주식분할·병합결정"}
 
 def _ox(c):
     return ", ".join(f"{k} {'이사회가 정할 수 있음' if v == 'O' else '결산기말 고정'}" for k, v in (c or {}).items())
@@ -120,9 +122,28 @@ READ = {
                                                   h.get("charter") and f"정관: {_ox(h['charter'])}"] if x),
     "agm_result": lambda h: " · ".join(x for x in [f"{'정기' if h.get('regular') else '임시'}주총 {h.get('agm_date', '')}",
                                                     h.get("rejected") and "부결", h.get("charter") and f"정관: {_ox(h['charter'])}"] if x),
-    "plan": lambda h: " ".join(h.get("lines") or [])[:500],
+    "plan": lambda h: policy_text(h.get("rows")) or " ".join(h.get("lines") or [])[:500],
+    "return_plan": lambda h: policy_text(h.get("rows")) or "배당 숫자 못 읽음",
     "split": lambda h: f"1주 → {h['factor']:g}주 · 효력발생일 {h['effective']}" if h.get("factor") else "비율 못 읽음",
 }
+
+def policy_text(rows):
+    """정책 줄 → 사람이 읽는 한 줄 (참고 공시 탭·화면)"""
+    unit = {"dps": "원", "cash": "원", "budget": "원", "buyback": "원", "payout": "%", "return": "%"}
+    name = {"dps": "주당", "cash": "현금배당 총액", "budget": "총주주환원(자사주 포함)", "buyback": "자사주 매입",
+            "payout": "배당성향", "return": "총주주환원율(자사주 포함)"}
+    out = []
+    for r in rows or []:
+        if r["kind"] == "high_div":
+            out.append(f"고배당기업 {'해당' if r['on'] else '미해당'}")
+            continue
+        v = lambda x: f"{x / 1e8:,.0f}억" if unit[r["kind"]] == "원" and r["kind"] != "dps" else f"{x:,g}"
+        rng = (f"{v(r['lo'])}" if r["lo"] == r["hi"] else f"{v(r['lo'])} 이상" if r["hi"] is None else f"{v(r['hi'])} 이하" if r["lo"] is None
+               else f"{v(r['lo'])}~{v(r['hi'])}")
+        fy = r["fy"] if isinstance(r["fy"], list) else [None, None]
+        out.append(f"{'' if r['slot'] == '연간' else r['slot'] + ' '}{name[r['kind']]} {rng}{unit[r['kind']]}"
+                   + (f" ({fy[0] or ''}~{fy[1] or ''})" if any(fy) else ""))
+    return " · ".join(out)
 
 def build_sources(stocks, companies):
     """엑셀 참고 공시 탭 — 장부 종목에 대해 배당 산출이 읽은 DART 공시(2년치)와 정기보고서 배당 표"""
