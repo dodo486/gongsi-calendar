@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """배당 1단계 수집 — OpenDART 정기보고서 배당에 관한 사항(alotMatter), 사업연도별.
-사업보고서: EPS·배당성향·연간 주당 현금배당금(보통주), 보고서 하나가 3년치(당기·전기·전전기).
+사업보고서: EPS·배당성향·연간 주당 현금배당금(보통주), 보고서 하나가 3년치(당기·전기·전전기) — 3개(작년·3년 전·6년 전)로 9년치.
+  9년인 까닭: 백테스트 첫 해(5년 전)에도 추세·안 깎음이 쓰는 3년 이력이 있어야 함(6년치면 첫 두 해가 전부 이력 짧음).
 3분기보고서: 9개월 누적 EPS(q3_eps)·연결·별도 순이익(q3_ni·q3_ni_sep, 백만원)·그때까지 정한 주당 배당금(q3_dps), 당기만 — 사업보고서와 같은 6년 + 올해.
 받은 (종목, 보고서)는 다시 묻지 않음 — 아직 안 나온 보고서는 다음에 다시. IP 차단을 피해 순차 → store alot"""
 import datetime
@@ -15,7 +16,7 @@ Q3 = {"(연결)주당순이익(원)": "q3_eps", "주당 현금배당금(원)": "
 def run():
     today = datetime.date.today()
     last = today.year - 1
-    asks = ([(str(y), "11011", ANNUAL, (("thstrm", 0), ("frmtrm", 1), ("lwfr", 2))) for y in (last, last - 3)]
+    asks = ([(str(y), "11011", ANNUAL, (("thstrm", 0), ("frmtrm", 1), ("lwfr", 2))) for y in (last, last - 3, last - 6)]
             + [(f"{y}Q3", "11014", Q3, (("thstrm", 0),)) for y in range(last - 5, today.year + 1)])
     data, n = dict(store.load("alot")), 0
     for s in sorted(universe.div()):
