@@ -3,12 +3,18 @@
 
   python -m derive.run        # 전부
 """
-import sys
+import sys, threading
 from core import ops
 from derive.registry import CALCS
 
+_lock = threading.Lock()   # 폴러·서버(사람 판정 저장)가 동시에 돌려도 한 바퀴씩
+
 def run(changed=None, log=True):
     """changed: 바뀐 종류 이름들(None 이면 전부). 반환 {계산 이름: 결과}"""
+    with _lock:
+        return _run(changed, log)
+
+def _run(changed, log):
     done, failed = {}, set()
     for c in CALCS:
         if changed is not None and not (c.reads & set(changed)) and not any(a in done for a in c.after):

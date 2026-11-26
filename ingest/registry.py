@@ -6,6 +6,7 @@ from typing import Callable, Optional
 from core import universe
 from ingest.parsers import dividend as dv, earn_sched as es, capital as cap, corporate as co, kind as kd
 from ingest.feeds import acc_mt, naver_cons, dart_alot, dart_fin, dart_shares, index_pdf
+from ingest import coverage
 
 
 @dataclass(frozen=True)
@@ -24,6 +25,7 @@ class Feed:
     name: str
     every: str                      # "pass" 매 바퀴(할 일 없으면 바로 끝남) · "day" 하루 한 번
     run: Callable[[], bool]         # 받아서 저장소에 씀 → 바뀌었나
+    after_docs: bool = False        # 공시를 다 받은 뒤에 (들여오기 점검)
 
 
 def _own(*words):
@@ -36,13 +38,17 @@ DOCS = [
     Doc("decision", ("I",), 800, _own("현금ㆍ현물배당결정"), dv.parse_decision, 3),
     Doc("record", ("I",), 800, lambda c, r: _own("주주명부폐쇄")(c) and "배당" in c, dv.parse_record),
     Doc("agm_record", ("I",), 800, _own("주주명부폐쇄"), None),
-    Doc("notice", ("I",), 800, lambda c, r: _own("기타경영사항")(c) and ("배당" in c or "기준일" in c or c.endswith("기타경영사항(자율공시)")),
+    Doc("notice", ("I",), 800, lambda c, r: _own("기타경영사항")(c) and ("배당" in c or "기준일" in c or c.endswith("기타경영사항(자율공시)"))
+        or _own("기타안내사항")(c) and "배당" in c,
         dv.parse_notice, 5),
     Doc("split", ("I",), 800, _own("주식분할결정", "주식병합결정"), lambda t: {**dv.parse_split(t), **co.parse_relist(t)}, 2),
     Doc("agm_call", ("I",), 800, _own("주주총회소집결의"), dv.parse_agm, 2),
     Doc("agm_result", ("I",), 800, _own("주주총회결과"), dv.parse_agm, 2),
-    Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 8),
-    Doc("return_plan", ("I",), 800, _own("수시공시의무관련사항"), dv.parse_return, 4),
+    Doc("plan", ("I",), 800, _own("기업가치제고계획", "지배구조보고서"), dv.parse_plan, 10),
+    Doc("return_plan", ("I",), 800, _own("수시공시의무관련사항"), dv.parse_return, 5),
+    Doc("stock_div", ("I",), 800, _own("주식배당결정"), dv.parse_stock_div),
+    Doc("exdiv", ("I",), 800, lambda c, r: _own("배당락", "권배락")(c), dv.parse_exdiv),
+    Doc("treasury", ("B",), 365, lambda c, r: _own("자기주식취득결정", "자기주식취득신탁계약체결결정", "자기주식처분결정")(c), dv.parse_treasury),
     Doc("earn_notice", ("I",), 45, _has("결산실적공시예고"), es.parse_sched),
     Doc("ir", ("I",), 14, _has("기업설명회"), es.parse_ir),
     Doc("cap_mixed", ("B",), 365, _has("유무상증자결정"), lambda t: cap.parse_cap(t, "유무상증자결정"), stocks=universe.watch),
@@ -67,6 +73,7 @@ FEEDS = [
     Feed("alot", "day", dart_alot.run),
     Feed("fin", "day", dart_fin.run),
     Feed("shares", "day", dart_shares.run),
+    Feed("doc_coverage", "pass", lambda: coverage.run(DOCS), after_docs=True),   # 빠뜨린 공시·못 읽은 숫자·정답 묶음 — 공시를 다 받은 뒤
 ]
 
 KINDS = [d.kind for d in DOCS] + [f.name for f in FEEDS]

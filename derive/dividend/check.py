@@ -9,20 +9,29 @@
 - 지수배당포인트: 월물 합계, 배당락일이 그 월물 구간 안인가
 - 정답표: docs/배당예측-워크플로우.md §5.1 사례 8종목
 - 적중률: verify 결과가 기준 아래로 떨어지지 않았나
-읽는 것은 배당 장부(div_book.json)·지수배당포인트·검증 결과뿐. 결과는 data/out/dividend_check.json — 오류가 있으면 monitor 가 알림.
+- 들여오기 점검(store doc_coverage): 정답 묶음 실패(오류), 수집 종류에 안 걸린 배당 공시·안 받은 공시·옛 버전·정책 줄로 안 잡힌 숫자(경고)
+- 정책 줄: 값이 말이 되나(배당성향 1~100%, 주당 금액이 작년 연간의 POLICY_JUMP 배 이내, 사업연도 5년 안), 나중에 나온 실제 배당과 맞나(정확한 금액·최소치)
+- 거래소 배당락 안내와 장부 배당락일
+- 확인 목록(div_queue.json): 지수·월물마다 확인 안 된 재료가 걸린 포인트 비중(경고)
+읽는 것은 배당 장부(div_book.json)·지수배당포인트·검증 결과·들여오기 점검·확인 목록뿐. 결과는 data/out/dividend_check.json — 오류가 있으면 monitor 가 알림.
 사용:
   python -m derive.dividend.check        # 오류 있으면 종료코드 1
 """
 import datetime, re, sys
-from core.paths import save_json, load_json, stamp, DIVIDEND_CHECK_PATH, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_VERIFY_PATH
+from core import store
+from core.paths import save_json, load_json, stamp, DIVIDEND_CHECK_PATH, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_VERIFY_PATH, DIV_QUEUE_PATH
 from core.krx_cal import t_minus, to_date
 from derive.dividend.facts import quarter_end
 from derive.dividend.date import SEASON_DAYS
 
 METHODS = {"고정", "유동", "유동 가능", "판별 불가", "확정 기준일"}
 JARGON = re.compile(r"\bA[12]\b|\bD1[34]\b|정관 [OX]\b|앵커")
+POLICY_JUMP = 5   # 정책 줄 주당 금액이 작년 연간의 이 배수 넘으면 단위·종류를 잘못 읽은 의심
+EXDIV_NEAR = 20   # 거래소 배당락 안내와 장부 회차를 짝지을 날 수
+UNREAD_SHOW = 10   # 점검에 낱낱이 보여줄 못 읽은 주주환원 공시 수
 CONS_GAP = 0.5   # 예상 금액이 컨센과 이만큼 넘게 다르면 경고 — 컨센은 과거 검증 전이라 순서엔 못 넣고 사람 눈으로
 MIN_HIT = {"판정 적중(고정/유동)": 93, "월물 적중": 93, "유동 기준일 ±7일 이내": 85}
+MAX_AMOUNT_ERR = 20   # 결산 금액 백테스트 오차 중앙값(%)이 이보다 커지면 오류 — 금액이 나빠져도 알게(2026-11 16.7~18.3)
 
 # 사례 정답표 (설계 §5.1) — 종목코드: [(검사 이름, 함수(회사, 예상들) → bool)]
 def _judg(c, t):
@@ -129,7 +138,7 @@ def check():
         w = f"회사 {c['name']}({s})"
         for fy, rep in c.get("reports", {}).items():
             got = c.get("paid_rounds", {}).get(fy)
-            if "q3_dps" in rep and got and abs(rep["q3_dps"] - got) >= 1:
+            if "q3_dps" in rep and got is not None and abs(rep["q3_dps"] - got) >= 1:
                 warn(w, f"{fy} 3분기보고서 누적 배당 {rep['q3_dps']:,.0f}원 ≠ 공시 회차 합 {got:,}원 — 회차 사업연도·금액 확인")
         done = {r["quarter"] for r in c["rounds"] if r["div_type"] == "결산배당"}
         for fy, dps in c.get("cons_dps", {}).items():
@@ -145,6 +154,62 @@ def check():
         pol = [p for p in book["companies"].get(e["code"], {}).get("policies", []) if p["fy"][0] <= fy <= p["fy"][1] and (p["kind"] == "cash" or p["kind"] == "dps" and p["hi"])]
         if pol and not any(x["signal"] == "stated" for x in e.get("amount_signals", [])):
             warn(f"예상 {e['name']}({e['code']}) {e['quarter']}", f"회사 정책({pol[-1]['date']} {pol[-1]['title']})이 걸렸는데 금액에 못 씀 — {e['amount_basis']}")
+
+    # ── 들여오기 점검 ──
+    cov = store.load("doc_coverage")
+    for f in cov.get("gold", {}).get("fails", []):
+        err(f"정답 묶음 {f['name']}", f"파서가 정답과 다름 — 정답 {f['want']} / 지금 {f['got']}")
+    groups = {}
+    for u in cov.get("uncaught", []):
+        groups.setdefault(re.sub(r"\s+|\(.*?\)|\[.*?\]", "", u["title"]), []).append(u)
+    for title, us in sorted(groups.items(), key=lambda x: -len(x[1])):
+        warn("수집 안 하는 배당 공시", f"{title} {len(us)}건 — 예: {', '.join(u['name'] + ' ' + u['date'] for u in us[:3])}")
+    for kind, k in cov.get("kinds", {}).items():
+        if k["missing"]:
+            warn(f"공시 받기 {kind}", f"목록 {k['listed']}건 중 안 받음 {len(k['missing'])}건 — {', '.join(k['missing'][:5])}")
+        if k["stale"]:
+            warn(f"공시 받기 {kind}", f"옛 파서 버전으로 읽음 {len(k['stale'])}건 — 다시 받는 중")
+    unread = cov.get("unread", [])
+    if unread:   # 전부는 하네스(두 번째 판독자)가 읽는 목록 — 점검엔 수와 주주환원 공시 앞 몇 건만
+        warn("못 읽은 숫자", f"정책 문장 숫자가 정책 줄에 없는 공시 {len(unread)}건(주주환원 {sum(u['kind'] == 'return_plan' for u in unread)}·계획서 "
+                           f"{sum(u['kind'] == 'plan' for u in unread)}) — 하네스 dividend-verify 가 읽음, 목록 store doc_coverage")
+        for u in [u for u in unread if u["kind"] == "return_plan"][:UNREAD_SHOW]:
+            warn(f"못 읽은 숫자 {u['name']}({u['code']})", f"{u['date']} {u['title'][:40]} — {', '.join(u['numbers'][:6])} https://dart.fss.or.kr/dsaf001/main.do?rcpNo={u['no']}")
+
+    # ── 확인 목록: 사람·판독자가 아직 확인 안 한 재료가 걸린 포인트 ──
+    for m in load_json(DIV_QUEUE_PATH, {}).get("summary", []):
+        if m["open"]:
+            warn(f"확인 목록 {m['index']} {m['month']}", f"{m['total']:.2f}pt 중 {m['open']:.2f}pt({m['open'] / m['total']:.0%})가 확인 안 된 재료에 걸림 — 화면 🔎 확인 목록")
+
+    # ── 정책 줄: 말이 되나 · 실제 배당과 맞나 ──
+    for s, c in book["companies"].items():
+        w = f"정책 줄 {c['name']}({s})"
+        last = {int(fy): rep.get("dps") for fy, rep in c.get("reports", {}).items()}   # 사업보고서 연간 DPS — 실제 배당 정답
+        for p in c.get("policies", []):
+            src = f"{p['date']} {p.get('title', '')[:30]}"
+            if p["kind"] in ("payout", "return") and any(v is not None and not 1 <= v <= 100 for v in (p.get("lo"), p.get("hi"))):
+                warn(w, f"비율 {p.get('lo')}~{p.get('hi')}% 가 1~100% 밖 — {src}")
+            ref = last.get(p["fy"][0] - 1)
+            if p["kind"] == "dps" and ref and (p.get("hi") or p.get("lo") or 0) > POLICY_JUMP * ref:
+                warn(w, f"주당 {p.get('hi') or p.get('lo'):,.0f}원이 작년 연간 {ref:,.0f}원의 {POLICY_JUMP}배 넘음 — 단위·종류 확인 · {src}")
+            if p["fy"][0] and p["fy"][0] > int(p["date"][:4]) + 5:
+                warn(w, f"사업연도 {p['fy']} 가 공시일({p['date']})보다 5년 넘게 뒤 — {src}")
+            for fy in (f for f in range(p["fy"][0], p["fy"][1] + 1) if last.get(f) and int(p["date"][:4]) <= f):
+                if p["kind"] == "dps" and p["slot"] == "연간":
+                    if p.get("hi") and last[fy] != p["hi"]:
+                        warn(w, f"{fy} 실제 연간 {last[fy]:,.0f}원(사업보고서) ≠ 정책 주당 {p['hi']:,.0f}원 — 파싱·정책 변경 확인 · {src}")
+                    elif not p.get("hi") and last[fy] < p["lo"]:
+                        warn(w, f"{fy} 실제 연간 {last[fy]:,.0f}원(사업보고서) < 정책 최소 {p['lo']:,.0f}원 — 파싱·적용 연도·정책 변경 확인 · {src}")
+
+    # ── 거래소 배당락 안내 ──
+    rows_by = {}
+    for e in book["rows"]:
+        rows_by.setdefault(e["code"], []).append(e)
+    for s, c in book["companies"].items():
+        for x in c.get("exdivs", []):
+            near = [e for e in rows_by.get(s, []) if abs((to_date(e["ex_date"]) - to_date(x["ex_date"])).days) <= EXDIV_NEAR]
+            if near and not any(e["ex_date"] == x["ex_date"] for e in near):
+                err(f"배당락 {c['name']}({s})", f"거래소 안내 {x['ex_date']}({x['reason']}) ≠ 장부 {', '.join(e['ex_date'] for e in near)}")
 
     # ── 지수배당포인트 ──
     dp = load_json(DIVPOINTS_PATH, None)
@@ -195,6 +260,9 @@ def check():
             m = re.search(r"\((\d+)%\)", str(sm.get(k, "")))
             if not m or int(m[1]) < lim:
                 err("적중률", f"{k} {sm.get(k)} — 기준 {lim}% 미만")
+        e = (sm.get("결산 금액(12월 초)") or {}).get("전체", {}).get("오차 중앙값(%)")
+        if e is None or e > MAX_AMOUNT_ERR:
+            err("적중률", f"결산 금액 오차 중앙값 {e}% — 기준 {MAX_AMOUNT_ERR}% 초과")
 
     return errors, warns
 

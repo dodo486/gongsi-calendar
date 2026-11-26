@@ -16,11 +16,11 @@ RETRY_MIN = 10
 KIND_RECHECK_DAYS = 2      # KIND 목록은 오늘·어제만 늦은 공시 대비 다시, 지난 날짜는 저장본
 _lock = threading.Lock()
 
-def _feeds(today):
+def _feeds(today, after_docs=False):
     done = dict(store.load("_feeds"))
-    changed = {"day"} if done.get("_day") != today else set()   # 날이 바뀜 — 오늘 기준 계산을 다시
+    changed = {"day"} if done.get("_day") != today and not after_docs else set()   # 날이 바뀜 — 오늘 기준 계산을 다시
     done["_day"] = today
-    for f in FEEDS:
+    for f in (f for f in FEEDS if f.after_docs == after_docs):
         if f.every == "day" and done.get(f.name) == today:
             continue
         result = ops.run(f.name, f.run, group="들여오기")   # 실패하면 다음 바퀴에 다시
@@ -118,6 +118,7 @@ def run(fast=False):
     today = datetime.date.today().isoformat()
     with _lock:
         changed = (set() if fast else _feeds(today)) | _docs(today, fast)
+        changed |= set() if fast else _feeds(today, after_docs=True)
     if changed or not fast:
         print(f"  [들여오기] 바뀐 종류: {', '.join(sorted(changed)) or '없음'}")
     return changed

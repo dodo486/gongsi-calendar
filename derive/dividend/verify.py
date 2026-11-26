@@ -103,9 +103,8 @@ def verify():
                                     for t in ("분기배당", "중간배당")},
         "결산 놓침(12월 초 예측 건 없음)": f"{len(missed)}/{len(missed) + len(finals)}",
         "결산 금액(12월 초)": {s or "전체": amount_hits([x for x in finals if x["pred_dps"] and (not s or x["style"] == s)]) for s in styles},
-        "결산 신호별 금액(12월 초)": {s or "전체": {sg.__name__: amount_hits([{**x, "pred_dps": x["sig_dps"][sg.__name__]} for x in finals
-                                                                         if sg.__name__ in x["sig_dps"] and (not s or x["style"] == s)])
-                                                for sg in amount.SIGNALS} for s in styles},
+        "결산 신호별 금액(12월 초)": {s or "전체": {n: amount_hits([{**x, "pred_dps": x["sig_dps"][n]} for x in finals if n in x["sig_dps"] and (not s or x["style"] == s)])
+                                                for n in amount.NAMES} for s in styles},
         "신호 순서(과거 적중순)": priority,
         "특별배당 가능성 표시(12월 초)": {"켜진 회차": sum(x["special_hint"] for x in finals),
                                      "그중 실제 특별": sum(x["special_hint"] and x["actual_special"] for x in finals),

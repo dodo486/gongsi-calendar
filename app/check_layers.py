@@ -7,7 +7,7 @@
 import os, re, sys
 from core.paths import BASE
 
-SIGNALS = {"day", "live", "quotes", "dart_listing", "kind_feed"}   # 들여오기·monitor 가 내는 변화 신호
+SIGNALS = {"day", "live", "quotes", "dart_listing", "kind_feed", "div_human"}   # 들여오기·monitor·서버(사람 판정 저장) 가 내는 변화 신호
 RULES = [("derive/", r"^\s*(from|import) ingest\b", "계산 층이 들여오기를 import"),
          ("ingest/parsers/", r"^\s*(from|import) (ingest\.sources|urllib|requests)\b", "파서가 접속")]
 

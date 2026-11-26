@@ -4,12 +4,14 @@
   → 브라우저가 새로고침 없이 즉시 다시 로드 (배당·실적·상하한가 실시간 반영)
 + /api/earnfacts?code=XXXXXX[&rcept=접수번호]: 실적 상세(시총·컨센서스·분기 추이) JSON
 + /ops: 관제탑 — 서버에서 도는 일·시세 허브 상태 JSON (core.ops.snapshot, 화면 web/ops.html)
++ POST /api/div_check: 배당 확인 목록 사람 판정 저장(app.div_check) → 배당 계산 다시
 """
 import http.server, os, time, json, re, threading
 import urllib.parse
 
 from core.paths import BASE, OUT_DIR, PORT, EARNINGS_PATH, load_json
 from core import ops
+from app import div_check
 WEB = os.path.join(BASE, "web")
 
 # 토스트 클릭 → 차트 열기 브로드캐스트용
@@ -82,6 +84,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if route == "/ops":
             return self._send(json.dumps(ops.snapshot(), ensure_ascii=False), "application/json")
         return super().do_GET()
+
+    def do_POST(self):
+        if self.path.split("?")[0] != "/api/div_check":
+            return self.send_error(404)
+        try:
+            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))).decode("utf-8"))
+            return self._send(json.dumps(div_check.record(body), ensure_ascii=False), "application/json")
+        except (ValueError, KeyError) as ex:
+            return self.send_error(400, explain=str(ex))   # 상태줄은 latin-1 이라 한글 설명은 본문으로
 
     def _send(self, text, ctype):
         body = text.encode("utf-8")

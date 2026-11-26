@@ -86,6 +86,17 @@
   .fc-event.halt-stop{background:#4b5563;border-color:#374151;color:#f3f4f6;font-weight:700}
   .fc-event.halt-resume{background:#10b981;border-color:#10b981;color:#022c22;font-weight:700}
   .fc-event.halt-tent{background:transparent;border:1.5px dashed #10b981;color:#10b981}
+  /* 재료표·확인 목록 — 상태: 있음 초록 / 없음·모름 빨강 / 의심·빠짐 노랑 / 안 함 회색 */
+  .inp td{padding:3px 6px;font-size:12px;vertical-align:top}
+  .inp td.src{color:var(--muted);font-size:11px}
+  .s-있음{color:#86efac} .s-없음,.s-모름{color:#fca5a5} .s-의심,.s-빠짐{color:#fde047}
+  .qi{padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:7px;background:var(--bg);font-size:12px;line-height:1.5}
+  .qi .src{color:var(--muted);font-size:11px;word-break:break-all}
+  .qi .imp{float:right;font-weight:800;color:var(--div)}
+  .qi .act{margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+  .qi .act button{font-size:11px;padding:2px 8px;border-radius:5px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer}
+  .qi .act button:hover{border-color:var(--div)}
+  .qi .act input{width:110px;font-size:11px;padding:2px 5px;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:5px}
   /* 목록 보기 — 하루치 안에서 색 띠가 이어 보이지 않게 행 배경은 그대로, 점만 색 */
   .fc-list-event td{background:transparent!important}
 </style>
@@ -98,6 +109,7 @@
     <input type="search" id="q" placeholder="회사명 검색">
     <span class="chip kospi on" data-market="KOSPI">KOSPI</span>
     <span class="chip kosdaq on" data-market="KOSDAQ">KOSDAQ</span>
+    <span class="chip" id="queueBtn" title="배당금 재료 중 사람이 확인할 것 — 돈 영향(지수배당포인트 비중) 순">🔎 확인 목록</span>
     <span class="chip xlsx" id="xlsxBtn" title="캘린더에 보고 있는 달 1일부터 그 이후 배당(확정·예상)을 엑셀로 — 검색·시장 필터 반영">📥 엑셀</span>
   </div>
 </header>
@@ -132,13 +144,14 @@
 <script>
 // 배당 페이지 = 이 폴더 + common/ — 데이터는 DATA 아래 DATA_FILES 만 읽는다(따로 배포할 때 이 파일들만 같이 올림)
 const DATA = "../data/out/";
-const DATA_FILES = ["div_book.json","div_sources.json","capital.json","halts.json","divpoints.json","expiries.json","dividend_check.json"];
+const DATA_FILES = ["div_book.json","div_sources.json","capital.json","halts.json","divpoints.json","expiries.json","dividend_check.json","div_queue.json"];
 let BOOK = {rows:[], grades:{}}, ROWS = [], SRC = {rows:[]}, CAPD = {events:[], ongoing_ids:[]}, CAP = [], HALT = [], EXP = [];
 let DP = null;                         // 지수배당포인트(divpoints.json)
+let QUEUE = {items:[], summary:[]};    // 배당 확인 목록(div_queue.json)
+let sideMode = "today";                // 사이드: today 오늘의 배당공시 · queue 확인 목록 · detail 상세 — 갱신 때 목록이면 다시 그림
 let HOL = new Set(), EXPD = new Set(); // 휴장일·만기일 ISO 날짜 — 캘린더 날짜 빨간 글자·노란 별표
 let calendar;
 const filters = { q:"", KOSPI:true, KOSDAQ:true };
-let divListMode = false;               // 사이드가 '오늘의 배당공시' 목록이면 갱신 때 다시 그림
 const matchQ = e => { const q = filters.q.trim().toLowerCase(); return !q || `${e.name}`.toLowerCase().includes(q); };
 const shown = e => filters[e.market] && matchQ(e);
 const show = {buy:true, ex:true};      // 매수일(T-2)·락일(T-1) 중 무엇을 볼지 — 배당·예상배당·증자 공통
@@ -224,7 +237,7 @@ function bindDp(box){
   }));
 }
 function renderDivToday(){
-  divListMode = true;
+  sideMode = "today";
   const box = document.getElementById("detail"); box.className = "";
   // 상단: 오늘 뜬 배당공시 (접수일=오늘)
   const byId = Object.fromEntries(ROWS.map(r=> [r.id, r]));
@@ -337,6 +350,46 @@ function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월
   h += (c.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("");
   return h + `</div>`;
 }
+function inputsBlock(e){   // 재료표 — 이 금액을 구한 재료와 상태(장부 rows[].inputs, 확인 목록과 같은 표)
+  if(!e.inputs || !e.inputs.length) return "";
+  return `<table class="dortab inp" style="margin-top:6px"><thead><tr><th>재료</th><th>값</th><th>상태</th><th>출처</th></tr></thead><tbody>${
+    e.inputs.map(x=>`<tr><td>${esc(x.item)}</td><td>${esc(x.value)}</td><td class="s-${esc(x.status)}">${esc(x.status)}<br><span class="src">${esc(x.check)}</span></td>
+      <td class="src">${esc(x.src)}</td></tr>`).join("")}</tbody></table>`;
+}
+function renderQueue(){   // 확인 목록 — 사람이 볼 재료 예외만, 돈 영향 순. 판정은 /api/div_check 로 저장 → 계산 다시
+  sideMode = "queue";
+  const box = document.getElementById("detail"); box.className = "";
+  const items = QUEUE.items.filter(x=> matchQ(x));
+  const f2 = v => Number(v||0).toFixed(2);
+  let h = `<div class="divlist"><div class="lh">🔎 확인 목록 (${items.length}) <span style="font-weight:400;color:var(--muted);font-size:11px">· ${esc(QUEUE.generated_at||"")}</span></div>
+    <div class="dpm">확인 안 된 재료가 걸린 포인트: ${QUEUE.summary.map(m=>`${esc(m.index)} ${esc(m.month)} ${f2(m.open)}/${f2(m.total)}pt`).join(" · ")}</div>`;
+  items.slice(0, 200).forEach((x, i)=>{
+    const policy = x.item.startsWith("회사 정책");
+    h += `<div class="qi" data-i="${QUEUE.items.indexOf(x)}"><span class="imp">${x.impact?x.impact.toFixed(1)+"%":"-"}</span>
+      <b>${esc(x.name)}</b> ${esc(x.fy)} ${esc(x.div_type)} ${x.per_share?won(x.per_share)+"원":""}<br>
+      ${esc(x.item)}: <b>${esc(x.value||"(비어 있음)")}</b> <span class="s-${esc(x.status)}">${esc(x.status)}</span> <span class="src">${esc(x.check)}${x.used?" · 금액에 쓰임":""}</span>
+      <div class="src">${esc(x.src)}</div>
+      <div class="act">
+        <button data-v="맞음">맞음</button><button data-v="틀림">틀림</button><button data-v="모름">모름</button>
+        ${x.status==="빠짐"?`<button data-v="빠짐 인정">빠짐 인정(정책 넣기)</button>`:""}
+        ${policy?"":`<input placeholder="고친 값(숫자)" data-fix>`}
+        <input placeholder="메모" data-note>
+      </div></div>`;
+  });
+  if(items.length > 200) h += `<div class="dpm">… ${items.length - 200}줄 더 (돈 영향 작은 순)</div>`;
+  box.innerHTML = h + `</div>`;
+  box.querySelectorAll(".qi").forEach(el=> el.querySelectorAll("button[data-v]").forEach(b=> b.addEventListener("click", ()=> judge(QUEUE.items[+el.dataset.i], b.dataset.v, el))));
+}
+async function judge(x, verdict, el){
+  const fix = el.querySelector("[data-fix]")?.value.replace(/,/g,"").trim() || "";
+  const note = el.querySelector("[data-note]").value.trim();
+  if(verdict==="틀림" && !x.item.startsWith("회사 정책") && fix && isNaN(+fix)) return alert("고친 값은 숫자로");
+  const body = {code:x.code, name:x.name, fy:x.fy, item:x.item, sigs:x.sigs, verdict, note,
+                ...(fix ? {value:+fix} : {}), ...(verdict==="빠짐 인정" ? {row:x.row} : {})};
+  const r = await fetch("/api/div_check", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  if(!r.ok) return alert("저장 실패: " + r.status);
+  el.style.opacity = .35; el.querySelectorAll("button").forEach(b=> b.disabled = true);
+}
 function whyBlock(e){
   // "왜 이 날짜인가" — 파생 날짜 설명 + 5단계 사다리 + 회사 판정 + 배당 이력
   let h = `<div class="why"><div class="wh">📍 날짜 산출 근거</div>
@@ -363,7 +416,7 @@ let _group = null;   // 마지막으로 연 묶음 — 종목 상세에서 목�
 const backLinks = e => `<span class="back" onclick="renderDivToday()">‹ 오늘의 배당공시</span>${_group && _group.items.includes(e) ? ` · <span class="back" onclick="showDetail(_group)">‹ ${esc(_group.label)} 목록</span>` : ""}`;
 function showDetail(e){
   const box = document.getElementById("detail");
-  divListMode = false; box.className = "";
+  sideMode = "detail"; box.className = "";
   if(e.kind==="group"){
     _group = e;
     const dp = {};
@@ -400,6 +453,7 @@ function showDetail(e){
           ${e.amount_cands?`<div class="ev" style="margin-top:4px">🧮 후보: ${esc(e.amount_cands)}</div>`:""}
           ${e.amount_special?`<div class="ev" style="margin-top:4px">⭐ ${esc(e.amount_special)}</div>`:""}
           ${e.amount_surprise?`<div class="ev" style="margin-top:4px">📈 ${esc(e.amount_surprise)}</div>`:""}
+          ${inputsBlock(e)}
           <div class="ev" style="margin-top:4px">※ 공시 기반 자동 추정 (설계: docs/배당예측-워크플로우.md). 실제 공시(④)가 나오면 빨간색(확정) 이벤트로 대체됩니다.</div>
         </div>
         ${companyBlock(e.code)}
@@ -620,6 +674,8 @@ async function loadData(){
   try{ CAPD = await getJSON("capital.json"); CAP = CAPD.events; }catch(_){ CAPD = {events:[], ongoing_ids:[]}; CAP = []; }
   try{ HALT = (await getJSON("halts.json")).events||[]; }catch(_){ HALT = []; }
   try{ DP = await getJSON("divpoints.json"); }catch(_){ DP = null; }
+  try{ QUEUE = await getJSON("div_queue.json"); }catch(_){ QUEUE = {items:[], summary:[]}; }
+  document.getElementById("queueBtn").textContent = `🔎 확인 목록 ${QUEUE.items.filter(x=>x.impact).length}`;
   let chk = null;
   try{ chk = await getJSON("dividend_check.json"); }catch(_){}
   const bad = chk && !chk.ok ? ` · ⚠ 데이터 점검 오류 ${chk.errors.length}건 (${chk.generated_at}) — ${chk.errors[0]}` : "";
@@ -629,7 +685,8 @@ async function loadData(){
   document.getElementById("estLegend").innerHTML = Object.values(BOOK.grades)
     .map(g=> `<i style="${g.style.ex}"></i>${esc(g.label)}`).join(" ");
   applyFilters();
-  if(divListMode) renderDivToday();
+  if(sideMode==="today") renderDivToday();
+  if(sideMode==="queue") renderQueue();
 }
 function refresh(){ return keepScroll(loadData); }   // 다시 그려도 보던 스크롤 위치 유지 (공시캘린더 탭이 열릴 때 바깥에서도 부름)
 
@@ -653,7 +710,7 @@ async function boot(){
   setInterval(()=>{ if(!window.frameElement || window.frameElement.offsetParent) refresh(); }, 30000);   // 30초마다 — 공시캘린더에 끼워져 숨겨져 있으면 쉼
 }
 
-document.getElementById("q").addEventListener("input",e=>{ filters.q=e.target.value; applyFilters(); });
+document.getElementById("q").addEventListener("input",e=>{ filters.q=e.target.value; applyFilters(); if(sideMode==="queue") renderQueue(); });
 document.getElementById("xlsxBtn").addEventListener("click", exportXlsx);
 [["showBuy","buy"],["showEx","ex"]].forEach(([id,k])=>{
   const el = document.getElementById(id);
@@ -667,8 +724,9 @@ document.getElementById("xlsxBtn").addEventListener("click", exportXlsx);
 document.querySelectorAll(".chip[data-market]").forEach(c=> c.addEventListener("click",()=>{
   const mk=c.dataset.market; filters[mk]=!filters[mk];
   c.classList.toggle("on",filters[mk]); applyFilters();
-  if(divListMode) renderDivToday();
+  if(sideMode==="today") renderDivToday();
 }));
+document.getElementById("queueBtn").addEventListener("click", renderQueue);
 
 boot().catch(err=>{
   document.getElementById("meta").textContent = "데이터 로드 실패: "+err.message;

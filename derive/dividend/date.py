@@ -3,7 +3,7 @@
 import datetime
 from core.paths import DART_VIEW
 from core.krx_cal import to_date, iso
-from derive.dividend import amount
+from derive.dividend import amount, inputs
 from derive.dividend.facts import quarter_end, view, quarter_owner, pattern, evidence, cons_of
 
 HORIZON_DAYS = 270
@@ -217,7 +217,7 @@ def predict_round(ctx, t, fy, q, today, earn, med):
             **grade_out("공고" if ann_rec else grade, t), "case": j["case"], "why": why, "anchor": anchor, "reason": reason,
             "alt": {k: iso(v) for k, v in alt.items()}, "warn": warn,
             "cond": cond_signals(ctx, qe, today) if t == "결산배당" else {},
-            **amount.estimate(ctx, t, fy, rec, med),
+            **amount.estimate((inp := inputs.build(ctx, fy, rec))["v"], t, med), "inputs": inp["table"],
             "ladder": ladder(ctx, t, fy, q, bool(ann_rec))}, None
 
 def forecast(ctx, today, earn, med):
@@ -275,4 +275,6 @@ def company_out(ctx, missed, today):
             "paid_rounds": {fy: sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy and r["type"] != "결산배당" and r["dps"])
                             for fy in (today.year - 1, today.year)},
             "cons_dps": {fy: c["dps"] for fy in (today.year, today.year + 1) if (c := cons_of(ctx, fy, "dps"))},
+            "exdivs": [{**x, "date": iso(x["date"])} for x in ctx["exdivs"]][-6:],
+            "suggested": ctx["suggested"],
             "evidence": ev}

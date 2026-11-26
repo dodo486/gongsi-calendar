@@ -16,13 +16,14 @@ for _d in (OUT_DIR, CACHE_DIR):
     os.makedirs(_d, exist_ok=True)
 
 # 계산 결과 파일 — 상수 이름 = 파일 이름. 쓰는 모듈·읽는 모듈 모두 여기서 가져간다
-(CAPITAL_PATH, DISCLOSURES_PATH, DIV_BOOK_PATH, DIV_SOURCES_PATH, DIV_VERIFY_PATH,
+(CAPITAL_PATH, DISCLOSURES_PATH, DIV_BOOK_PATH, DIV_QUEUE_PATH, DIV_SOURCES_PATH, DIV_VERIFY_PATH,
  DIVIDEND_CHECK_PATH, DIVPOINTS_PATH, EARN_SCHED_PATH, EARNINGS_PATH, EXPIRIES_PATH, HALTS_PATH,
  KRX_ACTIONS_PATH, LIMITS_PATH) = (os.path.join(OUT_DIR, f"{n}.json") for n in (
-    "capital", "disclosures", "div_book", "div_sources", "div_verify",
+    "capital", "disclosures", "div_book", "div_queue", "div_sources", "div_verify",
     "dividend_check", "divpoints", "earn_sched", "earnings", "expiries", "halts",
     "krx_actions", "limits"))
 
+DIV_CHECKED_PATH = os.path.join(BASE, "div_checked.json")   # 배당 재료 판정(사람·판독자) — 확인 목록에서 남김, 저장소에 커밋
 DIV_POLICY_PATH = os.path.join(BASE, "div_policy.json")   # 회사별 배당정책 장부 — 사람이 출처 보고 고치는 입력, 저장소에 커밋
 
 PORT = 8777

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Callable
 from core import expiries
 from derive import earn_sched, capital, actions, limits, halts, disclosures, earnings
-from derive.dividend import facts, verify, book, points, check
+from derive.dividend import facts, verify, book, points, review, check
 
 
 @dataclass(frozen=True)
@@ -26,10 +26,11 @@ CALCS = [
     Calc("earnings", frozenset({"dart_listing", "kind_feed", "day"}), (), earnings.main),
     Calc("earn_sched", frozenset({"earn_notice", "ir", "day"}), (), earn_sched.main),
     Calc("div_verify", frozenset({"alot", "fin", "day"}), (), verify.verify),    # 백테스트 — 하루 한 번, 신호 순서(priority)도 여기서
-    Calc("div_book", frozenset({*facts.DOC_KINDS, "agm_record", "charter_table", "acc_mt", "consensus", "alot", "fin", "shares", "index_pdf", "earn_notice", "ir", "day"}),
+    Calc("div_book", frozenset({*facts.DOC_KINDS, "agm_record", "charter_table", "acc_mt", "consensus", "alot", "fin", "shares", "div_human", "index_pdf", "earn_notice", "ir", "day"}),
          ("expiries", "div_verify"), book.build),
     Calc("divpoints", frozenset({"index_pdf", "day"}), ("div_book",), points.refresh),
-    Calc("dividend_check", frozenset(), ("div_book", "div_verify", "divpoints"), check.main),
+    Calc("div_queue", frozenset({"div_human"}), ("div_book", "divpoints"), review.build),   # 확인 목록 — 사람 판정(div_human)이 바뀌어도
+    Calc("dividend_check", frozenset({"doc_coverage"}), ("div_book", "div_verify", "divpoints", "div_queue"), check.main),
 ]
 
 _names = [c.name for c in CALCS]
