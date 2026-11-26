@@ -9,7 +9,7 @@
 """
 import datetime
 from core import store, universe
-from core.paths import save_json, load_json, stamp, DIV_BOOK_PATH, DIV_SOURCES_PATH, DIV_VERIFY_PATH, EXPIRIES_PATH, DART_VIEW
+from core.paths import save_json, load_json, stamp, DIV_BOOK_PATH, DIV_SOURCES_PATH, EXPIRIES_PATH, DART_VIEW
 from core.krx_cal import iso, ymd, days_ago, t_minus
 from derive import earn_sched
 from derive.dividend.facts import medians, contexts
@@ -34,7 +34,7 @@ def build():
     since = ymd(days_ago(FILED_DAYS))
     exps = sorted(e["date"] for e in load_json(EXPIRIES_PATH, {}).get("events", []))
     ctxs = contexts()
-    med = {**medians(ctxs), "priority": load_json(DIV_VERIFY_PATH, {}).get("priority", {})}
+    med = medians(ctxs)
     earn = {}
     for e in earn_sched.collect(watch=universe.div()):
         earn.setdefault(e["code"], []).append(e)

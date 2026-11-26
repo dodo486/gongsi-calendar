@@ -45,7 +45,7 @@ def numbers(t, a, b):
 
 # ── 3 종류: 숫자에서 가장 가까운 종류 말(앞 40자, 뒤 25자, 같은 마디 안) ──
 KIND_WORDS = {
-    "pct": [("payout", r"배당\s*성향"), ("return", r"(?:총\s*)?주주\s*환원\s*(?:[율률]|비중|비율)|환원\s*[율률]"), ("skip", r"TSR|총\s*주주\s*수익률|ROE|PBR|준수율|비율|수익률|증가율|성장률|이익률|지분|잉여\s*현금|FCF|배당\s*[률율]|시가\s*배당|주식\s*수|발행\s*주식"),
+    "pct": [("payout", r"배당\s*성향"), ("return", r"(?:총\s*)?주주\s*환원\s*(?:[율률]|비중|비율)|환원\s*[율률]"), ("skip", r"TSR|총\s*주주\s*수익률|ROE|PBR|준수율|비율|수익률|증가율|성장률|이익률|지분|잉여\s*현금|FCF|배당\s*[률율]|시가\s*배당|주식\s*수|발행\s*주식|비중"),
             ("ni", r"순이익|순익")],
     "money": [("buyback", r"(?:자사주|자기\s*주식)\S{0,4}\s*(?:매입|취득)|(?:매입|취득)\S{0,4}\s*(?:자사주|자기\s*주식)|^\s*원?\s*(?:규모의?\s*)?(?:추가\s*)?(?:매입|취득)(?!\s*가)"), ("skip", r"기부|보증|담보"), ("budget", r"(?:총\s*)?주주\s*환원|환원\s*(?:재원|규모)|현금\s*환원"), ("budget_income", r"배당\s*수입"),
               ("cash", r"현금\s*배당|배당\s*(?:금\s*)?총액|배당\s*(?:규모|재원)|배당금|배당"), ("skip", r"매출|영업\s*이익|순이익|투자|자본\s*준비금|이익\s*잉여금|차입|부채|자산|매각|인수|지분|유입|전입")],
@@ -86,15 +86,15 @@ def kind_of(t, a, b, n):
     return None if kind == "skip" else kind
 
 # ── 4 범위 말: 숫자 바로 앞·뒤 ──
-def bounds(t, n):
-    """(하한, 상한) 또는 None(바뀌기 전 값 "A원에서", "1,000원 → 1,500원"의 앞)"""
+def bounds(t, a, n):
+    """(하한, 상한) 또는 None(바뀌기 전 값 "A원에서", "1,000원 → 1,500원"의 앞). 앞 말은 같은 마디(a 부터) 안에서만 — 윗줄의 "최소"가 넘어오지 않게"""
     _, s, e, v, v2 = n
-    before, after = t[max(0, s - 20): s], t[e: e + 16]
+    before, after = t[max(a, s - 20): s], t[e: e + 16]
     if re.match(r"\s*%?\s*대?\s*(?:에서|→|->|⇒)", after) or re.match(r"\s*(?:이상\s*)?(?:확대|증액|인상|상향|증가|감소|축소)", after) or re.search(r"대비\s*$", before):
         return None   # 바뀌기 전 값, 늘린 폭("500원 확대")
     if v2 is not None:
         return v or None, v2   # "0~20%"의 0은 하한 없음
-    if re.match(r"\s*(?:이상|\+|α|을?\s*(?:기본|최소)|으로\s*(?:상향|확대|증액|인상))", after) or re.search(r"최소(?!화)|최저|기본\s*배당", t[max(0, s - 60): s]) or re.match(r"\s*원?\s*(?:수준의?\s*)?안정\s*배당", after) \
+    if re.match(r"\s*(?:이상|\+|α|을?\s*(?:기본|최소)|으로\s*(?:상향|확대|증액|인상))", after) or re.search(r"최소(?!화)|최저|기본\s*배당", t[max(a, s - 60): s]) or re.match(r"\s*원?\s*(?:수준의?\s*)?(?:안정\s*배당|의?\s*최소)", after) \
             or re.search(r"(?:최소|최저)\s*배당금?\s*(?:설정)?\s*[:：]", t[max(0, s - 80): s]):   # "최저배당금 설정 : 주당 2,500원 - 결산배당 : 주당 1,000원"
         return v, None
     if re.match(r"\s*%?\s*대", after) and n[0] == "pct":
@@ -202,7 +202,7 @@ def policy_rows(t):
                 continue   # 같은 종류·칸 금액 뒤 괄호 안은 그 금액의 나눔("주당 20,000원 (실적 반영 10,000원)"), 쌍점 뒤는 목표의 실적("500원 이상 유지 : 배당금 680원")
                            # — 다른 종류·칸("3.7조원(배당 2.4조원)", "1,300원(중간배당 600원)")은 읽음
             seen.append((n, (kind, slot)))
-            lohi = bounds(t, n)
+            lohi = bounds(t, a, n)
             if not lohi or kind == "dps" and re.search(r"액면|주식\s*수|발행|주당\s*금액|1주의\s*금액", t[max(a, n[1] - 30): n[2]]):
                 continue
             lo, hi = lohi

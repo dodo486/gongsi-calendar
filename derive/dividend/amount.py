@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """배당 금액 — 재료표(inputs.build 의 v)만 읽는다. 신호마다 후보 하나({signal, name, value 원, basis}) 또는 못 쓴 이유 문자열,
-estimate 가 회사가 밝힌 것(LAW) → 배당종류·회사 성향(style)별 신호 순서(verify 가 과거 적중률로 rank, med["priority"])대로 고른다.
+estimate 가 pick 으로 고른다(회사가 밝힌 것 > 나머지 신호 가운데 값 > 성향×이익).
 결산 신호는 연간 DPS 를 추정해 from_annual 한 곳에서 올해 이미 정한 배당을 뺀다. 날짜는 date"""
 import itertools, math, statistics
 from core.krx_cal import iso
-from derive.dividend.facts import spiked, EARN_UP, MIN_SAMPLES, SPECIAL_MULT
+from derive.dividend.facts import spiked, EARN_UP, SPECIAL_MULT
 
 
 def has_special(vals):
@@ -33,8 +33,10 @@ def repeat_last(x, t):
             v = max(round(x["prev"] - x["paid"]), int(q["dps"]))
             return {"signal": "repeat_last", "name": "직전 반복", "value": v,
                     "basis": f"올해 {q['type']} 시작 — " + (f"작년 연간 {x['prev']:,.0f}원 − 올해 이미 정한 {x['paid']:,.0f}원" if v > int(q["dps"]) else f"올해 Q{q['q']} {int(q['dps']):,}원 반복")}
-        if not x["last_final"]:
-            return "작년 결산 안 함" if x["last_final"] == 0 else "작년 결산 몫 모름"
+        if x["last_final"] == 0:
+            return "작년 결산 안 함"
+        if x["last_final"] is None:   # 사업보고서 3분기 칸이 없어 결산 몫을 모르면 작년 연간 반복(재개·첫 회차 오차 중앙 31.7→28.5%, 추정 연구 실험 1-g)
+            return from_annual(x, "repeat_last", "직전 반복", x["prev_adj"], f"작년({fy - 1}) 결산 몫 모름 — 작년 연간 {x['prev_adj']:,.0f}원 반복") if x["prev_adj"] else "작년 결산 몫·연간 모름"
         adj = x["last_adj"]
         return {"signal": "repeat_last", "name": "직전 반복", "value": round(x["last_final"] / adj),
                 "basis": f"작년({fy - 1}) 결산 {x['last_final']:,}원 반복" + (f" · 그 뒤 {'분할' if adj > 1 else '병합'} 1주→{adj:g}주 보정" if adj != 1 else "")}
@@ -179,39 +181,36 @@ def stated(x, t):
     rng = next((r for r in lv if r["role"] == "range"), None)
     cands = [r for r in lv if r["role"] == "level"]
     if exact:
-        pick = exact
+        choice = exact
     elif rng:
         c = x["cons_dps"]
         lo, hi = rng["value"]
         want = max(cands + ([{"value": c["dps"], "why": "컨센", "floor": False}] if c else []), key=lambda r: r["value"], default={"value": lo, "why": "", "floor": True})
         v = min(max(want["value"], lo, x["paid"]), hi)
-        pick = {"value": v, "floor": want["floor"] or v > want["value"],
+        choice = {"value": v, "floor": want["floor"] or v > want["value"],
                 "why": rng["why"] + (f" (범위 안 {want['why']} {want['value']:,.0f}원)" if want["why"] and want["value"] > lo else "")}
     elif cands:
-        pick = max(cands, key=lambda r: r["value"])
-        if pick["value"] < x["prev_adj"]:
-            pick = {"value": x["prev_adj"], "floor": True, "why": f"정책 최소({pick['why']})가 작년보다 낮음 → 작년 DPS {x['prev_adj']:,.0f}원 유지"}
+        choice = max(cands, key=lambda r: r["value"])
+        if choice["value"] < x["prev_adj"]:
+            choice = {"value": x["prev_adj"], "floor": True, "why": f"정책 최소({choice['why']})가 작년보다 낮음 → 작년 DPS {x['prev_adj']:,.0f}원 유지"}
     else:
         return "금액으로 바꿀 회사 정책 없음" if not x["policy"] else "회사 정책은 있으나 금액으로 못 바꿈(순이익·주식 수·현금 몫 없음 또는 일회성 컷)"
-    e = from_annual(x, "stated", "회사 정책", pick["value"], f"{pick['why']} → 연간 {pick['value']:,.0f}원")
-    return {**e, "floor": pick["floor"]} if isinstance(e, dict) else e
+    e = from_annual(x, "stated", "회사 정책", choice["value"], f"{choice['why']} → 연간 {choice['value']:,.0f}원")
+    return {**e, "floor": choice["floor"]} if isinstance(e, dict) else e
 
 SIGNALS = [(repeat_last, False), (consensus_left, False), (trend, False), (payout_eps, False), (no_cut, False),
            (earn_up, True), (step_up, True), (stated, False)]   # (신호, 수집대상 통계 med 를 쓰나)
 NAMES = [s.__name__ for s, _ in SIGNALS]
-LAW = ["stated"]   # 트레이더 순서: 회사가 밝힌 배당(단계 2·3) — 과거 적중순 경쟁 밖, 있으면 앞
-
-def rank(xs):
-    """신호 순서 — 과거 회차(xs: sig_dps·actual_dps)에 이 순서로 처음 있는 신호를 썼다면의 평균 오차(회차마다 100%에서 자름)가
-    가장 작은 순서 — 중앙값은 가운데 몇 회차만 봐서 소수 회차로 순서가 우연히 뒤집힘. 튄 회차도 넣음(대부분 실제 인상).
-    표본 MIN_SAMPLES 미만 신호는 검증 전이라 SIGNALS 순으로 뒤에"""
-    tested = [n for n in NAMES if n not in LAW and sum(n in x["sig_dps"] for x in xs) >= MIN_SAMPLES]
-    errs = lambda order: [abs(x["sig_dps"][k] - x["actual_dps"]) / x["actual_dps"] for x in xs if (k := next((k for k in order if k in x["sig_dps"]), None))]
-    best = min(itertools.permutations(tested), key=lambda o: statistics.mean(min(v, 1) for v in errs(o))) if tested else ()
-    return list(best) + [n for n in NAMES if n not in best and n not in LAW]
+def pick(vals):
+    """신호 값 {이름: 원} → 고른 신호 이름. 회사가 밝힌 것(stated) > 성향×이익을 뺀 신호들의 가운데 값(짝수면 낮은 쪽 — 실제 신호 하나라 근거가 남음) > 성향×이익.
+    신호들이 서로 다른 방향으로 틀릴 때 튀는 하나를 막음 — 과거 적중순 한 신호(18.3%)보다 백테스트 결산 오차 중앙 16.7%(추정 연구 실험 1-f). 장부·검증이 같이 씀"""
+    if "stated" in vals:
+        return "stated"
+    rest = sorted((v, k) for k, v in vals.items() if k != "payout_eps")
+    return rest[(len(rest) - 1) // 2][1] if rest else "payout_eps" if "payout_eps" in vals else None
 
 def estimate(x, t, med):
-    """금액 하나(LAW → 신호 순서대로 처음 있는 것) + 못 쓴 신호와 이유 + 표시 둘 — 특별배당 가능성(결산에서 특별배당 이력과 올해 이익 튐이 같이 켜지면,
+    """금액 하나(pick) + 못 쓴 신호와 이유 + 표시 둘 — 특별배당 가능성(결산에서 특별배당 이력과 올해 이익 튐이 같이 켜지면,
     특별 몫 금액은 과거 검증에서 오차를 키워 더하지 않음), 실적 서프라이즈 가능성(트레이더 단계 1: 직전 2개 분기 순이익이 발표 전 컨센 상회).
     후보는 회사가 딱 떨어지게 주는 단위(직전 금액의 단위)로 맞추고(최소 요건에서 나온 회사 정책 값 floor 는 올림), 결산 몫은 바닥 아래로 안 줌 —
     그해 분기·중간 정규 금액(과거 분기 43회 중 0회, 중간 31회 중 3회), 회사가 밝힌 최소 연간 주당 금액 − 올해 이미 정한 배당"""
@@ -245,10 +244,11 @@ def estimate(x, t, med):
         floors.append((math.ceil(mn["lo"] - x["paid"]), f"{iso(mn['date'])} 회사가 밝힌 최소 주당 {mn['lo']:,.0f}원 − 올해 이미 정한 {x['paid']:,.0f}원 아래로 안 줌"))
     for low, why in floors:
         cands = {k: c if c["value"] >= low else {**c, "value": low, "basis": c["basis"] + " → " + why} for k, c in cands.items()}
-    pick = next((cands[k] for k in LAW + med.get("priority", {}).get(f"{t}|{st}", NAMES) if k in cands), None)
+    chosen = pick({k: c["value"] for k, c in cands.items()})
+    best = cands[chosen] if chosen else None
     empty = (f"작년({fy - 1}) 결산배당 안 함 — 올해 근거({x['evidence'] or '없음'})로는 금액을 못 정함" if t == "결산배당" and x["last_final"] == 0
              else "금액 이력 없음")
-    return {"per_share": str(pick["value"]) if pick else "", "amount_basis": pick["basis"] if pick else empty,
+    return {"per_share": str(best["value"]) if best else "", "amount_basis": best["basis"] if best else empty,
             "amount_style": st, "amount_special": special, "amount_surprise": surprise, "amount_signals": list(cands.values()),
             "amount_cands": " · ".join(f"{c['name']} {c['value']:,}원" for c in cands.values()),
-            "amount_pick": pick["signal"] if pick else "", "amount_unused": unused}
+            "amount_pick": best["signal"] if best else "", "amount_unused": unused}

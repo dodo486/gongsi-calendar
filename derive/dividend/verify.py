@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """배당 검증 — 과거 회차마다 공시 직전 사실(view)로 같은 추정을 돌려 날짜·구분·금액(분기·중간) 적중률.
 결산배당은 사업연도마다 12월 초(결산기말 EVAL_DAYS 전) 시점 사실로 장부와 같은 예측(forecast)을 돌려 실제 결산 몫과 비교 — 예측 건이 안 나오면 놓침.
-신호 순서는 배당종류·회사 성향별로 과거 적중순(amount.rank) → priority, 장부가 이 순서로 고른다. 설계 정본 docs/배당예측-워크플로우.md §5
+금액은 장부와 같은 고르기(amount.pick)로 신호 값에서 고른다. 설계 정본 docs/배당예측-워크플로우.md §5
 
   python -m derive.dividend.verify   → data/out/div_verify.json
 """
@@ -70,13 +70,10 @@ def verify():
                            "actual_special": spiked(prior, act), "special_hint": bool(e["amount_special"]),
                            "sig_dps": {s["signal"]: s["value"] for s in e["amount_signals"]}})
     styles = ("", "안정", "연동", "이력 짧음")
-    scored = {"결산배당": finals, **{t: [x for x in rows if x.get("type") == t and x.get("actual_dps")] for t in ("분기배당", "중간배당")}}
-    priority = {f"{t}|{s}": amount.rank([x for x in xs if x["style"] == s]) for t, xs in scored.items() for s in styles[1:]}
-    ahead = {(s, fy): amount.rank([y for y in finals if y["style"] == s and y["fy"] < fy]) for s in styles[1:] for fy in {x["fy"] for x in finals}}
-    for x in rows + finals:   # 결산은 그 사업연도 전 해들로만 정한 순서(앞을 안 봄), 분기·중간은 표본이 한 해뿐이라 전체 순서
+    for x in rows + finals:
         if "sig_dps" in x:
-            order = amount.LAW + (ahead[x["style"], x["fy"]] if x in finals else priority[f"{x['type']}|{x['style']}"])
-            x["pred_dps"] = next((x["sig_dps"][k] for k in order if k in x["sig_dps"]), None)
+            k = amount.pick(x["sig_dps"])
+            x["pred_dps"] = x["sig_dps"][k] if k else None
     judged = [x for x in rows if x["pred"] in ("고정", "유동")]
     ok = [x for x in judged if (x["pred"] == "고정") == x["actual_fixed"]]
     flo = [x for x in rows if x["pred"] == "유동" and not x["actual_fixed"]]
@@ -105,14 +102,13 @@ def verify():
         "결산 금액(12월 초)": {s or "전체": amount_hits([x for x in finals if x["pred_dps"] and (not s or x["style"] == s)]) for s in styles},
         "결산 신호별 금액(12월 초)": {s or "전체": {n: amount_hits([{**x, "pred_dps": x["sig_dps"][n]} for x in finals if n in x["sig_dps"] and (not s or x["style"] == s)])
                                                 for n in amount.NAMES} for s in styles},
-        "신호 순서(과거 적중순)": priority,
         "특별배당 가능성 표시(12월 초)": {"켜진 회차": sum(x["special_hint"] for x in finals),
                                      "그중 실제 특별": sum(x["special_hint"] and x["actual_special"] for x in finals),
                                      "꺼진 회차 중 실제 특별": sum(not x["special_hint"] and x["actual_special"] for x in finals)},
         "결산 표본 사업연도": {fy: sum(x["fy"] == fy for x in finals) for fy in sorted({x["fy"] for x in finals})},
         "한계": "정관(정기보고서 표)은 최신값 사용 — 과거 시점 값이 아님. 실적발표 예정일 과거분 없음 → 백테스트에서 A2 이사회형 미사용",
     }
-    save_json(DIV_VERIFY_PATH, {"generated_at": stamp(), "summary": summary, "priority": priority, "rows": rows, "finals": finals, "missed": missed})
+    save_json(DIV_VERIFY_PATH, {"generated_at": stamp(), "summary": summary, "rows": rows, "finals": finals, "missed": missed})
     print(json.dumps(summary, ensure_ascii=False, indent=1))
     wrong = [x for x in judged if (x["pred"] == "고정") != x["actual_fixed"]]
     print(f"\n판정 틀린 회차 {len(wrong)}건 (앞 20):")
