@@ -270,7 +270,7 @@ def company_out(ctx, missed, today):
             "agms": [{"date": iso(a["date"]), "kind": a["kind"], "regular": a["regular"], "charter": a["charter"]}
                      for a in ctx["agms"]][-4:],
             "statements": [{**x, "date": iso(x["date"])} for x in ctx["statements"] if x["date"] >= today - datetime.timedelta(days=365)],
-            "policies": [{**p, "date": iso(p["date"])} for p in ctx["policies"] if p["fy"][1] >= today.year - 1],
+            "policies": [{**p, "date": iso(p["date"]), "said": [[iso(d), no] for d, no in p["said"]]} for p in ctx["policies"] if p["fy"][1] >= today.year - 1],
             "reports": {fy: {k: d[k] for k in ("dps", "q3_dps") if k in d} for fy, d in ctx["years"].items() if fy >= today.year - 1},
             "paid_rounds": {fy: sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy and r["type"] != "결산배당" and r["dps"])
                             for fy in (today.year - 1, today.year)},

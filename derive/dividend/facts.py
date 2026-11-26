@@ -207,7 +207,7 @@ def view(ctx, cut):
     v["treasury"] = [x for x in ctx["treasury"] if x["date"] < cut]
     v["cons"] = [x for x in ctx["cons"] if x["date"] < cut]
     v["statements"] = [p for p in ctx["statements"] if p["date"] < cut]
-    v["policies"] = [p for p in ctx["policies"] if p["date"] < cut]
+    v["policies"] = [{**p, "date": s[-1][0], "src": s[-1][1]} for p in ctx["policies"] if (s := [x for x in p["said"] if x[0] < cut])]   # 그때까지 마지막으로 말한 공시가 대표
     v["share_counts"] = {d: n for d, n in ctx["share_counts"].items() if d + datetime.timedelta(days=ANNUAL_REPORT_DAYS if d.month == 12 else HALF_REPORT_DAYS) < cut}
     v["cash_flow"] = {fy: d for fy, d in ctx["cash_flow"].items() if quarter_end(fy, 4, ctx["acc"]) + datetime.timedelta(days=ANNUAL_REPORT_DAYS) < cut}
     v["years"] = {}
@@ -311,36 +311,46 @@ def contexts():
     human = {}
     for p in load_json(DIV_POLICY_PATH, {}).get("rows", []):
         human.setdefault(p["code"], []).append({**p, "date": to_date(p["date"])})
-    checked = {}
+    checked = {}   # 회사 → {"사람": {열쇠: 판정}, "판독자": {열쇠: [공시마다 판정]}}
     for d in load_json(DIV_CHECKED_PATH, {}).get("decisions", []):
-        checked.setdefault(d["code"], {})[(d["by"] == "사람", d["sig"])] = d
+        who = checked.setdefault(d["code"], {"사람": {}, "판독자": {}})
+        if d["by"] == "사람":
+            who["사람"][d["sig"]] = d
+        else:
+            who["판독자"].setdefault(d["sig"], []).append(d)
     since = to_date(min((e["rcept_dt"] for e in store.load("decision").values()), default="99991231"))
     out = [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)), "filed_since": since,
              "cons": [{**x, "date": to_date(x["date"])} for x in cons.get(s, [])],
              "years": _years(alot.get(s, {}).get("years", {})),
              "cash_flow": {int(fy): d for fy, d in fin.get(s, {}).get("years", {}).items()},
              "share_counts": {to_date(d): n for d, n in counts.get(s, {}).get("dates", {}).items()}} for s in sorted(stocks)]
-    for c in out:   # 정책 목록 = 공시에서 읽은 줄(사람이 틀림 판정한 줄 빼고) + 사람 줄. 줄마다 판정 열쇠 sig·확인 상태 check
-        auto = [{**r, "fy": _fys(r["fy"], st["date"]), "date": st["date"], "src": st["rcept_no"], "title": st["title"], "by": "공시 자동"}
-                for st in c["statements"] for r in st["rows"]]
-        mine = checked.get(c["code"], {})
+    for c in out:   # 정책 목록 = 정책 사실(같은 내용은 여러 공시가 말해도 한 줄, 출처 srcs) − 사람이 틀림 판정한 사실 + 사람 줄
+        facts_ = {}
+        sts = sorted(c["statements"], key=lambda st: (st["date"], st["rcept_no"]))   # 같은 날이면 접수번호 뒤(정정)가 나중
+        said = said_bases([r for st in sts for r in st["rows"]] + human.get(c["code"], []))
+        for st in sts:
+            for r in st["rows"]:
+                p = {**r, "fy": _fys(r["fy"], st["date"]), "base": _base(r, said), "date": st["date"], "src": st["rcept_no"], "title": st["title"], "by": "공시 자동"}
+                sig = policy_sig(p)
+                old = facts_.pop(sig, {})   # 같은 사실은 가장 최근 공시가 대표, 말한 공시는 모두 said(날짜·접수번호) — 검증은 그때까지 말한 것만(view)
+                facts_[sig] = {**p, "sig": sig, "said": old.get("said", []) + [(st["date"], st["rcept_no"])]}
+        mine = checked.get(c["code"], {"사람": {}, "판독자": {}})
+        man, bot = mine["사람"], mine["판독자"]
         rows = []
-        for p in auto + human.get(c["code"], []):
-            sig = policy_sig(p)
-            man, bot = mine.get((True, sig)), mine.get((False, sig))
-            if man and man["verdict"] == "틀림":
+        for p in list(facts_.values()) + [{**p, "base": _base(p, said), "sig": policy_sig({**p, "base": _base(p, said)}), "said": [(p["date"], p["src"])]} for p in human.get(c["code"], [])]:
+            if man.get(p["sig"], {}).get("verdict") == "틀림":
                 continue
-            check = ("사람 확인" if man or p["by"].startswith("사람") else "판독자 다름" if bot and bot["verdict"] == "틀림"
-                     else "판독자 확인" if bot else "자동")
-            rows.append({**p, "sig": sig, "check": check})
-        c["policies"] = sorted(rows, key=lambda p: p["date"])
-        c["suggested"] = [d for (man, sig), d in mine.items() if not man and d["verdict"] == "빠짐" and (True, sig) not in mine   # 판독자가 있어야 한다고 한 줄(사람이 아직 안 본 것)
-                          and not any(p["kind"] == d["value"]["kind"] and p["slot"] == d["value"]["slot"]   # 같은 종류·숫자·기간이 겹치는 줄이 이미 있으면 같은 말
-                                      and p["fy"][0] <= (d["value"]["fy"][1] or 9999) and (d["value"]["fy"][0] or 0) <= p["fy"][1]
-                                      and {p.get("lo"), p.get("hi")} & {d["value"]["lo"], d["value"]["hi"]} - {None} for p in rows)]
-        c["human_sigs"] = {sig for man, sig in mine if man}
-        c["overrides"] = {(d["fy"], d["item"]): float(d["value"]) for (man, _), d in mine.items()
-                          if man and d["verdict"] == "틀림" and "value" in d and not d["item"].startswith("회사 정책")}   # 사람이 고친 재료 값
+            reads = bot.get(p["sig"], [])   # 판독자는 공시마다 판정 — 한 공시라도 맞음이면 그 사실은 확인됨
+            check = ("사람 확인" if p["sig"] in man or p["by"].startswith("사람") else "판독자 확인" if any(d["verdict"] == "맞음" for d in reads)
+                     else "판독자 다름" if reads else "자동")
+            fix = next((d["value"] for d in reads if "value" in d), None) if check == "판독자 다름" else None
+            rows.append({**p, "check": check, **({"fix": fix} if fix else {})})
+        c["policies"] = sorted(rows, key=lambda p: (p["date"], p["src"]))
+        have = {p["sig"] for p in rows} | set(man)
+        c["suggested"] = list({sig: ds[0] for sig, ds in bot.items() if sig not in have and all(d["verdict"] == "빠짐" for d in ds)}.values())   # 판독자만 읽은 사실
+        c["human_sigs"] = set(man)
+        c["overrides"] = {(d["fy"], d["item"]): float(d["value"]) for d in man.values()
+                          if d["verdict"] == "틀림" and "value" in d and not d["item"].startswith("회사 정책")}   # 사람이 고친 재료 값
     return out
 
 def _years(raw):
@@ -352,9 +362,19 @@ def _years(raw):
             del d["q3_dps"]
     return ys
 
+RATIO_KINDS = ("payout", "return")   # 순이익에 곱하는 비율 — 연결·별도가 다른 정책(같은 공시에 "연결 30% 이상, 별도 22%")
+
+def said_bases(rows):
+    """회사가 비율마다 밝힌 기준 {kind: 연결·별도} — 오래된 것부터 받은 정책 줄에서 마지막으로 밝힌 것"""
+    return {r["kind"]: r["base"] for r in rows if r.get("base") and r["kind"] in RATIO_KINDS}
+
+def _base(p, said):
+    """정책 기준 — 비율만: 문장에 밝힌 기준 > 그 회사가 같은 비율에 밝힌 기준(said_bases) > 연결. 금액(주당·총액·고배당 표)은 기준 없음"""
+    return (p.get("base") or said.get(p["kind"]) or "연결") if p["kind"] in RATIO_KINDS else ""
+
 def policy_sig(p):
-    """정책 줄 판정 열쇠 — 출처 공시·종류·칸·하한·상한·사업연도 (값이 바뀌면 열쇠도 바뀌어 다시 확인 목록에)"""
-    return f"{p.get('src', '')}|{p['kind']}|{p['slot']}|{p.get('lo')}|{p.get('hi')}|{p['fy'][0]}-{p['fy'][1]}"
+    """정책 사실 열쇠 — 종류·칸·하한·상한·사업연도(출처 공시는 빼고: 여러 공시가 같은 말을 하면 한 사실). 값이 바뀌면 열쇠도 바뀌어 다시 확인 목록에"""
+    return f"{p['kind']}|{p['slot']}|{float(p['lo']) if p.get('lo') is not None else None}|{float(p['hi']) if p.get('hi') is not None else None}|{p['fy'][0]}-{p['fy'][1]}|{p['base']}" + (f"|{p['on']}" if "on" in p else "")
 
 def _fys(fy, date):
     """정책 줄의 사업연도 [첫, 끝] — 안 밝힌 첫 해는 공시한 해, 안 밝힌 끝은 첫 해부터 POLICY_YEARS 개"""
@@ -434,9 +454,11 @@ def eps_of(ctx, fy):
             else (q3 * 4 / 3, f"3분기 누적 EPS×4/3 {q3 * 4 / 3:,.0f}원") if q3 > 0 else (0, ""))
 
 def policy(ctx, fy):
-    """사업연도 fy 에 걸린 정책 줄 {(kind, slot): 줄} — 같은 칸은 사람 줄이 이기고, 그다음 최근 공시(같은 날이면 원문 뒤쪽)"""
-    rows = sorted((p for p in ctx["policies"] if p["fy"][0] <= fy <= p["fy"][1]), key=lambda p: (p["by"].startswith("사람"), p["date"]))
-    return {(p["kind"], p["slot"]): p for p in rows}
+    """사업연도 fy 에 걸린 정책 줄 {(kind, slot, base): 줄} — 같은 칸은 사람 줄이 이기고, 그다음 최근 공시(같은 날이면 접수번호 뒤 = 정정).
+    상한만 있는 비율("최대 배당성향 40%")은 수준이 아니라 칸을 다투지 않음"""
+    rows = sorted((p for p in ctx["policies"] if p["fy"][0] <= fy <= p["fy"][1] and (p["kind"] not in RATIO_KINDS or p.get("lo") is not None)),
+                  key=lambda p: (p["by"].startswith("사람"), p["date"], p["src"]))
+    return {(p["kind"], p["slot"], p["base"]): p for p in rows}
 
 def evidence(ctx, fy):
     """이 사업연도에 결산배당이 있다고 볼 근거(문장) — 작년 결산배당, 회사 정책, 연간 컨센 DPS. 없으면 """""

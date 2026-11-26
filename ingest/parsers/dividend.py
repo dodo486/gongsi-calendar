@@ -145,7 +145,7 @@ def plan_rows(excerpt):
                      "prev_payout": float(hp[2]) if hp else None, "prev_total": int(ht[1].replace(",", "")) if ht else None, "text": hd[0]})
     return rows
 
-# ── 정책 줄 — 회사가 배당에 대해 밝힌 숫자 하나 = {kind, slot, lo, hi, fy [첫, 끝], base, text} ──
+# ── 정책 줄 — 회사가 배당에 대해 밝힌 숫자 하나 = {kind, slot, lo, hi, fy [첫, 끝], base 연결·별도·None(안 밝힘), text} ──
 # kind: dps 주당 금액(원) · cash 현금배당 총액(원) · payout 배당성향(%, 현금배당만) · return 총주주환원율(%, 자사주 포함)
 #       budget 총주주환원 금액(원, 자사주 포함 — "환원 가능 재원 약 4천억원", "배당수입 약 6.2조원 … 배당수입의 60% 환원") · buyback 자사주 매입 금액(원)
 # lo·hi: 하한·상한(같으면 그 값, 모르면 None) · slot: 연간·결산·중간·분기 · fy: 숫자 앞 가장 가까운 사업연도 표기(없으면 None = 공시한 해부터)
@@ -231,13 +231,13 @@ def policy_rows(t):
             else:
                 hi2 = float(m[g + 1]) if m[g + 1] else None
                 word = m.groups()[-1]
-                cap = re.search(r"최대\s*$", t[max(0, m.start(g) - 6): m.start(g)])   # "최대 50%"
+                cap = re.search(r"최대[^.,%\d]{0,12}$", t[max(0, m.start(g) - 20): m.start(g)])   # "최대 50%", "최대 배당성향 40%"
                 lo, hi = (v, hi2) if hi2 else (v, None) if word in ("이상", "+") else (None, v) if cap or word in ("이내", "內", "한도") else (v, v)
                 near_txt = sentence + t[max(0, m.start() - 40): m.end() + 40]
                 buyback = (RETURN_WORDS.search(near_txt) and not re.search(r"배당\s*성향", near_txt)
                            and not re.match(r"\S{0,8}\s*(?:의\s*)?현금\s*배당(?!\s*(?:또는|및|과|와|,)\s*(?:자기|자사))", t[m.end(): m.end() + 30]))   # "50%~70% 수준의 현금배당"은 배당성향, "현금배당 또는 자기주식"은 총환원
                 row.update(kind="return" if kind == "return" or (kind == "ni" and buyback) else "payout", slot="연간", lo=lo, hi=hi,
-                           base="별도" if re.search(r"별도|개별", t[max(0, m.start() - 60): m.end() + 40]) else "연결")
+                           base=next((b for b, rx in (("별도", r"별도|개별"), ("연결", r"연결")) if re.search(rx, t[max(0, m.start() - 60): m.end() + 40])), None))   # 안 밝혔으면 모름(None) — 회사 단위로 facts 가 정함
             rows.append((m.start(), row))
     return [r for _, r in sorted(rows, key=lambda x: x[0])]
 

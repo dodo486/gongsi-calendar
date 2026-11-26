@@ -95,6 +95,7 @@ def build(ctx, fy, rec):
     if any(k[0] in ("return", "budget") for k in pol):
         table.append(row("현금 몫(총환원 중 배당)", f"{share:.0%}" if share is not None else "", "있음" if share is not None else "없음", v["share_txt"]))
     for r in pol.values():
-        table.append(row("회사 정책", policy_text([r]), "의심" if r["check"] == "판독자 다름" else "있음",
-                         f"{iso(r['date'])} {r.get('title', '')} — {r.get('text', '')[:80]}", r["check"], r["sig"]))
+        table.append({**row("회사 정책", policy_text([r]), "의심" if r["check"] == "판독자 다름" else "있음",
+                            f"{iso(r['date'])} {r.get('title', '')} — {r.get('text', '')[:80]}", r["check"], r["sig"]),
+                      **({"fix": {k: r["fix"][k] for k in ("kind", "slot", "lo", "hi", "fy")}} if r.get("fix") else {})})   # 판독자가 고쳐 읽은 값
     return {"v": v, "table": table}

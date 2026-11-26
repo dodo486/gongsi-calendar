@@ -26,7 +26,7 @@ def build():
                     share[x["id"]] = max(share.get(x["id"], 0), x["points"] / m["total"] * 100 if m["total"] else 0)
                     months.setdefault((ix["name"], m["label"]), []).append((x["id"], x["points"]))
     items = {}
-    def add(r, item, value, status, check, src, sig, used, row=None):
+    def add(r, item, value, status, check, src, sig, used, accept=None):
         if (r["code"], sig) in seen:
             return
         key = (r["code"], item, value)
@@ -39,7 +39,7 @@ def build():
         items[key] = {"code": r["code"], "name": r["name"], "fy": int(r["quarter"][:4]), "row": r["id"], "rows": [r["id"]] + (old["rows"] if old else []),
                       "div_type": r["div_type"], "per_share": r.get("per_share", ""), "item": item, "value": value, "status": status, "check": check,
                       "src": src, "sigs": [sig] + [x for x in (old["sigs"] if old else []) if x != sig], "used": used, "impact": round(impact, 2),
-                      "basis": r.get("amount_basis", ""), **({"row": row} if row else {})}   # row: 빠짐 인정 때 그대로 넣을 정책 줄
+                      "basis": r.get("amount_basis", ""), **({"accept": accept} if accept else {})}   # accept: 판독자 값 받기 단추가 그대로 보낼 판정·정책 줄
     for r in book.get("rows", []):
         if r["kind"] != "est" or not r.get("inputs"):
             continue
@@ -48,17 +48,18 @@ def build():
             policy = e["item"].startswith("회사 정책")
             used = any(e["item"].startswith(u) for u in uses)
             if e["status"] in OPEN or (policy and used and e["check"] in ("자동", "판독자 다름")):
-                add(r, e["item"], e["value"], e["status"], e["check"], e["src"], e["sig"], used)
+                add(r, e["item"], e["value"] + (f" → 판독자: {policy_text([e['fix']])}" if "fix" in e else ""), e["status"], e["check"], e["src"], e["sig"], used,
+                    {"label": "판독자 값으로", "verdict": "틀림", "row": e["fix"]} if "fix" in e else None)
         for s in book["companies"].get(r["code"], {}).get("suggested", []):
             if int(r["quarter"][:4]) in range(s["value"]["fy"][0] or 0, (s["value"]["fy"][1] or 9999) + 1) and r["div_type"] == "결산배당":
                 v = s["value"]
                 add(r, "회사 정책", policy_text([v]), "빠짐", "판독자 제안", s.get("note", ""), s["sig"], True,
-                    {k: v.get(k) for k in ("kind", "slot", "lo", "hi", "fy")})
+                    {"label": "빠짐 인정(정책 넣기)", "verdict": "빠짐 인정", "row": {k: v.get(k) for k in ("kind", "slot", "lo", "hi", "fy")}})
     open_rows = {i for x in items.values() if x["impact"] for i in x["rows"]}
     summary = [{"index": ix, "month": mo, "total": round(sum(p for _, p in xs), 4), "open": round(sum(p for i, p in xs if i in open_rows), 4)}
                for (ix, mo), xs in months.items()]
     queue = sorted(items.values(), key=lambda x: (-x["impact"], OPEN.index(x["status"]) if x["status"] in OPEN else 9, x["name"]))
-    save_json(DIV_QUEUE_PATH, {"generated_at": stamp(), "summary": summary, "items": queue})
+    save_json(DIV_QUEUE_PATH, {"generated_at": stamp(), "summary": summary, "counts": {"money": sum(1 for x in queue if x["impact"]), "all": len(queue)}, "items": queue})
     return queue
 
 

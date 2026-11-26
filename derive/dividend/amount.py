@@ -137,7 +137,7 @@ def policy_levels(x):
     share, share_txt = x["share"], x["share_txt"]
     src = lambda p: f"{iso(p['date'])} {p['title']}"
     more = lambda p: " 이상" if p["hi"] is None else ""
-    for (kind, slot), p in pol.items():
+    for (kind, slot, _), p in pol.items():
         if kind == "dps" and slot == "결산" and p["hi"]:
             out.append({"role": "exact", "value": x["paid"] + p["hi"], "why": f"{src(p)} 결산 주당 {p['hi']:,.0f}원", "floor": False})
         elif kind == "dps" and slot == "연간" and p["hi"]:
@@ -157,7 +157,7 @@ def policy_levels(x):
         elif kind == "budget" and share is not None and sh:
             out.append({"role": "level", "value": p["lo"] * share / sh, "floor": False,
                         "why": f"{src(p)} 총주주환원 {p['lo'] / 1e8:,.0f}억원{more(p)} × 현금 {share:.0%}({share_txt}) ÷ {sh / 1e8:,.2f}억주"})
-    hd = pol.get(("high_div", "연간"))
+    hd = pol.get(("high_div", "연간", ""))
     if (hd["on"] if hd else x["tax_hist"]) and eps > 0 and prev:
         prev_t = hd["prev_total"] / sh if hd and hd["prev_total"] and sh else prev   # 요건은 배당총액 기준 — 자사주 소각으로 주식이 줄면 DPS 는 10% 넘게 올라야 함
         need = max(prev, min(TAX_PAYOUT_HIGH * eps, max(TAX_PAYOUT_LOW * eps, (1 + TAX_GROWTH) * prev_t)))
@@ -171,7 +171,7 @@ def stated(x, t):
     결산: 1단계 policy_levels → 2단계 고르기: 회사가 정한 금액 > 계산한 금액 중 큰 값(현금 총액 범위가 있으면 그 안에서 컨센도 후보, 벗어나면 경계) —
     정책 숫자는 최소치라 작년 DPS 아래로 안 줌(2025: 최소치 그대로 오차 28%, 작년 바닥 14.5%) → 3단계 from_annual(올해 이미 정한 배당 빼기)"""
     if t != "결산배당":
-        q = x["policy"].get(("dps", "분기" if t == "분기배당" else "중간"))
+        q = x["policy"].get(("dps", "분기" if t == "분기배당" else "중간", ""))
         return ({"signal": "stated", "name": "회사 정책", "value": round(q["lo"] / q["adj"]),
                  "basis": f"{iso(q['date'])} {q['title']} {t} 주당 {q['lo']:,.0f}원" + (" 이상" if q["hi"] is None else "")} if q else f"{t} 주당 금액 정책 없음")
     lv = policy_levels(x)
@@ -240,7 +240,7 @@ def estimate(x, t, med):
     reg = max((r for r in x["rounds"] if t == "결산배당" and r["fy"] == fy and r["type"] != t and r["dps"] and not r["special"]), key=lambda r: r["q"], default=None)
     if reg:
         floors.append((int(reg["dps"]), f"올해 Q{reg['q']} {reg['type']} {int(reg['dps']):,}원 아래로 안 줌"))
-    mn = x["policy"].get(("dps", "연간")) if t == "결산배당" else None
+    mn = x["policy"].get(("dps", "연간", "")) if t == "결산배당" else None
     if mn and mn["lo"] > x["paid"]:
         floors.append((math.ceil(mn["lo"] - x["paid"]), f"{iso(mn['date'])} 회사가 밝힌 최소 주당 {mn['lo']:,.0f}원 − 올해 이미 정한 {x['paid']:,.0f}원 아래로 안 줌"))
     for low, why in floors:

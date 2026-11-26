@@ -147,7 +147,7 @@ const DATA = "../data/out/";
 const DATA_FILES = ["div_book.json","div_sources.json","capital.json","halts.json","divpoints.json","expiries.json","dividend_check.json","div_queue.json"];
 let BOOK = {rows:[], grades:{}}, ROWS = [], SRC = {rows:[]}, CAPD = {events:[], ongoing_ids:[]}, CAP = [], HALT = [], EXP = [];
 let DP = null;                         // 지수배당포인트(divpoints.json)
-let QUEUE = {items:[], summary:[]};    // 배당 확인 목록(div_queue.json)
+let QUEUE = {items:[], summary:[], counts:{money:0, all:0}};    // 배당 확인 목록(div_queue.json)
 let sideMode = "today";                // 사이드: today 오늘의 배당공시 · queue 확인 목록 · detail 상세 — 갱신 때 목록이면 다시 그림
 let HOL = new Set(), EXPD = new Set(); // 휴장일·만기일 ISO 날짜 — 캘린더 날짜 빨간 글자·노란 별표
 let calendar;
@@ -361,7 +361,7 @@ function renderQueue(){   // 확인 목록 — 사람이 볼 재료 예외만, �
   const box = document.getElementById("detail"); box.className = "";
   const items = QUEUE.items.filter(x=> matchQ(x));
   const f2 = v => Number(v||0).toFixed(2);
-  let h = `<div class="divlist"><div class="lh">🔎 확인 목록 — 돈 영향 있는 줄 ${items.filter(x=>x.impact).length} · 전체 ${items.length} <span style="font-weight:400;color:var(--muted);font-size:11px">· ${esc(QUEUE.generated_at||"")}</span></div>
+  let h = `<div class="divlist"><div class="lh">🔎 확인 목록 — 돈 영향 있는 줄 ${QUEUE.counts.money} · 전체 ${QUEUE.counts.all} <span style="font-weight:400;color:var(--muted);font-size:11px">· ${esc(QUEUE.generated_at||"")}</span></div>
     <div class="dpm">확인 안 된 재료가 걸린 포인트: ${QUEUE.summary.map(m=>`${esc(m.index)} ${esc(m.month)} ${f2(m.open)}/${f2(m.total)}pt`).join(" · ")}</div>`;
   items.slice(0, 200).forEach((x, i)=>{
     const policy = x.item.startsWith("회사 정책");
@@ -371,7 +371,7 @@ function renderQueue(){   // 확인 목록 — 사람이 볼 재료 예외만, �
       <div class="src">${esc(x.src)}</div>
       <div class="act">
         <button data-v="맞음">맞음</button><button data-v="틀림">틀림</button><button data-v="모름">모름</button>
-        ${x.status==="빠짐"?`<button data-v="빠짐 인정">빠짐 인정(정책 넣기)</button>`:""}
+        ${x.accept?`<button data-v="accept">${esc(x.accept.label)}</button>`:""}
         ${policy?"":`<input placeholder="고친 값(숫자)" data-fix>`}
         <input placeholder="메모" data-note>
       </div></div>`;
@@ -385,7 +385,7 @@ async function judge(x, verdict, el){
   const note = el.querySelector("[data-note]").value.trim();
   if(verdict==="틀림" && !x.item.startsWith("회사 정책") && fix && isNaN(+fix)) return alert("고친 값은 숫자로");
   const body = {code:x.code, name:x.name, fy:x.fy, item:x.item, sigs:x.sigs, verdict, note,
-                ...(fix ? {value:+fix} : {}), ...(verdict==="빠짐 인정" ? {row:x.row} : {})};
+                ...(fix ? {value:+fix} : {}), ...(verdict==="accept" ? {verdict:x.accept.verdict, row:x.accept.row} : {})};
   const r = await fetch("/api/div_check", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
   if(!r.ok) return alert("저장 실패: " + r.status);
   el.style.opacity = .35; el.querySelectorAll("button").forEach(b=> b.disabled = true);
@@ -674,8 +674,8 @@ async function loadData(){
   try{ CAPD = await getJSON("capital.json"); CAP = CAPD.events; }catch(_){ CAPD = {events:[], ongoing_ids:[]}; CAP = []; }
   try{ HALT = (await getJSON("halts.json")).events||[]; }catch(_){ HALT = []; }
   try{ DP = await getJSON("divpoints.json"); }catch(_){ DP = null; }
-  try{ QUEUE = await getJSON("div_queue.json"); }catch(_){ QUEUE = {items:[], summary:[]}; }
-  document.getElementById("queueBtn").textContent = `🔎 확인 목록 ${QUEUE.items.filter(x=>x.impact).length}`;
+  try{ QUEUE = await getJSON("div_queue.json"); }catch(_){ QUEUE = {items:[], summary:[], counts:{money:0, all:0}}; }
+  document.getElementById("queueBtn").textContent = `🔎 확인 목록 ${QUEUE.counts.money}`;
   let chk = null;
   try{ chk = await getJSON("dividend_check.json"); }catch(_){}
   const bad = chk && !chk.ok ? ` · ⚠ 데이터 점검 오류 ${chk.errors.length}건 (${chk.generated_at}) — ${chk.errors[0]}` : "";
