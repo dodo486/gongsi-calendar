@@ -10,7 +10,7 @@ import datetime, json
 from core import store
 from core.krx_cal import to_date
 from core.paths import DIV_CHECKED_PATH, load_json, save_json
-from derive.dividend.facts import policy_sig, said_bases, _base, _fys
+from derive.dividend.facts import policy_sig, said_bases, _base, fact_of
 
 KEYS = ("kind", "slot", "lo", "hi", "base")
 
@@ -29,12 +29,11 @@ for no, j in judged.items():
     if not e:
         continue
     d = to_date(e["rcept_dt"])
-    fact = lambda r: {**{k: r.get(k) for k in KEYS}, "fy": _fys(r.get("fy") or [None, None], d), "base": _base(r, said.get(e["code"], {}))}
-    got = [fact(r) for r in e.get("rows", []) if r["kind"] != "high_div"]
+    fact = lambda r: (f := fact_of({**r, "fy": r.get("fy") or [None, None]}, d)) and {**{k: f.get(k) for k in KEYS}, "fy": f["fy"], "base": _base(r, said.get(e["code"], {}))}   # facts 와 같은 사실 규칙
+    got = [x for r in e.get("rows", []) if r["kind"] != "high_div" and (x := fact(r))]
     same = lambda a, b: all(a[k] == b[k] for k in ("kind", "slot", "lo", "hi", "fy"))
-    want = [fact(r) for r in j["rows"] if r.get("kind") != "high_div"]
-    want = [{**w, "base": next((g["base"] for g in got if same(g, w)), w["base"])} if not r_base else w
-            for w, r_base in zip(want, [r.get("base") for r in j["rows"] if r.get("kind") != "high_div"])]   # 판독자가 기준을 안 적었으면 같은 줄의 파서 기준
+    want = [x for r in j["rows"] if r.get("kind") != "high_div" and (x := fact(r))]
+    want = [{**w, "base": next((g["base"] for g in got if same(g, w)), w["base"])} for w in want]   # 판독자가 기준을 안 적었으면(대개) 같은 내용 파서 줄의 기준
     W, G = {policy_sig(r) for r in want}, {policy_sig(r) for r in got}
     left = [r for r in want if policy_sig(r) not in G]   # 판독자만 읽은 줄 — 같은 종류·칸의 틀린 파서 줄이 있으면 그 줄의 고친 값
     out = []

@@ -379,7 +379,7 @@ python -m app.launch               # 폴러+웹 동시 기동 + 크롬 앱창 (�
     배당 존재를 공시 회차로만 판단(SK스퀘어·한샘 등 결산 예측 누락), 주주환원 공시는 "현금배당 N조원" 한 문구만 읽음(45건 중 11건).
   · facts: 사업연도 함수 slot_of 하나(분기·중간 = 결의일이 든 사업연도, 결산 = 직전 결산기말, 예고 = 다음 분기말),
     사실 조회 paid·annual_dps·final_of(0 = 공시로 다 봤는데 없음, None = 모름)·shares·cons_of·eps_of·policy·evidence 한 곳.
-  · 정책 줄: 밸류업·지배구조보고서·주주환원 공시·사람 장부를 같은 모양 {kind, slot, lo, hi, fy, base}으로, 파서 ingest/parsers/dividend.policy_rows 하나.
+  · 정책 줄: 밸류업·지배구조보고서·주주환원 공시·사람 장부를 같은 모양 {kind, slot, lo, hi, fy, base}으로, 파서 ingest/parsers/policy.policy_rows 하나.
     같은 칸은 사람 줄이 이김. 숫자 읽는 주주환원 공시 11 → 36건. 별도 기준 정책은 별도 순이익 3분기 누적 그대로(×4/3 과대 — 과거 21건 오차 중앙 3.3% vs 17.5%).
   · amount: valueup·announced → stated 하나, 신호는 facts 조회만. 최소 주당 금액만 밝힌 회사는 바닥, 최소 요건 값만 올림.
   · date.forecast: 결산 회차가 없어도 작년 결산·정책·컨센이 있으면 결산 예측. verify: 결산도 장부와 같은 forecast 경로 — 놓친 결산 75/1061 채점.

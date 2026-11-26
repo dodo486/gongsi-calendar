@@ -33,7 +33,8 @@ def policy_text(rows):
         rng = (f"{v(r['lo'])}" if r["lo"] == r["hi"] else f"{v(r['lo'])} 이상" if r["hi"] is None else f"{v(r['hi'])} 이하" if r["lo"] is None
                else f"{v(r['lo'])}~{v(r['hi'])}")
         fy = r["fy"] if isinstance(r["fy"], list) else [None, None]
-        out.append(f"{'' if r['slot'] == '연간' else r['slot'] + ' '}{name[r['kind']]} {rng}"
+        total = r.get("total") and f" ({fy[1] - fy[0] + 1}년 합 {v(r['total'][0] or r['total'][1])} ÷ {fy[1] - fy[0] + 1})"
+        out.append(f"{'' if r['slot'] == '연간' else r['slot'] + ' '}{name[r['kind']]} {rng}{total or ''}"
                    + ("" if not any(fy) else f" ({fy[0]})" if fy[0] == fy[1] else f" ({fy[0] or ''}~{fy[1] or ''})"))
     return " · ".join(out)
 

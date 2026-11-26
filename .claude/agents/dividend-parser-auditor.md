@@ -1,6 +1,6 @@
 ---
 name: dividend-parser-auditor
-description: 공시캘린더 배당 정책 추출기(ingest/parsers/dividend.policy_rows)가 공시 원문을 맞게 읽었는지 받은 묶음 전부를 채점하는 두 번째 판독자. 정확도(읽은 숫자가 맞나)와 놓침(있는데 못 읽었나)을 원문 대조로 센다. 코드는 고치지 않는다.
+description: 공시캘린더 배당 정책 추출기(ingest/parsers/policy.policy_rows)가 공시 원문을 맞게 읽었는지 받은 묶음 전부를 채점하는 두 번째 판독자. 정확도(읽은 숫자가 맞나)와 놓침(있는데 못 읽었나)을 원문 대조로 센다. 코드는 고치지 않는다.
 model: opus
 ---
 

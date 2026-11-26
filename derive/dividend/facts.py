@@ -330,7 +330,10 @@ def contexts():
         said = said_bases([r for st in sts for r in st["rows"]] + human.get(c["code"], []))
         for st in sts:
             for r in st["rows"]:
-                p = {**r, "fy": _fys(r["fy"], st["date"]), "base": _base(r, said), "date": st["date"], "src": st["rcept_no"], "title": st["title"], "by": "공시 자동"}
+                f = fact_of(r, st["date"])
+                if not f:
+                    continue
+                p = {**f, "base": _base(r, said), "date": st["date"], "src": st["rcept_no"], "title": st["title"], "by": "공시 자동"}
                 sig = policy_sig(p)
                 old = facts_.pop(sig, {})   # 같은 사실은 가장 최근 공시가 대표, 말한 공시는 모두 said(날짜·접수번호) — 검증은 그때까지 말한 것만(view)
                 facts_[sig] = {**p, "sig": sig, "said": old.get("said", []) + [(st["date"], st["rcept_no"])]}
@@ -340,8 +343,8 @@ def contexts():
         for p in list(facts_.values()) + [{**p, "base": _base(p, said), "sig": policy_sig({**p, "base": _base(p, said)}), "said": [(p["date"], p["src"])]} for p in human.get(c["code"], [])]:
             if man.get(p["sig"], {}).get("verdict") == "틀림":
                 continue
-            reads = bot.get(p["sig"], [])   # 판독자는 공시마다 판정 — 한 공시라도 맞음이면 그 사실은 확인됨
-            check = ("사람 확인" if p["sig"] in man or p["by"].startswith("사람") else "판독자 확인" if any(d["verdict"] == "맞음" for d in reads)
+            reads = bot.get(p["sig"], [])   # 판독자는 공시마다 판정 — 한 공시라도 맞음·빠짐(판독자도 읽은 사실)이면 확인됨, 전부 틀림이어야 다름
+            check = ("사람 확인" if p["sig"] in man or p["by"].startswith("사람") else "판독자 확인" if any(d["verdict"] in ("맞음", "빠짐") for d in reads)
                      else "판독자 다름" if reads else "자동")
             fix = next((d["value"] for d in reads if "value" in d), None) if check == "판독자 다름" else None
             rows.append({**p, "check": check, **({"fix": fix} if fix else {})})
@@ -375,6 +378,16 @@ def _base(p, said):
 def policy_sig(p):
     """정책 사실 열쇠 — 종류·칸·하한·상한·사업연도(출처 공시는 빼고: 여러 공시가 같은 말을 하면 한 사실). 값이 바뀌면 열쇠도 바뀌어 다시 확인 목록에"""
     return f"{p['kind']}|{p['slot']}|{float(p['lo']) if p.get('lo') is not None else None}|{float(p['hi']) if p.get('hi') is not None else None}|{p['fy'][0]}-{p['fy'][1]}|{p['base']}" + (f"|{p['on']}" if "on" in p else "")
+
+def fact_of(r, date):
+    """공시 원문의 정책 줄 → 정책 사실 (공시일 기준). 사업연도 채움(_fys), 기간 합은 해마다로(per 기간 → 합 ÷ 해 수),
+    이미 배당을 정한 사업연도만 말하면 지난 실적이라 None — 공시 전 해는 1~3월(결산 배당 정하기 전)까지만 정책"""
+    fy = [date.year, date.year + r["years"] - 1] if r.get("years") and not r["fy"][0] else _fys(r["fy"], date)   # "3년간 300억원" — 공시한 해부터
+    if fy[1] < date.year - (1 if date.month <= 3 else 0):
+        return None
+    n = max(fy[1] - fy[0] + 1, 1) if r.get("per") == "기간" else 1
+    return {**r, "fy": fy, "per": "해", "lo": r["lo"] / n if r.get("lo") else r.get("lo"), "hi": r["hi"] / n if r.get("hi") else r.get("hi"),
+            **({"total": (r.get("lo"), r.get("hi"))} if n > 1 else {})}
 
 def _fys(fy, date):
     """정책 줄의 사업연도 [첫, 끝] — 안 밝힌 첫 해는 공시한 해, 안 밝힌 끝은 첫 해부터 POLICY_YEARS 개"""
@@ -455,8 +468,8 @@ def eps_of(ctx, fy):
 
 def policy(ctx, fy):
     """사업연도 fy 에 걸린 정책 줄 {(kind, slot, base): 줄} — 같은 칸은 사람 줄이 이기고, 그다음 최근 공시(같은 날이면 접수번호 뒤 = 정정).
-    상한만 있는 비율("최대 배당성향 40%")은 수준이 아니라 칸을 다투지 않음"""
-    rows = sorted((p for p in ctx["policies"] if p["fy"][0] <= fy <= p["fy"][1] and (p["kind"] not in RATIO_KINDS or p.get("lo") is not None)),
+    상한만 있는 줄("최대 배당성향 40%", "총 주주환원 최대 5천억")은 수준이 아니라 칸을 다투지 않음 — 현금배당 총액만 상한이 범위로 쓰임, 고배당 표는 숫자 없음"""
+    rows = sorted((p for p in ctx["policies"] if p["fy"][0] <= fy <= p["fy"][1] and (p["kind"] in ("cash", "high_div") or p.get("lo") is not None)),
                   key=lambda p: (p["by"].startswith("사람"), p["date"], p["src"]))
     return {(p["kind"], p["slot"], p["base"]): p for p in rows}
 

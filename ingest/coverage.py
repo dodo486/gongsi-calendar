@@ -9,7 +9,7 @@ import json, os, re
 from core import store, universe
 from core.krx_cal import ymd, days_ago
 from ingest.sources import dart
-from ingest.parsers.dividend import policy_rows, PAST_WORDS, FORWARD_WORDS
+from ingest.parsers.policy import policy_rows, PAST, FORWARD
 
 DIV_TITLE = re.compile(r"배당|주주\s*환원|밸류업|기업가치\s*제고|자기\s*주식|자사주|기준일|주식\s*(?:분할|병합)")
 EXCLUDED = [(re.compile(r"자회사"), "자회사의 공시"),
@@ -19,7 +19,7 @@ NEAR = re.compile(r"배당|환원|자사주|자기\s*주식|성향")
 
 NUM = re.compile(r"\d[\d,]*(?:\.\d+)?\s*(?:%|조\s*원|천억\s*원|억\s*원|원)")
 GOLD_PATH = os.path.join(os.path.dirname(__file__), "parsers", "dividend_gold.json")
-GOLD_KEYS = ("kind", "slot", "lo", "hi", "fy")
+GOLD_KEYS = ("kind", "slot", "lo", "hi", "fy", "per")
 
 
 def run(docs):
@@ -54,7 +54,7 @@ def run(docs):
             for m in NUM.finditer(t):
                 a, b = max(t.rfind(".", 0, m.start()), m.start() - 120), t.find(".", m.end())
                 sent = t[a + 1: b if 0 <= b < m.end() + 120 else m.end() + 120]
-                if (NEAR.search(t[max(0, m.start() - 40): m.end() + 40]) and FORWARD_WORDS.search(sent) and not PAST_WORDS.search(sent)
+                if (NEAR.search(t[max(0, m.start() - 40): m.end() + 40]) and FORWARD.search(sent) and not PAST.search(sent)
                         and m[0].split()[0] not in got):
                     miss.add(m[0].replace(" ", ""))
             miss = sorted(miss)
@@ -64,7 +64,7 @@ def run(docs):
     gold = json.load(open(GOLD_PATH, encoding="utf-8")) if os.path.exists(GOLD_PATH) else []
     fails = []
     for g in gold:
-        key = lambda x: tuple(x.get(k) for k in GOLD_KEYS)
+        key = lambda x: tuple(x.get(k, "해" if k == "per" else None) for k in GOLD_KEYS)
         got = sorted((list(key(x)) for x in policy_rows(g["text"])), key=str)
         want = sorted((list(key(x)) for x in g["rows"]), key=str)
         if got != want:
