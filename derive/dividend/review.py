@@ -10,7 +10,7 @@
   python -m derive.dividend.review
 """
 from core.paths import save_json, load_json, stamp, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_CHECKED_PATH, DIV_QUEUE_PATH
-from derive.dividend.inputs import USES
+from derive.dividend.inputs import USES, policy_text
 
 OPEN = ("없음", "모름", "의심", "빠짐")
 
@@ -52,7 +52,7 @@ def build():
         for s in book["companies"].get(r["code"], {}).get("suggested", []):
             if int(r["quarter"][:4]) in range(s["value"]["fy"][0] or 0, (s["value"]["fy"][1] or 9999) + 1) and r["div_type"] == "결산배당":
                 v = s["value"]
-                add(r, f"회사 정책 빠짐 {v['kind']}·{v['slot']}", f"{v.get('lo')}~{v.get('hi')}", "빠짐", "판독자 제안", s.get("note", ""), s["sig"], True,
+                add(r, "회사 정책", policy_text([v]), "빠짐", "판독자 제안", s.get("note", ""), s["sig"], True,
                     {k: v.get(k) for k in ("kind", "slot", "lo", "hi", "fy")})
     open_rows = {i for x in items.values() if x["impact"] for i in x["rows"]}
     summary = [{"index": ix, "month": mo, "total": round(sum(p for _, p in xs), 4), "open": round(sum(p for i, p in xs if i in open_rows), 4)}

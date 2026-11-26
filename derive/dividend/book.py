@@ -14,6 +14,7 @@ from core.krx_cal import iso, ymd, days_ago, t_minus
 from derive import earn_sched
 from derive.dividend.facts import medians, contexts
 from derive.dividend.date import GRADES, TAGS, END_WORD, forecast, company_out
+from derive.dividend.inputs import policy_text
 
 FILED_DAYS = 90   # 공시 회차는 최근 접수분만 (지난 회차는 companies 이력)
 
@@ -126,24 +127,6 @@ READ = {
     "return_plan": lambda h: policy_text(h.get("rows")) or "배당 숫자 못 읽음",
     "split": lambda h: f"1주 → {h['factor']:g}주 · 효력발생일 {h['effective']}" if h.get("factor") else "비율 못 읽음",
 }
-
-def policy_text(rows):
-    """정책 줄 → 사람이 읽는 한 줄 (참고 공시 탭·화면)"""
-    unit = {"dps": "원", "cash": "원", "budget": "원", "buyback": "원", "payout": "%", "return": "%"}
-    name = {"dps": "주당", "cash": "현금배당 총액", "budget": "총주주환원(자사주 포함)", "buyback": "자사주 매입",
-            "payout": "배당성향", "return": "총주주환원율(자사주 포함)"}
-    out = []
-    for r in rows or []:
-        if r["kind"] == "high_div":
-            out.append(f"고배당기업 {'해당' if r['on'] else '미해당'}")
-            continue
-        v = lambda x: f"{x / 1e8:,.0f}억" if unit[r["kind"]] == "원" and r["kind"] != "dps" else f"{x:,g}"
-        rng = (f"{v(r['lo'])}" if r["lo"] == r["hi"] else f"{v(r['lo'])} 이상" if r["hi"] is None else f"{v(r['hi'])} 이하" if r["lo"] is None
-               else f"{v(r['lo'])}~{v(r['hi'])}")
-        fy = r["fy"] if isinstance(r["fy"], list) else [None, None]
-        out.append(f"{'' if r['slot'] == '연간' else r['slot'] + ' '}{name[r['kind']]} {rng}{unit[r['kind']]}"
-                   + (f" ({fy[0] or ''}~{fy[1] or ''})" if any(fy) else ""))
-    return " · ".join(out)
 
 def build_sources(stocks, companies):
     """엑셀 참고 공시 탭 — 장부 종목에 대해 배당 산출이 읽은 DART 공시(2년치)와 정기보고서 배당 표"""

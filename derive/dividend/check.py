@@ -177,7 +177,16 @@ def check():
             warn(f"못 읽은 숫자 {u['name']}({u['code']})", f"{u['date']} {u['title'][:40]} — {', '.join(u['numbers'][:6])} https://dart.fss.or.kr/dsaf001/main.do?rcpNo={u['no']}")
 
     # ── 확인 목록: 사람·판독자가 아직 확인 안 한 재료가 걸린 포인트 ──
-    for m in load_json(DIV_QUEUE_PATH, {}).get("summary", []):
+    queue = load_json(DIV_QUEUE_PATH, {})
+    seen_q = {}
+    for x in queue.get("items", []):   # 사람에게 보이는 줄이 읽히나·겹치나 — 날 숫자·영어 종류·None, 같은 회사 같은 글
+        if re.search(r"\d{9,}|None|(?:dps|cash|payout|return|budget|buyback|high_div)", f"{x['item']} {x['value']}"):
+            err(f"확인 목록 {x['name']}({x['code']})", f"사람이 못 읽는 값 — {x['item']}: {x['value']}")
+        k = (x["code"], x["item"], x["value"])
+        if k in seen_q:
+            err(f"확인 목록 {x['name']}({x['code']})", f"같은 줄 두 번 — {x['item']}: {x['value']}")
+        seen_q[k] = 1
+    for m in queue.get("summary", []):
         if m["open"]:
             warn(f"확인 목록 {m['index']} {m['month']}", f"{m['total']:.2f}pt 중 {m['open']:.2f}pt({m['open'] / m['total']:.0%})가 확인 안 된 재료에 걸림 — 화면 🔎 확인 목록")
 

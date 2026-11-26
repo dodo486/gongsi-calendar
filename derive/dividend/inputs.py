@@ -19,6 +19,24 @@ USES = {"repeat_last": ("작년 결산 몫", "올해 이미 정한 배당"), "co
 OVERRIDE = {"올해 순이익(EPS)": ("eps",), "작년 연간 DPS": ("prev", "prev_adj"), "작년 결산 몫": ("last_final",), "올해 이미 정한 배당": ("paid",),
             "주식 수": ("shares",), "연간 컨센 DPS": ("cons_dps",), "현금 몫(총환원 중 배당)": ("share",)}   # 사람이 고칠 수 있는 재료 → 계산용 값 칸
 
+def policy_text(rows):
+    """정책 줄 → 사람이 읽는 한 줄 (재료표·확인 목록·참고 공시 탭·화면)"""
+    unit = {"dps": "원", "cash": "원", "budget": "원", "buyback": "원", "payout": "%", "return": "%"}
+    name = {"dps": "주당", "cash": "현금배당 총액", "budget": "총주주환원(자사주 포함)", "buyback": "자사주 매입",
+            "payout": "배당성향", "return": "총주주환원율(자사주 포함)"}
+    out = []
+    for r in rows or []:
+        if r["kind"] == "high_div":
+            out.append(f"고배당기업 {'해당' if r['on'] else '미해당'}")
+            continue
+        v = lambda x: (f"{x:,g}" if unit[r["kind"]] == "%" or r["kind"] == "dps" else f"{x / 1e12:,g}조" if x >= 1e12 else f"{x / 1e8:,.0f}억") + unit[r["kind"]]
+        rng = (f"{v(r['lo'])}" if r["lo"] == r["hi"] else f"{v(r['lo'])} 이상" if r["hi"] is None else f"{v(r['hi'])} 이하" if r["lo"] is None
+               else f"{v(r['lo'])}~{v(r['hi'])}")
+        fy = r["fy"] if isinstance(r["fy"], list) else [None, None]
+        out.append(f"{'' if r['slot'] == '연간' else r['slot'] + ' '}{name[r['kind']]} {rng}"
+                   + ("" if not any(fy) else f" ({fy[0]})" if fy[0] == fy[1] else f" ({fy[0] or ''}~{fy[1] or ''})"))
+    return " · ".join(out)
+
 def run_dps(ctx, fy):
     """직전 사업연도부터 거슬러 끊김 없이 이어진 연간 DPS (오래된 것부터)"""
     ys = []
@@ -76,8 +94,7 @@ def build(ctx, fy, rec):
     ]
     if any(k[0] in ("return", "budget") for k in pol):
         table.append(row("현금 몫(총환원 중 배당)", f"{share:.0%}" if share is not None else "", "있음" if share is not None else "없음", v["share_txt"]))
-    for (kind, slot), r in pol.items():
-        rng = f"{r.get('lo')}~{r.get('hi')}" if kind != "high_div" else ("해당" if r.get("on") else "미해당")
-        table.append(row(f"회사 정책 {kind}·{slot}", rng, "의심" if r["check"] == "판독자 다름" else "있음",
+    for r in pol.values():
+        table.append(row("회사 정책", policy_text([r]), "의심" if r["check"] == "판독자 다름" else "있음",
                          f"{iso(r['date'])} {r.get('title', '')} — {r.get('text', '')[:80]}", r["check"], r["sig"]))
     return {"v": v, "table": table}

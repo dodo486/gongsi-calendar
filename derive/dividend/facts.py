@@ -334,7 +334,10 @@ def contexts():
                      else "판독자 확인" if bot else "자동")
             rows.append({**p, "sig": sig, "check": check})
         c["policies"] = sorted(rows, key=lambda p: p["date"])
-        c["suggested"] = [d for (man, sig), d in mine.items() if not man and d["verdict"] == "빠짐" and (True, sig) not in mine]   # 판독자가 있어야 한다고 한 줄(사람이 아직 안 본 것)
+        c["suggested"] = [d for (man, sig), d in mine.items() if not man and d["verdict"] == "빠짐" and (True, sig) not in mine   # 판독자가 있어야 한다고 한 줄(사람이 아직 안 본 것)
+                          and not any(p["kind"] == d["value"]["kind"] and p["slot"] == d["value"]["slot"]   # 같은 종류·숫자·기간이 겹치는 줄이 이미 있으면 같은 말
+                                      and p["fy"][0] <= (d["value"]["fy"][1] or 9999) and (d["value"]["fy"][0] or 0) <= p["fy"][1]
+                                      and {p.get("lo"), p.get("hi")} & {d["value"]["lo"], d["value"]["hi"]} - {None} for p in rows)]
         c["human_sigs"] = {sig for man, sig in mine if man}
         c["overrides"] = {(d["fy"], d["item"]): float(d["value"]) for (man, _), d in mine.items()
                           if man and d["verdict"] == "틀림" and "value" in d and not d["item"].startswith("회사 정책")}   # 사람이 고친 재료 값

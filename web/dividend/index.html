@@ -361,7 +361,7 @@ function renderQueue(){   // 확인 목록 — 사람이 볼 재료 예외만, �
   const box = document.getElementById("detail"); box.className = "";
   const items = QUEUE.items.filter(x=> matchQ(x));
   const f2 = v => Number(v||0).toFixed(2);
-  let h = `<div class="divlist"><div class="lh">🔎 확인 목록 (${items.length}) <span style="font-weight:400;color:var(--muted);font-size:11px">· ${esc(QUEUE.generated_at||"")}</span></div>
+  let h = `<div class="divlist"><div class="lh">🔎 확인 목록 — 돈 영향 있는 줄 ${items.filter(x=>x.impact).length} · 전체 ${items.length} <span style="font-weight:400;color:var(--muted);font-size:11px">· ${esc(QUEUE.generated_at||"")}</span></div>
     <div class="dpm">확인 안 된 재료가 걸린 포인트: ${QUEUE.summary.map(m=>`${esc(m.index)} ${esc(m.month)} ${f2(m.open)}/${f2(m.total)}pt`).join(" · ")}</div>`;
   items.slice(0, 200).forEach((x, i)=>{
     const policy = x.item.startsWith("회사 정책");
