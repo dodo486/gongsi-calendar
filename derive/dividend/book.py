@@ -15,6 +15,7 @@ from derive import earn_sched
 from derive.dividend.facts import medians, contexts
 from derive.dividend.date import GRADES, TAGS, END_WORD, forecast, company_out
 from derive.dividend.inputs import policy_text
+from derive.dividend.amount import AMOUNT_GRADES
 
 FILED_DAYS = 90   # 공시 회차는 최근 접수분만 (지난 회차는 companies 이력)
 
@@ -57,11 +58,12 @@ def build():
                  "basis_text": f"DART 공시 {iso(f['rcept_dt'])} {url}"}
             p = noticed.get(f["record_date"])
             if f["per_share"]:
-                r.update(grade="확정", amount_src="공시", amount_basis="공시 금액")
+                r.update(grade="확정", amount_src="공시", amount_basis="공시 금액", amount_grade="공시")
             elif p and p["per_share"]:
-                r.update(grade="공고", per_share=p["per_share"], amount_src="예상", amount_basis=p["amount_basis"], amount_cands=p["amount_cands"], amount_special=p["amount_special"], amount_surprise=p["amount_surprise"])
+                r.update(grade="공고", per_share=p["per_share"], amount_src="예상", amount_basis=p["amount_basis"], amount_cands=p["amount_cands"], amount_special=p["amount_special"],
+                         amount_surprise=p["amount_surprise"], amount_grade=p["amount_grade"])
             else:
-                r.update(grade="공고", amount_src="", amount_basis="")
+                r.update(grade="공고", amount_src="", amount_basis="", amount_grade="없음")
             rows.append(r)
         for p in preds:
             if p["grade"] == "공고":
@@ -96,7 +98,7 @@ def build():
     today = today.isoformat()
     nxt = next((d for d in exps if d > today), "")
     payload = {"generated_at": stamp(), "today": today,
-               "tags": TAGS,
+               "tags": TAGS, "amount_grades": AMOUNT_GRADES,
                "grades": {k: {**g, **{f: g[f].format(end="기말") for f in ("label", "desc", "rule")}} for k, g in GRADES.items()}, "next_expiry": nxt,
                "today_ids": [r["id"] for r in rows if r["kind"] == "div" and r.get("rcept_dt") == ymd(today)],
                "upcoming_ids": [r["id"] for r in rows if r["kind"] == "div" and today < r["ex_date"] and (not nxt or r["ex_date"] <= nxt)],

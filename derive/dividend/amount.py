@@ -7,6 +7,19 @@ from core.krx_cal import iso
 from derive.dividend.facts import spiked, EARN_UP, SPECIAL_MULT
 
 
+AMOUNT_GRADES = {   # 금액 구분 — 이 금액이 얼마나 확실한가. 날짜 구분(date.GRADES)과 같은 태그. 장부·화면·엑셀은 이 표만 읽음
+    "공시": {"rank": 0, "tag": "확정", "label": "[확정] 금액 공시", "desc": "회사가 현금배당결정 공시를 냄 — 금액 확정", "xl": "F8CBAD"},
+    "회사정함": {"rank": 1, "tag": "사실상 확정", "label": "[사실상 확정] 회사가 정한 금액",
+                 "desc": "회사가 정책에 올해 주당 금액을 못 박음(결산 주당·연간 주당·분기 주당 N원)", "xl": "FFD966"},
+    "정책계산": {"rank": 2, "tag": "예상", "label": "[예상] 회사 정책으로 계산",
+                 "desc": "회사 정책(현금배당 총액·배당성향·총주주환원율·총환원 금액·고배당 요건)에 이익·주식 수를 넣어 계산", "xl": "FFE699"},
+    "시장추정": {"rank": 3, "tag": "예상", "label": "[예상] 시장 추정", "desc": "네이버 연간 주당배당금 컨센 − 올해 이미 정한 배당", "xl": "FFF2CC"},
+    "과거패턴": {"rank": 4, "tag": "예상", "label": "[예상] 과거 패턴", "desc": "직전 반복·이익 반영·안 깎음·추세·새해 인상 중 가운데 값", "xl": "FFF2CC"},
+    "근거약함": {"rank": 5, "tag": "미정", "label": "[미정] 근거 약함", "desc": "최근 배당성향 × 올해 이익만 있음", "xl": "EDEDED"},
+    "없음": {"rank": 6, "tag": "미정", "label": "[미정] 금액 없음", "desc": "쓸 근거가 없음(작년 결산을 안 했고 회사 정책·컨센도 없음 등)", "xl": "D9D9D9"},
+}
+SIGNAL_GRADE = {"consensus_left": "시장추정", "payout_eps": "근거약함"}   # 회사 정책은 stated 가 회사정함·정책계산을 정함, 나머지 신호는 과거패턴
+
 def has_special(vals):
     """금액 이력(오래된 것부터)에 튄 값이 있나. 추세·안 깎음은 튄 해를 이어 그리면 폭주해 안 씀"""
     return any(spiked(vals[:i], v) for i, v in enumerate(vals) if i)
@@ -175,7 +188,7 @@ def stated(x, t):
     if t != "결산배당":
         q = x["policy"].get(("dps", "분기" if t == "분기배당" else "중간", ""))
         return ({"signal": "stated", "name": "회사 정책", "value": round(q["lo"] / q["adj"]),
-                 "basis": f"{iso(q['date'])} {q['title']} {t} 주당 {q['lo']:,.0f}원" + (" 이상" if q["hi"] is None else "")} if q else f"{t} 주당 금액 정책 없음")
+                 "basis": f"{iso(q['date'])} {q['title']} {t} 주당 {q['lo']:,.0f}원" + (" 이상" if q["hi"] is None else ""), "grade": "회사정함"} if q else f"{t} 주당 금액 정책 없음")
     lv = policy_levels(x)
     exact = next((r for r in lv if r["role"] == "exact"), None)
     rng = next((r for r in lv if r["role"] == "range"), None)
@@ -196,7 +209,7 @@ def stated(x, t):
     else:
         return "금액으로 바꿀 회사 정책 없음" if not x["policy"] else "회사 정책은 있으나 금액으로 못 바꿈(순이익·주식 수·현금 몫 없음 또는 일회성 컷)"
     e = from_annual(x, "stated", "회사 정책", choice["value"], f"{choice['why']} → 연간 {choice['value']:,.0f}원")
-    return {**e, "floor": choice["floor"]} if isinstance(e, dict) else e
+    return {**e, "floor": choice["floor"], "grade": "회사정함" if exact else "정책계산"} if isinstance(e, dict) else e
 
 SIGNALS = [(repeat_last, False), (consensus_left, False), (trend, False), (payout_eps, False), (no_cut, False),
            (earn_up, True), (step_up, True), (stated, False)]   # (신호, 수집대상 통계 med 를 쓰나)
@@ -251,4 +264,5 @@ def estimate(x, t, med):
     return {"per_share": str(best["value"]) if best else "", "amount_basis": best["basis"] if best else empty,
             "amount_style": st, "amount_special": special, "amount_surprise": surprise, "amount_signals": list(cands.values()),
             "amount_cands": " · ".join(f"{c['name']} {c['value']:,}원" for c in cands.values()),
-            "amount_pick": best["signal"] if best else "", "amount_unused": unused}
+            "amount_pick": best["signal"] if best else "", "amount_unused": unused,
+            "amount_grade": (best.get("grade") or SIGNAL_GRADE.get(best["signal"], "과거패턴")) if best else "없음"}

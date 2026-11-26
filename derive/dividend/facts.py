@@ -400,10 +400,18 @@ def seen(ctx, fy, q):
     return quarter_end(fy, q, ctx["acc"]) >= ctx["filed_since"]
 
 def paid(ctx, fy):
-    """이 사업연도에 이미 정한 결산 말고의 배당(주당) — 공시로 다 본 해는 공시 회차, 그 전 해는 3분기보고서 누적"""
+    """이 사업연도에 이미 정한 결산 말고의 배당(주당) → (원, 쓴 원천) — 공시로 다 본 해는 배당결정 회차 합, 그 전 해는 3분기보고서 누적"""
     y = ctx["years"].get(fy, {})
-    rounds = sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy and r["type"] != "결산배당" and r["dps"])
-    return y.get("q3_dps", 0) if "q3_eps" in y and not seen(ctx, fy, 1) else rounds
+    if "q3_eps" in y and not seen(ctx, fy, 1):
+        return y.get("q3_dps", 0), f"{fy} 3분기보고서 누적 주당배당금 {y.get('q3_dps', 0):,.0f}원"
+    rs = [r for r in ctx["rounds"] if r["fy"] == fy and r["type"] != "결산배당" and r["dps"]]
+    return sum(int(r["dps"]) for r in rs), " + ".join(f"Q{r['q']} {int(r['dps']):,}원({iso(r['decided'])} 배당결정)" for r in rs) or "올해 정한 배당 없음"
+
+def paid_gap(ctx, fy):
+    """같은 사실 두 원천 대조 — 공시로 다 본 해의 배당결정 회차 합과 3분기보고서 누적 주당배당금이 다르면 (보고서, 회차 합), 아니면 None"""
+    q3 = ctx["years"].get(fy, {}).get("q3_dps")
+    got = paid(ctx, fy)[0] if seen(ctx, fy, 1) else None
+    return (q3, got) if q3 is not None and got is not None and abs(q3 - got) >= 1 else None
 
 def annual_dps(ctx, fy):
     """사업연도 연간 주당배당금 — 사업보고서, 없으면 공시로 다 본 해만 회차 합 (일부만 수집된 해의 합은 틀린 값이라 0)"""
@@ -425,15 +433,18 @@ def final_of(ctx, fy):
     return 0 if "eps" in y and not y.get("dps") and seen(ctx, fy + 1, 1) else None   # 연간 배당이 있는데 결산 회차가 없으면(상장 전 결의 등) 모름
 
 def shares(ctx, rec):
-    """기준일 rec 의 배당 받는 주식 수(자사주 빠짐, 보통+종류) — 최근 배당결정(배당금총액 ÷ 주당)과 반기·사업보고서 유통주식 수 중 더 최근 것,
+    """기준일 rec 의 배당 받는 주식 수(자사주 빠짐, 보통+종류) → (주, 쓴 원천) — 최근 배당결정(배당금총액 ÷ 주당)과 반기·사업보고서 유통주식 수 중 더 최근 것,
     그 뒤 분할·병합·주식배당 보정, rec 전에 기간이 끝나는 자기주식 취득(−)·처분(+) 예정 수량(다 사고판다고 봄)만큼 더함. 소각은 이미 빠진 주식이라 안 봄. 모르면 0"""
     last = next((r for r in reversed(ctx["rounds"]) if r["total"] and r["dps"] and int(r["dps"])), None)
-    known = ([(last["record"], last["total"] / int(last["dps"]))] if last else []) + list(ctx["share_counts"].items())
+    known = ([(last["record"], last["total"] / int(last["dps"]), f"{iso(last['decided'])} 배당결정 총액 {last['total'] / 1e8:,.0f}억 ÷ 주당 {int(last['dps']):,}원")] if last else [])         + [(d, n, f"{iso(d)} 기준 정기보고서 유통주식 수") for d, n in ctx["share_counts"].items()]
     if not known:
-        return 0
-    d, n = max(known)
-    moved = sum(x["delta"] * share_factor(ctx["splits"], x["end"], rec) for x in ctx["treasury"] if d < x["end"] <= rec)
-    return n * share_factor(ctx["splits"], d, rec) + moved
+        return 0, ""
+    d, n, src = max(known, key=lambda k: k[0])
+    k = share_factor(ctx["splits"], d, rec)
+    moves = [x for x in ctx["treasury"] if d < x["end"] <= rec]
+    return (n * k + sum(x["delta"] * share_factor(ctx["splits"], x["end"], rec) for x in moves),
+            f"{n / 1e8:,.2f}억주({src})" + (f" × 분할·병합 {k:g}" if k != 1 else "")
+            + "".join(f" {'+' if x['delta'] > 0 else '−'} 자사주 {abs(x['delta']):,.0f}주({iso(x['date'])} {'처분' if x['delta'] > 0 else '취득'})" for x in moves))
 
 def cash_share(ctx, fy):
     """총주주환원(배당 + 자사주) 중 현금배당 비율 → (비율, 근거). 한 공시 안에서 그해 현금·자사주(또는 총환원·자사주) 금액을 나눠 밝혔으면
@@ -463,8 +474,8 @@ def cons_of(ctx, fy, key):
 def eps_of(ctx, fy):
     """사업연도 EPS — 실적 발표(네이버 연간 실제, 1~2월 잠정 실적 뒤), 없으면 연간 컨센, 없으면 3분기 누적 × 4/3 → (원, 근거)"""
     a, c, q3 = cons_of(ctx, fy, "eps_act"), cons_of(ctx, fy, "eps"), ctx["years"].get(fy, {}).get("q3_eps", 0)
-    return ((a["eps_act"], f"{iso(a['date'])} 실적 발표 EPS {a['eps_act']:,}원") if a else (c["eps"], f"컨센 EPS {c['eps']:,}원") if c
-            else (q3 * 4 / 3, f"3분기 누적 EPS×4/3 {q3 * 4 / 3:,.0f}원") if q3 > 0 else (0, ""))
+    return ((a["eps_act"], f"{iso(a['date'])} 네이버 실적 발표 EPS {a['eps_act']:,}원") if a else (c["eps"], f"{iso(c['date'])} 네이버 컨센 EPS {c['eps']:,}원") if c
+            else (q3 * 4 / 3, f"{fy} 3분기보고서 누적 EPS {q3:,.0f}원 × 4/3") if q3 > 0 else (0, ""))
 
 def policy(ctx, fy):
     """사업연도 fy 에 걸린 정책 줄 {(kind, slot, base): 줄} — 같은 칸은 사람 줄이 이기고, 그다음 최근 공시(같은 날이면 접수번호 뒤 = 정정).

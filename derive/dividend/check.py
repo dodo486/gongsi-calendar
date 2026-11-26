@@ -136,10 +136,8 @@ def check():
     est_q = {(e["code"], e.get("quarter")) for e in book["rows"] if e["kind"] == "est" and e.get("div_type") == "결산배당"}
     for s, c in book["companies"].items():
         w = f"회사 {c['name']}({s})"
-        for fy, rep in c.get("reports", {}).items():
-            got = c.get("paid_rounds", {}).get(fy)
-            if "q3_dps" in rep and got is not None and abs(rep["q3_dps"] - got) >= 1:
-                warn(w, f"{fy} 3분기보고서 누적 배당 {rep['q3_dps']:,.0f}원 ≠ 공시 회차 합 {got:,}원 — 회차 사업연도·금액 확인")
+        for fy, (rep, got) in c.get("paid_gaps", {}).items():
+            warn(w, f"{fy} 3분기보고서 누적 배당 {rep:,.0f}원 ≠ 공시 회차 합 {got:,}원 — 회차 사업연도·금액 확인")
         done = {r["quarter"] for r in c["rounds"] if r["div_type"] == "결산배당"}
         for fy, dps in c.get("cons_dps", {}).items():
             if f"{fy} Q4" not in done and (s, f"{fy} Q4") not in est_q:

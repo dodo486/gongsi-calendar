@@ -443,6 +443,7 @@ function showDetail(e){
         <div class="row">종목코드 ${esc(e.code||"-")} · <b style="color:var(--est)">예상 ${esc(e.div_type||"배당")}</b> (공시 기반 추정)</div>
         <div class="row">📶 <b>${esc(e.headline)}</b> <span class="grade">${esc(e.grade_label)}</span></div>
         <div class="big" style="color:var(--est)">${e.per_share?won(e.per_share)+"원":"금액 미정"} <span style="font-size:13px;color:var(--muted)">/주 (예상)</span></div>
+        <div class="row">💰 <span class="grade">${esc((BOOK.amount_grades[e.amount_grade] || {}).label || "")}</span> <span style="color:var(--muted)">${esc((BOOK.amount_grades[e.amount_grade] || {}).desc || "")}</span></div>
         <div class="row">🗓️ 예상 배당매수일(T-2) <b style="color:var(--est)">${esc(e.confirm_date||"-")}</b></div>
         <div class="row">🚫 예상 배당락일(T-1) ${esc(e.ex_date||"-")}</div>
         <div class="row">📌 예상 배당기준일 ${esc(e.record_date)} <span style="color:var(--muted)">(${esc(e.quarter)} · 결산기말·분기말 ${esc(e.quarter_end)})</span></div>
@@ -544,7 +545,8 @@ function exportXlsx(){
   const picked = ROWS.filter(e=> shown(e) && e.ex_date >= from);
   const rows = picked.map(e=> ({
     "종목코드": "A" + e.code, "종목명": e.name, "시장": {KOSPI:"KP", KOSDAQ:"KQ"}[e.market] || e.market,
-    "구분": e.grade_label, "사례": e.case || "", "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
+    "날짜 구분": e.grade_label, "사례": e.case || "", "배당종류": e.div_type || "", "주당배당금(원)": e.per_share ? Number(e.per_share) : "",
+    "금액 구분": (BOOK.amount_grades[e.amount_grade] || {}).label || "",
     "기준일": e.record_date, "배당매수일(T-2)": e.confirm_date, "배당락일(T-1)": e.ex_date,
     "몇월 만기 후": e.after_expiry, "배당락 월물": e.ex_month, "근거": e.basis_text, "금액 근거": e.amount_basis || "", "금액 후보": e.amount_cands || "", "특별배당 가능성": e.amount_special || "", "실적 서프라이즈 가능성": e.amount_surprise || "",
   }));
@@ -558,7 +560,9 @@ function exportXlsx(){
   const NOTE = {font:{italic:true, color:{rgb:"595959"}}};
   const CELL = {alignment:{vertical:"top"}, border:BOX};
   const WRAP = {alignment:{vertical:"top", wrapText:true}, border:BOX};
+  const A = BOOK.amount_grades;
   const fillOf = k => G[k] ? {fill:{fgColor:{rgb:G[k].xl}}} : {};
+  const fillOfA = k => A[k] ? {fill:{fgColor:{rgb:A[k].xl}}} : {};
   const paint = (ws, fn) => {
     const r = XLSX.utils.decode_range(ws["!ref"]);
     for(let R=r.s.r; R<=r.e.r; R++) for(let C=r.s.c; C<=r.e.c; C++){
@@ -568,18 +572,35 @@ function exportXlsx(){
     }
   };
   const ws = XLSX.utils.json_to_sheet(rows);
-  paint(ws, (R, C)=> R===0 ? HEAD : C===3 ? {...CELL, ...fillOf(picked[R-1].grade), font:{bold:true}} : CELL);
-  ws["!cols"] = [9,16,5,34,50,9,11,11,13,13,13,10,70,30].map(w=> ({wch:w}));
+  paint(ws, (R, C)=> R===0 ? HEAD : C===3 ? {...CELL, ...fillOf(picked[R-1].grade), font:{bold:true}}
+                          : C===7 ? {...CELL, ...fillOfA(picked[R-1].amount_grade), font:{bold:true}} : CELL);   // 날짜 구분·금액 구분 칸 색 = 장부의 구분 표
+  ws["!cols"] = [9,16,5,34,50,9,11,26,11,13,13,13,10,70,30].map(w=> ({wch:w}));
   ws["!autofilter"] = {ref: ws["!ref"]};
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "배당");
+  // 배당금 탭 — 금액과 그 금액을 구한 재료(장부 재료표 줄을 그대로: 값 — 쓴 원천). 계산 없음
+  const fact = (e, item) => (e.inputs || []).filter(x=> x.item === item).map(x=> x.value ? `${x.value} — ${x.src}` : `(${x.status}) ${x.src}`).join("\n");
+  const amt = picked.map(e=> ({
+    "종목코드": "A" + e.code, "종목명": e.name, "배당종류": e.div_type || "", "회차": e.quarter || "", "배당락일(T-1)": e.ex_date,
+    "주당배당금(원)": e.per_share ? Number(e.per_share) : "", "금액 구분": (A[e.amount_grade] || {}).label || "", "금액 근거": e.amount_basis || "",
+    "당기순이익": fact(e, "올해 순이익(EPS)"), "올해 이미 지급": fact(e, "올해 이미 정한 배당"), "배당성향 3년": fact(e, "과거 배당성향(3년)"),
+    "나눌 주식 수": fact(e, "주식 수"), "정책": fact(e, "회사 정책"),
+  }));
+  const as = XLSX.utils.json_to_sheet(amt);
+  paint(as, (R, C)=> R===0 ? HEAD : C===6 ? {...WRAP, ...fillOfA(picked[R-1].amount_grade), font:{bold:true}} : WRAP);
+  as["!cols"] = [9,16,9,9,12,11,26,60,40,50,30,50,70].map(w=> ({wch:w}));
+  as["!autofilter"] = {ref: as["!ref"]};
+  XLSX.utils.book_append_sheet(wb, as, "배당금");
   // 설명 탭 — 구분·칸 뜻. 장부의 구분 표를 그대로 씀
   const guide = [
-    ["태그", "뜻 — 구분 이름 앞 [ ] 는 날짜가 얼마나 확실한지"],
+    ["태그", "뜻 — 날짜 구분·금액 구분 이름 앞 [ ] 는 얼마나 확실한지"],
     ...Object.entries(BOOK.tags).map(([t, d])=> [`[${t}]`, d]),
     [],
-    ["구분 칸 색", "뜻 — 구분 칸에 그 회차의 구분, 근거 칸에 공시 링크 또는 '예상 기준일 날짜 — 그 날짜를 잡은 이유'. 색은 날짜가 얼마나 확실한지"],
+    ["날짜 구분 칸 색", "뜻 — 날짜 구분 칸에 그 회차의 날짜 구분, 근거 칸에 공시 링크 또는 '예상 기준일 날짜 — 그 날짜를 잡은 이유'. 색은 날짜가 얼마나 확실한지"],
     ...Object.entries(G).map(([k, g])=> [g.label, g.desc, k]),
+    [],
+    ["금액 구분 칸 색", "뜻 — 금액 구분 칸에 그 금액을 무엇으로 구했나, 금액 근거 칸에 근거 문장. 색은 금액이 얼마나 확실한지"],
+    ...Object.entries(A).map(([k, g])=> [g.label, g.desc, "금액:" + k]),
     ["※ 기말", "결산배당은 결산기말, 분기배당은 분기말, 중간배당은 반기말 — 구분 칸에는 그 배당종류의 말로 적힘"],
     [],
     ["칸", "뜻"],
@@ -591,19 +612,21 @@ function exportXlsx(){
     ["몇월 만기 후", "배당매수일이 들어가지 않는 가장 끝 월물(배당매수일 당일 이전에 끝나는 마지막 만기, 만기 당일 포함) + '만기 후'"],
     ["배당락 월물", "배당락이 걸리는 주식선물 월물 = 배당락일 이후 첫 만기(매월 둘째 목요일)"],
     ["근거", "확정은 DART 공시일·링크, 예상은 예상 기준일·이유, 판정 근거, 날짜를 잡은 근거"],
-    ["금액 근거", "예상 금액은 같은 종류 직전 정기 회차 금액 반복 (특별배당 섞인 회차 제외, 분할·병합 보정)"],
-    ["금액 후보", "신호별 예상 금액 — 직전 반복, 컨센(네이버 연간 주당배당금 컨센 − 올해 이미 정한 배당 ÷ 남은 회차). 컨센은 적중률이 쌓이면 우선순위에 반영"],
+    ["금액 근거", "고른 금액의 근거 — 회사 정책이면 공시 날짜·제목과 계산식, 아니면 고른 신호의 계산 (분할·병합 보정, 올해 이미 정한 배당 뺌)"],
+    ["금액 후보", "신호별 예상 금액 — 회사 정책 · 직전 반복 · 이익 반영 · 컨센 · 안 깎음 · 추세 · 새해 인상 · 성향×이익. 고르기: 회사 정책 > 나머지 신호의 가운데 값(성향×이익 빼고) > 성향×이익"],
+    ["배당금 탭", "예상 금액을 구한 재료 — 당기순이익(주당), 올해 이미 지급(회차별 배당결정), 배당성향 3년(사업보고서), 나눌 주식 수(기준 공시·보고서 + 그 뒤 자사주·분할), 정책(공시 글). 칸마다 '값 — 쓴 원천', 확정 배당은 재료 없음"],
     ["참고 공시 탭", "이 목록 종목들에 대해 배당 산출이 읽은 DART 공시 전부(2년치)와 정기보고서 배당 표 — 공시마다 읽어 낸 내용과 원문 링크"],
     [],
     ["뽑은 범위", `${from} 이후 배당락 · 검색·시장 필터 반영 · ${new Date().toLocaleString("ko-KR")} 기준`],
   ];
-  const gs = XLSX.utils.aoa_to_sheet(guide.map(r=> r.slice(0, 2)));   // 3번째 값은 색 단계(표에는 안 씀)
+  const gs = XLSX.utils.aoa_to_sheet(guide.map(r=> r.slice(0, 2)));   // 3번째 값은 색 열쇠(날짜 구분 / "금액:" 금액 구분, 표에는 안 씀)
   paint(gs, (R, C, v)=> {
     const row = guide[R];
     if(!row.length) return {};
-    if(row[0]==="태그" || row[0]==="구분 칸 색" || row[0]==="칸") return HEAD;
+    if(row[0]==="태그" || row[0]==="날짜 구분 칸 색" || row[0]==="금액 구분 칸 색" || row[0]==="칸") return HEAD;
     if(row[0]==="뽑은 범위") return NOTE;
-    return C===0 ? {...WRAP, ...fillOf(row[2]), font:{bold:true}} : WRAP;
+    const key = String(row[2] || "");
+    return C===0 ? {...WRAP, ...(key.startsWith("금액:") ? fillOfA(key.slice(3)) : fillOf(key)), font:{bold:true}} : WRAP;
   });
   gs["!cols"] = [{wch:44}, {wch:90}];
   XLSX.utils.book_append_sheet(wb, gs, "설명");
@@ -616,7 +639,7 @@ function exportXlsx(){
     ["예상 기준일", "결산기말 고정이면 결산기말·분기말, 이사회 지정이면 날짜 근거 + 그 회사의 작년 간격"],
     ["날짜 계산", "배당락일 = 기준일 T-1 영업일, 매수일 = T-2 영업일"],
     ["월물 배정", "배당락일 이후 첫 선·옵 동시만기 → 근월물·차월물"],
-    ["예상 금액", "같은 종류 직전 정기 회차 금액 반복 (특별배당 섞인 회차 제외)"],
+    ["예상 금액", "회사 정책 > 나머지 신호의 가운데 값(성향×이익 빼고) > 성향×이익 — 무엇으로 구했나는 금액 구분 칸 (설명 탭)"],
     [],
     ["2. 구분 (위에서부터 먼저 걸리는 것)", "구분"],
     ...Object.values(G).map(g=> [g.rule, g.label]),

@@ -8,7 +8,7 @@ USES = 금액 신호마다 읽는 재료(확인 목록이 "이 금액에 쓰인 
 import datetime
 from core.krx_cal import iso
 from derive.dividend.facts import (share_factor, paid, annual_dps, final_of, last_annual, shares, cash_share, cons_of, eps_of, policy,
-                                   evidence, quarter_end, year_steps, seen)
+                                   evidence, quarter_end, year_steps, paid_gap)
 
 
 USES = {"repeat_last": ("작년 결산 몫", "올해 이미 정한 배당"), "consensus_left": ("연간 컨센 DPS", "올해 이미 정한 배당"),
@@ -47,14 +47,15 @@ def run_dps(ctx, fy):
 
 def build(ctx, fy, rec):
     y, yp = ctx["years"].get(fy, {}), ctx["years"].get(fy - 1, {})
-    sh = shares(ctx, rec)
+    sh, sh_txt = shares(ctx, rec)
     eps, eps_txt = eps_of(ctx, fy)
     pol = policy(ctx, fy)
     share, share_txt = cash_share(ctx, fy)
-    pays = [ctx["years"][fy - i]["payout"] for i in (1, 2, 3) if ctx["years"].get(fy - i, {}).get("payout", 0) > 0]
+    payouts = {fy - i: ctx["years"][fy - i]["payout"] for i in (3, 2, 1) if ctx["years"].get(fy - i, {}).get("payout", 0) > 0}   # 사업보고서 해마다 배당성향
+    pays = list(payouts.values())
     c_dps, c_eps = cons_of(ctx, fy, "dps"), cons_of(ctx, fy, "eps")
     last = final_of(ctx, fy - 1)
-    p = paid(ctx, fy)
+    p, p_txt = paid(ctx, fy)
     rounds = [{**r, "adj": share_factor(ctx["splits"], r["record"], rec)} for r in ctx["rounds"]]
     v = {"fy": fy, "rounds": rounds, "acc": int(ctx["acc"]),
          "eps": eps, "eps_txt": eps_txt, "sep_eps": y["q3_ni_sep"] * 1e6 / sh if y.get("q3_ni_sep", 0) > 0 and sh else 0,
@@ -74,8 +75,7 @@ def build(ctx, fy, rec):
     for item, val in fixed.items():   # 사람이 확인 목록에서 고친 값이 자동 값을 대신함
         for k in OVERRIDE[item]:
             v[k] = {"date": datetime.date.today(), "dps": val} if k == "cons_dps" else val
-    q3_paid = y.get("q3_dps") if "q3_eps" in y and seen(ctx, fy, 1) else None
-    rounds_paid = sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy and r["type"] != "결산배당" and r["dps"])
+    gap = paid_gap(ctx, fy)
     def row(item, value, status, src="", check="자동", sig=""):
         sig = sig or f"{item}|{value}"   # 값이 바뀌면 열쇠도 바뀌어 다시 확인
         man = item in fixed or sig in ctx["human_sigs"]
@@ -84,13 +84,12 @@ def build(ctx, fy, rec):
     c_dps, eps, sh, share = v["cons_dps"], v["eps"], v["shares"], v["share"]
     table = [
         row("올해 순이익(EPS)", f"{eps:,.0f}원" if eps > 0 else "", "있음" if eps > 0 else "없음", v["eps_txt"]),
-        row("과거 배당성향(3년)", " · ".join(f"{x:g}%" for x in pays), "있음" if len(pays) == 3 else "모름" if pays else "없음", "사업보고서"),
+        row("과거 배당성향(3년)", " · ".join(f"{y} {x:g}%" for y, x in payouts.items()), "있음" if len(pays) == 3 else "모름" if pays else "없음", "사업보고서 배당 표"),
         row("작년 연간 DPS", f"{v['prev']:,.0f}원" if v["prev"] else "", "있음" if v["prev"] else "없음", "사업보고서·공시 회차"),
         row("작년 결산 몫", f"{v['last_final']:,.0f}원" if v["last_final"] else "", "있음" if v["last_final"] else "안 함" if v["last_final"] == 0 else "모름",
             "결산 공시 회차·사업보고서"),
-        row("올해 이미 정한 배당", f"{v['paid']:,.0f}원", "의심" if q3_paid is not None and abs(q3_paid - rounds_paid) >= 1 else "있음",
-            f"공시 회차 {rounds_paid:,}원" + (f" · 3분기보고서 {q3_paid:,.0f}원" if q3_paid is not None else "")),
-        row("주식 수", f"{sh / 1e8:,.2f}억주" if sh else "", "있음" if sh else "없음", "배당결정 총액÷주당·반기/사업보고서·자사주 변동"),
+        row("올해 이미 정한 배당", f"{v['paid']:,.0f}원", "의심" if gap else "있음", p_txt + (f" · 3분기보고서 누적 {gap[0]:,.0f}원과 다름" if gap else "")),
+        row("주식 수", f"{sh / 1e8:,.2f}억주" if sh else "", "있음" if sh else "없음", sh_txt),
         row("연간 컨센 DPS", f"{c_dps['dps']:,.0f}원" if c_dps else "", "있음" if c_dps else "없음", f"네이버 {iso(c_dps['date'])}" if c_dps else "네이버"),
     ]
     if any(k[0] in ("return", "budget") for k in pol):

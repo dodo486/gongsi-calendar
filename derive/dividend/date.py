@@ -4,7 +4,7 @@ import datetime
 from core.paths import DART_VIEW
 from core.krx_cal import to_date, iso
 from derive.dividend import amount, inputs
-from derive.dividend.facts import quarter_end, view, quarter_owner, pattern, evidence, cons_of
+from derive.dividend.facts import quarter_end, view, quarter_owner, pattern, evidence, cons_of, paid_gap
 
 HORIZON_DAYS = 270
 MISS_GRACE_DAYS = 3
@@ -272,8 +272,7 @@ def company_out(ctx, missed, today):
             "statements": [{**x, "date": iso(x["date"])} for x in ctx["statements"] if x["date"] >= today - datetime.timedelta(days=365)],
             "policies": [{**p, "date": iso(p["date"]), "said": [[iso(d), no] for d, no in p["said"]]} for p in ctx["policies"] if p["fy"][1] >= today.year - 1],
             "reports": {fy: {k: d[k] for k in ("dps", "q3_dps") if k in d} for fy, d in ctx["years"].items() if fy >= today.year - 1},
-            "paid_rounds": {fy: sum(int(r["dps"]) for r in ctx["rounds"] if r["fy"] == fy and r["type"] != "결산배당" and r["dps"])
-                            for fy in (today.year - 1, today.year)},
+            "paid_gaps": {fy: list(g) for fy in (today.year - 1, today.year) if (g := paid_gap(ctx, fy))},   # 3분기보고서 누적 ≠ 배당결정 회차 합
             "cons_dps": {fy: c["dps"] for fy in (today.year, today.year + 1) if (c := cons_of(ctx, fy, "dps"))},
             "exdivs": [{**x, "date": iso(x["date"])} for x in ctx["exdivs"]][-6:],
             "suggested": ctx["suggested"],
