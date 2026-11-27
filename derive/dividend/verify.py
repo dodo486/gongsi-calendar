@@ -111,7 +111,8 @@ def verify():
             prior = [v for y, v in done.items() if y < fy]
             finals.append({"code": c["code"], "name": c["name"], "type": "결산배당", "fy": fy, "style": e["amount_style"], "actual_dps": act,
                            "actual_special": spiked(prior, act), "special_hint": bool(e["amount_special"]),
-                           "sig_dps": {s["signal"]: s["value"] for s in e["amount_signals"]}})
+                           "sig_dps": {s["signal"]: s["value"] for s in e["amount_signals"]}, "pick": e["amount_pick"],
+                           "variants": e["amount_variants"]})
     styles = ("", "안정", "연동", "이력 짧음")
     for x in rows + finals:
         if "sig_dps" in x:
@@ -145,6 +146,10 @@ def verify():
         "결산 금액(12월 초)": {s or "전체": amount_hits([x for x in finals if x["pred_dps"] and (not s or x["style"] == s)]) for s in styles},
         "결산 신호별 금액(12월 초)": {s or "전체": {n: amount_hits([{**x, "pred_dps": x["sig_dps"][n]} for x in finals if n in x["sig_dps"] and (not s or x["style"] == s)])
                                                 for n in amount.NAMES} for s in styles},
+        "작년 안 줄임 바닥(회사 정책이 고른 회차)": {
+            who: {"지금(" + now + ")": amount_hits([x for x in finals if alt in x["variants"] and x["pred_dps"] and x["pick"] == "stated"]),
+                  alt: amount_hits([{**x, "pred_dps": x["variants"][alt]} for x in finals if alt in x["variants"] and x["pred_dps"] and x["pick"] == "stated"])}
+            for who, now, alt in (("밸류업·고배당 회사", "씌움", "안 줄임 없이"), ("그 밖의 회사", "안 씌움", "안 줄임 씌움"))},
         "특별배당 가능성 표시(12월 초)": {"켜진 회차": sum(x["special_hint"] for x in finals),
                                      "그중 실제 특별": sum(x["special_hint"] and x["actual_special"] for x in finals),
                                      "꺼진 회차 중 실제 특별": sum(not x["special_hint"] and x["actual_special"] for x in finals)},

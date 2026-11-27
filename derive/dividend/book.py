@@ -53,7 +53,7 @@ def company_out(ctx, missed, today):
             "rounds": [{"quarter": f"{r['fy']} Q{r['q']}", "div_type": r["type"], "decided": iso(r["decided"]),
                         "record_date": iso(r["record"]), "quarter_end": iso(r["qe"]), "fixed": r["fixed"],
                         "amount_first": r["amount_first"], "per_share": r["dps"], "special": r["special"], "src": r["src"],
-                        "note": r["note"], "tax_rule": r["tax_rule"]}
+                        "note": r["note"]}
                        for r in reversed(ctx["rounds"])],
             "notices": [{"date": iso(n["date"]), "div_type": n["div_type"], "quarter": f"{n['fy']} Q{n['q']}",
                          "hint": n["hint"], "title": n["title"]} for n in ctx["notices"]][-4:],

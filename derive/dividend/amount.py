@@ -5,13 +5,14 @@ estimate 가 pick 으로 고른다(회사가 밝힌 것 > 나머지 신호 가�
 USES = 신호마다 읽는 재료(확인 목록이 "이 금액에 쓰인 재료"를 고를 때)"""
 import itertools, math, statistics
 from core.krx_cal import iso
+from derive.dividend import law
 from derive.dividend.facts import spiked, SPECIAL_MULT
 
 EARN_UP, MIN_SAMPLES = 1.1, 20   # 이익 증가 회사 배당 증가율 — 그 사업연도 전 해들에서 배움
 USES = {"repeat_last": ("작년 결산 몫", "올해 이미 정한 배당"), "consensus_left": ("연간 컨센 DPS", "올해 이미 정한 배당"),
         "trend": ("작년 연간 DPS", "올해 이미 정한 배당"), "no_cut": ("작년 연간 DPS", "과거 배당성향(3년)", "올해 순이익(EPS)", "올해 이미 정한 배당"),
         "payout_eps": ("과거 배당성향(3년)", "올해 순이익(EPS)", "올해 이미 정한 배당"), "earn_up": ("작년 결산 몫",),
-        "step_up": (), "stated": ("회사 정책", "올해 순이익(EPS)", "주식 수", "현금 몫(총환원 중 배당)", "작년 연간 DPS", "올해 이미 정한 배당")}
+        "step_up": (), "stated": ("회사 정책", "올해 순이익(EPS)", "주식 수", "현금 몫(총환원 중 배당)", "작년 연간 DPS", "올해 이미 정한 배당", "밸류업 공시", "부채비율", "고배당기업")}
 
 
 AMOUNT_GRADES = {   # 금액 구분 — 이 금액이 얼마나 확실한가. 날짜 구분(date.GRADES)과 같은 태그. 장부·화면·엑셀은 이 표만 읽음
@@ -154,8 +155,11 @@ def step_up(x, t, med):
             "basis": f"작년 마지막 분기({q[-1]['fy']} Q{q[-1]['q']}) {int(q[-1]['dps']):,}원 × 새해 인상 {k:.2f}배("
                      + (f"이 회사 과거 {len(own)}번 중앙" if own else "수집대상 전체 중앙") + ")"}
 
-TAX_PAYOUT_HIGH, TAX_PAYOUT_LOW, TAX_GROWTH = 0.40, 0.25, 0.10   # 조특법 §104의27 고배당기업: 배당성향 40% 이상, 또는 25% 이상 + 배당 전년 대비 10% 증가
-TAX_MAX_JUMP = 2   # 요건 맞추는 데 작년의 이 배수 넘게 필요하면(일회성 이익) 포기한다고 봄 — 2025 요건 충족 회사들의 필요 인상은 최대 1.48배
+HIGH_DIV_JUMP = 2   # 요건 맞추는 데 작년의 이 배수 넘게 필요하면(일회성 이익) 포기한다고 봄 — 2025 요건 충족 회사들의 필요 인상은 최대 1.48배
+
+def keeps(x):
+    """작년보다 배당을 안 줄일 회사 — 밸류업 공시를 냈거나 작년 실적으로 고배당기업(수집)"""
+    return x["valueup"] or bool(x["high_div"])
 
 def policy_levels(x):
     """1단계 — 이 사업연도 정책 줄 하나하나를 연간 주당 금액으로 → [{role, value, why, floor}].
@@ -188,13 +192,13 @@ def policy_levels(x):
         elif kind == "budget" and share is not None and sh:
             out.append({"role": "level", "value": p["lo"] * share / sh, "floor": False,
                         "why": f"{src(p)} 총주주환원 {p['lo'] / 1e8:,.0f}억원{more(p)} × 현금 {share:.0%}({share_txt}) ÷ {sh / 1e8:,.2f}억주"})
-    hd = pol.get(("high_div", "연간", ""))
-    if (hd["on"] if hd else x["tax_hist"]) and eps > 0 and prev:
-        prev_t = hd["prev_total"] / sh if hd and hd["prev_total"] and sh else prev   # 요건은 배당총액 기준 — 자사주 소각으로 주식이 줄면 DPS 는 10% 넘게 올라야 함
-        need = max(prev, min(TAX_PAYOUT_HIGH * eps, max(TAX_PAYOUT_LOW * eps, (1 + TAX_GROWTH) * prev_t)))
-        if need <= TAX_MAX_JUMP * prev or any(r["role"] == "range" and r["value"][0] >= need for r in out):   # 회사가 그만큼 이상 준다고 밝힌 경우만 상한을 넘김
-            out.append({"role": "level", "value": need, "floor": True,
-                        "why": f"고배당기업({src(hd) + ' 밸류업 표' if hd else '배당결정 공시'}) 요건 최소 — 작년 배당총액의 1.1배·순이익 25% 중 큰 값, 40% 넘지 않게"})
+    hd = x["high_div"]
+    if hd and hd["total"] and x["div_base"] and x["asof"] >= law.ENACTED and x["fy"] + 1 <= law.LAST_YEAR and sh and prev:
+        need = law.need(hd["total"], x["div_base"], x["ni_now"], x["debt"])
+        annual = need / sh if need is not None else None
+        if annual and (annual <= HIGH_DIV_JUMP * prev or any(r["role"] == "range" and r["value"][0] >= annual for r in out)):   # 회사가 그만큼 이상 준다고 밝힌 경우만 상한을 넘김
+            out.append({"role": "level", "value": annual, "floor": True,
+                        "why": f"고배당기업 유지 — 올해 이익배당금액 법 최소 {need / 1e8:,.0f}억(작년 {hd['total'] / 1e8:,.0f}억 · {law.BASE_YEAR}년분 이상, 순이익 40% 또는 25% + 10% 증가) ÷ {sh / 1e8:,.2f}억주"})
     return out
 
 def stated(x, t):
@@ -221,11 +225,17 @@ def stated(x, t):
     elif cands:
         choice = max(cands, key=lambda r: r["value"])
         if choice["value"] < x["prev_adj"]:
-            choice = {"value": x["prev_adj"], "floor": True, "why": f"정책 최소({choice['why']})가 작년보다 낮음 → 작년 DPS {x['prev_adj']:,.0f}원 유지"}
+            kept = {"value": x["prev_adj"], "raw": choice.get("raw", choice["value"]), "floor": True,
+                    "why": f"정책 최소({choice['why']})가 작년보다 낮음 → 밸류업·고배당 회사라 작년 DPS {x['prev_adj']:,.0f}원 유지"}
+            choice = kept if keeps(x) else {**choice, "kept": x["prev_adj"]}
     else:
         return "금액으로 바꿀 회사 정책 없음" if not x["policy"] else "회사 정책은 있으나 금액으로 못 바꿈(순이익·주식 수·현금 몫 없음 또는 일회성 컷)"
     e = from_annual(x, "stated", "회사 정책", choice["value"], f"{choice['why']} → 연간 {choice['value']:,.0f}원")
-    return {**e, "floor": choice["floor"], "grade": "회사정함" if exact else "정책계산"} if isinstance(e, dict) else e
+    other = choice.get("kept") or choice.get("raw")   # 작년 안 줄임 바닥의 반대 값(밸류업·고배당이면 안 씌운 값, 아니면 씌운 값) — 검증이 둘을 비교
+    alt = from_annual(x, "stated", "", other, "") if other and other != choice["value"] else None
+    return ({**e, "floor": choice["floor"], "grade": "회사정함" if exact else "정책계산",
+             **({"alt": (alt["value"] if isinstance(alt, dict) else 0, "안 줄임 씌움" if "kept" in choice else "안 줄임 없이")} if alt else {})}
+            if isinstance(e, dict) else e)
 
 SIGNALS = [(repeat_last, False), (consensus_left, False), (trend, False), (payout_eps, False), (no_cut, False),
            (earn_up, True), (step_up, True), (stated, False)]   # (신호, 수집대상 통계 med 를 쓰나)
@@ -280,5 +290,6 @@ def estimate(x, t, med):
     return {"per_share": str(best["value"]) if best else "", "amount_basis": best["basis"] if best else empty,
             "amount_style": st, "amount_special": special, "amount_surprise": surprise, "amount_signals": list(cands.values()),
             "amount_cands": " · ".join(f"{c['name']} {c['value']:,}원" for c in cands.values()),
+            "amount_variants": {best["alt"][1]: fit(best["alt"][0], best.get("floor"))} if best and "alt" in best else {},
             "amount_pick": best["signal"] if best else "", "amount_uses": list(USES.get(chosen, ())), "amount_unused": unused,
             "amount_grade": (best.get("grade") or SIGNAL_GRADE.get(best["signal"], "과거패턴")) if best else "없음"}

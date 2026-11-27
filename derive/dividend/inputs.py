@@ -10,9 +10,10 @@ import datetime
 from core.paths import load_json, DIV_POLICY_PATH, DIV_CHECKED_PATH, DART_VIEW
 from core.krx_cal import to_date, iso
 from derive.dividend import facts
-from derive.dividend.facts import (GROUP, SEASON_DAYS, NI, share_factor, paid, annual_dps, final_of, last_annual, shares, cons_of, eps_of, owner_ni,
+from derive.dividend.facts import (GROUP, SEASON_DAYS, NI, share_factor, paid, annual_dps, final_of, last_annual, shares, cons_of, eps_of, owner_ni, debt_ratio, high_div,
                                    quarter_end, year_steps, paid_gap, said_bases, _base, policy_sig, fact_of, policy_text, ytd)
 
+BASE_FY = 2025   # 고배당기업 첫 판정 사업연도 — 그 해 공시의 증가율로 2024년분을 알아냄
 CASH_SHARE_YEARS = 3   # 총환원 중 현금배당 비율 = 최근 이만큼 사업연도 현금흐름표 배당금 지급 ÷ (배당금 지급 + 자기주식 취득)
 DIV_PAID, BUYBACK = "ifrs-full:DividendsPaidClassifiedAsFinancingActivities", "dart:AcquisitionOfTreasuryShares"
 
@@ -204,7 +205,7 @@ def for_date(ctx, t, fy, q):
                  ("기말 직전 한 달 명부폐쇄", f"배당 기준일 공고 {'있음' if v['div_rec'] else '없음'} · 주총 명부폐쇄 {'있음' if v['agm_rec'] else '없음'}", "있음", "")]
     return {"v": v, "table": [{"item": i, "value": val, "status": st, "check": "자동", "src": src, "sig": f"{i}|{val}"} for i, val, st, src in rows]}
 
-def for_amount(ctx, fy, q, rec):
+def for_amount(ctx, fy, q, rec, today):
     """한 회차의 금액 재료 (회사 × 사업연도 × 분기 — 결산 4·중간 2·분기 1~3, 주식 수·분할 보정은 예상 기준일 rec 기준).
     3분기 누적 이익(q3·q3_prev·q3_hist)은 지배순이익 금액 — 비율로만 쓰여 주식 수가 필요 없고 분할에도 안 흔들림"""
     y = ctx["years"].get(fy, {})
@@ -214,6 +215,9 @@ def for_amount(ctx, fy, q, rec):
     upto = next((k for k in range(q, 0, -1) if owner_ni(ctx, fy, k)[0] is not None), 0)
     ni, ni_txt = owner_ni(ctx, fy, upto) if upto else (None, "")
     sep = ytd(ctx, NI, "별도", fy, 3) or y.get("q3_ni_sep", 0) * 1e6
+    debt, debt_txt = debt_ratio(ctx)
+    hd = high_div(ctx, fy - 1)   # 작년 실적으로 고배당기업 — 올해 결산을 정할 때 유지하려는 회사
+    plans = [st for st in ctx["statements"] if "기업가치제고" in st["title"]]
     pol = policy(ctx, fy)
     share, share_txt = cash_share(ctx, fy)
     payouts = {fy - i: ctx["years"][fy - i]["payout"] for i in (3, 2, 1) if ctx["years"].get(fy - i, {}).get("payout", 0) > 0}   # 사업보고서 해마다 배당성향
@@ -234,7 +238,9 @@ def for_amount(ctx, fy, q, rec):
          "cons_q": [x for x in ctx["cons"] if "quarter" in x],
          "policy": {k: {**r, "adj": share_factor(ctx["splits"], r["date"], rec)} for k, r in pol.items()},
          "share": share, "share_txt": share_txt, "steps": year_steps(ctx),
-         "tax_hist": any(r["tax_rule"] for r in ctx["rounds"] if r["type"] == "결산배당" and r["fy"] < fy),
+         "valueup": bool(plans), "debt": debt, "asof": today,
+         "high_div": hd, "ni_now": eps * sh,
+         "div_base": (b["total"] / (1 + b["growth"] / 100)) if (b := high_div(ctx, BASE_FY)) and b["total"] and b["growth"] is not None else None,   # 2024 사업연도분 — 첫해 회사가 밝힌 금액 ÷ (1 + 증가율)
          "evidence": evidence(ctx, fy)}
     fixed = {item: val for (f, item), val in ctx["overrides"].items() if f == fy}
     for item, val in fixed.items():   # 사람이 확인 목록에서 고친 값이 자동 값을 대신함
@@ -256,6 +262,10 @@ def for_amount(ctx, fy, q, rec):
             "결산 공시 회차·사업보고서"),
         row("올해 이미 정한 배당", f"{v['paid']:,.0f}원", "의심" if gap else "있음", p_txt + (f" · 3분기보고서 누적 {gap[0]:,.0f}원과 다름" if gap else "")),
         row("주식 수", f"{sh / 1e8:,.2f}억주" if sh else "", "있음" if sh else "없음", sh_txt),
+        row("밸류업 공시", f"냄({iso(plans[-1]['date'])})" if plans else "안 냄", "있음", plans[-1]["title"] if plans else "기업가치제고계획 공시 없음"),
+        row(f"고배당기업({fy - 1})", (f"해당 · 배당성향 {hd['payout']:g}% · 이익배당 증가 {hd['growth']:g}%" + (f" · 이익배당금액 {hd['total'] / 1e8:,.0f}억" if hd["total"] else ""))
+            if hd else "목록에 없음", "있음", f"KIND 고배당기업 현황 · {DART_VIEW}{hd['rcept_no']}" if hd else "KIND 고배당기업 현황"),
+        row("부채비율", f"{debt:.0%}" if debt is not None else "", "있음" if debt is not None else "안 함" if eps > 0 else "모름", debt_txt),
         row("연간 컨센 DPS", f"{c_dps['dps']:,.0f}원" if c_dps else "", "있음" if c_dps else "없음", f"네이버 {iso(c_dps['date'])}" if c_dps else "네이버"),
     ]
     if any(k[0] in ("return", "budget") for k in pol):

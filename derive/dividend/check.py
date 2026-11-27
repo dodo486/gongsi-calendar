@@ -276,8 +276,13 @@ def check():
             err("적중률", f"결산 금액 오차 중앙값 {e}% — 기준 {MAX_AMOUNT_ERR}% 초과")
 
     # ── 재무제표: 보고서의 분기 3개월 = 누적끼리 뺀 값 (기간·정정이 이어지나) ──
-    q_gap, n_q = [], 0
+    q_gap, n_q, hd_gap, n_hd = [], 0, [], 0
     for c in facts.contexts():
+        said = {r["fy"][0] - 1: r["on"] for st in c["statements"] for r in st["rows"] if r["kind"] == "high_div" and r["fy"][0]}   # 우리가 읽은 공시: 사업연도 → 해당?
+        for fy, h in c["high_div"].items():   # KIND 고배당기업 목록 ↔ 우리가 읽은 그 공시 — 빠뜨리거나 잘못 읽은 공시
+            n_hd += 1
+            if said.get(fy) is not True:
+                hd_gap.append(f"{c['name']}({c['code']}) {fy} KIND 해당 · 우리 공시 {'미해당' if said.get(fy) is False else '못 읽음'} {h['rcept_no']}")
         for fy in c["years"]:
             for q in (2, 3):
                 start = iso(quarter_end(fy, q - 1, c["acc"]) + datetime.timedelta(days=1))
@@ -286,8 +291,9 @@ def check():
                     n_q += 1
                     if abs(given - made) > 1e6:
                         q_gap.append(f"{c['name']}({c['code']}) {fy} Q{q} 보고서 3개월 {given / 1e8:,.0f}억 · 누적끼리 뺀 값 {made / 1e8:,.0f}억")
-    if q_gap:
-        warn("재무 대조 분기 3개월(보고서 ↔ 누적끼리 뺀 값)", f"{len(q_gap)}/{n_q}건 다름 — 예: {' / '.join(q_gap[:FIN_SHOW])}")
+    for name, gap, n in (("재무 대조 분기 3개월(보고서 ↔ 누적끼리 뺀 값)", q_gap, n_q), ("고배당기업(KIND 목록 ↔ 우리가 읽은 공시)", hd_gap, n_hd)):
+        if gap:
+            warn(name, f"{len(gap)}/{n}건 다름 — 예: {' / '.join(gap[:FIN_SHOW])}")
 
     return errors, warns
 

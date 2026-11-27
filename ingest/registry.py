@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 from core import universe
 from ingest.parsers import dividend as dv, earn_sched as es, capital as cap, corporate as co, kind as kd
-from ingest.feeds import acc_mt, naver_cons, dart_alot, dart_shares, dart_xbrl, index_pdf
+from ingest.feeds import acc_mt, naver_cons, dart_alot, dart_shares, dart_xbrl, kind_highdiv, index_pdf
 from ingest import coverage
 
 
@@ -73,6 +73,7 @@ FEEDS = [
     Feed("alot", "day", dart_alot.run),
     Feed("shares", "day", dart_shares.run),
     Feed("xbrl", "day", dart_xbrl.run),
+    Feed("kind_highdiv", "day", kind_highdiv.run),
     Feed("doc_coverage", "pass", lambda: coverage.run(DOCS), after_docs=True),   # 빠뜨린 공시·못 읽은 숫자·정답 묶음 — 공시를 다 받은 뒤
 ]
 

@@ -39,7 +39,7 @@ def assemble(entries, acc):
     같은 회차 = 같은 배당종류·사업연도·분기(정정으로 기준일이 바뀌어도 한 건). 배당종류를 못 읽은 공시는 같은 기준일 회차에 붙인다.
     반환: 회차마다 {code, name, market, div_type, record_date, per_share, pay_date,
     decided(첫 배당결정 접수일 ISO, 없으면 ""), rcept_no(최근 배당결정, 없으면 기준일 공고), rcept_dt(최근 접수일),
-    note(「기타 투자판단」 정책 문장), tax_rule(고배당기업 과세특례 요건 충족을 밝힘), total(배당금총액 원)}"""
+    note(「기타 투자판단」 정책 문장), total(배당금총액 원)}"""
     merged = {}
     def key_of(e, decided):
         t, rec = e["div_type"], e["record_date"]
@@ -63,7 +63,7 @@ def assemble(entries, acc):
         r = merged.setdefault(key_of(e, iso(e["rcept_dt"]) if dec else None),
                               {"code": e["code"], "name": e["name"], "market": e["market"], "div_type": "",
                                "per_share": "", "record_date": "", "pay_date": "", "decided": "", "rcept_no": e["rcept_no"], "rcept_dt": "",
-                               "note": [], "tax_rule": False, "total": 0})
+                               "note": [], "total": 0})
         r["div_type"] = e["div_type"] if e.get("div_type") in TYPE_QUARTERS else r["div_type"] or e.get("div_type") or ""
         r["rcept_dt"] = max(r["rcept_dt"], e["rcept_dt"])
         if e.get("record_date"):
@@ -71,7 +71,7 @@ def assemble(entries, acc):
         if dec:
             r["per_share"] = e.get("per_share") or r["per_share"]
             r["pay_date"] = e.get("pay_date") or r["pay_date"]
-            r["note"], r["tax_rule"] = e.get("note") or r["note"], e.get("tax_rule", False) or r["tax_rule"]
+            r["note"] = e.get("note") or r["note"]
             r["total"] = e.get("total") or r["total"]
             r["decided"] = r["decided"] or iso(e["rcept_dt"])
             r["rcept_no"] = e["rcept_no"]
@@ -135,7 +135,7 @@ def context(stock, entries, policy, acc, agm_records):
         fy, q, qe = slot_of(t, decided if decided < record else record, acc, record)
         rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
                        "dps": r["per_share"], "pay": to_date(r["pay_date"]), "src": "공시", "rcept_no": r["rcept_no"],
-                       "note": r["note"], "tax_rule": r["tax_rule"], "total": r["total"]})
+                       "note": r["note"], "total": r["total"]})
     seen = {(r["type"], r["record"]) for r in rounds}
     for t, decided, record in (policy or {}).get("rows", []):
         record, decided = to_date(record), to_date(decided)
@@ -144,7 +144,7 @@ def context(stock, entries, policy, acc, agm_records):
         if record and (t, record) not in seen:
             fy, q, qe = slot_of(t, decided if decided and decided < record else record, acc, record)
             rounds.append({"type": t, "fy": fy, "q": q, "qe": qe, "record": record, "decided": decided,
-                           "dps": "", "pay": None, "src": "정기보고서 표", "rcept_no": "", "note": [], "tax_rule": False, "total": 0})
+                           "dps": "", "pay": None, "src": "정기보고서 표", "rcept_no": "", "note": [], "total": 0})
             seen.add((t, record))
     rounds.sort(key=lambda r: r["record"])
     for r in rounds:
@@ -246,6 +246,13 @@ def contexts():
                                                          for p in got if p.get("charter") or p.get("charter_text")]}
     acc = {s: int(m) for s, m in store.load("acc_mt").items() if str(m).isdigit()}
     cons, alot, counts, xbrl = store.load("consensus"), store.load("alot"), store.load("shares"), store.load("xbrl")
+    totals = {(e["code"], r["fy"][0] - 1): r["prev_total"] for e in store.load("plan").values() for r in e.get("rows", [])
+              if r["kind"] == "high_div" and r["fy"][0] and r.get("prev_total")}   # 회사가 밝힌 직전 사업연도 이익배당금액
+    hd = {}
+    for r in store.load("kind_highdiv").values():
+        if "gone" not in r:
+            hd.setdefault(r["code"], {})[r["fy"]] = {"payout": r["payout"], "growth": r["growth"], "rcept_no": r["rcept_no"], "known": to_date(r["rcept_no"][:8]),
+                                                    "total": totals.get((r["code"], r["fy"]))}
     earn = {}
     for e in earn_sched.collect(watch=stocks):
         earn.setdefault(e["code"], []).append(e)
@@ -255,7 +262,7 @@ def contexts():
              "years": _years(alot.get(s, {}).get("years", {})),
              "years_known": {int(fy): {k: to_date(dt) for k, dt in d.items()} for fy, d in alot.get(s, {}).get("known", {}).items()},
              "share_counts": {to_date(d): {"n": x["n"], "dt": to_date(x["dt"])} for d, x in counts.get(s, {}).get("dates", {}).items()},
-             "earn": earn.get(s, []),
+             "earn": earn.get(s, []), "high_div": hd.get(s, {}),
              "fin_reports": sorted(({"dt": to_date(r["dt"]), "end": r["end"], "facts": r["facts"]} for r in xbrl.get(s, {}).get("reports", {}).values() if r["end"]),
                                key=lambda r: r["dt"])} for s in sorted(stocks)]
 
@@ -388,6 +395,20 @@ def shares(ctx, rec):
 def cons_of(ctx, fy, key):
     """사업연도 fy 의 최신 네이버 연간 컨센(key: dps·eps) — 네이버 연도 = 사업연도인 12월 결산만"""
     return next((x for x in reversed(ctx["cons"]) if x.get("fy") == str(fy) and x.get(key)), None) if int(ctx["acc"]) == 12 else None
+
+def high_div(ctx, fy):
+    """사업연도 fy 실적으로 고배당기업인가(그다음 해 받는 배당이 분리과세 대상) — 수집한 KIND 고배당기업 현황(회사 밸류업 공시 기준).
+    → {payout 회사가 밝힌 배당성향, growth 이익배당금 증가율, total 회사가 밝힌 이익배당금액(공시 표), rcept_no} 또는 None(목록에 없음·아직 공시 전)"""
+    return ctx["high_div"].get(fy)
+
+def debt_ratio(ctx):
+    """부채비율(부채 ÷ 자본) — 가장 최근 정기보고서, 연결 없으면 별도 → (비율, 근거), 모르면 (None, "")"""
+    for r in reversed(ctx["fin_reports"]):
+        for b in ("연결", "별도"):
+            got = {f[0]: f[4] for f in r["facts"] if f[1] == b and not f[2] and f[0] in ("ifrs-full:Liabilities", "ifrs-full:Equity")}
+            if len(got) == 2 and got["ifrs-full:Equity"] > 0:
+                return got["ifrs-full:Liabilities"] / got["ifrs-full:Equity"], f"{r['end']} {b} 부채 {got['ifrs-full:Liabilities'] / 1e8:,.0f}억 ÷ 자본 {got['ifrs-full:Equity'] / 1e8:,.0f}억"
+    return None, ""
 
 def owner_ni(ctx, fy, q):
     """지배 순이익 누적(사업연도 fy, q 분기말까지) → (원, 쓴 원천). 연결 지배, 연결이 없는 회사는 별도 순이익,
