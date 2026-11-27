@@ -47,7 +47,7 @@ def numbers(t, a, b):
 KIND_WORDS = {
     "pct": [("payout", r"배당\s*성향"), ("return", r"(?:총\s*)?주주\s*환원\s*(?:[율률]|비중|비율)|환원\s*[율률]"), ("skip", r"TSR|총\s*주주\s*수익률|ROE|PBR|준수율|비율|수익률|증가율|성장률|이익률|지분|잉여\s*현금|FCF|배당\s*[률율]|시가\s*배당|주식\s*수|발행\s*주식|비중"),
             ("ni", r"순이익|순익")],
-    "money": [("buyback", r"(?:자사주|자기\s*주식)\S{0,4}\s*(?:매입|취득)|(?:매입|취득)\S{0,4}\s*(?:자사주|자기\s*주식)|^\s*원?\s*(?:규모의?\s*)?(?:추가\s*)?(?:매입|취득)(?!\s*가)"), ("skip", r"기부|보증|담보"), ("budget", r"(?:총\s*)?주주\s*환원|환원\s*(?:재원|규모)|현금\s*환원"), ("budget_income", r"배당\s*수입"),
+    "money": [("buyback", r"(?:자사주|자기\s*주식)\S{0,4}(?:\s+[가-힣]{1,3})?\s*(?:매입|취득)|(?:매입|취득)\S{0,4}\s*(?:자사주|자기\s*주식)|^\s*원?\s*(?:규모의?\s*)?(?:추가\s*)?(?:매입|취득)(?!\s*가)"), ("skip", r"기부|보증|담보"), ("budget", r"(?:총\s*)?주주\s*환원|환원\s*(?:재원|규모)|현금\s*환원"), ("budget_income", r"배당\s*수입"),
               ("cash", r"현금\s*배당|배당\s*(?:금\s*)?총액|배당\s*(?:규모|재원)|배당금|배당"), ("skip", r"매출|영업\s*이익|순이익|투자|자본\s*준비금|이익\s*잉여금|차입|부채|자산|매각|인수|지분|유입|전입")],
     "won": [("dps", r"주당|DPS|1주|배당금|배당"), ("skip", r"가격|주가|시가|평균가|취득가|매입가|공모가|목표가")],   # 액면가는 policy_rows 가 따로(뒤 "액면배당률"은 배당금 설명)
 }
@@ -110,7 +110,8 @@ FY_FROM = re.compile(r"(20\d\d)\s*(?:년|사업\s*연도|사업년도)\s*\S{0,6}
 FY_UNTIL = re.compile(r"(20\d\d)\s*년\s*까지")
 FY_SINCE = re.compile(YEAR + r"\s*(?:년|사업\s*연도|사업년도|회계\s*연도|회계년도)\s*(?:부터|이후)")
 FY_ONE = re.compile(r"(?:" + YEAR + r"\s*(?:년|사업\s*연도|사업년도|회계\s*연도|회계년도)|(FY\s*(?:20)?\d\d))(\s*이후)?")   # "2027년", "FY2027"
-SPAN = re.compile(r"(\d)\s*(?:년간|개년|개\s*사업연도)|향후\s*(\d)\s*년")
+SPAN = re.compile(r"(\d)\s*(?:년간|개년|개\s*사업연도|년\s*단위)|향후\s*(\d)\s*년")
+DATE = re.compile(r"(20\d\d)\s*(?:년\s*|[.\-/]\s*)(\d{1,2})\s*(?:월|[.\-/])")   # "2024년 11월 15일", "2024.11." — 그 말을 한 때
 
 def _yy(s):
     d = re.sub(r"\D", "", s)
@@ -129,13 +130,16 @@ def years(t):
                 out.append((m.start(), m.end(), fy))
     return sorted(out)
 
-def period(t, a, b, n, ys, head, sec):
-    """숫자 n 의 기간 — 숫자 바로 뒤 괄호 > 마디 안 앞쪽 가장 가까운 표기 > 마디 안 뒤쪽 > 다음 마디 "적용시기" > 마디 제목의 기간 > 같은 □ 단락(sec 부터) 앞 마디들의 가장 가까운 계획 기간.
+def period(t, a, b, n, ys, head, sec, length):
+    """숫자 n 의 기간 — 숫자 바로 뒤 괄호 > 마디 안 앞쪽 가장 가까운 표기(길이 말이 붙은 숫자는 날짜도 — 그때부터 length 년) > 마디 안 뒤쪽 > 다음 마디 "적용시기" > 마디 제목의 기간 > 같은 □ 단락(sec 부터) 앞 마디들의 가장 가까운 계획 기간.
     다른 □ 단락의 기간은 안 물려받음("□ 정책 기간(2025~2027) …" 다음 "□ 조기 환원 - 40조원 자사주 취득 결정"은 그해 한 번)
     금액 바로 앞에 붙은 한 해("'26년 200억원")는 그 금액의 해"""
     _, s, e, _, _ = n
     after = next((y for x, _, y in ys if e <= x < b and re.fullmatch(r"\s*\(\s*", t[e: x])), None)   # "30%+ ('25~'27)"
-    inside = [y for x, z, y in ys if a <= x and z <= s]
+    inside = [(x, y) for x, z, y in ys if a <= x and z <= s]
+    for m in DATE.finditer(t, a, s) if length else ():
+        inside.append((m.start(), [int(m[1]), int(m[1]) + length - 1]))   # "2023년 4월 향후 5년" = 2023~2027 — 날짜의 해가 첫 사업연도, 위 단락의 기간을 물려받지 않음
+    inside = [y for _, y in sorted(inside, key=lambda q: q[0])]
     later = [y for x, _, y in ys if e <= x < b and y[0] != y[1]]   # 숫자 뒤 한 해 표기는 대개 다른 말의 해 — 여러 해·부터·까지만
     applied = next((y for x, _, y in ys if b <= x < b + 40 and re.search(r"적용", t[b: x])), None)   # 다음 마디 "적용시기 : '26사업년도 이후"
     above = [y for x, _, y in ys if sec <= x < a and y[0] != y[1]]   # 위에서 물려받는 건 이 □ 단락 안의 계획 기간(여러 해·부터·까지)만 — 한 해 표기는 대개 실적 이름표(계획 제목의 한 해까지 물려받으면 판독자 대조 290→270)
@@ -145,7 +149,7 @@ def period(t, a, b, n, ys, head, sec):
 # ── 6 앞으로 할 일: 정책은 앞으로 할 배당 — 지난 실적·옛 정책·설명 표는 아님 ──
 DONE = r"(?:했|하였|되었|됐|하여\s*왔|해\s*왔|완료|함)"
 PAST = re.compile(r"(?:지급|실시|시행|집행|매입|취득|소각|달성|기록|이행|배당|환원|유지|증가|확대|상향|결의|체결|완료)\s*(?:을|를|이|가)?\s*(?:하|되)?\s*" + DONE
-                  + r"|(?:이었|(?<!하)였)(?:습니다|으며|고|다)|진행\s*중|이행\s*완료|인정\s*받|선정|수상")   # 해낸 일(실행 동사 + 지난 꼴) — "산정·결정·수립·발표하였습니다"는 앞으로 할 일을 정한 것이라 아님
+                  + r"|(?:이었|(?<!하)였)(?:습니다|으며|고|다)|[한된]\s*바\s*(?:가\s*)?있|진행\s*중|이행\s*완료|인정\s*받|선정|수상")   # 해낸 일(실행 동사 + 지난 꼴) — "산정·결정·수립·발표하였습니다"는 앞으로 할 일을 정한 것이라 아님
 FUTURE = re.compile(r"예정|계획|목표|추진|할\s*것|하겠|방침|검토|지향|도입|추구|원칙|할\s*수\s*있|결정(?!\s*(?:하였|했|되었|됐))")   # 앞으로 할 일을 말하는 술어 — 범위 말(이상·수준·상향)과 다름
 FORWARD = re.compile(FUTURE.pattern + r"|정책|유지|확대|상향|이상|이내|한도|수준|최소|최저|까지|부터|매년|향후|중장기")   # 마디가 정책을 말하나(술어 없는 글머리표)
 HISTORY = re.compile(r"제\s*\d{1,3}\s*기|최근\s*\d\s*개?\s*(?:년|사업)|과거|지난|연평균|(?:실시|지급|결의|완료|시행|확정|발표)(?:한|된|했던|하였던)\s|기\s*(?:지급|시행|공시)|기존|종전|전년|작년|에\s*따르면")   # 숫자 바로 앞 — 지난 일·남의 공시 인용
@@ -210,15 +214,15 @@ def policy_rows(t):
                              or n[0] != "pct" and re.match(r"\s*(?:을|를)\s*(?:현금\s*)?(?:배당|지급)", t[n[2]: n[2] + 12]) and not FUTURE.search(t[n[2]: b])
                              or n[0] == "pct" and lo % 1 and not FUTURE.search(t[n[2]: b])):
                 continue   # 정한 값·실적("1주당 배당금은 1,040원입니다", "주당 750원을 지급", "연결현금배당성향: 51.3%") — 정책은 범위 말이나 둥근 목표
-            fy = period(t, a, b, n, ys, (ha, hb), sec)
+            span = SPAN.search(t[max(a, n[1] - 30): n[1]])
+            length = int(span[1] or span[2]) if span else None
+            fy = period(t, a, b, n, ys, (ha, hb), sec, length)
             if kind == "budget_income":   # "배당수입 약 6.2조원 … 배당수입의 N%" — 그 비율만큼이 총환원
                 rate = list(re.finditer(r"(?<!특별)배당\s*수입의\s*(\d{1,3})\s*%\s*(이상)?", t[n[2]: n[2] + 400]))
                 if not rate:
                     continue
                 k = float(rate[-1][1]) / 100
                 kind, lo, hi = "budget", lo * k if lo else None, None if rate[-1][2] else hi * k if hi else None
-            span = SPAN.search(t[max(a, n[1] - 30): n[1]])
-            length = int(span[1] or span[2]) if span else None
             if length and fy[0] and not fy[1]:
                 fy = [fy[0], fy[0] + length - 1]
             yearly = re.search(r"연간|매년|해마다|연\s|각\s*(?:연도|사업연도)|연도별", t[max(a, n[1] - 30): n[1]])
