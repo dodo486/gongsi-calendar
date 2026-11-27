@@ -183,3 +183,16 @@ def corp_code(stock):
         save_json(CORP_PATH, _corp)
     return _corp.get(stock, "")
 
+def periodic(corp, since):
+    """한 회사의 정기보고서 목록(정정 포함, since 접수부터) — 행마다 first = 같은 보고서(정정 전·후, 이름의 [정정] 앞붙임 뺀 것)의 처음 접수일"""
+    rows, page = [], 1
+    while True:
+        j = api({"crtfc_key": KEY, "corp_code": corp, "bgn_de": since, "pblntf_ty": "A", "page_count": 100, "page_no": page})
+        rows += j.get("list", [])
+        if page >= int(j.get("total_page") or 1):
+            break
+        page += 1
+    first = {}
+    for r in sorted(rows, key=lambda r: r["rcept_no"]):
+        first.setdefault(re.sub(r"^\[[^\]]*\]\s*", "", r["report_nm"]).strip(), r["rcept_no"][:8])
+    return [{**r, "first": first[re.sub(r"^\[[^\]]*\]\s*", "", r["report_nm"]).strip()]} for r in rows]

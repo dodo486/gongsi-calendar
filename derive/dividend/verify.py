@@ -27,8 +27,8 @@ def spoil(ctx, cut):
     s["rounds"] = [{**r, "dps": str(int(r["dps"] or 1) * BAD), "total": (r["total"] or 1) * BAD, "record": shift(r["record"]), "decided": shift(r["decided"]),
                     "pay": shift(r["pay"]), "fixed": False, "amount_first": True} if later(r["decided"] or r["record"]) else r for r in ctx["rounds"]]
     s["years"] = {fy: {k: x * BAD if later(quarter_end(fy, 3 if k.startswith("q3_") else 4, ctx["acc"])) else x for k, x in d.items()} for fy, d in ctx["years"].items()}
-    s["cash_flow"] = {fy: bad(d, d) if later(quarter_end(fy, 4, ctx["acc"])) else d for fy, d in ctx["cash_flow"].items()}
-    s["share_counts"] = {d: n * BAD if later(d) else n for d, n in ctx["share_counts"].items()}
+    s["share_counts"] = {d: {**x, "n": x["n"] * BAD} if later(d) else x for d, x in ctx["share_counts"].items()}
+    s["fin_reports"] = [{**r, "facts": [f[:4] + [f[4] * BAD] for f in r["facts"]]} if later(r["dt"]) else r for r in ctx["fin_reports"]]
     s["cons"] = [bad(x, ("dps", "eps", "dps_act", "eps_act", "ni", "ni_act")) if later(x["date"]) else x for x in ctx["cons"]]
     s["policies"] = [bad(p, ("lo", "hi")) if all(later(d) for d, _ in p["said"]) else p for p in ctx["policies"]]
     s["rec_notices"] = ctx["rec_notices"] + [{"date": cut, "record": cut + datetime.timedelta(days=10), "div_type": ""}]

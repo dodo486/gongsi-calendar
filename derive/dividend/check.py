@@ -20,8 +20,9 @@
 import datetime, re, sys
 from core import store
 from core.paths import save_json, load_json, stamp, DIVIDEND_CHECK_PATH, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_VERIFY_PATH, DIV_QUEUE_PATH
-from core.krx_cal import t_minus, to_date
-from derive.dividend.facts import quarter_end, SEASON_DAYS
+from core.krx_cal import t_minus, to_date, iso
+from derive.dividend import facts
+from derive.dividend.facts import quarter_end, SEASON_DAYS, ytd, quarter_only, fin
 
 METHODS = {"고정", "유동", "유동 가능", "판별 불가", "확정 기준일"}
 JARGON = re.compile(r"\bA[12]\b|\bD1[34]\b|정관 [OX]\b|앵커")
@@ -30,6 +31,8 @@ EXDIV_NEAR = 20   # 거래소 배당락 안내와 장부 회차를 짝지을 날
 UNREAD_SHOW = 10   # 점검에 낱낱이 보여줄 못 읽은 주주환원 공시 수
 CONS_GAP = 0.5   # 예상 금액이 컨센과 이만큼 넘게 다르면 경고 — 컨센은 과거 검증 전이라 순서엔 못 넣고 사람 눈으로
 MIN_HIT = {"판정 적중(고정/유동)": 93, "월물 적중": 93, "유동 기준일 ±7일 이내": 85}
+FIN_SHOW = 5   # 재무 대조에서 낱낱이 보여줄 수
+NI, EPS = "ifrs-full:ProfitLossAttributableToOwnersOfParent", "ifrs-full:BasicEarningsLossPerShare"
 MAX_AMOUNT_ERR = 20   # 결산 금액 백테스트 오차 중앙값(%)이 이보다 커지면 오류 — 금액이 나빠져도 알게(2026-11 16.7~18.3)
 
 # 사례 정답표 (설계 §5.1) — 종목코드: [(검사 이름, 함수(회사, 예상들) → bool)]
@@ -272,6 +275,32 @@ def check():
         e = (sm.get("결산 금액(12월 초)") or {}).get("전체", {}).get("오차 중앙값(%)")
         if e is None or e > MAX_AMOUNT_ERR:
             err("적중률", f"결산 금액 오차 중앙값 {e}% — 기준 {MAX_AMOUNT_ERR}% 초과")
+
+    # ── 재무제표: 같은 숫자 두 원천 대조 · 누적과 3개월이 이어지나 ──
+    eps_gap, q3_gap, q_gap, n_eps, n_q3, n_q = [], [], [], 0, 0, 0
+    for c in facts.contexts():
+        for fy, y in c["years"].items():
+            x = ytd(c, EPS, "연결", fy, 4)
+            if "eps" in y and x is not None:
+                n_eps += 1
+                if abs(x - y["eps"]) > 1:
+                    eps_gap.append(f"{c['name']}({c['code']}) {fy} 배당 표 {y['eps']:,.0f} · 재무제표 {x:,.0f}")
+            x = ytd(c, NI, "연결", fy, 3)
+            if "q3_ni" in y and x is not None:
+                n_q3 += 1
+                if abs(x / 1e6 - y["q3_ni"]) > 1:
+                    q3_gap.append(f"{c['name']}({c['code']}) {fy} 배당 표 {y['q3_ni']:,.0f} · 재무제표 {x / 1e6:,.0f}(백만원)")
+            for q in (2, 3):
+                start = iso(quarter_end(fy, q - 1, c["acc"]) + datetime.timedelta(days=1))
+                given, made = fin(c, NI, "연결", start, iso(quarter_end(fy, q, c["acc"]))), quarter_only(c, NI, "연결", fy, q)
+                if given is not None and made is not None:
+                    n_q += 1
+                    if abs(given - made) > 1e6:
+                        q_gap.append(f"{c['name']}({c['code']}) {fy} Q{q} 보고서 3개월 {given / 1e8:,.0f}억 · 누적끼리 뺀 값 {made / 1e8:,.0f}억")
+    for name, gap, n in (("연간 EPS(배당 표 ↔ 재무제표)", eps_gap, n_eps), ("3분기 누적 순이익(배당 표 ↔ 재무제표 지배)", q3_gap, n_q3),
+                         ("분기 3개월(보고서 ↔ 누적끼리 뺀 값)", q_gap, n_q)):
+        if gap:
+            warn(f"재무 대조 {name}", f"{len(gap)}/{n}건 다름 — 예: {' / '.join(gap[:FIN_SHOW])}")
 
     return errors, warns
 

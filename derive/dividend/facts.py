@@ -245,7 +245,7 @@ def contexts():
         pol[st] = latest and {**latest, "charter_hist": [{"date": p["rcept_dt"], "charter": p.get("charter") or {"결산": p["charter_text"]}}
                                                          for p in got if p.get("charter") or p.get("charter_text")]}
     acc = {s: int(m) for s, m in store.load("acc_mt").items() if str(m).isdigit()}
-    cons, alot, fin, counts = store.load("consensus"), store.load("alot"), store.load("fin"), store.load("shares")
+    cons, alot, counts, xbrl = store.load("consensus"), store.load("alot"), store.load("shares"), store.load("xbrl")
     earn = {}
     for e in earn_sched.collect(watch=stocks):
         earn.setdefault(e["code"], []).append(e)
@@ -253,9 +253,11 @@ def contexts():
     return [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)), "filed_since": since,
              "cons": [{**x, "date": to_date(x["date"])} for x in cons.get(s, [])],
              "years": _years(alot.get(s, {}).get("years", {})),
-             "cash_flow": {int(fy): d for fy, d in fin.get(s, {}).get("years", {}).items()},
-             "share_counts": {to_date(d): n for d, n in counts.get(s, {}).get("dates", {}).items()},
-             "earn": earn.get(s, [])} for s in sorted(stocks)]
+             "years_known": {int(fy): {k: to_date(dt) for k, dt in d.items()} for fy, d in alot.get(s, {}).get("known", {}).items()},
+             "share_counts": {to_date(d): {"n": x["n"], "dt": to_date(x["dt"])} for d, x in counts.get(s, {}).get("dates", {}).items()},
+             "earn": earn.get(s, []),
+             "fin_reports": sorted(({"dt": to_date(r["dt"]), "end": r["end"], "facts": r["facts"]} for r in xbrl.get(s, {}).get("reports", {}).values() if r["end"]),
+                               key=lambda r: r["dt"])} for s in sorted(stocks)]
 
 def _years(raw):
     """사업연도별 정기보고서 배당 — 3분기보고서 '주당 현금배당금'이 작년 연간과 똑같으면 한 해 밀린 값(분기·중간배당 없는 회사의 보고서가
@@ -315,6 +317,21 @@ def policy_text(rows):
     return " · ".join(out)
 
 # ── 사실 조회 — 재료(inputs)는 장부·시장 사실을 여기서만 읽는다 ──
+def fin(ctx, concept, basis, start, end):
+    """정기보고서 숫자 — (계정, 연결·별도, 시작, 끝)이 그 보고서 기간인 공시 중 가장 최근 값, 없으면 None. 시점 값(재무상태표)은 시작 ""
+    기간은 원본(XBRL) 그대로라 사업연도를 맞춰 만들지 않음 — 결산월로 찾은 기간이 원본에 없으면 None(모름)"""
+    key = [concept, basis, start, end]
+    return next((f[4] for r in reversed(ctx["fin_reports"]) for f in r["facts"] if f[:4] == key), None)
+
+def ytd(ctx, concept, basis, fy, q):
+    """사업연도 fy 의 q 분기말까지 누적 (흐름 값: 손익·현금흐름). q=4 = 연간"""
+    return fin(ctx, concept, basis, iso(quarter_end(fy - 1, 4, ctx["acc"]) + datetime.timedelta(days=1)), iso(quarter_end(fy, q, ctx["acc"])))
+
+def quarter_only(ctx, concept, basis, fy, q):
+    """그 분기 3개월 = 누적 − 직전 분기 누적 (한 곳에서만 뺌)"""
+    now, before = ytd(ctx, concept, basis, fy, q), ytd(ctx, concept, basis, fy, q - 1) if q > 1 else 0
+    return None if now is None or before is None else now - before
+
 def seen(ctx, fy, q):
     """사업연도 fy 의 q 분기 배당 결정 시기를 공시로 다 봤나 — 공시 수집 시작일(filed_since) 뒤면 회차가 없으면 정말 안 한 것"""
     return quarter_end(fy, q, ctx["acc"]) >= ctx["filed_since"]
@@ -356,7 +373,7 @@ def shares(ctx, rec):
     """기준일 rec 의 배당 받는 주식 수(자사주 빠짐, 보통+종류) → (주, 쓴 원천) — 최근 배당결정(배당금총액 ÷ 주당)과 반기·사업보고서 유통주식 수 중 더 최근 것,
     그 뒤 분할·병합·주식배당 보정, rec 전에 기간이 끝나는 자기주식 취득(−)·처분(+) 예정 수량(다 사고판다고 봄)만큼 더함. 소각은 이미 빠진 주식이라 안 봄. 모르면 0"""
     last = next((r for r in reversed(ctx["rounds"]) if r["total"] and r["dps"] and int(r["dps"])), None)
-    known = ([(last["record"], last["total"] / int(last["dps"]), f"{iso(last['decided'])} 배당결정 총액 {last['total'] / 1e8:,.0f}억 ÷ 주당 {int(last['dps']):,}원")] if last else [])         + [(d, n, f"{iso(d)} 기준 정기보고서 유통주식 수") for d, n in ctx["share_counts"].items()]
+    known = ([(last["record"], last["total"] / int(last["dps"]), f"{iso(last['decided'])} 배당결정 총액 {last['total'] / 1e8:,.0f}억 ÷ 주당 {int(last['dps']):,}원")] if last else [])         + [(d, x["n"], f"{iso(d)} 기준 정기보고서 유통주식 수") for d, x in ctx["share_counts"].items()]
     if not known:
         return 0, ""
     d, n, src = max(known, key=lambda k: k[0])

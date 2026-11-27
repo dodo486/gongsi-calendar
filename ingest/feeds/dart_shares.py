@@ -9,7 +9,7 @@ from ingest.sources.dart import api, KEY, corp_code
 
 def run():
     today = datetime.date.today()
-    asks = [(f"{today.year - 1}", "11011"), (f"{today.year}H1", "11012")]
+    asks = [(f"A{today.year - 1}", "11011"), (f"H{today.year}", "11012")]
     data, n = dict(store.load("shares")), 0
     for s in sorted(universe.div()):
         cc = corp_code(s)
@@ -17,14 +17,14 @@ def run():
             if not cc or tag in data.get(s, {}).get("asked", []):
                 continue
             try:
-                j = api({"crtfc_key": KEY, "corp_code": cc, "bsns_year": tag[:4], "reprt_code": reprt}, "stockTotqySttus", tries=2)
+                j = api({"crtfc_key": KEY, "corp_code": cc, "bsns_year": tag[1:], "reprt_code": reprt}, "stockTotqySttus", tries=2)
             except Exception as ex:
                 print(f"  [주식 수] {s} {tag} 받기 실패 — 다음에 다시: {ex}")
                 continue
             d = data.setdefault(s, {"asked": [], "dates": {}})
             row = next((r for r in j.get("list", []) if r.get("se") == "합계" and num(r.get("distb_stock_co"))), None)
             if row:
-                d["dates"][row["stlm_dt"]] = num(row["distb_stock_co"])
+                d["dates"][row["stlm_dt"]] = {"n": num(row["distb_stock_co"]), "dt": row["rcept_no"][:8]}
             if j.get("status") == "000":   # 아직 안 낸 보고서(013)는 다음에 다시
                 d["asked"].append(tag)
             n += 1

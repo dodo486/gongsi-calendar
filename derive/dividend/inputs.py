@@ -11,10 +11,10 @@ from core.paths import load_json, DIV_POLICY_PATH, DIV_CHECKED_PATH, DART_VIEW
 from core.krx_cal import to_date, iso
 from derive.dividend import facts
 from derive.dividend.facts import (GROUP, SEASON_DAYS, share_factor, paid, annual_dps, final_of, last_annual, shares, cons_of, eps_of,
-                                   quarter_end, year_steps, paid_gap, said_bases, _base, policy_sig, fact_of, policy_text)
+                                   quarter_end, year_steps, paid_gap, said_bases, _base, policy_sig, fact_of, policy_text, ytd)
 
-ANNUAL_REPORT_DAYS, HALF_REPORT_DAYS, Q3_REPORT_DAYS = 90, 45, 45   # 사업보고서 · 반기보고서 · 3분기보고서 제출 기한 — 그 뒤부터 안 값
 CASH_SHARE_YEARS = 3   # 총환원 중 현금배당 비율 = 최근 이만큼 사업연도 현금흐름표 배당금 지급 ÷ (배당금 지급 + 자기주식 취득)
+DIV_PAID, BUYBACK = "ifrs-full:DividendsPaidClassifiedAsFinancingActivities", "dart:AcquisitionOfTreasuryShares"
 
 OVERRIDE = {"올해 순이익(EPS)": ("eps",), "작년 연간 DPS": ("prev", "prev_adj"), "작년 결산 몫": ("last_final",), "올해 이미 정한 배당": ("paid",),
             "주식 수": ("shares",), "연간 컨센 DPS": ("cons_dps",), "현금 몫(총환원 중 배당)": ("share",)}   # 사람이 고칠 수 있는 재료 → 계산용 값 칸
@@ -78,15 +78,14 @@ def view(ctx, cut):
     v["treasury"] = [x for x in ctx["treasury"] if x["date"] < cut]
     v["cons"] = [x for x in ctx["cons"] if x["date"] < cut]
     v["earn"] = [e for e in ctx["earn"] if to_date(e["rcept_dt"]) < cut]
+    v["fin_reports"] = [r for r in ctx["fin_reports"] if r["dt"] < cut]
     v["statements"] = [p for p in ctx["statements"] if p["date"] < cut]
     v["policies"] = [{**p, "date": s[-1][0], "src": s[-1][1]} for p in ctx["policies"] if (s := [x for x in p["said"] if x[0] < cut])]   # 그때까지 마지막으로 말한 공시가 대표
-    v["share_counts"] = {d: n for d, n in ctx["share_counts"].items() if d + datetime.timedelta(days=ANNUAL_REPORT_DAYS if d.month == 12 else HALF_REPORT_DAYS) < cut}
-    v["cash_flow"] = {fy: d for fy, d in ctx["cash_flow"].items() if quarter_end(fy, 4, ctx["acc"]) + datetime.timedelta(days=ANNUAL_REPORT_DAYS) < cut}
+    v["share_counts"] = {d: x for d, x in ctx["share_counts"].items() if x["dt"] < cut}
     v["years"] = {}
     for fy, d in ctx["years"].items():
         for k, x in d.items():
-            q, days = (3, Q3_REPORT_DAYS) if k.startswith("q3_") else (4, ANNUAL_REPORT_DAYS)
-            if quarter_end(fy, q, ctx["acc"]) + datetime.timedelta(days=days) < cut:
+            if ctx["years_known"].get(fy, {}).get(k, datetime.date.max) < cut:
                 v["years"].setdefault(fy, {})[k] = x
     return v
 
@@ -144,10 +143,11 @@ def cash_share(ctx, fy):
         if bb and g.get("budget") and g["budget"]["lo"] > bb["lo"]:
             b = g["budget"]["lo"]
             return (b - bb["lo"]) / b, f"{iso(bb['date'])} 회사가 밝힌 총환원 {b / 1e8:,.0f}억 중 자사주 {bb['lo'] / 1e8:,.0f}억"
-    ys = [ctx["cash_flow"][y] for y in range(fy - CASH_SHARE_YEARS, fy) if "div_paid" in ctx["cash_flow"].get(y, {})]
-    if not ys or not any("buyback" in y for y in ys):
+    flow = lambda c, y: next((x for b in ("연결", "별도") if (x := ytd(ctx, c, b, y, 4)) is not None), None)   # 연결 없는 회사는 별도
+    ys = [(d, flow(BUYBACK, y)) for y in range(fy - CASH_SHARE_YEARS, fy) if (d := flow(DIV_PAID, y)) is not None]
+    if not ys or all(b is None for _, b in ys):
         return None, ""   # 배당금 지급·자기주식 취득 계정이 빠진 해·회사(금융업 등)는 모름 — 0원으로 보면 현금 0%·100%로 틀림
-    div, bb = sum(abs(y.get("div_paid", 0)) for y in ys), sum(abs(y.get("buyback", 0)) for y in ys)
+    div, bb = sum(abs(d) for d, _ in ys), sum(abs(b or 0) for _, b in ys)
     return (div / (div + bb), f"최근 {len(ys)}년 현금흐름표 배당 {div / 1e8:,.0f}억·자사주 {bb / 1e8:,.0f}억") if div + bb else (None, "")
 
 def run_dps(ctx, fy):
