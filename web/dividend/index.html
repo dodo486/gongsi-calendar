@@ -160,6 +160,16 @@ try{ Object.assign(show, JSON.parse(localStorage.getItem("div.show") || "{}")); 
 const ALT_TXT = {A1:"작년 날짜 반복", A2:"올해 주총·실적발표 기준"};
 const COND_TXT = {D13:"결산기말 전 한 달에 주총용 명부폐쇄만 있음", D14:"결산기말 전 한 달에 배당 기준일 공고 없음"};
 const CH_TXT = {O:"이사회가 기준일을 따로 정할 수 있음", X:"기준일이 결산기말로 고정"};
+const GRADE_LOOK = {   // 날짜 구분(장부 grades 키)마다 캘린더 표시 색(buy 매수일·ex 락일)·엑셀 칸 색
+  "확정": {buy:"background:#fca5a5;border:1px solid #fca5a5;color:#3a0a0a;font-weight:600", ex:"background:#dc2626;border:1px solid #dc2626;color:#fff;font-weight:600", xl:"F8CBAD"},
+  "공고": {buy:"background:#fca5a5;border:1px solid #fca5a5;color:#3a0a0a;font-weight:600", ex:"background:#dc2626;border:1px solid #dc2626;color:#fff;font-weight:600", xl:"F4B084"},
+  "미변경": {buy:"background:#eab308;border:1px solid #eab308;color:#241a00;font-weight:600", ex:"background:#eab308;border:1px solid #eab308;color:#241a00;font-weight:600", xl:"FFD966"},
+  "사례기말": {buy:"background:#fde68a;border:1px solid #fde68a;color:#241a00;font-weight:600", ex:"background:#fde68a;border:1px solid #fde68a;color:#241a00;font-weight:600", xl:"FFE699"},
+  "사례지정": {buy:"background:rgba(234,179,8,.18);border:1.5px solid #eab308;color:#fde047;font-weight:600", ex:"background:rgba(234,179,8,.18);border:1.5px solid #eab308;color:#fde047;font-weight:600", xl:"FFF2CC"},
+  "사례없음": {buy:"background:transparent;border:1.5px dashed #eab308;color:#fde047;font-weight:600", ex:"background:transparent;border:1.5px dashed #eab308;color:#fde047;font-weight:600", xl:"EDEDED"},
+  "근거약함": {buy:"background:transparent;border:1.5px dotted #a3a3a3;color:#d4d4d4;font-weight:600", ex:"background:transparent;border:1.5px dotted #a3a3a3;color:#d4d4d4;font-weight:600", xl:"D9D9D9"}
+};
+const AMOUNT_XL = {"공시":"F8CBAD", "회사정함":"FFD966", "정책계산":"FFE699", "시장추정":"FFF2CC", "과거패턴":"FFF2CC", "근거약함":"EDEDED", "없음":"D9D9D9"};   // 금액 구분(장부 amount_grades 키)마다 엑셀 칸 색
 
 let _divUp = [], _divSort = {key:"ex", dir:1};   // 기본: 배당락일 오름차순(가까운 날 먼저)
 function divRowsHtml(){                 // 정렬 상태(_divSort) 반영해 배당락 표 행 생성
@@ -295,7 +305,7 @@ function markEvents(list, kind){   // 증자·거래정지 — 생산자의 표�
 function bookEvents(){   // 배당 — 장부의 회차별 표시(날짜·제목·묶음·색)를 그대로
   return ROWS.filter(shown).flatMap((r,i)=> r.marks.filter(m=> show[m.type]).map(m=>
     ({id:`b${m.type}${i}`, title:m.title, start:m.date, allDay:true, group:m.group,
-      extendedProps:{...r, _style:BOOK.grades[r.grade].style[m.type]}})));
+      extendedProps:{...r, _style:GRADE_LOOK[r.grade][m.type]}})));
 }
 
 const GROUP_MAX = 4;   // 월 캘린더에서 같은 날 같은 종류가 이보다 많으면 요약 한 줄
@@ -350,10 +360,10 @@ function companyBlock(stock){   // 이 회사의 정관·결정기관·결산월
   h += (c.evidence||[]).map(x=>`<div class="ev">· ${esc(x)}</div>`).join("");
   return h + `</div>`;
 }
-function inputsBlock(e){   // 재료표 — 이 금액을 구한 재료와 상태(장부 rows[].inputs, 확인 목록과 같은 표)
-  if(!e.inputs || !e.inputs.length) return "";
+function inputsBlock(rows){   // 재료표 — 이 날짜·금액을 구한 재료와 상태(장부 rows[].date_inputs·amount_inputs, 금액은 확인 목록과 같은 표)
+  if(!rows || !rows.length) return "";
   return `<table class="dortab inp" style="margin-top:6px"><thead><tr><th>재료</th><th>값</th><th>상태</th><th>출처</th></tr></thead><tbody>${
-    e.inputs.map(x=>`<tr><td>${esc(x.item)}</td><td>${esc(x.value)}</td><td class="s-${esc(x.status)}">${esc(x.status)}<br><span class="src">${esc(x.check)}</span></td>
+    rows.map(x=>`<tr><td>${esc(x.item)}</td><td>${esc(x.value)}</td><td class="s-${esc(x.status)}">${esc(x.status)}<br><span class="src">${esc(x.check)}</span></td>
       <td class="src">${esc(x.src)}</td></tr>`).join("")}</tbody></table>`;
 }
 function renderQueue(){   // 확인 목록 — 사람이 볼 재료 예외만, 돈 영향 순. 판정은 /api/div_check 로 저장 → 계산 다시
@@ -450,11 +460,12 @@ function showDetail(e){
         <div class="row">💸 예상 지급일 ${esc(e.pay_date||"-")}</div>
         <div class="why"><div class="wh">🧠 예상 배당 — 추정 근거</div>
           ${stageLadder(e)}
+          ${inputsBlock(e.date_inputs)}
           <div class="ev" style="margin-top:8px">🧮 금액: ${esc(e.amount_basis||"")}</div>
           ${e.amount_cands?`<div class="ev" style="margin-top:4px">🧮 후보: ${esc(e.amount_cands)}</div>`:""}
           ${e.amount_special?`<div class="ev" style="margin-top:4px">⭐ ${esc(e.amount_special)}</div>`:""}
           ${e.amount_surprise?`<div class="ev" style="margin-top:4px">📈 ${esc(e.amount_surprise)}</div>`:""}
-          ${inputsBlock(e)}
+          ${inputsBlock(e.amount_inputs)}
           <div class="ev" style="margin-top:4px">※ 공시 기반 자동 추정 (설계: docs/배당예측-워크플로우.md). 실제 공시(④)가 나오면 빨간색(확정) 이벤트로 대체됩니다.</div>
         </div>
         ${companyBlock(e.code)}
@@ -561,8 +572,8 @@ function exportXlsx(){
   const CELL = {alignment:{vertical:"top"}, border:BOX};
   const WRAP = {alignment:{vertical:"top", wrapText:true}, border:BOX};
   const A = BOOK.amount_grades;
-  const fillOf = k => G[k] ? {fill:{fgColor:{rgb:G[k].xl}}} : {};
-  const fillOfA = k => A[k] ? {fill:{fgColor:{rgb:A[k].xl}}} : {};
+  const fillOf = k => G[k] ? {fill:{fgColor:{rgb:GRADE_LOOK[k].xl}}} : {};
+  const fillOfA = k => A[k] ? {fill:{fgColor:{rgb:AMOUNT_XL[k]}}} : {};
   const paint = (ws, fn) => {
     const r = XLSX.utils.decode_range(ws["!ref"]);
     for(let R=r.s.r; R<=r.e.r; R++) for(let C=r.s.c; C<=r.e.c; C++){
@@ -579,7 +590,7 @@ function exportXlsx(){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "배당");
   // 배당금 탭 — 금액과 그 금액을 구한 재료(장부 재료표 줄을 그대로: 값 — 쓴 원천). 계산 없음
-  const fact = (e, item) => (e.inputs || []).filter(x=> x.item === item).map(x=> x.value ? `${x.value} — ${x.src}` : `(${x.status}) ${x.src}`).join("\n");
+  const fact = (e, item) => (e.amount_inputs || []).filter(x=> x.item === item).map(x=> x.value ? `${x.value} — ${x.src}` : `(${x.status}) ${x.src}`).join("\n");
   const amt = picked.map(e=> ({
     "종목코드": "A" + e.code, "종목명": e.name, "배당종류": e.div_type || "", "회차": e.quarter || "", "배당락일(T-1)": e.ex_date,
     "주당배당금(원)": e.per_share ? Number(e.per_share) : "", "금액 구분": (A[e.amount_grade] || {}).label || "", "금액 근거": e.amount_basis || "",
@@ -705,8 +716,8 @@ async function loadData(){
   const meta = document.getElementById("meta");
   meta.textContent = `💰 배당 ${BOOK.count.div} · 💡예상 ${BOOK.count.est} · 📈 증자 ${CAP.length} · 🚫 정지 ${HALT.length}${bad}`;
   meta.style.color = bad ? "#f87171" : "";
-  document.getElementById("estLegend").innerHTML = Object.values(BOOK.grades)
-    .map(g=> `<i style="${g.style.ex}"></i>${esc(g.label)}`).join(" ");
+  document.getElementById("estLegend").innerHTML = Object.entries(BOOK.grades)
+    .map(([k, g])=> `<i style="${GRADE_LOOK[k].ex}"></i>${esc(g.label)}`).join(" ");
   applyFilters();
   if(sideMode==="today") renderDivToday();
   if(sideMode==="queue") renderQueue();

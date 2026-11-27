@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""배당 장부 — 사실(facts) → 공시 회차 + 예상 회차(date·amount)를 회차마다 한 줄로 → data/out/div_book.json
+"""배당 장부 — 재료(inputs) → 공시 회차 + 예상 회차(predict)를 회차마다 한 줄로 → data/out/div_book.json
 
 화면·엑셀·지수배당포인트·점검은 이 장부만 읽는다 — companies(회사 판정·정관·회차 이력), rows(회차별 구분·날짜·만기·금액·근거·캘린더 표시).
 기준일 공고만 있고 금액이 없는 공시 회차는 그 회차의 예상 금액을 붙인다.
@@ -8,13 +8,13 @@
   python -m derive.dividend.book
 """
 import datetime
-from core import store, universe
+from core import store
 from core.paths import save_json, load_json, stamp, DIV_BOOK_PATH, DIV_SOURCES_PATH, EXPIRIES_PATH, DART_VIEW
 from core.krx_cal import iso, ymd, days_ago, t_minus
-from derive import earn_sched
-from derive.dividend.facts import medians, contexts
-from derive.dividend.date import GRADES, TAGS, END_WORD, forecast, company_out
-from derive.dividend.inputs import policy_text
+from derive.dividend.facts import quarter_owner, pattern, paid_gap, cons_of, policy_text
+from derive.dividend.inputs import contexts, view, for_date
+from derive.dividend import predict
+from derive.dividend.date import GRADES, TAGS, END_WORD, FLOAT_FROM, judge, ladder, grade_out
 from derive.dividend.amount import AMOUNT_GRADES
 
 FILED_DAYS = 90   # 공시 회차는 최근 접수분만 (지난 회차는 companies 이력)
@@ -29,25 +29,59 @@ def _won(s):
 def _label(key, t):
     return GRADES[key]["label"].format(end=END_WORD.get(t, "기말"))
 
+def company_out(ctx, missed, today):
+    by_type, owner = quarter_owner(ctx["rounds"])
+    ev = list(missed)
+    for r in ctx["rounds"]:
+        if not r["fixed"] and r["fy"] < FLOAT_FROM[r["type"]]:
+            ev.append(f"⚠ 이상치: {r['fy']} Q{r['q']} {r['type']} 기준일 {r['record']} — 제도 시행 전인데 결산기말·분기말 아님")
+    if not ctx["acc_known"]:
+        ev.append("⚠ 결산월 조회 실패 — 12월 결산으로 가정")
+    judgments = {}
+    for t, rs in by_type.items():
+        qs = sorted(q for q, ot in owner.items() if ot == t) or [rs[-1]["q"]]
+        nq = next((x for x in qs if x > rs[-1]["q"]), None)
+        fy, q = (rs[-1]["fy"], nq) if nq else (rs[-1]["fy"] + 1, qs[0])
+        j = judge(for_date(ctx, t, fy, q)["v"])
+        judgments[t] = {"method": j["method"], "why": j["why"], **grade_out(j["grade"], t), "case": j["case"], "quarter": f"{fy} Q{q}"}
+    ladders = {f"{r['type']}|{iso(r['record'])}": ladder(for_date(view(ctx, r["decided"] or r["record"]), r["type"], r["fy"], r["q"])["v"], True)
+               for r in ctx["rounds"][-12:]}
+    return {"name": ctx["name"], "market": ctx["market"], "acc_mt": ctx["acc"], "acc_known": ctx["acc_known"],
+            "charter": {g: {"v": c["v"], "src": c["src"], "date": iso(c["date"])} for g, c in ctx["charter"].items()},
+            "charter_pending": ctx["charter_pending"], "organ": ctx["organ"], "policy_report": ctx["policy_report"],
+            "pattern": pattern(owner) if owner else "", "judgments": judgments, "ladders": ladders,
+            "rounds": [{"quarter": f"{r['fy']} Q{r['q']}", "div_type": r["type"], "decided": iso(r["decided"]),
+                        "record_date": iso(r["record"]), "quarter_end": iso(r["qe"]), "fixed": r["fixed"],
+                        "amount_first": r["amount_first"], "per_share": r["dps"], "special": r["special"], "src": r["src"],
+                        "note": r["note"], "tax_rule": r["tax_rule"]}
+                       for r in reversed(ctx["rounds"])],
+            "notices": [{"date": iso(n["date"]), "div_type": n["div_type"], "quarter": f"{n['fy']} Q{n['q']}",
+                         "hint": n["hint"], "title": n["title"]} for n in ctx["notices"]][-4:],
+            "agms": [{"date": iso(a["date"]), "kind": a["kind"], "regular": a["regular"], "charter": a["charter"]}
+                     for a in ctx["agms"]][-4:],
+            "statements": [{**x, "date": iso(x["date"]), "read": policy_text(x["rows"])} for x in ctx["statements"] if x["date"] >= today - datetime.timedelta(days=365)],
+            "policies": [{**p, "date": iso(p["date"]), "said": [[iso(d), no] for d, no in p["said"]]} for p in ctx["policies"] if p["fy"][1] >= today.year - 1],
+            "reports": {fy: {k: d[k] for k in ("dps", "q3_dps") if k in d} for fy, d in ctx["years"].items() if fy >= today.year - 1},
+            "paid_gaps": {fy: list(g) for fy in (today.year - 1, today.year) if (g := paid_gap(ctx, fy))},   # 3분기보고서 누적 ≠ 배당결정 회차 합
+            "cons_dps": {fy: c["dps"] for fy in (today.year, today.year + 1) if (c := cons_of(ctx, fy, "dps"))},
+            "exdivs": [{**x, "date": iso(x["date"])} for x in ctx["exdivs"]][-6:],
+            "suggested": [{**s, "text": policy_text([s["value"]])} for s in ctx["suggested"]],
+            "evidence": ev}
+
 
 def build():
     today = datetime.date.today()
     since = ymd(days_ago(FILED_DAYS))
     exps = sorted(e["date"] for e in load_json(EXPIRIES_PATH, {}).get("events", []))
     ctxs = contexts()
-    med = medians(ctxs)
-    earn = {}
-    for e in earn_sched.collect(watch=universe.div()):
-        earn.setdefault(e["code"], []).append(e)
+    med = predict.learn(ctxs)
 
     companies, rows = {}, []
     for c in ctxs:
         if not c["name"] and not c["charter"]:
             continue
-        preds, missed = forecast(c, today, earn.get(c["code"], []), med)
+        preds, missed = predict.upcoming(c, today, med)
         companies[c["code"]] = company_out(c, missed, today)
-        for st in companies[c["code"]]["statements"]:
-            st["read"] = policy_text(st["rows"])
         noticed = {p["record_date"]: p for p in preds if p["grade"] == "공고"}
         for f in c["filings"]:
             if f["rcept_dt"] < since:

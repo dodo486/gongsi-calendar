@@ -21,8 +21,7 @@ import datetime, re, sys
 from core import store
 from core.paths import save_json, load_json, stamp, DIVIDEND_CHECK_PATH, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_VERIFY_PATH, DIV_QUEUE_PATH
 from core.krx_cal import t_minus, to_date
-from derive.dividend.facts import quarter_end
-from derive.dividend.date import SEASON_DAYS
+from derive.dividend.facts import quarter_end, SEASON_DAYS
 
 METHODS = {"고정", "유동", "유동 가능", "판별 불가", "확정 기준일"}
 JARGON = re.compile(r"\bA[12]\b|\bD1[34]\b|정관 [OX]\b|앵커")

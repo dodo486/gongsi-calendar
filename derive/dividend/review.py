@@ -10,7 +10,6 @@
   python -m derive.dividend.review
 """
 from core.paths import save_json, load_json, stamp, DIV_BOOK_PATH, DIVPOINTS_PATH, DIV_CHECKED_PATH, DIV_QUEUE_PATH
-from derive.dividend.inputs import USES, policy_text
 
 OPEN = ("없음", "모름", "의심", "빠짐")
 
@@ -41,19 +40,19 @@ def build():
                       "src": src, "sigs": [sig] + [x for x in (old["sigs"] if old else []) if x != sig], "used": used, "impact": round(impact, 2),
                       "basis": r.get("amount_basis", ""), **({"accept": accept} if accept else {})}   # accept: 판독자 값 받기 단추가 그대로 보낼 판정·정책 줄
     for r in book.get("rows", []):
-        if r["kind"] != "est" or not r.get("inputs"):
+        if r["kind"] != "est" or not r.get("amount_inputs"):
             continue
-        uses = USES.get(r.get("amount_pick"), ())
-        for e in r["inputs"]:
+        uses = r["amount_uses"]
+        for e in r["amount_inputs"]:
             policy = e["item"].startswith("회사 정책")
             used = any(e["item"].startswith(u) for u in uses)
             if e["status"] in OPEN or (policy and used and e["check"] in ("자동", "판독자 다름")):
-                add(r, e["item"], e["value"] + (f" → 판독자: {policy_text([e['fix']])}" if "fix" in e else ""), e["status"], e["check"], e["src"], e["sig"], used,
+                add(r, e["item"], e["value"] + (f" → 판독자: {e['fix_text']}" if "fix" in e else ""), e["status"], e["check"], e["src"], e["sig"], used,
                     {"label": "판독자 값으로", "verdict": "틀림", "row": e["fix"]} if "fix" in e else None)
         for s in book["companies"].get(r["code"], {}).get("suggested", []):
             if int(r["quarter"][:4]) in range(s["value"]["fy"][0] or 0, (s["value"]["fy"][1] or 9999) + 1) and r["div_type"] == "결산배당":
                 v = s["value"]
-                add(r, "회사 정책", policy_text([v]), "빠짐", "판독자 제안", s.get("note", ""), s["sig"], True,
+                add(r, "회사 정책", s["text"], "빠짐", "판독자 제안", s.get("note", ""), s["sig"], True,
                     {"label": "빠짐 인정(정책 넣기)", "verdict": "빠짐 인정", "row": {k: v.get(k) for k in ("kind", "slot", "lo", "hi", "fy")}})
     open_rows = {i for x in items.values() if x["impact"] for i in x["rows"]}
     summary = [{"index": ix, "month": mo, "total": round(sum(p for _, p in xs), 4), "open": round(sum(p for i, p in xs if i in open_rows), 4)}

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-"""배당 사실 — 저장소 → 종목별 사실(공시 회차·분할·정관 이력·주총·예고·계획·사업연도별 EPS·배당·정책 장부). view(ctx, cut) = cut 전까지 알던 것만. 추정 없음"""
+"""배당 사실 — 저장소 → 종목별 사실(공시 회차·분할·정관 이력·주총·예고·실적발표 예정·회사 말·사업연도별 EPS·배당). 공시 원문 그대로, 사람 판정·추정 없음"""
 import datetime, calendar, statistics
 from core import store, universe
-from core.paths import load_json, DIV_POLICY_PATH, DIV_CHECKED_PATH
 from core.krx_cal import to_date, iso, ymd, days_ago, days_between
+from derive import earn_sched
 
 # ── 회차 — 배당 하나 = 종목 · 배당종류 · 사업연도 · 분기 ──
 TYPE_QUARTERS = {"분기배당": (1, 2, 3), "중간배당": (2,), "결산배당": (4,)}
+GROUP = {"결산배당": "결산", "중간배당": "분기중간", "분기배당": "분기중간"}   # 정관 기준일 표의 칸
+SEASON_DAYS = {"결산배당": 123, "중간배당": 92, "분기배당": 92}   # 결산기말·분기말 뒤 이만큼 안에 그 회차 공시가 나옴
 
 def quarter_end(fy, q, acc):
     m, y = acc - 3 * (4 - q), fy
@@ -81,9 +83,6 @@ POLICY_YEARS = 3   # 사업연도를 안 밝힌 정책 줄 = 공시한 해부터
 
 NOTICE_LOOKBACK_DAYS = 45
 SPECIAL_MULT = 2
-EARN_UP, MIN_SAMPLES = 1.1, 20   # 이익 증가 회사 배당 증가율 — 그 사업연도 전 해들에서 배움
-ANNUAL_REPORT_DAYS, HALF_REPORT_DAYS, Q3_REPORT_DAYS = 90, 45, 45   # 사업보고서 · 반기보고서 · 3분기보고서 제출 기한 — 그 뒤부터 안 값
-CASH_SHARE_YEARS = 3   # 총환원 중 현금배당 비율 = 최근 이만큼 사업연도 현금흐름표 배당금 지급 ÷ (배당금 지급 + 자기주식 취득)
 
 def spiked(prior, v):
     """튄 값인가 — 그 전 값들 중앙의 SPECIAL_MULT 배 넘음 (특별배당·일회성 이익 판정 한 곳)"""
@@ -194,30 +193,6 @@ def context(stock, entries, policy, acc, agm_records):
             "agm_records": sorted(agm_records or []), "charter": charter, "charter_since": since, "charter_pending": pending, "splits": splits,
             "organ": (policy or {}).get("organ") or {}, "policy_report": (policy or {}).get("title", "")}
 
-def view(ctx, cut):
-    """cut 이전에 공시된 것만 남긴 ctx — 검증·확정 회차 사다리용"""
-    v = dict(ctx)
-    v["rounds"] = [r for r in ctx["rounds"] if (r["decided"] or r["record"]) < cut]
-    v["rec_notices"] = [n for n in ctx["rec_notices"] if n["date"] < cut]
-    v["notices"] = [n for n in ctx["notices"] if n["date"] < cut]
-    v["agms"] = [a for a in ctx["agms"] if a["rcept"] < cut]
-    v["agm_records"] = [d for d in ctx["agm_records"] if d < cut]
-    v["charter_since"] = {g: d for g, d in ctx["charter_since"].items() if d < cut}
-    v["splits"] = [x for x in ctx["splits"] if x["date"] < cut]
-    v["treasury"] = [x for x in ctx["treasury"] if x["date"] < cut]
-    v["cons"] = [x for x in ctx["cons"] if x["date"] < cut]
-    v["statements"] = [p for p in ctx["statements"] if p["date"] < cut]
-    v["policies"] = [{**p, "date": s[-1][0], "src": s[-1][1]} for p in ctx["policies"] if (s := [x for x in p["said"] if x[0] < cut])]   # 그때까지 마지막으로 말한 공시가 대표
-    v["share_counts"] = {d: n for d, n in ctx["share_counts"].items() if d + datetime.timedelta(days=ANNUAL_REPORT_DAYS if d.month == 12 else HALF_REPORT_DAYS) < cut}
-    v["cash_flow"] = {fy: d for fy, d in ctx["cash_flow"].items() if quarter_end(fy, 4, ctx["acc"]) + datetime.timedelta(days=ANNUAL_REPORT_DAYS) < cut}
-    v["years"] = {}
-    for fy, d in ctx["years"].items():
-        for k, x in d.items():
-            q, days = (3, Q3_REPORT_DAYS) if k.startswith("q3_") else (4, ANNUAL_REPORT_DAYS)
-            if quarter_end(fy, q, ctx["acc"]) + datetime.timedelta(days=days) < cut:
-                v["years"].setdefault(fy, {})[k] = x
-    return v
-
 def quarter_owner(rounds):
     """분기 → 그 분기를 맡는 배당 종류 (분기·중간이 겹치면 최근 회차가 있는 쪽)"""
     by_type = {}
@@ -250,43 +225,6 @@ def year_steps(ctx):
             out.append((r["fy"], int(r["dps"]) * share_factor(ctx["splits"], last["record"], r["record"]) / int(last["dps"])))
     return out
 
-def medians(ctxs):
-    """수집대상 전체 실측 중앙값 — 이력 없는 회사용 기본 오프셋, 이익 증가 회사의 결산 배당 증가율·분기배당 새해 인상(사업연도별, 그 전 해들만)"""
-    acc = {"qe": {}, "dec": {}, "pay": {}, "agm": []}
-    for c in ctxs:
-        agm_by_fy = {a["fy"]: a["date"] for a in c["agms"] if a["regular"]}
-        for r in c["rounds"]:
-            t = r["type"]
-            if r["pay"]:
-                acc["pay"].setdefault(t, []).append((r["pay"] - r["record"]).days)
-            if r["fixed"]:
-                continue
-            acc["qe"].setdefault(t, []).append((r["record"] - r["qe"]).days)
-            if r["decided"] and r["decided"] < r["record"]:
-                acc["dec"].setdefault(t, []).append((r["record"] - r["decided"]).days)
-            if t == "결산배당" and r["fy"] in agm_by_fy:
-                acc["agm"].append((r["record"] - agm_by_fy[r["fy"]]).days)
-    md = lambda xs, dflt: int(statistics.median(xs)) if xs else dflt
-    up = []   # (사업연도, 결산 몫 ÷ 작년 결산 몫) — 3분기 누적 EPS 가 작년보다 EARN_UP 배 이상 늘었던 회사
-    for c in ctxs:
-        y = c["years"]
-        for fy, d in y.items():
-            p = y.get(fy - 1, {})
-            fin, pfin = final_of(c, fy), final_of(c, fy - 1)
-            if fin and pfin and d.get("q3_eps", 0) > 0 and p.get("q3_eps", 0) > 0 and d["q3_eps"] >= EARN_UP * p["q3_eps"]:
-                up.append((fy, fin / pfin))
-    fys = {fy for fy, _ in up}
-    steps = [s for c in ctxs for s in year_steps(c)]
-    sfys = {fy for fy, _ in steps}
-    return {"qe": {t: md(acc["qe"].get(t), 60 if t == "결산배당" else 45) for t in TYPE_QUARTERS},
-            "dec": {t: md(acc["dec"].get(t), 21) for t in TYPE_QUARTERS},
-            "pay": {t: md(acc["pay"].get(t), 30) for t in TYPE_QUARTERS},
-            "agm": md(acc["agm"], 7),
-            "dps_up": {fy: statistics.median(xs) for fy in range(min(fys, default=0) + 1, max(fys, default=0) + 2)
-                       if len(xs := [r for f, r in up if f < fy]) >= MIN_SAMPLES},
-            "q_step": {fy: statistics.median(xs) for fy in range(min(sfys, default=0) + 1, max(sfys, default=0) + 2)
-                       if len(xs := [r for f, r in steps if f < fy]) >= MIN_SAMPLES}}
-
 def contexts():
     """저장소 → 배당 대상 종목마다 사실 묶음"""
     stocks = universe.div()
@@ -308,53 +246,16 @@ def contexts():
                                                          for p in got if p.get("charter") or p.get("charter_text")]}
     acc = {s: int(m) for s, m in store.load("acc_mt").items() if str(m).isdigit()}
     cons, alot, fin, counts = store.load("consensus"), store.load("alot"), store.load("fin"), store.load("shares")
-    human = {}
-    for p in load_json(DIV_POLICY_PATH, {}).get("rows", []):
-        human.setdefault(p["code"], []).append({**p, "date": to_date(p["date"])})
-    checked = {}   # 회사 → {"사람": {열쇠: 판정}, "판독자": {열쇠: [공시마다 판정]}}
-    for d in load_json(DIV_CHECKED_PATH, {}).get("decisions", []):
-        who = checked.setdefault(d["code"], {"사람": {}, "판독자": {}})
-        if d["by"] == "사람":
-            who["사람"][d["sig"]] = d
-        else:
-            who["판독자"].setdefault(d["sig"], []).append(d)
+    earn = {}
+    for e in earn_sched.collect(watch=stocks):
+        earn.setdefault(e["code"], []).append(e)
     since = to_date(min((e["rcept_dt"] for e in store.load("decision").values()), default="99991231"))
-    out = [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)), "filed_since": since,
+    return [{**context(s, by.get(s, []), pol.get(s), acc.get(s), agm_records.get(s)), "filed_since": since,
              "cons": [{**x, "date": to_date(x["date"])} for x in cons.get(s, [])],
              "years": _years(alot.get(s, {}).get("years", {})),
              "cash_flow": {int(fy): d for fy, d in fin.get(s, {}).get("years", {}).items()},
-             "share_counts": {to_date(d): n for d, n in counts.get(s, {}).get("dates", {}).items()}} for s in sorted(stocks)]
-    for c in out:   # 정책 목록 = 정책 사실(같은 내용은 여러 공시가 말해도 한 줄, 출처 srcs) − 사람이 틀림 판정한 사실 + 사람 줄
-        facts_ = {}
-        sts = sorted(c["statements"], key=lambda st: (st["date"], st["rcept_no"]))   # 같은 날이면 접수번호 뒤(정정)가 나중
-        said = said_bases([r for st in sts for r in st["rows"]] + human.get(c["code"], []))
-        for st in sts:
-            for r in st["rows"]:
-                f = fact_of(r, st["date"])
-                if not f:
-                    continue
-                p = {**f, "base": _base(r, said), "date": st["date"], "src": st["rcept_no"], "title": st["title"], "by": "공시 자동"}
-                sig = policy_sig(p)
-                old = facts_.pop(sig, {})   # 같은 사실은 가장 최근 공시가 대표, 말한 공시는 모두 said(날짜·접수번호) — 검증은 그때까지 말한 것만(view)
-                facts_[sig] = {**p, "sig": sig, "said": old.get("said", []) + [(st["date"], st["rcept_no"])]}
-        mine = checked.get(c["code"], {"사람": {}, "판독자": {}})
-        man, bot = mine["사람"], mine["판독자"]
-        rows = []
-        for p in list(facts_.values()) + [{**p, "base": _base(p, said), "sig": policy_sig({**p, "base": _base(p, said)}), "said": [(p["date"], p["src"])]} for p in human.get(c["code"], [])]:
-            if man.get(p["sig"], {}).get("verdict") == "틀림":
-                continue
-            reads = bot.get(p["sig"], [])   # 판독자는 공시마다 판정 — 한 공시라도 맞음·빠짐(판독자도 읽은 사실)이면 확인됨, 전부 틀림이어야 다름
-            check = ("사람 확인" if p["sig"] in man or p["by"].startswith("사람") else "판독자 확인" if any(d["verdict"] in ("맞음", "빠짐") for d in reads)
-                     else "판독자 다름" if reads else "자동")
-            fix = next((d["value"] for d in reads if "value" in d), None) if check == "판독자 다름" else None
-            rows.append({**p, "check": check, **({"fix": fix} if fix else {})})
-        c["policies"] = sorted(rows, key=lambda p: (p["date"], p["src"]))
-        have = {p["sig"] for p in rows} | set(man)
-        c["suggested"] = list({sig: ds[0] for sig, ds in bot.items() if sig not in have and all(d["verdict"] == "빠짐" for d in ds)}.values())   # 판독자만 읽은 사실
-        c["human_sigs"] = set(man)
-        c["overrides"] = {(d["fy"], d["item"]): float(d["value"]) for d in man.values()
-                          if d["verdict"] == "틀림" and "value" in d and not d["item"].startswith("회사 정책")}   # 사람이 고친 재료 값
-    return out
+             "share_counts": {to_date(d): n for d, n in counts.get(s, {}).get("dates", {}).items()},
+             "earn": earn.get(s, [])} for s in sorted(stocks)]
 
 def _years(raw):
     """사업연도별 정기보고서 배당 — 3분기보고서 '주당 현금배당금'이 작년 연간과 똑같으면 한 해 밀린 값(분기·중간배당 없는 회사의 보고서가
@@ -394,7 +295,26 @@ def _fys(fy, date):
     a = fy[0] or date.year
     return [a, fy[1] or a + POLICY_YEARS - 1]
 
-# ── 사실 조회 — 계산(amount·date·verify)은 장부·정책·시장 사실을 여기서만 읽는다 ──
+def policy_text(rows):
+    """정책 줄 → 사람이 읽는 한 줄 (재료표·확인 목록·참고 공시 탭·화면)"""
+    unit = {"dps": "원", "cash": "원", "budget": "원", "buyback": "원", "payout": "%", "return": "%"}
+    name = {"dps": "주당", "cash": "현금배당 총액", "budget": "총주주환원(자사주 포함)", "buyback": "자사주 매입",
+            "payout": "배당성향", "return": "총주주환원율(자사주 포함)"}
+    out = []
+    for r in rows or []:
+        if r["kind"] == "high_div":
+            out.append(f"고배당기업 {'해당' if r['on'] else '미해당'}")
+            continue
+        v = lambda x: (f"{x:,g}" if unit[r["kind"]] == "%" or r["kind"] == "dps" else f"{x / 1e12:,g}조" if x >= 1e12 else f"{x / 1e8:,.0f}억") + unit[r["kind"]]
+        rng = (f"{v(r['lo'])}" if r["lo"] == r["hi"] else f"{v(r['lo'])} 이상" if r["hi"] is None else f"{v(r['hi'])} 이하" if r["lo"] is None
+               else f"{v(r['lo'])}~{v(r['hi'])}")
+        fy = r["fy"] if isinstance(r["fy"], list) else [None, None]
+        total = r.get("total") and f" ({fy[1] - fy[0] + 1}년 합 {v(r['total'][0] or r['total'][1])} ÷ {fy[1] - fy[0] + 1})"
+        out.append(f"{'' if r['slot'] == '연간' else r['slot'] + ' '}{name[r['kind']]} {rng}{total or ''}"
+                   + ("" if not any(fy) else f" ({fy[0]})" if fy[0] == fy[1] else f" ({fy[0] or ''}~{fy[1] or ''})"))
+    return " · ".join(out)
+
+# ── 사실 조회 — 재료(inputs)는 장부·시장 사실을 여기서만 읽는다 ──
 def seen(ctx, fy, q):
     """사업연도 fy 의 q 분기 배당 결정 시기를 공시로 다 봤나 — 공시 수집 시작일(filed_since) 뒤면 회차가 없으면 정말 안 한 것"""
     return quarter_end(fy, q, ctx["acc"]) >= ctx["filed_since"]
@@ -446,27 +366,6 @@ def shares(ctx, rec):
             f"{n / 1e8:,.2f}억주({src})" + (f" × 분할·병합 {k:g}" if k != 1 else "")
             + "".join(f" {'+' if x['delta'] > 0 else '−'} 자사주 {abs(x['delta']):,.0f}주({iso(x['date'])} {'처분' if x['delta'] > 0 else '취득'})" for x in moves))
 
-def cash_share(ctx, fy):
-    """총주주환원(배당 + 자사주) 중 현금배당 비율 → (비율, 근거). 한 공시 안에서 그해 현금·자사주(또는 총환원·자사주) 금액을 나눠 밝혔으면
-    그 비율(가장 최근 공시, 자사주는 처음 나온 금액 — 뒤 금액은 그 안의 나눔일 수 있음), 아니면 최근 CASH_SHARE_YEARS 사업연도
-    현금흐름표(배당금 지급 ÷ (배당금 지급 + 자기주식 취득)). 모르면 (None, "")"""
-    by_src = {}
-    for p in ctx["policies"]:
-        if p["fy"][0] <= fy <= p["fy"][1] and p["kind"] in ("cash", "budget", "buyback") and p["slot"] == "연간" and p["lo"]:
-            by_src.setdefault(p["src"], {}).setdefault(p["kind"], p)
-    for g in sorted(by_src.values(), key=lambda g: max(p["date"] for p in g.values()), reverse=True):
-        bb = g.get("buyback")
-        if bb and g.get("cash"):
-            return g["cash"]["lo"] / (g["cash"]["lo"] + bb["lo"]), f"{iso(bb['date'])} 회사가 밝힌 {fy} 현금 {g['cash']['lo'] / 1e8:,.0f}억·자사주 {bb['lo'] / 1e8:,.0f}억"
-        if bb and g.get("budget") and g["budget"]["lo"] > bb["lo"]:
-            b = g["budget"]["lo"]
-            return (b - bb["lo"]) / b, f"{iso(bb['date'])} 회사가 밝힌 총환원 {b / 1e8:,.0f}억 중 자사주 {bb['lo'] / 1e8:,.0f}억"
-    ys = [ctx["cash_flow"][y] for y in range(fy - CASH_SHARE_YEARS, fy) if "div_paid" in ctx["cash_flow"].get(y, {})]
-    if not ys or not any("buyback" in y for y in ys):
-        return None, ""   # 배당금 지급·자기주식 취득 계정이 빠진 해·회사(금융업 등)는 모름 — 0원으로 보면 현금 0%·100%로 틀림
-    div, bb = sum(abs(y.get("div_paid", 0)) for y in ys), sum(abs(y.get("buyback", 0)) for y in ys)
-    return (div / (div + bb), f"최근 {len(ys)}년 현금흐름표 배당 {div / 1e8:,.0f}억·자사주 {bb / 1e8:,.0f}억") if div + bb else (None, "")
-
 def cons_of(ctx, fy, key):
     """사업연도 fy 의 최신 네이버 연간 컨센(key: dps·eps) — 네이버 연도 = 사업연도인 12월 결산만"""
     return next((x for x in reversed(ctx["cons"]) if x.get("fy") == str(fy) and x.get(key)), None) if int(ctx["acc"]) == 12 else None
@@ -476,19 +375,3 @@ def eps_of(ctx, fy):
     a, c, q3 = cons_of(ctx, fy, "eps_act"), cons_of(ctx, fy, "eps"), ctx["years"].get(fy, {}).get("q3_eps", 0)
     return ((a["eps_act"], f"{iso(a['date'])} 네이버 실적 발표 EPS {a['eps_act']:,}원") if a else (c["eps"], f"{iso(c['date'])} 네이버 컨센 EPS {c['eps']:,}원") if c
             else (q3 * 4 / 3, f"{fy} 3분기보고서 누적 EPS {q3:,.0f}원 × 4/3") if q3 > 0 else (0, ""))
-
-def policy(ctx, fy):
-    """사업연도 fy 에 걸린 정책 줄 {(kind, slot, base): 줄} — 같은 칸은 사람 줄이 이기고, 그다음 최근 공시(같은 날이면 접수번호 뒤 = 정정).
-    상한만 있는 줄("최대 배당성향 40%", "총 주주환원 최대 5천억")은 수준이 아니라 칸을 다투지 않음 — 현금배당 총액만 상한이 범위로 쓰임, 고배당 표는 숫자 없음"""
-    rows = sorted((p for p in ctx["policies"] if p["fy"][0] <= fy <= p["fy"][1] and (p["kind"] in ("cash", "high_div") or p.get("lo") is not None)),
-                  key=lambda p: (p["by"].startswith("사람"), p["date"], p["src"]))
-    return {(p["kind"], p["slot"], p["base"]): p for p in rows}
-
-def evidence(ctx, fy):
-    """이 사업연도에 결산배당이 있다고 볼 근거(문장) — 작년 결산배당, 회사 정책, 연간 컨센 DPS. 없으면 """""
-    last, pol, c = final_of(ctx, fy - 1), policy(ctx, fy), cons_of(ctx, fy, "dps")
-    p = max(pol.values(), key=lambda p: p["date"]) if pol else None
-    po = ctx["years"].get(fy - 1, {}).get("payout", 0)
-    return (f"작년({fy - 1}) 결산배당 {last:,}원" if last else f"작년({fy - 1}) 배당함(연간 {annual_dps(ctx, fy - 1):,.0f}원 · 배당성향 {po:g}%)"
-            if last is None and (annual_dps(ctx, fy - 1) or po > 0)
-            else f"{iso(p['date'])} {p['title']}" if p else f"{iso(c['date'])} 연간 컨센 DPS {c['dps']:,}원" if c else "")

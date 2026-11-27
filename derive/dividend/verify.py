@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """배당 검증 — 과거 회차마다 공시 직전 사실(view)로 같은 추정을 돌려 날짜·구분·금액(분기·중간) 적중률.
-결산배당은 사업연도마다 12월 초(결산기말 EVAL_DAYS 전) 시점 사실로 장부와 같은 예측(forecast)을 돌려 실제 결산 몫과 비교 — 예측 건이 안 나오면 놓침.
+결산배당은 사업연도마다 12월 초(결산기말 EVAL_DAYS 전) 시점 사실로 장부와 같은 예측(predict.upcoming)을 돌려 실제 결산 몫과 비교 — 예측 건이 안 나오면 놓침.
 금액은 장부와 같은 고르기(amount.pick)로 신호 값에서 고른다. 설계 정본 docs/배당예측-워크플로우.md §5
 
   python -m derive.dividend.verify   → data/out/div_verify.json
@@ -8,11 +8,13 @@
 import json, datetime, statistics
 from core.paths import save_json, load_json, stamp, DIV_VERIFY_PATH, EXPIRIES_PATH
 from core.krx_cal import t_minus, to_date, iso
-from derive.dividend.facts import view, medians, contexts, quarter_end, final_of, spiked
+from derive.dividend.facts import quarter_end, final_of, spiked, GROUP
+from derive.dividend.inputs import contexts, view
+from derive.dividend import predict
+from derive.dividend.date import GRADES
+from derive.dividend import amount
 
 EVAL_DAYS = 30
-from derive.dividend.date import GRADES, GROUP, predict_round, forecast
-from derive.dividend import amount
 
 def amount_hits(xs):
     """예상 금액 적중 — 정확히 같음 · ±5% · ±20% · 오차 중앙값 (특별배당 섞인 실제 회차는 따로 셈)"""
@@ -27,7 +29,7 @@ def amount_hits(xs):
 def verify():
     today = datetime.date.today()
     ctxs = contexts()
-    med = medians(ctxs)
+    med = predict.learn(ctxs)
     exps = sorted(to_date(e["date"]) for e in load_json(EXPIRIES_PATH, {}).get("events", []) if e.get("type") == "선·옵 동시만기")
     month = lambda ex: next((x for x in exps if x >= ex), None)
     rows = []
@@ -37,7 +39,7 @@ def verify():
                 continue
             cut = min([r["decided"]] + [n["date"] for n in c["rec_notices"] if n["record"] == r["record"]])
             v = view(c, cut)
-            p, miss = predict_round(v, r["type"], r["fy"], r["q"], cut, [], med)
+            p, miss = predict.one(v, r["type"], r["fy"], r["q"], cut, med)
             base = {"code": c["code"], "name": c["name"], "type": r["type"], "quarter": f"{r['fy']} Q{r['q']}",
                     "actual_record": iso(r["record"]), "actual_fixed": r["fixed"]}
             if p is None:
@@ -61,7 +63,7 @@ def verify():
             known = any(r["type"] == "결산배당" and r["fy"] == fy and r["decided"] and r["decided"] < cut for r in c["rounds"])
             if cut + datetime.timedelta(days=EVAL_DAYS) >= today or known or fy - 1 not in c["years"]:
                 continue   # 아직 안 끝난 해, 12월 초 전에 이미 공시한 결산, 작년 사업보고서가 없는 첫 해는 예측 대상이 아님
-            e = next((p for p in forecast(view(c, cut), cut, [], med)[0] if p["div_type"] == "결산배당" and p["fy"] == fy), None)
+            e = next((p for p in predict.upcoming(view(c, cut), cut, med)[0] if p["div_type"] == "결산배당" and p["fy"] == fy), None)
             if not e:
                 missed.append({"code": c["code"], "name": c["name"], "fy": fy, "actual_dps": act})
                 continue
@@ -106,7 +108,7 @@ def verify():
                                      "그중 실제 특별": sum(x["special_hint"] and x["actual_special"] for x in finals),
                                      "꺼진 회차 중 실제 특별": sum(not x["special_hint"] and x["actual_special"] for x in finals)},
         "결산 표본 사업연도": {fy: sum(x["fy"] == fy for x in finals) for fy in sorted({x["fy"] for x in finals})},
-        "한계": "정관(정기보고서 표)은 최신값 사용 — 과거 시점 값이 아님. 실적발표 예정일 과거분 없음 → 백테스트에서 A2 이사회형 미사용",
+        "한계": "정관(정기보고서 표)은 최신값 사용 — 과거 시점 값이 아님. 실적발표 예정일은 최근 수집분만 → 백테스트에서 A2 이사회형은 거의 안 쓰임",
     }
     save_json(DIV_VERIFY_PATH, {"generated_at": stamp(), "summary": summary, "rows": rows, "finals": finals, "missed": missed})
     print(json.dumps(summary, ensure_ascii=False, indent=1))
