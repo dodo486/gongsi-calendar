@@ -46,7 +46,7 @@ except Exception:
 #   get(이름, {피드: 코드들})            최신값 — 처음 묻는 종목만 그 자리에서 받고, 그 뒤로는 허브가 갱신
 #   stats()                             관제탑용 — 피드별·구독자별로 언제 몇 개 받았나
 # 피드 이름 = 거래소 상품 자료. 관제탑도 이 이름을 그대로 쓴다.
-KRX_STOCK, KRX_FUT, NXT_STOCK = "KRX 주식 시세", "KRX 주식선물 시세", "NXT 주식 시세"
+KRX_STOCK, KRX_FUT, NXT_STOCK, UN_STOCK = "KRX 주식 시세", "KRX 주식선물 시세", "NXT 주식 시세", "통합 주식 시세"   # 통합 = KRX+NXT, 거래량·거래대금이 두 시장 합
 KRX_STATUS, KRX_INDEX, KRX_BOOK = "KRX 주식 상태", "KRX 지수 시세", "KRX 주식 호가"
 PRE, OPEN_AUCTION, REGULAR, AUCTION, FUT_CLOSE, AFTER = "NXT 프리마켓", "개장 동시호가", "정규장", "마감 동시호가", "선물 마감까지", "NXT 애프터마켓"
 KRX_OPEN, AUCTION_START, KRX_CLOSE = "0900", "1520", "1530"   # 평소 KRX 개장·마감 동시호가 시작·마감
@@ -60,12 +60,12 @@ PHASES = [
 ]
 ONCE = float("inf")
 SCHEDULE = {   # 시간대: {피드: 받는 주기(초)} — 0 매 바퀴, ONCE 시간대에 들어와서 한 번
-    PRE: {NXT_STOCK: 0},
-    OPEN_AUCTION: {KRX_STOCK: 0, KRX_FUT: 0, NXT_STOCK: 0},
-    REGULAR: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300},
-    AUCTION: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300, KRX_BOOK: 10},
-    FUT_CLOSE: {KRX_STOCK: ONCE, KRX_INDEX: ONCE, KRX_FUT: 0, NXT_STOCK: 0},
-    AFTER: {KRX_FUT: ONCE, NXT_STOCK: 300},
+    PRE: {NXT_STOCK: 0, UN_STOCK: 0},
+    OPEN_AUCTION: {KRX_STOCK: 0, KRX_FUT: 0, NXT_STOCK: 0, UN_STOCK: 0},
+    REGULAR: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300, UN_STOCK: 0},
+    AUCTION: {KRX_STOCK: 0, KRX_FUT: 0, KRX_INDEX: 0, KRX_STATUS: 300, KRX_BOOK: 10, UN_STOCK: 0},
+    FUT_CLOSE: {KRX_STOCK: ONCE, KRX_INDEX: ONCE, KRX_FUT: 0, NXT_STOCK: 0, UN_STOCK: 0},
+    AFTER: {KRX_FUT: ONCE, NXT_STOCK: 300, UN_STOCK: 300},
 }
 ROUND_SECONDS = 1   # 한 바퀴 최소 간격
 CALENDAR_SECONDS = 86400   # KIS 휴장일 달력 — KIS 권장 하루 1회
@@ -85,6 +85,7 @@ _FETCH = {   # 피드: 받는 법({피드: 코드들} → {피드: {코드: 값}
     KRX_STOCK: _krx_multi,
     KRX_FUT: _krx_multi,
     NXT_STOCK: lambda due: {NXT_STOCK: md.multi_quote(due[NXT_STOCK], venue="NXT")["stock"]},
+    UN_STOCK: lambda due: {UN_STOCK: md.multi_quote(due[UN_STOCK], venue="UN")["stock"]},
     KRX_STATUS: lambda due: {KRX_STATUS: md.quote(due[KRX_STATUS])},
     KRX_BOOK: lambda due: {KRX_BOOK: md.orderbook(due[KRX_BOOK], "KRX")},
     KRX_INDEX: lambda due: {KRX_INDEX: {c: md.index_rate(c) for c in due[KRX_INDEX]}},

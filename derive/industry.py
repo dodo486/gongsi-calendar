@@ -11,7 +11,7 @@
 한 묶음 2종목+ +5% 날 덜 오른 멤버의 다음 날 시장 대비 +0.08% (무작위 묶음 -0.04%).
 
 오늘 (data/out/industry_action.json): 묶음 종목을 시세 허브에 구독해 허브가 받을 때마다 묶음·세부 테마별
-거래대금 합, 평균 등락, 상승 비율, 대장주(거래대금 1위). 등락률은 전일 종가 대비 — 시세는 SOURCE.
+거래대금 합, 평균 등락, 상승 비율, 대장주(거래대금 1위). 등락률은 전일 종가 대비 — 시세는 SOURCE. 거래대금은 통합(KRX+NXT) 시세.
 시장 조합(MARKETS)마다 그 시장 종목만 남기고 집계한다(scopes) — 묶음 자체는 시장과 무관.
 네이버 소속표 원본은 날마다 data/cache/theme_snapshots/YYYYMMDD.json 으로 남긴다(사후 편입 없는 재검증용).
 
@@ -152,7 +152,7 @@ def subscribe():
     names = {r["code"]: {"code": r["code"], "name": r["name"], "market": r.get("market", "")}
              for r in md_feed.market_snapshot() if r["code"] in set(codes)}
     _now.update(groups=g, names=names, day=datetime.date.today())
-    feeds = {md_feed.KRX_STOCK: codes, md_feed.NXT_STOCK: codes}
+    feeds = {md_feed.KRX_STOCK: codes, md_feed.NXT_STOCK: codes, md_feed.UN_STOCK: codes}
     md_feed.watch("인더스트리", lambda phase, now: build_action(phase), feeds)
     return feeds
 
@@ -174,7 +174,8 @@ def _action(groups, snap):
 def build_action(phase):
     g, names = _now["groups"], _now["names"]
     feed = SOURCE.get(phase, md_feed.KRX_STOCK)
-    snap = {c: {**names[c], "rate": pct(q["price"], q.get("prev_close")), "value": q.get("value")}
+    un = md_feed.latest(md_feed.UN_STOCK)
+    snap = {c: {**names[c], "rate": pct(q["price"], q.get("prev_close")), "value": un.get(c, {}).get("value")}
             for c, q in md_feed.latest(feed).items() if c in names and q.get("price")}
     scopes = {"+".join(ms): _action(g["groups"], {c: s for c, s in snap.items() if s["market"] in ms})
               for n in range(1, len(MARKETS) + 1) for ms in combinations(MARKETS, n)}
