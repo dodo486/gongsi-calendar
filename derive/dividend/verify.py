@@ -15,6 +15,45 @@ from derive.dividend.date import GRADES
 from derive.dividend import amount
 
 EVAL_DAYS = 30
+LEAK_YEARS = 5   # 미래 오염 시험 — 최근 이만큼 해의 6월 초(분기·중간)·12월 초(결산)
+BAD = 1000
+
+def spoil(ctx, cut):
+    """cut 날부터 일어난 일(사건 날짜 기준)을 전부 엉터리로 — 예측이 하나라도 바뀌면 미래가 섞인 것"""
+    later = lambda d: d is not None and d >= cut
+    bad = lambda d, keys: {**d, **{k: d[k] * BAD for k in keys if isinstance(d.get(k), (int, float))}}
+    s = dict(ctx)
+    shift = lambda d: d and d + datetime.timedelta(days=17)
+    s["rounds"] = [{**r, "dps": str(int(r["dps"] or 1) * BAD), "total": (r["total"] or 1) * BAD, "record": shift(r["record"]), "decided": shift(r["decided"]),
+                    "pay": shift(r["pay"]), "fixed": False, "amount_first": True} if later(r["decided"] or r["record"]) else r for r in ctx["rounds"]]
+    s["years"] = {fy: {k: x * BAD if later(quarter_end(fy, 3 if k.startswith("q3_") else 4, ctx["acc"])) else x for k, x in d.items()} for fy, d in ctx["years"].items()}
+    s["cash_flow"] = {fy: bad(d, d) if later(quarter_end(fy, 4, ctx["acc"])) else d for fy, d in ctx["cash_flow"].items()}
+    s["share_counts"] = {d: n * BAD if later(d) else n for d, n in ctx["share_counts"].items()}
+    s["cons"] = [bad(x, ("dps", "eps", "dps_act", "eps_act", "ni", "ni_act")) if later(x["date"]) else x for x in ctx["cons"]]
+    s["policies"] = [bad(p, ("lo", "hi")) if all(later(d) for d, _ in p["said"]) else p for p in ctx["policies"]]
+    s["rec_notices"] = ctx["rec_notices"] + [{"date": cut, "record": cut + datetime.timedelta(days=10), "div_type": ""}]
+    s["notices"] = ctx["notices"] + [{"date": cut, "div_type": "결산배당", "fy": cut.year, "q": 4, "hint": "", "title": "오염", "rcept_no": "0"}]
+    s["earn"] = ctx["earn"] + [{"rcept_dt": cut.strftime("%Y%m%d"), "expected_date": iso(cut + datetime.timedelta(days=20)), "src": "IR"}]
+    s["agms"] = ctx["agms"] + [{"date": cut + datetime.timedelta(days=30), "kind": "agm_result", "rcept": cut, "charter": {"결산": "O", "분기중간": "O"},
+                                "regular": True, "rejected": False, "fy": cut.year}]
+    s["agm_records"] = ctx["agm_records"] + [cut]
+    s["treasury"] = ctx["treasury"] + [{"date": cut, "delta": -10 ** 9, "end": cut + datetime.timedelta(days=5)}]
+    s["splits"] = ctx["splits"] + [{"date": cut, "effective": cut + datetime.timedelta(days=1), "factor": 10.0}]
+    s["charter_since"] = {**{g: cut for g in GROUP.values()}, **ctx["charter_since"]}
+    return s
+
+def leak_test(ctxs, today):
+    """앞으로 올 배당 예측을 원래 사실과 오염된 사실로 두 번 — 다른 예측 목록"""
+    out = []
+    for cut in [datetime.date(y, m, 1) for y in range(today.year - LEAK_YEARS, today.year) for m in (6, 12)]:
+        spoiled = [spoil(c, cut) for c in ctxs]
+        med, med_s = predict.learn(ctxs, cut), predict.learn(spoiled, cut)
+        for c, s in zip(ctxs, spoiled):
+            a, b = (sorted((p["div_type"], p["quarter"], p["record_date"], p["per_share"]) for p in predict.upcoming(view(x, cut), cut, m)[0])
+                    for x, m in ((c, med), (s, med_s)))
+            if a != b:
+                out.append({"cut": iso(cut), "code": c["code"], "name": c["name"], "원래": a, "오염": b})
+    return out
 
 def amount_hits(xs):
     """예상 금액 적중 — 정확히 같음 · ±5% · ±20% · 오차 중앙값 (특별배당 섞인 실제 회차는 따로 셈)"""
@@ -29,9 +68,11 @@ def amount_hits(xs):
 def verify():
     today = datetime.date.today()
     ctxs = contexts()
-    med = predict.learn(ctxs)
+    learned = {}
+    med = lambda cut: learned.get(cut) or learned.setdefault(cut, predict.learn(ctxs, cut))
     exps = sorted(to_date(e["date"]) for e in load_json(EXPIRIES_PATH, {}).get("events", []) if e.get("type") == "선·옵 동시만기")
     month = lambda ex: next((x for x in exps if x >= ex), None)
+    leaks = leak_test(ctxs, today)
     rows = []
     for c in ctxs:
         for r in c["rounds"]:
@@ -39,7 +80,7 @@ def verify():
                 continue
             cut = min([r["decided"]] + [n["date"] for n in c["rec_notices"] if n["record"] == r["record"]])
             v = view(c, cut)
-            p, miss = predict.one(v, r["type"], r["fy"], r["q"], cut, med)
+            p, miss = predict.one(v, r["type"], r["fy"], r["q"], cut, med(cut.replace(day=1)))
             base = {"code": c["code"], "name": c["name"], "type": r["type"], "quarter": f"{r['fy']} Q{r['q']}",
                     "actual_record": iso(r["record"]), "actual_fixed": r["fixed"]}
             if p is None:
@@ -63,7 +104,7 @@ def verify():
             known = any(r["type"] == "결산배당" and r["fy"] == fy and r["decided"] and r["decided"] < cut for r in c["rounds"])
             if cut + datetime.timedelta(days=EVAL_DAYS) >= today or known or fy - 1 not in c["years"]:
                 continue   # 아직 안 끝난 해, 12월 초 전에 이미 공시한 결산, 작년 사업보고서가 없는 첫 해는 예측 대상이 아님
-            e = next((p for p in predict.upcoming(view(c, cut), cut, med)[0] if p["div_type"] == "결산배당" and p["fy"] == fy), None)
+            e = next((p for p in predict.upcoming(view(c, cut), cut, med(cut))[0] if p["div_type"] == "결산배당" and p["fy"] == fy), None)
             if not e:
                 missed.append({"code": c["code"], "name": c["name"], "fy": fy, "actual_dps": act})
                 continue
@@ -108,6 +149,7 @@ def verify():
                                      "그중 실제 특별": sum(x["special_hint"] and x["actual_special"] for x in finals),
                                      "꺼진 회차 중 실제 특별": sum(not x["special_hint"] and x["actual_special"] for x in finals)},
         "결산 표본 사업연도": {fy: sum(x["fy"] == fy for x in finals) for fy in sorted({x["fy"] for x in finals})},
+        "미래 오염 시험": {"다른 예측": len(leaks), "예": leaks[:5]},
         "한계": "정관(정기보고서 표)은 최신값 사용 — 과거 시점 값이 아님. 실적발표 예정일은 최근 수집분만 → 백테스트에서 A2 이사회형은 거의 안 쓰임",
     }
     save_json(DIV_VERIFY_PATH, {"generated_at": stamp(), "summary": summary, "rows": rows, "finals": finals, "missed": missed})

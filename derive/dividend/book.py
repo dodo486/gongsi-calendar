@@ -74,7 +74,7 @@ def build():
     since = ymd(days_ago(FILED_DAYS))
     exps = sorted(e["date"] for e in load_json(EXPIRIES_PATH, {}).get("events", []))
     ctxs = contexts()
-    med = predict.learn(ctxs)
+    med = predict.learn(ctxs, today)
 
     companies, rows = {}, []
     for c in ctxs:

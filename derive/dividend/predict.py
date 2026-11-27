@@ -8,9 +8,9 @@ from derive.dividend.facts import quarter_end, quarter_owner
 HORIZON_DAYS = 270
 
 
-def learn(ctxs):
-    """수집대상 전체 통계 — 날짜 기본 간격(date.learn) · 금액 증가율(amount.learn)"""
-    s = inputs.samples(ctxs)
+def learn(ctxs, cut):
+    """수집대상 전체 통계 — 날짜 기본 간격(date.learn) · 금액 증가율(amount.learn), cut 전에 알던 것만"""
+    s = inputs.samples([inputs.view(c, cut) for c in ctxs])
     return {"date": date.learn(s), "amount": amount.learn(s)}
 
 def one(ctx, t, fy, q, today, med):
