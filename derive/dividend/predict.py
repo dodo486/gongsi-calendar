@@ -19,7 +19,7 @@ def one(ctx, t, fy, q, today, med):
     p, miss = date.predict(d["v"], today, med["date"])
     if miss:
         return None, miss
-    a = inputs.for_amount(ctx, fy, to_date(p["record_date"]))
+    a = inputs.for_amount(ctx, fy, q, to_date(p["record_date"]))
     return {**p, "date_inputs": d["table"], **amount.estimate(a["v"], t, med["amount"]), "amount_inputs": a["table"]}, None
 
 def upcoming(ctx, today, med):

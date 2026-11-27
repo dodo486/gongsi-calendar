@@ -10,7 +10,7 @@ import datetime
 from core.paths import load_json, DIV_POLICY_PATH, DIV_CHECKED_PATH, DART_VIEW
 from core.krx_cal import to_date, iso
 from derive.dividend import facts
-from derive.dividend.facts import (GROUP, SEASON_DAYS, share_factor, paid, annual_dps, final_of, last_annual, shares, cons_of, eps_of,
+from derive.dividend.facts import (GROUP, SEASON_DAYS, NI, share_factor, paid, annual_dps, final_of, last_annual, shares, cons_of, eps_of, owner_ni,
                                    quarter_end, year_steps, paid_gap, said_bases, _base, policy_sig, fact_of, policy_text, ytd)
 
 CASH_SHARE_YEARS = 3   # 총환원 중 현금배당 비율 = 최근 이만큼 사업연도 현금흐름표 배당금 지급 ÷ (배당금 지급 + 자기주식 취득)
@@ -91,7 +91,7 @@ def view(ctx, cut):
 
 def samples(ctxs):
     """수집대상 전체 표본 — 이사회가 정한 회차의 날짜 간격(qe 기말→기준일 · dec 배당결정→기준일 · agm 주총→기준일, 종류별 일수)과 pay 기준일→지급,
-    growth (사업연도, 올해·작년 3분기 누적 EPS, 올해·작년 결산 몫), steps 분기배당 새해 인상 (사업연도, 비율)"""
+    growth (사업연도, 올해·작년 3분기 누적 지배순이익, 올해·작년 결산 몫), steps 분기배당 새해 인상 (사업연도, 비율)"""
     s = {"qe": {}, "dec": {}, "pay": {}, "agm": [], "growth": [], "steps": []}
     for c in ctxs:
         agm_by_fy = {a["fy"]: a["date"] for a in c["agms"] if a["regular"]}
@@ -108,7 +108,7 @@ def samples(ctxs):
                 s["agm"].append((r["record"] - agm_by_fy[r["fy"]]).days)
         y = c["years"]
         for fy, d in y.items():
-            s["growth"].append((fy, d.get("q3_eps", 0), y.get(fy - 1, {}).get("q3_eps", 0), final_of(c, fy), final_of(c, fy - 1)))
+            s["growth"].append((fy, owner_ni(c, fy, 3)[0] or 0, owner_ni(c, fy - 1, 3)[0] or 0, final_of(c, fy), final_of(c, fy - 1)))
         s["steps"] += year_steps(c)
     return s
 
@@ -204,11 +204,16 @@ def for_date(ctx, t, fy, q):
                  ("기말 직전 한 달 명부폐쇄", f"배당 기준일 공고 {'있음' if v['div_rec'] else '없음'} · 주총 명부폐쇄 {'있음' if v['agm_rec'] else '없음'}", "있음", "")]
     return {"v": v, "table": [{"item": i, "value": val, "status": st, "check": "자동", "src": src, "sig": f"{i}|{val}"} for i, val, st, src in rows]}
 
-def for_amount(ctx, fy, rec):
-    """한 회차의 금액 재료 (회사 × 사업연도, 주식 수·분할 보정은 예상 기준일 rec 기준)"""
-    y, yp = ctx["years"].get(fy, {}), ctx["years"].get(fy - 1, {})
+def for_amount(ctx, fy, q, rec):
+    """한 회차의 금액 재료 (회사 × 사업연도 × 분기 — 결산 4·중간 2·분기 1~3, 주식 수·분할 보정은 예상 기준일 rec 기준).
+    3분기 누적 이익(q3·q3_prev·q3_hist)은 지배순이익 금액 — 비율로만 쓰여 주식 수가 필요 없고 분할에도 안 흔들림"""
+    y = ctx["years"].get(fy, {})
     sh, sh_txt = shares(ctx, rec)
-    eps, eps_txt = eps_of(ctx, fy)
+    eps, eps_txt = eps_of(ctx, fy, sh)
+    per = lambda f: owner_ni(ctx, f, 3)[0] or 0
+    upto = next((k for k in range(q, 0, -1) if owner_ni(ctx, fy, k)[0] is not None), 0)
+    ni, ni_txt = owner_ni(ctx, fy, upto) if upto else (None, "")
+    sep = ytd(ctx, NI, "별도", fy, 3) or y.get("q3_ni_sep", 0) * 1e6
     pol = policy(ctx, fy)
     share, share_txt = cash_share(ctx, fy)
     payouts = {fy - i: ctx["years"][fy - i]["payout"] for i in (3, 2, 1) if ctx["years"].get(fy - i, {}).get("payout", 0) > 0}   # 사업보고서 해마다 배당성향
@@ -218,10 +223,10 @@ def for_amount(ctx, fy, rec):
     p, p_txt = paid(ctx, fy)
     rounds = [{**r, "adj": share_factor(ctx["splits"], r["record"], rec)} for r in ctx["rounds"]]
     v = {"fy": fy, "rounds": rounds, "acc": int(ctx["acc"]),
-         "eps": eps, "eps_txt": eps_txt, "sep_eps": y["q3_ni_sep"] * 1e6 / sh if y.get("q3_ni_sep", 0) > 0 and sh else 0,
-         "pays": pays, "pay_last": yp.get("payout", 0),
-         "q3": y.get("q3_eps", 0), "q3_prev": yp.get("q3_eps", 0),
-         "q3_hist": [d["q3_eps"] for f, d in ctx["years"].items() if f < fy and d.get("q3_eps", 0) > 0],
+         "eps": eps, "eps_txt": eps_txt, "sep_eps": sep / sh if sep > 0 and sh else 0, "q": q, "ni_ytd": ni, "ni_upto": upto,
+         "pays": pays, "pay_last": ctx["years"].get(fy - 1, {}).get("payout", 0),
+         "q3": per(fy), "q3_prev": per(fy - 1),
+         "q3_hist": [x for f in sorted(ctx["years"]) if f < fy and (x := per(f)) > 0],
          "final_hist": [x for f in sorted(ctx["years"]) if f < fy and (x := final_of(ctx, f))],
          "dps_hist": run_dps(ctx, fy), "prev": annual_dps(ctx, fy - 1), "prev_adj": last_annual(ctx, fy, rec),
          "last_final": last, "last_adj": share_factor(ctx["splits"], quarter_end(fy - 1, 4, ctx["acc"]), rec),
@@ -244,6 +249,7 @@ def for_amount(ctx, fy, rec):
     c_dps, eps, sh, share = v["cons_dps"], v["eps"], v["shares"], v["share"]
     table = [
         row("올해 순이익(EPS)", f"{eps:,.0f}원" if eps > 0 else "", "있음" if eps > 0 else "없음", v["eps_txt"]),
+        row("지배순이익 누적", f"{ni / 1e8:,.0f}억({upto}분기까지)" if ni is not None else "", "있음" if ni is not None else "모름", ni_txt),
         row("과거 배당성향(3년)", " · ".join(f"{y} {x:g}%" for y, x in payouts.items()), "있음" if len(pays) == 3 else "모름" if pays else "없음", "사업보고서 배당 표"),
         row("작년 연간 DPS", f"{v['prev']:,.0f}원" if v["prev"] else "", "있음" if v["prev"] else "없음", "사업보고서·공시 회차"),
         row("작년 결산 몫", f"{v['last_final']:,.0f}원" if v["last_final"] else "", "있음" if v["last_final"] else "안 함" if v["last_final"] == 0 else "모름",

@@ -29,7 +29,7 @@ def spoil(ctx, cut):
     s["years"] = {fy: {k: x * BAD if later(quarter_end(fy, 3 if k.startswith("q3_") else 4, ctx["acc"])) else x for k, x in d.items()} for fy, d in ctx["years"].items()}
     s["share_counts"] = {d: {**x, "n": x["n"] * BAD} if later(d) else x for d, x in ctx["share_counts"].items()}
     s["fin_reports"] = [{**r, "facts": [f[:4] + [f[4] * BAD] for f in r["facts"]]} if later(r["dt"]) else r for r in ctx["fin_reports"]]
-    s["cons"] = [bad(x, ("dps", "eps", "dps_act", "eps_act", "ni", "ni_act")) if later(x["date"]) else x for x in ctx["cons"]]
+    s["cons"] = [bad(x, ("dps", "eps", "dps_act", "eps_act", "ni", "ni_act", "ni_own", "ni_own_act")) if later(x["date"]) else x for x in ctx["cons"]]
     s["policies"] = [bad(p, ("lo", "hi")) if all(later(d) for d, _ in p["said"]) else p for p in ctx["policies"]]
     s["rec_notices"] = ctx["rec_notices"] + [{"date": cut, "record": cut + datetime.timedelta(days=10), "div_type": ""}]
     s["notices"] = ctx["notices"] + [{"date": cut, "div_type": "결산배당", "fy": cut.year, "q": 4, "hint": "", "title": "오염", "rcept_no": "0"}]

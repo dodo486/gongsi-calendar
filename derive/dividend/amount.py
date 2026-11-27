@@ -126,7 +126,7 @@ def no_cut(x, t):
     return from_annual(x, "no_cut", "안 깎음", ys[-1], f"연간 DPS {len(ys)}년 줄인 적 없음 — 작년 {ys[-1]:,.0f}원 바닥")
 
 def earn_up(x, t, med):
-    """올해 3분기 누적 EPS 가 작년보다 EARN_UP 배 이상이면 직전 반복 × 과거 그런 회사들의 결산 배당 증가율, 아니면 직전 반복"""
+    """올해 3분기 누적 지배순이익이 작년보다 EARN_UP 배 이상이면 직전 반복 × 과거 그런 회사들의 결산 배당 증가율, 아니면 직전 반복"""
     if t != "결산배당":
         return "결산만"
     rl, up = repeat_last(x, t), med["dps_up"].get(x["fy"])
@@ -135,10 +135,10 @@ def earn_up(x, t, med):
     if not up:
         return "수집대상 배당 증가율 표본 부족"
     if x["q3"] <= 0 or x["q3_prev"] <= 0:
-        return "3분기 누적 EPS(올해·작년) 없음"
+        return "3분기 누적 지배순이익(올해·작년) 없음"
     k = up if x["q3"] >= EARN_UP * x["q3_prev"] else 1
     return {"signal": "earn_up", "name": "이익 반영", "value": round(rl["value"] * k),
-            "basis": f"3분기 누적 EPS 작년 {x['q3_prev']:,.0f}원 → 올해 {x['q3']:,.0f}원" + (f", 이렇게 늘었던 회사들 배당 {k:.2f}배 × " if k != 1 else " (크게 늘지 않음) · ") + rl["basis"]}
+            "basis": f"3분기 누적 지배순이익 작년 {x['q3_prev'] / 1e8:,.0f}억 → 올해 {x['q3'] / 1e8:,.0f}억" + (f", 이렇게 늘었던 회사들 배당 {k:.2f}배 × " if k != 1 else " (크게 늘지 않음) · ") + rl["basis"]}
 
 def step_up(x, t, med):
     """분기배당 회사의 새해 첫 분기 — 작년 마지막 분기배당 × 새해 인상 비율(이 회사 과거 중앙, 없으면 수집대상 전체 중앙 med["q_step"])"""
@@ -254,7 +254,7 @@ def estimate(x, t, med):
     surprise = (f"실적 서프라이즈 가능성 — 직전 2개 분기 순이익이 컨센 상회 ("
                 + ", ".join(f"{q[:4]}.{q[4:]} {a:,}억 vs 컨센 {e:,}억" for q, a, e in beat[-2:]) + ")"
                 if len(beat) >= 2 and all(a > e for _, a, e in beat[-2:]) else "")
-    special = (f"특별배당 가능성 — 특별배당 준 적 있음 + 올해 3분기 누적 EPS {x['q3']:,.0f}원이 평소({statistics.median(x['q3_hist']):,.0f}원)의 {SPECIAL_MULT}배 넘음"
+    special = (f"특별배당 가능성 — 특별배당 준 적 있음 + 올해 3분기 누적 지배순이익 {x['q3'] / 1e8:,.0f}억이 평소({statistics.median(x['q3_hist']) / 1e8:,.0f}억)의 {SPECIAL_MULT}배 넘음"
                if t == "결산배당" and hist and spiked(x["q3_hist"], x["q3"]) else "")
     got = {s.__name__: (s(x, t, med) if uses_med else s(x, t)) for s, uses_med in SIGNALS}
     cands = {k: c for k, c in got.items() if isinstance(c, dict)}

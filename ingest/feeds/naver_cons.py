@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """네이버 컨센서스(E) — 과거 값을 안 주므로 매일 받아 값이 바뀐 날만 쌓는다 → store consensus
-연간: {date, fy, dps, eps 컨센 | dps_act, eps_act 실제(잠정 실적 발표 뒤)}(원) — 배당·실적 추정.
-분기: {date, quarter "YYYYMM", ni 컨센 | ni_act 실제}(억원, 당기순이익) — 서프라이즈 판정"""
+연간: {date, fy, dps, eps 컨센 | dps_act, eps_act 실제(잠정 실적 발표 뒤)}(원), ni_own 지배주주순이익(억원) — 배당·실적 추정.
+분기: {date, quarter "YYYYMM"(분기 끝 달), ni·ni_own 컨센 | ni_act·ni_own_act 실제}(억원, 당기순이익·지배주주순이익) — 서프라이즈 판정·남은 분기 이익"""
 import datetime
 from concurrent.futures import ThreadPoolExecutor
 from core import store, universe
@@ -24,7 +24,7 @@ def _rows(code, kind, titles, actual=False):
     return out
 
 def _fetch(code):
-    return code, _rows(code, "annual", {"주당배당금": "dps", "EPS": "eps"}, True), _rows(code, "quarter", {"당기순이익": "ni"}, True)
+    return code, _rows(code, "annual", {"주당배당금": "dps", "EPS": "eps", "지배주주순이익": "ni_own"}, True), _rows(code, "quarter", {"당기순이익": "ni", "지배주주순이익": "ni_own"}, True)
 
 def run():
     data, today, n = dict(store.load("consensus")), datetime.date.today().isoformat(), 0

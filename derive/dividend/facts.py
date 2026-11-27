@@ -317,6 +317,8 @@ def policy_text(rows):
     return " · ".join(out)
 
 # ── 사실 조회 — 재료(inputs)는 장부·시장 사실을 여기서만 읽는다 ──
+OWNER_NI, NI = "ifrs-full:ProfitLossAttributableToOwnersOfParent", "ifrs-full:ProfitLoss"
+
 def fin(ctx, concept, basis, start, end):
     """정기보고서 숫자 — (계정, 연결·별도, 시작, 끝)이 그 보고서 기간인 공시 중 가장 최근 값, 없으면 None. 시점 값(재무상태표)은 시작 ""
     기간은 원본(XBRL) 그대로라 사업연도를 맞춰 만들지 않음 — 결산월로 찾은 기간이 원본에 없으면 None(모름)"""
@@ -387,8 +389,38 @@ def cons_of(ctx, fy, key):
     """사업연도 fy 의 최신 네이버 연간 컨센(key: dps·eps) — 네이버 연도 = 사업연도인 12월 결산만"""
     return next((x for x in reversed(ctx["cons"]) if x.get("fy") == str(fy) and x.get(key)), None) if int(ctx["acc"]) == 12 else None
 
-def eps_of(ctx, fy):
-    """사업연도 EPS — 실적 발표(네이버 연간 실제, 1~2월 잠정 실적 뒤), 없으면 연간 컨센, 없으면 3분기 누적 × 4/3 → (원, 근거)"""
-    a, c, q3 = cons_of(ctx, fy, "eps_act"), cons_of(ctx, fy, "eps"), ctx["years"].get(fy, {}).get("q3_eps", 0)
-    return ((a["eps_act"], f"{iso(a['date'])} 네이버 실적 발표 EPS {a['eps_act']:,}원") if a else (c["eps"], f"{iso(c['date'])} 네이버 컨센 EPS {c['eps']:,}원") if c
-            else (q3 * 4 / 3, f"{fy} 3분기보고서 누적 EPS {q3:,.0f}원 × 4/3") if q3 > 0 else (0, ""))
+def owner_ni(ctx, fy, q):
+    """지배 순이익 누적(사업연도 fy, q 분기말까지) → (원, 쓴 원천). 연결 지배, 연결이 없는 회사는 별도 순이익,
+    재무제표 원본이 없으면(금융업 2023년 3분기 전) 3분기만 배당 표 누적 순이익. 모르면 (None, "")"""
+    x = ytd(ctx, OWNER_NI, "연결", fy, q)
+    if x is not None:
+        return x, f"{fy} {q}분기 누적 연결 지배순이익"
+    x = ytd(ctx, NI, "별도", fy, q) if ytd(ctx, NI, "연결", fy, q) is None else None
+    if x is not None:
+        return x, f"{fy} {q}분기 누적 별도 순이익(연결 없음)"
+    y = ctx["years"].get(fy, {})
+    return (y["q3_ni"] * 1e6, f"{fy} 3분기보고서 배당 표 누적 순이익") if q == 3 and "q3_ni" in y else (None, "")
+
+def quarter_cons(ctx, fy, q):
+    """그 분기 지배 순이익 네이버 컨센(원) — 분기 끝 달로 찾음, 없으면 None"""
+    key = quarter_end(fy, q, ctx["acc"]).strftime("%Y%m")
+    return next((x["ni_own"] * 1e8 for x in reversed(ctx["cons"]) if x.get("quarter") == key and "ni_own" in x), None)
+
+def eps_of(ctx, fy, sh):
+    """사업연도 EPS(원) → (값, 근거). 잠정 실적 뒤 실제(네이버) > 지배순이익 누적 실제 + 남은 분기 컨센 ÷ 주식 수 > 네이버 연간 컨센 EPS
+    > 3분기 누적 지배순이익 × 4/3 ÷ 주식 수 (주식 수 모르면 배당 표 3분기 EPS × 4/3). EPS 는 지배순이익 ÷ 배당 받는 주식 수로 우리가 계산 — 원천마다 EPS 기준(연결·별도·주식 종류)이 달라서"""
+    a, c = cons_of(ctx, fy, "eps_act"), cons_of(ctx, fy, "eps")
+    if a:
+        return a["eps_act"], f"{iso(a['date'])} 네이버 실적 발표 EPS {a['eps_act']:,}원"
+    done = next((q for q in (3, 2, 1) if ytd(ctx, OWNER_NI, "연결", fy, q) is not None or ytd(ctx, NI, "별도", fy, q) is not None), 0)
+    rest = [quarter_cons(ctx, fy, q) for q in range(done + 1, 5)]
+    if done and sh and None not in rest:
+        ni, src = owner_ni(ctx, fy, done)
+        return ((ni + sum(rest)) / sh, f"{src} {ni / 1e8:,.0f}억 + 남은 {4 - done}개 분기 컨센 {sum(rest) / 1e8:,.0f}억 ÷ {sh / 1e8:,.2f}억주")
+    if c:
+        return c["eps"], f"{iso(c['date'])} 네이버 컨센 EPS {c['eps']:,}원"
+    ni, src = owner_ni(ctx, fy, 3)
+    if ni and ni > 0 and sh:
+        return ni * 4 / 3 / sh, f"{src} {ni / 1e8:,.0f}억 × 4/3 ÷ {sh / 1e8:,.2f}억주"
+    q3 = ctx["years"].get(fy, {}).get("q3_eps", 0)   # 주식 수를 모르는 과거 시점
+    return (q3 * 4 / 3, f"{fy} 3분기보고서 배당 표 누적 EPS {q3:,.0f}원 × 4/3") if q3 > 0 else (0, "")
