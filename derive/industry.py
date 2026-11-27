@@ -12,12 +12,14 @@
 
 오늘 (data/out/industry_action.json): 묶음 종목을 시세 허브에 구독해 허브가 받을 때마다 묶음·세부 테마별
 거래대금 합, 평균 등락, 상승 비율, 대장주(거래대금 1위). 등락률은 전일 종가 대비 — 시세는 SOURCE.
+시장 조합(MARKETS)마다 그 시장 종목만 남기고 집계한다(scopes) — 묶음 자체는 시장과 무관.
 네이버 소속표 원본은 날마다 data/cache/theme_snapshots/YYYYMMDD.json 으로 남긴다(사후 편입 없는 재검증용).
 
   python -m derive.industry          # 오늘 집계 1회 (묶음 파일이 없거나 오래됐으면 먼저 다시 묶음)
   python -m derive.industry rebuild  # 묶음 강제 재구성
 """
 import os, re, sys, datetime
+from itertools import combinations
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
@@ -36,9 +38,9 @@ REBUILD_DAYS = 30   # 묶음 재구성 주기(일)
 PRUNE = 0.25        # 테마 정제: 나머지 평균과의 잔차 상관 하한
 MERGE = 0.6         # 테마 합치기: 테마 지수 상관 하한
 MIN_SIZE = 3
-CANDLE_HOUR = 18    # 이 시각 이후 하루 한 번 일봉 증분 수집
-UPKEEP_SECONDS = 60  # 하루 한 번 일(구독·소속표·일봉)을 챙기는 주기
+UPKEEP_SECONDS = 60  # 하루 한 번 일(구독·소속표)을 챙기는 주기
 SOURCE = {md_feed.PRE: md_feed.NXT_STOCK}   # 시간대: 등락률을 재는 시세 — 그 밖엔 KRX(개장 동시호가엔 예상체결가)
+MARKETS = ("KOSPI", "KOSDAQ")   # 화면 시장 필터 — 켠 시장 조합마다 그 종목만으로 집계
 
 
 def _residual(R):
@@ -155,31 +157,31 @@ def subscribe():
     return feeds
 
 
+def _action(groups, snap):
+    out = []
+    for grp in groups:
+        a = _agg(grp["codes"], snap)
+        if not a:
+            continue
+        subs = [{"name": s["name"], **x} for s in grp["subs"] if (x := _agg(s["codes"], snap))]
+        ms = [snap[c] for c in grp["codes"] if c in snap]
+        a.update(name=grp["name"], themes=grp["themes"], subs=sorted(subs, key=lambda s: -s["value"]),
+                 members=sorted(ms, key=lambda m: -(m.get("value") or 0)))
+        out.append(a)
+    return sorted(out, key=lambda a: -a["value"])
+
+
 def build_action(phase):
     g, names = _now["groups"], _now["names"]
     feed = SOURCE.get(phase, md_feed.KRX_STOCK)
     snap = {c: {**names[c], "rate": pct(q["price"], q.get("prev_close")), "value": q.get("value")}
             for c, q in md_feed.latest(feed).items() if c in names and q.get("price")}
-    out = []
-    for grp in g["groups"]:
-        a = _agg(grp["codes"], snap)
-        if not a:
-            continue
-        a["name"] = grp["name"]
-        a["themes"] = grp["themes"]
-        a["subs"] = sorted(({"name": s["name"], **_agg(s["codes"], snap)} for s in grp["subs"]
-                            if _agg(s["codes"], snap)), key=lambda s: -s["value"])
-        ms = [snap[c] for c in grp["codes"] if c in snap]
-        a["members"] = sorted(ms, key=lambda m: -(m.get("value") or 0))
-        out.append(a)
-    out.sort(key=lambda a: -a["value"])
+    scopes = {"+".join(ms): _action(g["groups"], {c: s for c, s in snap.items() if s["market"] in ms})
+              for n in range(1, len(MARKETS) + 1) for ms in combinations(MARKETS, n)}
     payload = {"generated_at": stamp(), "source": f"{phase or '장 밖'} · {feed}",
-               "groups_built_at": g["generated_at"], "window": g["window"], "groups": out}
+               "groups_built_at": g["generated_at"], "window": g["window"], "scopes": scopes}
     save_json(INDUSTRY_ACTION_PATH, payload)
     return payload
-
-
-_candle_day = None
 
 
 def start():
@@ -188,16 +190,10 @@ def start():
 
 
 def daily_upkeep():
-    """하루 한 번: 시세 허브 구독(묶음이 오래됐으면 다시 묶고), 소속표 스냅샷, 장 마감 뒤 일봉 증분 수집."""
-    global _candle_day
+    """하루 한 번: 시세 허브 구독(묶음이 오래됐으면 다시 묶고), 소속표 스냅샷."""
     if _now["day"] != datetime.date.today():
         subscribe()
     snapshot_themes(md_feed.themes())
-    now = datetime.datetime.now()
-    if now.hour >= CANDLE_HOUR and now.weekday() < 5 and _candle_day != now.date():
-        codes = [r["code"] for r in md_feed.market_snapshot() if r.get("kind") == "stock"]
-        md_feed.refresh_candles(codes)
-        _candle_day = now.date()
 
 
 if __name__ == "__main__":
@@ -207,6 +203,7 @@ if __name__ == "__main__":
               f"(일봉 {g['window'][0]}~{g['window'][1]})")
     md_feed.get("인더스트리(1회)", subscribe())
     p = build_action(md_feed.phase_of(datetime.datetime.now()))
-    print(f"{p['generated_at']} 묶음 {len(p['groups'])}개 (묶은 날 {p['groups_built_at']})")
-    for a in p["groups"][:10]:
+    gs = p["scopes"]["+".join(MARKETS)]
+    print(f"{p['generated_at']} 묶음 {len(gs)}개 (묶은 날 {p['groups_built_at']})")
+    for a in gs[:10]:
         print(f"  {a['name']:<20} {a['value'] / 1e8:>9,.0f}억 {a['rate']:+.2f}% 상승 {a['up']}/{a['n']} 대장 {a['lead']['name']}")

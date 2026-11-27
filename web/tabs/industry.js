@@ -5,23 +5,26 @@ tab("industry", {label: "🏭 인더스트리 액션", css: true, files: ["indus
 let IA = null, IA_SORT = "value", IA_SEL = null;   // data/out/industry_action.json
 async function loadIndustry(){
   try{ IA = await (await fetch("data/out/industry_action.json?_="+Date.now())).json(); }catch(_){ IA = null; }
-  document.getElementById("meta").textContent = IA
-    ? `🏭 묶음 ${IA.groups.length}개 · 갱신 ${IA.generated_at} · 시세 ${IA.source} · 묶은 날 ${IA.groups_built_at.slice(0,10)} (일봉 ${IA.window[0]}~${IA.window[1]})`
-    : "인더스트리 데이터 없음";
   renderIndustry();
+}
+function iaScope(){   // 켠 시장 종목만으로 집계한 묶음 — derive/industry.py MARKETS
+  return IA.scopes[["KOSPI","KOSDAQ"].filter(m=>filters[m]).join("+")] || [];
 }
 function iaGroups(){
   const q = (filters.q||"").trim();
-  let gs = IA.groups.filter(g=> !q || g.name.includes(q) || g.themes.some(t=>t.includes(q)) || g.members.some(m=>m.name.includes(q)));
+  let gs = iaScope().filter(g=> !q || g.name.includes(q) || g.themes.some(t=>t.includes(q)) || g.members.some(m=>m.name.includes(q)));
   const key = {value:g=>-g.value, up:g=>-g.rate, down:g=>g.rate}[IA_SORT];
   return gs.slice().sort((a,b)=>key(a)-key(b));
 }
 function renderIndustry(){
   const box = document.getElementById("industryView");
-  if(!IA){ box.innerHTML = `<div class="empty">인더스트리 데이터가 없습니다 — python -m derive.industry 실행 후 다시 여세요.</div>`; return; }
+  const meta = document.getElementById("meta");
+  if(!IA){ meta.textContent = "인더스트리 데이터 없음";
+    box.innerHTML = `<div class="empty">인더스트리 데이터가 없습니다 — python -m derive.industry 실행 후 다시 여세요.</div>`; return; }
+  meta.textContent = `🏭 묶음 ${iaScope().length}개 · 갱신 ${IA.generated_at} · 시세 ${IA.source} · 묶은 날 ${IA.groups_built_at.slice(0,10)} (일봉 ${IA.window[0]}~${IA.window[1]})`;
   const gs = iaGroups();
   if(!IA_SEL || !gs.some(g=>g.name===IA_SEL)) IA_SEL = gs.length ? gs[0].name : null;
-  const vmax = Math.max(1, ...IA.groups.map(g=>g.value));
+  const vmax = Math.max(1, ...iaScope().map(g=>g.value));
   const chip = (k,t)=>`<span class="chip${IA_SORT===k?" on":""}" data-sort="${k}">${t}</span>`;
   const rows = gs.map(g=>`<div class="ia-row${g.name===IA_SEL?" sel":""}" data-g="${esc(g.name)}">
       <span class="bar" style="width:${(g.value/vmax*100).toFixed(1)}%"></span>
@@ -39,14 +42,13 @@ function renderIndustry(){
 }
 function renderIndustryDetail(){
   const box = document.getElementById("iaDetail");
-  const g = IA && IA.groups.find(x=>x.name===IA_SEL);
+  const g = IA && iaScope().find(x=>x.name===IA_SEL);
   if(!box) return;
   if(!g){ box.innerHTML = `<div class="empty">묶음을 고르세요.</div>`; return; }
-  const ms = g.members.filter(m=>filters[m.market] !== false);
   box.innerHTML = `<h3>${esc(g.name)}</h3>
     <div class="ia-sub">${won(Math.round(g.value/1e8))}억 · 평균 ${signedPct(g.rate)} · 상승 ${g.up}/${g.n} · 합쳐진 테마 ${g.themes.length}개</div>
     <div class="ia-themes">${g.subs.map(s=>`<span title="${s.n}종목 · 대장 ${esc(s.lead.name)}">${esc(s.name)} <b class="${sgn(s.rate)}">${signedPct(s.rate)}</b></span>`).join("")}</div>
-    ${ms.map(m=>`<div class="ia-m" data-code="${esc(m.code)}"><span>${esc(m.name)}</span>
+    ${g.members.map(m=>`<div class="ia-m" data-code="${esc(m.code)}"><span>${esc(m.name)}</span>
       <span class="num ${sgn(m.rate)}">${signedPct(m.rate)}</span><span class="num v">${won(Math.round((m.value||0)/1e8))}억</span></div>`).join("")}`;
 }
 document.getElementById("industryView").addEventListener("click", e=>{

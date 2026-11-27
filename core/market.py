@@ -8,7 +8,7 @@ md.candles/md.flows, 현재가·지수·분봉은 KIS(키 필요), 전시장은 
 
 읽기 규칙:
 - 일별(OHLC·수급): **로컬 미러(SISE_DB_PATH)**에서 읽는다. 미러는 sync_mirror.py가
-  중앙 PG에서 채운다 — 비어 있으면 빈 값.
+  중앙 PG에서 채우고, 일봉은 장 마감 뒤 이 창구가 KIS 로 증분 수집한다 — 비어 있으면 빈 값.
 - 실시간(호가·현재가·종목 상태·주식선물·지수): 시세 허브 하나가 받고 소비자는 구독·읽기만 한다.
 - 분봉/참조: jhts 창구가 그때그때 소스에서 받아온다(휘발성, 저장 안 함).
   실시간·분봉은 KIS 를 쓰므로 SISE_KIS_* 키가 필요하다.
@@ -69,6 +69,9 @@ SCHEDULE = {   # 시간대: {피드: 받는 주기(초)} — 0 매 바퀴, ONCE 
 }
 ROUND_SECONDS = 1   # 한 바퀴 최소 간격
 CALENDAR_SECONDS = 86400   # KIS 휴장일 달력 — KIS 권장 하루 1회
+CANDLE_HOUR = 18           # 이 시각 이후 하루 한 번 일봉 증분 수집
+CANDLE_CHECK_SECONDS = 60
+_candle_day = None         # 일봉 수집한 날
 IDLE_SECONDS = 5    # 받을 게 없을 때 쉬는 초
 
 
@@ -270,6 +273,7 @@ def start():
     ops.source(stats)
     threading.Thread(target=_loop, daemon=True, name="시세 허브").start()
     threading.Thread(target=ops.every, args=("휴장일 달력", CALENDAR_SECONDS, refresh_calendar), daemon=True, name="휴장일 달력").start()
+    threading.Thread(target=ops.every, args=("일봉 수집", CANDLE_CHECK_SECONDS, refresh_candles), daemon=True, name="일봉 수집").start()
 
 
 def _call(default, fetch, realtime=False):
@@ -308,10 +312,16 @@ def closes_values(codes, start):
     return out
 
 
-def refresh_candles(codes):
-    """일봉 미러를 종목별 MAX(date) 다음 날부터 오늘까지 KIS 로 증분 수집.
-    오늘 캔들까지 저장하므로 장 마감 뒤에만 부른다."""
-    return _call({}, lambda: md.collect(codes, ["candles"]).get("candles", {}), realtime=True)
+def refresh_candles():
+    """전 종목 일봉 미러를 종목별 MAX(date) 다음 날부터 오늘까지 KIS 로 증분 수집.
+    오늘 캔들까지 저장하므로 거래일 CANDLE_HOUR 이후 하루 한 번."""
+    global _candle_day
+    now = datetime.datetime.now()
+    if now.hour < CANDLE_HOUR or not is_business_day(now.date()) or _candle_day == now.date():
+        return
+    codes = [r["code"] for r in market_snapshot() if r.get("kind") == "stock"]
+    _call({}, lambda: md.collect(codes, ["candles"]), realtime=True)
+    _candle_day = now.date()
 
 
 # ── 분봉 / 참조 ───────────────────────────────────────────────
